@@ -1,0 +1,12 @@
+const router     = require('express').Router()
+const controller = require('./admin-exam.controller')
+const { validate } = require('../../core/validate')
+const { createExamSchema, updateExamSchema } = require('./admin-exam.schema')
+
+router.get('/',    controller.list)
+router.post('/',   validate(createExamSchema), controller.create)
+router.get('/:id', controller.getOne)
+router.put('/:id', validate(updateExamSchema), controller.update)
+router.delete('/:id', controller.remove)
+
+module.exports = router

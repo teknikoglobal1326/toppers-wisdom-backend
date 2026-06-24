@@ -1,0 +1,51 @@
+const express    = require('express')
+const helmet     = require('helmet')
+const cors       = require('cors')
+const compression = require('compression')
+const pinoHttp   = require('pino-http')
+const config     = require('./config/env')
+const { rootLogger } = require('./config/logger')
+const { apiLimiter, adminLimiter } = require('./middlewares/rateLimiter.middleware')
+const { authMiddleware }      = require('./middlewares/auth.middleware')
+const { adminAuthMiddleware } = require('./middlewares/adminAuth.middleware')
+const { languageMiddleware } = require('./middlewares/language.middleware')
+const { errorHandler }    = require('./middlewares/errorHandler.middleware')
+
+const path = require('path')
+
+const app = express()
+
+app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')))
+app.use(helmet())
+app.use(cors({ origin: config.ALLOWED_ORIGINS.split(','), credentials: true }))
+app.use(compression())
+app.use(express.json({ limit: '10mb' }))
+app.use(pinoHttp({
+  logger: rootLogger,
+  customLogLevel: (_req, res) => res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',
+}))
+app.use(apiLimiter)
+app.use(languageMiddleware)
+
+// ── Admin Auth ────────────────────────────────
+app.use('/api/v1/admin-auth',    require('./modules/admin-auth/admin-auth.routes'))
+
+// ── User API ──────────────────────────────────
+app.use('/api/v1/auth',          require('./modules/auth/auth.routes'))
+app.use('/api/v1/user',          authMiddleware, require('./modules/user/user.routes'))
+app.use('/api/v1/qualifications', require('./modules/qualification/qualification.routes'))
+app.use('/api/v1/courses',        authMiddleware, require('./modules/course/course.routes'))
+app.use('/api/v1/tests',          authMiddleware, require('./modules/test/test.routes'))
+app.use('/api/v1/test-attempts',  authMiddleware, require('./modules/test/attempt.routes'))
+app.use('/api/v1/boosters',       authMiddleware, require('./modules/booster/booster.routes'))
+app.use('/api/v1/progress',       authMiddleware, require('./modules/progress/progress.routes'))
+app.use('/api/v1/payments',       require('./modules/payment/payment.routes'))
+app.use('/api/v1/blog',           require('./modules/blog/blog.routes'))
+
+// ── Admin API ─────────────────────────────────
+app.use('/api/v1/admin', adminLimiter, adminAuthMiddleware, require('./admin/admin.router'))
+
+// Must be LAST
+app.use(errorHandler)
+
+module.exports = app

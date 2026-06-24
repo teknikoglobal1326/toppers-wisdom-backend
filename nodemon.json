@@ -1,0 +1,1 @@
+{ "watch": ["src"], "ext": "js", "ignore": ["src/seeds/*"], "exec": "node -r dotenv/config src/server.js" }
