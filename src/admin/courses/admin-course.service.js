@@ -1,12 +1,19 @@
-/**
- * Admin course service reuses the same courseRepository.
- * Admins get full access — no isFree/status filter.
- * BaseService.getAll / create / update / remove are all inherited.
- */
-const BaseService    = require('../../core/BaseService')
+const BaseService      = require('../../core/BaseService')
 const courseRepository = require('../../modules/course/course.repository')
 const { getPresignedUploadUrl } = require('../../lib/s3')
 const { createLogger } = require('../../config/logger')
+
+const generateSlug = (title) => {
+  const base = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')   // strip special chars (non-ASCII like Hindi becomes empty)
+    .replace(/[\s_]+/g, '-')    // spaces/underscores → hyphen
+    .replace(/-+/g, '-')        // collapse multiple hyphens
+    .replace(/^-+|-+$/g, '')    // trim edge hyphens
+  const suffix = Date.now().toString(36)  // short unique suffix e.g. "lrz1k4"
+  return base ? `${base}-${suffix}` : suffix
+}
 
 class AdminCourseService extends BaseService {
   constructor() {
@@ -14,10 +21,16 @@ class AdminCourseService extends BaseService {
     this.logger = createLogger('admin:course:service')
   }
 
+  async create(data) {
+    const { examId, ...rest } = data
+    return super.create({ ...rest, exam: examId, slug: generateSlug(data.title) })
+  }
+
   async listAll(filters) {
     // No status filter — admins see everything
     const filter = {}
     if (filters.status)  filter.status  = filters.status
+    if (filters.examId)  filter.exam    = filters.examId
     if (filters.subExam) filter.subExam = filters.subExam
     // inherited getAll
     return this.getAll(filter, { page: filters.page, limit: filters.limit })
@@ -46,6 +59,16 @@ class AdminCourseService extends BaseService {
 
   async getLessonUploadUrl(courseId, lessonId, contentType) {
     const key = `courses/${courseId}/lessons/${lessonId}/video`
+    return getPresignedUploadUrl(key, contentType)
+  }
+
+  async getThumbnailUploadUrl(courseId, contentType) {
+    const key = `courses/${courseId}/thumbnail`
+    return getPresignedUploadUrl(key, contentType)
+  }
+
+  async getBannerUploadUrl(courseId, contentType) {
+    const key = `courses/${courseId}/banner`
     return getPresignedUploadUrl(key, contentType)
   }
 }
