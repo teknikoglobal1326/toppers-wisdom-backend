@@ -11,6 +11,7 @@ const { createLogger } = require('../config/logger')
 const logger = createLogger('middleware:validate')
 
 const validate = (schema) => (req, _res, next) => {
+  console.log("req.body", req.body);
   const { error, value } = schema.validate(req.body, {
     abortEarly: false,    // collect ALL errors, not just the first
     stripUnknown: true,   // remove fields not in schema

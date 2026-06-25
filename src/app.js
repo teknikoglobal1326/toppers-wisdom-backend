@@ -23,6 +23,10 @@ app.use(express.json({ limit: '10mb' }))
 app.use(pinoHttp({
   logger: rootLogger,
   customLogLevel: (_req, res) => res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',
+  serializers: {
+    req: (req) => ({ method: req.method, url: req.url }),
+    res: (res) => ({ statusCode: res.statusCode }),
+  },
 }))
 app.use(apiLimiter)
 app.use(languageMiddleware)
