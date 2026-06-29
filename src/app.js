@@ -34,6 +34,9 @@ app.use(languageMiddleware)
 // ── Admin Auth ────────────────────────────────
 app.use('/api/v1/admin-auth',    require('./modules/admin-auth/admin-auth.routes'))
 
+// ── Common (public, no auth) ──────────────────
+app.use('/api/v1/common',         require('./common/common.routes'))
+
 // ── User API ──────────────────────────────────
 app.use('/api/v1/auth',          require('./modules/auth/auth.routes'))
 app.use('/api/v1/user',          authMiddleware, require('./modules/user/user.routes'))

@@ -13,6 +13,14 @@ class QualificationService extends BaseService {
     return this.getAll({ isActive: true }, { sort: { sortOrder: 1 }, limit: 100 })
   }
 
+  async listPublic() {
+    this.logger.info('Listing public qualifications')
+    return this.repository.findAll(
+      { isActive: true },
+      { sort: { sortOrder: 1 }, select: '_id name' },
+    )
+  }
+
   async getExamTypes(qualificationId) {
     this.logger.info({ qualificationId }, 'Fetching exam types')
     await this.repository.assertExists(qualificationId, 'Qualification not found')
