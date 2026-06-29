@@ -28,4 +28,14 @@ const logout = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Logged out successfully')
 })
 
-module.exports = { sendOtp, verifyOtp, refreshToken, logout }
+const updatePassword = catchAsync(async (req, res) => {
+  const data = await authService.updatePassword(req.user._id, req.body.password)
+  sendSuccess(res, data, 'Password updated successfully')
+})
+
+const updateProfile = catchAsync(async (req, res) => {
+  const data = await authService.updateProfile(req.user._id, req.body)
+  sendSuccess(res, data, 'Profile updated successfully')
+})
+
+module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, updateProfile }

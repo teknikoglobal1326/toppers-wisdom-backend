@@ -1,12 +1,12 @@
 const mongoose = require('mongoose')
 const bcrypt   = require('bcryptjs')
 
-const MODULES = ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'admins', 'exams', 'subexams', 'subjects', 'banners', 'shorts']
+const MODULES = ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'admins', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications']
 
 const ROLE_PERMISSIONS = {
   superadmin: MODULES,
-  manager:    ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'exams', 'subexams', 'subjects', 'banners', 'shorts'],
-  editor:     ['courses', 'tests', 'boosters', 'blog', 'exams', 'subexams', 'subjects', 'banners', 'shorts'],
+  manager:    ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications'],
+  editor:     ['courses', 'tests', 'boosters', 'blog', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications'],
   viewer:     ['analytics'],
 }
 
