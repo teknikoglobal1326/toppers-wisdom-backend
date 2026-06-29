@@ -14,4 +14,15 @@ const refreshTokenSchema = Joi.object({
   refreshToken: Joi.string().required(),
 })
 
-module.exports = { sendOtpSchema, verifyOtpSchema, refreshTokenSchema }
+const updatePasswordSchema = Joi.object({
+  password: Joi.string().min(6).required(),
+})
+
+const updateProfileSchema = Joi.object({
+  name: Joi.string().trim().required(),
+  email: Joi.string().email().trim().optional().allow(null, ''),
+  qualification: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(), // MongoDB ObjectId
+  language: Joi.string().valid('hi', 'en').required(),
+})
+
+module.exports = { sendOtpSchema, verifyOtpSchema, refreshTokenSchema, updatePasswordSchema, updateProfileSchema }
