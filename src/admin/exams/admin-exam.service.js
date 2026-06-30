@@ -1,7 +1,7 @@
 const path = require('path')
-const BaseService    = require('../../core/BaseService')
+const BaseService = require('../../core/BaseService')
 const examRepository = require('../../modules/exam/exam.repository')
-const AppError       = require('../../core/AppError')
+const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 const { createLogger } = require('../../config/logger')
 
@@ -29,9 +29,9 @@ class AdminExamService extends BaseService {
       payload.qualificationId = null
     }
     if (file) {
-      const ext      = path.extname(file.originalname) || '.jpg'
+      const ext = path.extname(file.originalname) || '.jpg'
       const filename = `${Date.now()}${ext}`
-      payload.image  = await uploadFile(file.buffer, filename, 'exams', file.mimetype)
+      payload.image = await uploadFile(file.buffer, filename, 'exams', file.mimetype)
     }
     return this.create(payload)
   }
@@ -44,9 +44,9 @@ class AdminExamService extends BaseService {
       payload.qualificationId = null
     }
     if (file) {
-      const ext      = path.extname(file.originalname) || '.jpg'
+      const ext = path.extname(file.originalname) || '.jpg'
       const filename = `${Date.now()}${ext}`
-      payload.image  = await uploadFile(file.buffer, filename, 'exams', file.mimetype)
+      payload.image = await uploadFile(file.buffer, filename, 'exams', file.mimetype)
     }
     return examRepository.updateById(id, payload)
   }

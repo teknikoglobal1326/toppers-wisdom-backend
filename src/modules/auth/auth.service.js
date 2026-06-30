@@ -17,7 +17,7 @@ const sendOtp = async (phone) => {
 
   if (!isNewUser) {
     logger.info({ phone }, 'Old user, skipping OTP')
-    const payload = { _id: user._id, phone: user.phone, role: user.role, subExamId: user.subExam?._id || null }
+    const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamId: user.subExam?._id || null }
     const accessToken = signAccessToken(payload)
     const refreshToken = signRefreshToken({ _id: user._id })
 
@@ -68,7 +68,7 @@ const verifyOtpAndLogin = async (phone, otp) => {
     logger.info({ phone, userId: user._id }, 'Existing user logged in')
   }
 
-  const payload = { _id: user._id, phone: user.phone, role: user.role, subExamId: user.subExam?._id || null }
+  const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamId: user.subExam?._id || null }
   const accessToken = signAccessToken(payload)
   const refreshToken = signRefreshToken({ _id: user._id })
 
@@ -79,7 +79,7 @@ const refreshToken = async (token) => {
   const payload = verifyRefreshToken(token)
   // uses BaseRepository.findByIdOrFail — throws 401 if not found
   const user = await authRepository.findByIdOrFail(payload._id, 'User not found')
-  const accessToken = signAccessToken({ _id: user._id, phone: user.phone, role: user.role, subExamId: user.subExam?._id || null })
+  const accessToken = signAccessToken({ _id: user._id, phone: user.phone, role: user.role, examId: user.exam?._id || null, subExamId: user.subExam?._id || null })
   logger.info({ userId: user._id }, 'Token refreshed')
   return { accessToken }
 }
@@ -113,18 +113,54 @@ const updatePassword = async (userId, password) => {
 
 const updateProfile = async (userId, payload) => {
   const qualificationRepository = require('../qualification/qualification.repository')
-  const qual = await qualificationRepository.findByIdOrFail(payload.qualification, 'Qualification not found')
+  const examRepository = require('../exam/exam.repository')
+  const subExamRepository = require('../subexam/subexam.repository')
 
-  const updateData = {
-    name: payload.name,
-    qualification: { _id: qual._id, name: qual.name },
-    language: payload.language,
-    profileCompletionState: 'profileUpdated',
-    profileComplete: true
+  const updateData = {}
+
+  if (payload.name) {
+    updateData.name = payload.name
   }
 
   if (payload.email) {
     updateData.email = payload.email
+  }
+
+  if (payload.language) {
+    updateData.language = payload.language
+  }
+
+  if (payload.avatar) {
+    updateData.avatar = payload.avatar
+  }
+
+  if (payload.qualification) {
+    const qual = await qualificationRepository.findByIdOrFail(payload.qualification, 'Qualification not found')
+    updateData.qualification = { _id: qual._id, name: qual.name }
+  }
+
+  if (payload.examId) {
+    const exam = await examRepository.findByIdOrFail(payload.examId, 'Exam not found')
+    updateData.exam = { _id: exam._id, name: exam.name }
+  }
+
+  if (payload.subexamIds?.length) {
+    const subExams = await Promise.all(
+      payload.subexamIds.map((id) => subExamRepository.findByIdOrFail(id, 'Sub-exam not found'))
+    )
+    updateData.subExams = subExams.map((s) => ({ _id: s._id, name: s.name }))
+  }
+
+  // Mark onboarding as complete when name + qualification are present along with avatar or language
+  if (payload.name && payload.qualification && (payload.avatar || payload.language)) {
+    updateData.profileCompletionState = 'onboardingCompleted'
+    updateData.profileComplete = true
+  }
+
+  // Mark profile as fully complete when exam and subExams are set
+  if (payload.examId && payload.subexamIds?.length) {
+    updateData.profileCompletionState = 'profileFullCompleted'
+    updateData.profileComplete = true
   }
 
   const updatedUser = await authRepository.updateById(userId, updateData)

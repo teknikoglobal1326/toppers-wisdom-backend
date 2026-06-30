@@ -40,6 +40,7 @@ app.use('/api/v1/common',         require('./common/common.routes'))
 // ── User API ──────────────────────────────────
 app.use('/api/v1/auth',          require('./modules/auth/auth.routes'))
 app.use('/api/v1/user',          authMiddleware, require('./modules/user/user.routes'))
+app.use('/api/v1/home',          authMiddleware, require('./modules/home/home.routes'))
 app.use('/api/v1/qualifications', require('./modules/qualification/qualification.routes'))
 app.use('/api/v1/courses',        authMiddleware, require('./modules/course/course.routes'))
 app.use('/api/v1/tests',          authMiddleware, require('./modules/test/test.routes'))
