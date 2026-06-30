@@ -3,6 +3,7 @@ const Joi = require('joi')
 const createExamSchema = Joi.object({
   name:             Joi.string().trim().required(),
   subexamCount:     Joi.number().integer().min(0).default(0),
+  qualificationId:  Joi.string().trim().optional().allow(null, ''),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
   status:           Joi.string().valid('active', 'inactive').default('active'),
 })
@@ -10,6 +11,7 @@ const createExamSchema = Joi.object({
 const updateExamSchema = Joi.object({
   name:             Joi.string().trim(),
   subexamCount:     Joi.number().integer().min(0),
+  qualificationId:  Joi.string().trim().optional().allow(null, ''),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
   status:           Joi.string().valid('active', 'inactive'),
 }).min(1)

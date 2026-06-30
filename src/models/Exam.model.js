@@ -4,6 +4,7 @@ const examSchema = new mongoose.Schema({
   name:             { type: String, required: true, trim: true },
   image:            { type: String, default: null },
   subexamCount:     { type: Number, default: 0, min: 0 },
+  qualificationId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Qualification', default: null, index: true },
   shortDescription: { type: String, trim: true, default: null },
   status:           { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
   is_deleted:       { type: Boolean, default: false, index: true },

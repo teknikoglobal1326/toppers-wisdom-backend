@@ -14,17 +14,20 @@ class AdminExamService extends BaseService {
   async listAll({ status, page, limit } = {}) {
     const filter = { is_deleted: false }
     if (status) filter.status = status
-    return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
+    return this.getAll(filter, { page, limit, sort: { createdAt: -1 }, populate: 'qualificationId' })
   }
 
   async getOne(id) {
-    const exam = await examRepository.findOne({ _id: id, is_deleted: false })
+    const exam = await examRepository.findOne({ _id: id, is_deleted: false }, { populate: 'qualificationId' })
     if (!exam) throw new AppError('Exam not found', 404, 'NOT_FOUND')
     return exam
   }
 
   async createExam(data, file) {
     const payload = { ...data }
+    if (payload.qualificationId === '') {
+      payload.qualificationId = null
+    }
     if (file) {
       const ext      = path.extname(file.originalname) || '.jpg'
       const filename = `${Date.now()}${ext}`
@@ -37,6 +40,9 @@ class AdminExamService extends BaseService {
     const exam = await examRepository.findOne({ _id: id, is_deleted: false })
     if (!exam) throw new AppError('Exam not found', 404, 'NOT_FOUND')
     const payload = { ...data }
+    if (payload.qualificationId === '') {
+      payload.qualificationId = null
+    }
     if (file) {
       const ext      = path.extname(file.originalname) || '.jpg'
       const filename = `${Date.now()}${ext}`
