@@ -18,11 +18,16 @@ const updatePasswordSchema = Joi.object({
   password: Joi.string().min(6).required(),
 })
 
+const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/) // MongoDB ObjectId
+
 const updateProfileSchema = Joi.object({
-  name: Joi.string().trim().required(),
+  name: Joi.string().trim().optional(),
   email: Joi.string().email().trim().optional().allow(null, ''),
-  qualification: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(), // MongoDB ObjectId
-  language: Joi.string().valid('hi', 'en').required(),
-})
+  qualification: objectId.optional().label('qualification'),
+  language: Joi.string().valid('hi', 'en').optional(),
+  examId: objectId.optional().label('examId'),
+  subexamIds: Joi.array().items(objectId.label('subexamIds')).min(1).optional(),
+  avatar: Joi.string().max(500).allow('', null).optional(),
+}).min(1).messages({ 'object.min': 'At least one field is required to update' })
 
 module.exports = { sendOtpSchema, verifyOtpSchema, refreshTokenSchema, updatePasswordSchema, updateProfileSchema }
