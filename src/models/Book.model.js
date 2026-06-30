@@ -7,7 +7,7 @@ const bookSchema = new mongoose.Schema({
   description: { type: String, default: null },
   price:       { type: Number, default: 0 },
   isFree:      { type: Boolean, default: false, index: true },
-  section:     { type: String, enum: ['eBooks', 'books', 'audioBooks'], default: 'myBooks', index: true },
+  section:     { type: String, enum: ['myBooks', 'eBooks', 'books', 'audioBooks'], default: 'books', index: true },
   buyUrl:      { type: String, default: null },
   pages:       { type: Number, default: 0 },
   rating:      { type: Number, default: 0 },
