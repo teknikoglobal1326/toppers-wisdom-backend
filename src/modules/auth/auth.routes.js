@@ -12,4 +12,4 @@ router.post('/logout', authMiddleware, controller.logout)
 router.put('/update-password', authMiddleware, validate(updatePasswordSchema), controller.updatePassword)
 router.put('/update-profile', authMiddleware, validate(updateProfileSchema), controller.updateProfile)
 
-module.exports = router
+module.exports = router 
