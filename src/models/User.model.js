@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema({
   qualification:   { _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Qualification' }, name: String },
   examType:        { _id: { type: mongoose.Schema.Types.ObjectId, ref: 'ExamType'      }, name: String },
   subExam:         { _id: { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam'       }, name: String },
+  exam:            { _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam'          }, name: String },
+  subExams: [{ _id: { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam' }, name: String }],
   avatar:          String,
   fcmToken:        String,
   savedItems: [{

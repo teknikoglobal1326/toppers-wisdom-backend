@@ -40,6 +40,7 @@ app.use('/api/v1/common',         require('./common/common.routes'))
 // ── User API ──────────────────────────────────
 app.use('/api/v1/auth',          require('./modules/auth/auth.routes'))
 app.use('/api/v1/user',          authMiddleware, require('./modules/user/user.routes'))
+app.use('/api/v1/home',          authMiddleware, require('./modules/home/home.routes'))
 app.use('/api/v1/qualifications', require('./modules/qualification/qualification.routes'))
 app.use('/api/v1/courses',        authMiddleware, require('./modules/course/course.routes'))
 app.use('/api/v1/tests',          authMiddleware, require('./modules/test/test.routes'))
@@ -47,7 +48,7 @@ app.use('/api/v1/test-attempts',  authMiddleware, require('./modules/test/attemp
 app.use('/api/v1/boosters',       authMiddleware, require('./modules/booster/booster.routes'))
 app.use('/api/v1/progress',       authMiddleware, require('./modules/progress/progress.routes'))
 app.use('/api/v1/payments',       require('./modules/payment/payment.routes'))
-app.use('/api/v1/blog',           require('./modules/blog/blog.routes'))
+app.use('/api/v1/blog',           authMiddleware, require('./modules/blog/blog.routes'))
 app.use('/api/v1/books',          require('./modules/book/book.routes'))
 
 // ── Admin API ─────────────────────────────────

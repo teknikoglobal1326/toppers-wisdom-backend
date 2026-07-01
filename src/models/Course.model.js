@@ -18,6 +18,7 @@ const courseSchema = new mongoose.Schema({
   title: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
   description: String,
+  longDescription: String,
   language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
   type: { type: String, enum: ['recorded', 'live', 'free'], required: true, index: true },
   mrp: { type: Number, default: 0 },
