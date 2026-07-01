@@ -29,6 +29,8 @@ const userSchema = new mongoose.Schema({
     reportedAt: { type: Date, default: Date.now },
   }],
   watchDuration: { type: Number, default: 0 },
+  isDeleted:     { type: Boolean, default: false, index: true },
+  deletedAt:     { type: Date },
 }, { timestamps: true })
 
 module.exports = mongoose.model('User', userSchema)

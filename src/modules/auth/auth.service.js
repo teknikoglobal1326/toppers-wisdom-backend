@@ -173,4 +173,49 @@ const updateProfile = async (userId, payload) => {
   }
 }
 
-module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile }
+const deleteAccount = async (userId, token) => {
+  await authRepository.updateById(userId, {
+    isDeleted: true,
+    deletedAt: new Date(),
+  })
+
+  // invalidate the current token so it can't be reused
+  const decoded = require('jsonwebtoken').decode(token)
+  if (decoded?.exp) {
+    const ttl = decoded.exp - Math.floor(Date.now() / 1000)
+    if (ttl > 0) await redis.set(`blacklist:${token}`, '1', 'EX', ttl)
+  }
+
+  logger.info({ userId }, 'User account deleted')
+}
+
+const loginWithPassword = async (phone, password) => {
+  const user = await authRepository.findByPhone(phone)
+
+  const isNewUser = !user || user.profileCompletionState === 'otpsended'
+  if (isNewUser) {
+    throw new AppError('User not found. Please register first.', 404, 'USER_NOT_FOUND')
+  }
+
+  if (!user.profileComplete) {
+    throw new AppError('Please complete your profile before logging in', 403, 'PROFILE_INCOMPLETE')
+  }
+
+  if (!user.password) {
+    throw new AppError('Password not set. Please use OTP to login.', 400, 'PASSWORD_NOT_SET')
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password)
+  if (!isMatch) {
+    throw new AppError('Invalid phone number or password', 401, 'INVALID_CREDENTIALS')
+  }
+
+  const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamId: user.subExam?._id || null }
+  const accessToken = signAccessToken(payload)
+  const refreshToken = signRefreshToken({ _id: user._id })
+
+  logger.info({ userId: user._id }, 'User logged in with password')
+  return { accessToken, refreshToken, isNewUser: false, profileCompletionState: user.profileCompletionState, profileComplete: user.profileComplete }
+}
+
+module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, loginWithPassword, deleteAccount }
