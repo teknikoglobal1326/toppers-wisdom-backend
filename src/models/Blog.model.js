@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 const blogSchema = new mongoose.Schema({
   title: { type: String, required: true }, slug: { type: String, required: true, unique: true, index: true },
-  content: { type: String, required: true }, excerpt: String, thumbnail: String,
+  longDescription: { type: String, required: true }, shortDescription: String, image: String,
   author: { name: String, avatar: String },
   category: { type: String, index: true }, tags: [String],
   status: { type: String, enum: ['draft', 'published'], default: 'draft', index: true },
