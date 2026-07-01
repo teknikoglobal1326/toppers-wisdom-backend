@@ -41,7 +41,7 @@ const svc = new AdminBlogService()
 
 const listAll = catchAsync(async (req, res) => { const r = await svc.listAll(req.query); sendPaginated(res, r.data, r.pagination) })
 const getOne = catchAsync(async (req, res) => { sendSuccess(res, await svc.getById(req.params.id)) })
-const createPost = catchAsync(async (req, res) => { sendCreated(res, await svc.create({ ...req.body, createdBy: req.user._id })) })
+const createPost = catchAsync(async (req, res) => { sendCreated(res, await svc.create({ ...req.body, createdBy: req.admin._id })) })
 const updatePost = catchAsync(async (req, res) => { sendSuccess(res, await svc.update(req.params.id, req.body)) })
 const deletePost = catchAsync(async (req, res) => { await svc.remove(req.params.id); sendSuccess(res, null, 'Post deleted') })
 const publish = catchAsync(async (req, res) => { sendSuccess(res, await svc.publish(req.params.id), 'Post published') })

@@ -1,19 +1,23 @@
 const mongoose = require('mongoose')
 
 const boosterSchema = new mongoose.Schema({
-  subExam:  { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', index: true },
-  type:     { type: String, enum: ['pyp_dictionary', 'editorial', 'grammar'], required: true, index: true },
-  title:    { type: String, required: true },
-  language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
-  isActive: { type: Boolean, default: true, index: true },
-  items: [{
-    title:       { type: String, required: true },
-    contentType: { type: String, enum: ['word', 'article', 'topic'], required: true },
-    audioKey: String, pdfKey: String, content: String,
-    isFree: { type: Boolean, default: false },
-    subItems: [{ title: String, pdfKey: String, testRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Test' } }],
-    sortOrder: { type: Number, default: 0 },
-  }],
+  exam:             { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', index: true },
+  subExam:          { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', index: true },
+  type:             { type: String, enum: ['vocabulary', 'editorial', 'grammar', 'math'], required: true, index: true },
+  subType:          { type: String },
+  title:            { type: String, required: true },
+  shortDescription: { type: String },
+  longDescription:  { type: String },
+  thumbnailImage:   { type: String },
+  bannerImage:      { type: String },
+  tag:              [{ type: String }],
+  file:             { type: String },
+  isFree:           { type: Boolean, default: false },
+  price:            { type: Number, default: 0 },
+  mrp:              { type: Number, default: 0 },
+  sortOrder:        { type: Number, default: 0 },
+  language:         { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
+  isActive:         { type: Boolean, default: true, index: true },
 }, { timestamps: true })
 
 module.exports = mongoose.model('Booster', boosterSchema)

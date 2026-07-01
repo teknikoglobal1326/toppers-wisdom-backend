@@ -4,7 +4,10 @@ const AppError = require('../../core/AppError')
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: {
+    fileSize:  5 * 1024 * 1024,   // 5 MB per image
+    fieldSize: 10 * 1024 * 1024,  // 10 MB per text field (HTML content)
+  },
   fileFilter: (_req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new AppError('Only image files are allowed', 400, 'INVALID_FILE_TYPE'))
@@ -22,6 +25,12 @@ const parseFormData = async (req, _res, next) => {
     // tags arrives as a JSON string from form-data e.g. '["tag1","tag2"]'
     if (req.body.tags && typeof req.body.tags === 'string') {
       try { req.body.tags = JSON.parse(req.body.tags) } catch (_) { /* leave as-is, Joi will reject */ }
+    }
+
+    // longDescription can arrive as an array when multipart sends the field more than once;
+    // join the parts so Joi always receives a plain string
+    if (Array.isArray(req.body.longDescription)) {
+      req.body.longDescription = req.body.longDescription.join('')
     }
 
     if (req.file) {
