@@ -16,6 +16,7 @@ router.use('/exams', requirePermission('exams'), require('./exams/admin-exam.rou
 router.use('/subexams', requirePermission('subexams'), require('./subexams/admin-subexam.routes'))
 router.use('/subjects', requirePermission('subjects'), require('./subjects/admin-subject.routes'))
 router.use('/banners', requirePermission('banners'), require('./banners/admin-banner.routes'))
+router.use('/books', requirePermission('books'), require('./books/admin-book.routes'))
 router.use('/shorts', requirePermission('shorts'), require('./shorts/admin-short.routes'))
 router.use('/qualifications', requirePermission('qualifications'), require('./qualifications/admin-qualification.routes'))
 
