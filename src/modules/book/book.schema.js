@@ -6,6 +6,8 @@ const listBooksSchema = Joi.object({
   section: Joi.string().valid('myBooks', 'eBooks', 'books', 'audioBooks').optional(),
   q: Joi.string().trim().optional().allow('', null),
   isFree: Joi.boolean().optional(),
+  examId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional().label('examId'),
+  subExam: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional().label('subExam'),
 })
 
 module.exports = { listBooksSchema }
