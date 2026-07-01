@@ -49,6 +49,7 @@ app.use('/api/v1/boosters',       authMiddleware, require('./modules/booster/boo
 app.use('/api/v1/progress',       authMiddleware, require('./modules/progress/progress.routes'))
 app.use('/api/v1/payments',       require('./modules/payment/payment.routes'))
 app.use('/api/v1/blog',           authMiddleware, require('./modules/blog/blog.routes'))
+app.use('/api/v1/books',          require('./modules/book/book.routes'))
 
 // ── Admin API ─────────────────────────────────
 app.use('/api/v1/admin', adminLimiter, adminAuthMiddleware, require('./admin/admin.router'))
