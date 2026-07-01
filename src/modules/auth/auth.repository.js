@@ -13,7 +13,7 @@ class AuthRepository extends BaseRepository {
 
   // findByPhone is auth-specific — add it here
   async findByPhone(phone) {
-    return this.findOne({ phone })  // uses BaseRepository.findOne
+    return this.findOne({ phone, isDeleted: { $ne: true } })
   }
 
   // findByPhone or create — upsert pattern

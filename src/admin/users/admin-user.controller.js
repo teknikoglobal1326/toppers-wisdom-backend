@@ -10,13 +10,16 @@ class AdminUserService extends BaseService {
   constructor() { super(userRepository, 'admin:user') }
 
   async listAll(filters) {
-    const filter = { role: 'user' }
+    const filter = { role: 'user', isDeleted: { $ne: true } }
     if (filters.search) filter.$or = [
-      { name: { $regex: filters.search, $options: 'i' } },
+      { name:  { $regex: filters.search, $options: 'i' } },
       { phone: { $regex: filters.search, $options: 'i' } },
-      { email: { $regex: filters.search, $options: 'i' } },
     ]
-    return this.getAll(filter, { page: filters.page, limit: filters.limit, select: '-fcmToken -savedItems -reportedItems' })
+    return this.getAll(filter, {
+      page:   filters.page,
+      limit:  filters.limit,
+      select: 'name phone qualification exam subExams profileCompletionState profileComplete createdAt',
+    })
   }
 }
 
