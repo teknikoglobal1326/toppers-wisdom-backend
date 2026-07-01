@@ -1,24 +1,24 @@
 const mongoose = require('mongoose')
-const bcrypt   = require('bcryptjs')
+const bcrypt = require('bcryptjs')
 
-const MODULES = ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'admins', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications']
+const MODULES = ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'admins', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications', 'books']
 
 const ROLE_PERMISSIONS = {
   superadmin: MODULES,
-  manager:    ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications'],
-  editor:     ['courses', 'tests', 'boosters', 'blog', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications'],
-  viewer:     ['analytics'],
+  manager: ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications', 'books'],
+  editor: ['courses', 'tests', 'boosters', 'blog', 'exams', 'subexams', 'subjects', 'banners', 'shorts', 'qualifications', 'books'],
+  viewer: ['analytics'],
 }
 
 const adminSchema = new mongoose.Schema({
-  name:        { type: String, required: true, trim: true },
-  email:       { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
-  password:    { type: String, required: true, select: false },
-  role:        { type: String, enum: ['superadmin', 'manager', 'editor', 'viewer'], default: 'editor' },
+  name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+  password: { type: String, required: true, select: false },
+  role: { type: String, enum: ['superadmin', 'manager', 'editor', 'viewer'], default: 'editor' },
   permissions: { type: [String], enum: MODULES, default: [] },
-  isActive:    { type: Boolean, default: true, index: true },
+  isActive: { type: Boolean, default: true, index: true },
   lastLoginAt: { type: Date },
-  createdBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
 }, { timestamps: true })
 
 adminSchema.pre('save', async function () {
@@ -40,5 +40,5 @@ adminSchema.methods.hasPermission = function (module) {
 const Admin = mongoose.model('Admin', adminSchema)
 
 module.exports = Admin
-module.exports.MODULES          = MODULES
+module.exports.MODULES = MODULES
 module.exports.ROLE_PERMISSIONS = ROLE_PERMISSIONS
