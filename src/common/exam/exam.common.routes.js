@@ -6,7 +6,6 @@ const examService = require('../../modules/exam/exam.service')
 
 // GET /api/v1/common/exams — qualificationId resolved from the logged-in user's token
 router.get('/', authMiddleware, catchAsync(async (req, res) => {
-  console.log("req.user===========================>>>", req.user);
   const exams = await examService.listByQualification(req.user.qualificationId)
   sendSuccess(res, exams)
 }))
