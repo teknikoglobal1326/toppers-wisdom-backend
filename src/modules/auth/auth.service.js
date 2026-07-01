@@ -17,7 +17,13 @@ const sendOtp = async (phone) => {
 
   if (!isNewUser) {
     logger.info({ phone }, 'Old user, skipping OTP')
-    const payload = { _id: user._id, phone: user.phone, role: user.role, subExamId: user.subExam?._id || null }
+const payload = {
+    _id: user._id,
+    phone: user.phone,
+    role: user.role,
+    examTypeId: user.examType?._id || null,
+    subExamId: user.subExam?._id || null,
+  }
     const accessToken = signAccessToken(payload)
     const refreshToken = signRefreshToken({ _id: user._id })
 
@@ -68,7 +74,13 @@ const verifyOtpAndLogin = async (phone, otp) => {
     logger.info({ phone, userId: user._id }, 'Existing user logged in')
   }
 
-  const payload = { _id: user._id, phone: user.phone, role: user.role, subExamId: user.subExam?._id || null }
+  const payload = {
+    _id: user._id,
+    phone: user.phone,
+    role: user.role,
+    examTypeId: user.examType?._id || null,
+    subExamId: user.subExam?._id || null,
+  }
   const accessToken = signAccessToken(payload)
   const refreshToken = signRefreshToken({ _id: user._id })
 
@@ -79,7 +91,13 @@ const refreshToken = async (token) => {
   const payload = verifyRefreshToken(token)
   // uses BaseRepository.findByIdOrFail — throws 401 if not found
   const user = await authRepository.findByIdOrFail(payload._id, 'User not found')
-  const accessToken = signAccessToken({ _id: user._id, phone: user.phone, role: user.role, subExamId: user.subExam?._id || null })
+  const accessToken = signAccessToken({
+    _id: user._id,
+    phone: user.phone,
+    role: user.role,
+    examTypeId: user.examType?._id || null,
+    subExamId: user.subExam?._id || null,
+  })
   logger.info({ userId: user._id }, 'Token refreshed')
   return { accessToken }
 }

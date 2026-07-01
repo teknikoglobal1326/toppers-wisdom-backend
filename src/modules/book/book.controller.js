@@ -7,8 +7,13 @@ const listBooks = catchAsync(async (req, res) => {
   sendPaginated(res, r.data, r.pagination)
 })
 
+const listUserBooks = catchAsync(async (req, res) => {
+  const r = await bookService.listBooksForUser(req.user, req.query)
+  sendPaginated(res, r.data, r.pagination)
+})
+
 const getBook = catchAsync(async (req, res) => {
   sendSuccess(res, await bookService.getBook(req.params.id))
 })
 
-module.exports = { listBooks, getBook }
+module.exports = { listBooks, listUserBooks, getBook }
