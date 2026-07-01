@@ -15,7 +15,7 @@ class BlogService extends BaseService {
     if (filters.category) filter.category = filters.category
     return this.getAll(filter, {
       page: filters.page, limit: filters.limit,
-      select: 'title slug excerpt thumbnail category tags author publishedAt',
+      select: 'title slug shortDescription image category tags author publishedAt',
       sort: { publishedAt: -1 },
     })
   }
