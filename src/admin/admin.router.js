@@ -3,6 +3,8 @@ const { requirePermission } = require('../middlewares/permission.middleware')
 
 // Common lookup endpoints — no specific permission required, just admin auth
 router.use('/common', require('./common/admin-common.routes'))
+router.use('/cms',         require('./cms/admin-cms.routes'))
+router.use('/app-version', require('./app-version/admin-app-version.routes'))
 
 router.use('/courses', requirePermission('courses'), require('./courses/admin-course.routes'))
 router.use('/tests', requirePermission('tests'), require('./tests/admin-test.routes'))

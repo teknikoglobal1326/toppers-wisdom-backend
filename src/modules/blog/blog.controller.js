@@ -1,6 +1,6 @@
-const catchAsync                     = require('../../core/catchAsync')
+const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendPaginated } = require('../../core/response')
-const blogService                    = require('./blog.service')
+const blogService = require('./blog.service')
 
 const listPosts = catchAsync(async (req, res) => {
   const r = await blogService.listPosts(req.query)
