@@ -2,6 +2,7 @@ const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response')
 const Book = require('../../models/Book.model')
 const AppError = require('../../core/AppError')
+const { createWithLanguage } = require('../../core/createWithLanguage')
 
 const list = catchAsync(async (req, res) => {
     const { status, section, page = 1, limit = 10, q } = req.query
@@ -31,12 +32,9 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
-    const data = { ...req.body, createdBy: req.admin?._id }
-    if (data.examId) data.exam = data.examId
-    if (data.subExamIds) data.subExams = data.subExamIds
-    if (data.subExamId && !data.subExamIds) data.subExams = [data.subExamId]
-    const book = await Book.create(data)
-    sendCreated(res, book)
+  const data = { ...req.body, createdBy: req.admin?._id }
+  const result = await createWithLanguage((d) => Book.create(d), data)
+  sendCreated(res, result)
 })
 
 const update = catchAsync(async (req, res) => {

@@ -3,6 +3,7 @@ const BaseService    = require('../../core/BaseService')
 const bannerRepository = require('../../modules/banner/banner.repository')
 const AppError       = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
+const { createWithLanguage } = require('../../core/createWithLanguage')
 
 class AdminBannerService extends BaseService {
   constructor() {
@@ -30,7 +31,7 @@ class AdminBannerService extends BaseService {
       const filename = `${Date.now()}${ext}`
       payload.image  = await uploadFile(file.buffer, filename, 'banners', file.mimetype)
     }
-    return this.create(payload)
+    return createWithLanguage((d) => this.create(d), payload)
   }
 
   async updateBanner(id, data, file) {

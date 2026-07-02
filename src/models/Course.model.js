@@ -2,14 +2,14 @@ const mongoose = require('mongoose')
 
 const lessonSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  type:  { type: String, enum: ['video', 'pdf', 'quiz'], required: true },
-  subject:   String,
-  videoKey:  String,
-  pdfKey:    String,
-  duration:  { type: Number, default: 0 },
+  type: { type: String, enum: ['video', 'pdf', 'quiz'], required: true },
+  subject: String,
+  videoKey: String,
+  pdfKey: String,
+  duration: { type: Number, default: 0 },
   isPreview: { type: Boolean, default: false },
   sortOrder: { type: Number, default: 0 },
-  language:  { type: String, enum: ['hi', 'en'], default: 'hi' },
+  language: { type: String, enum: ['hi', 'en'], default: 'hi' },
 })
 
 const courseSchema = new mongoose.Schema({
@@ -24,7 +24,7 @@ const courseSchema = new mongoose.Schema({
   mrp: { type: Number, default: 0 },
   price: { type: Number, default: 0 },
   isFree: { type: Boolean, default: false, index: true },
-  thumbnail:   String,
+  thumbnail: String,
   bannerImage: [String],
   instructor: { name: String, avatar: String, bio: String },
   status: { type: String, enum: ['draft', 'published', 'archived'], default: 'draft', index: true },

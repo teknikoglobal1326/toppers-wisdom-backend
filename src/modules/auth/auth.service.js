@@ -17,13 +17,7 @@ const sendOtp = async (phone) => {
 
   if (!isNewUser) {
     logger.info({ phone }, 'Old user, skipping OTP')
-const payload = {
-    _id: user._id,
-    phone: user.phone,
-    role: user.role,
-    examTypeId: user.examType?._id || null,
-    subExamId: user.subExam?._id || null,
-  }
+    const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamIds: (user.subExams || []).map((s) => s._id) }
     const accessToken = signAccessToken(payload)
     const refreshToken = signRefreshToken({ _id: user._id })
 
@@ -74,13 +68,7 @@ const verifyOtpAndLogin = async (phone, otp) => {
     logger.info({ phone, userId: user._id }, 'Existing user logged in')
   }
 
-  const payload = {
-    _id: user._id,
-    phone: user.phone,
-    role: user.role,
-    examTypeId: user.examType?._id || null,
-    subExamId: user.subExam?._id || null,
-  }
+  const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamIds: (user.subExams || []).map((s) => s._id) }
   const accessToken = signAccessToken(payload)
   const refreshToken = signRefreshToken({ _id: user._id })
 
@@ -91,13 +79,7 @@ const refreshToken = async (token) => {
   const payload = verifyRefreshToken(token)
   // uses BaseRepository.findByIdOrFail — throws 401 if not found
   const user = await authRepository.findByIdOrFail(payload._id, 'User not found')
-  const accessToken = signAccessToken({
-    _id: user._id,
-    phone: user.phone,
-    role: user.role,
-    examTypeId: user.examType?._id || null,
-    subExamId: user.subExam?._id || null,
-  })
+  const accessToken = signAccessToken({ _id: user._id, phone: user.phone, role: user.role, examId: user.exam?._id || null, subExamIds: (user.subExams || []).map((s) => s._id) })
   logger.info({ userId: user._id }, 'Token refreshed')
   return { accessToken }
 }
@@ -134,6 +116,9 @@ const updateProfile = async (userId, payload) => {
   const examRepository = require('../exam/exam.repository')
   const subExamRepository = require('../subexam/subexam.repository')
 
+  const currentUser = await authRepository.findByIdOrFail(userId, 'User not found')
+  const alreadyComplete = currentUser.profileComplete === true
+
   const updateData = {}
 
   if (payload.name) {
@@ -169,16 +154,18 @@ const updateProfile = async (userId, payload) => {
     updateData.subExams = subExams.map((s) => ({ _id: s._id, name: s.name }))
   }
 
-  // Mark onboarding as complete when name + qualification are present along with avatar or language
-  if (payload.name && payload.qualification && (payload.avatar || payload.language)) {
-    updateData.profileCompletionState = 'onboardingCompleted'
-    updateData.profileComplete = true
-  }
+  if (!alreadyComplete) {
+    // Mark onboarding as complete when name + qualification are present along with avatar or language
+    if (payload.name && payload.qualification && (payload.avatar || payload.language)) {
+      updateData.profileCompletionState = 'onboardingCompleted'
+      updateData.profileComplete = true
+    }
 
-  // Mark profile as fully complete when exam and subExams are set
-  if (payload.examId && payload.subexamIds?.length) {
-    updateData.profileCompletionState = 'profileFullCompleted'
-    updateData.profileComplete = true
+    // Mark profile as fully complete when exam and subExams are set
+    if (payload.examId && payload.subexamIds?.length) {
+      updateData.profileCompletionState = 'profileFullCompleted'
+      updateData.profileComplete = true
+    }
   }
 
   const updatedUser = await authRepository.updateById(userId, updateData)
@@ -189,6 +176,13 @@ const updateProfile = async (userId, payload) => {
     profileCompletionState: updatedUser.profileCompletionState,
     profileComplete: updatedUser.profileComplete
   }
+}
+
+const getProfile = async (userId) => {
+  const user = await authRepository.findByIdOrFail(userId, 'User not found')
+  logger.info({ userId }, 'User profile fetched')
+  const { password, plainPassword, fcmToken, savedItems, reportedItems, isDeleted, deletedAt, ...profile } = user
+  return profile
 }
 
 const deleteAccount = async (userId, token) => {
@@ -228,7 +222,7 @@ const loginWithPassword = async (phone, password) => {
     throw new AppError('Invalid phone number or password', 401, 'INVALID_CREDENTIALS')
   }
 
-  const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamId: user.subExam?._id || null }
+  const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamIds: (user.subExams || []).map((s) => s._id) }
   const accessToken = signAccessToken(payload)
   const refreshToken = signRefreshToken({ _id: user._id })
 
@@ -236,4 +230,4 @@ const loginWithPassword = async (phone, password) => {
   return { accessToken, refreshToken, isNewUser: false, profileCompletionState: user.profileCompletionState, profileComplete: user.profileComplete }
 }
 
-module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, loginWithPassword, deleteAccount }
+module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, getProfile, loginWithPassword, deleteAccount }

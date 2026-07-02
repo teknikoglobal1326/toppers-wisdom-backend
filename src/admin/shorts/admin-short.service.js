@@ -3,6 +3,7 @@ const BaseService = require('../../core/BaseService')
 const shortRepository = require('../../modules/short/short.repository')
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
+const { createWithLanguage } = require('../../core/createWithLanguage')
 
 class AdminShortService extends BaseService {
   constructor() {
@@ -33,7 +34,7 @@ class AdminShortService extends BaseService {
       const t = files.thumbnail[0]
       payload.thumbnail = await uploadFile(t.buffer, `${Date.now()}-thumb${path.extname(t.originalname) || '.jpg'}`, 'shorts/thumbnails', t.mimetype)
     }
-    return this.create(payload)
+    return createWithLanguage((d) => this.create(d), payload)
   }
 
   async updateShort(id, data, files = {}) {

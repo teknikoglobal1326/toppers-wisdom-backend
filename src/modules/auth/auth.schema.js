@@ -33,17 +33,17 @@ const updateProfileSchema = Joi.object({
 const loginSchema = Joi.object({
   phone: Joi.string().pattern(/^[6-9]\d{9}$/).required()
     .messages({
-      'string.base':         'Phone number must be a string',
-      'string.empty':        'Phone number is required',
-      'any.required':        'Phone number is required',
+      'string.base': 'Phone number must be a string',
+      'string.empty': 'Phone number is required',
+      'any.required': 'Phone number is required',
       'string.pattern.base': 'Phone number must be exactly 10 digits and start with 6, 7, 8 or 9',
     }),
   password: Joi.string().min(6).required()
     .messages({
-      'string.base':    'Password must be a string',
-      'string.empty':   'Password is required',
-      'any.required':   'Password is required',
-      'string.min':     'Password must be at least 6 characters long',
+      'string.base': 'Password must be a string',
+      'string.empty': 'Password is required',
+      'any.required': 'Password is required',
+      'string.min': 'Password must be at least 6 characters long',
     }),
 })
 
