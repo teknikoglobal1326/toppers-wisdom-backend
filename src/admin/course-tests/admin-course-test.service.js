@@ -37,7 +37,7 @@ class AdminCourseTestService extends BaseService {
       {
         populate: [
           { path: 'course', select: 'title slug' },
-          { path: 'topic', select: 'topicName' },
+          { path: 'topic', select: 'topicName chapters' },
         ],
       }
     )

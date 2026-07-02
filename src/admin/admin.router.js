@@ -22,6 +22,7 @@ router.use('/topics', requirePermission('topics'), require('./topics/admin-topic
 router.use('/pdfs', requirePermission('pdfs'), require('./pdfs/admin-pdf.routes'))
 router.use('/contents', requirePermission('pdfs'), require('./contents/admin-content.routes'))
 router.use('/course-tests', requirePermission('tests'), require('./course-tests/admin-course-test.routes'))
+router.use('/questions', requirePermission('tests'), require('./questions/admin-question.routes'))
 router.use('/books', requirePermission('books'), require('./books/admin-book.routes'))
 router.use('/shorts', requirePermission('shorts'), require('./shorts/admin-short.routes'))
 router.use('/qualifications', requirePermission('qualifications'), require('./qualifications/admin-qualification.routes'))
