@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const contantSchema = new mongoose.Schema({
   course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
   topic: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic', required: true, index: true },
+  chapter: { type: String, default: '' },
   title: { type: String, required: true, trim: true },
   description: { type: String, default: '' },
   video: { type: String, required: true },

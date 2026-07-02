@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const courseTestSchema = new mongoose.Schema({
   course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
   topic: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic', required: true, index: true },
+  chapter: { type: String, default: '' },
   title: { type: String, required: true, trim: true },
   slug: { type: String, required: true, unique: true, trim: true },
   description: { type: String, default: '' },
@@ -20,7 +21,7 @@ const courseTestSchema = new mongoose.Schema({
   startDate: { type: Date },
   endDate: { type: Date },
   language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
-  status: { type: String, enum: ['draft', 'active', 'inactive'], default: 'draft' },
+  status: { type: String, enum: ['draft', 'active', 'inactive', 'other'], default: 'other' },
   isDeleted: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User'}
 
