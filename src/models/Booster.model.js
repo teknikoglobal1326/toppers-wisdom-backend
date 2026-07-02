@@ -16,6 +16,7 @@ const boosterSchema = new mongoose.Schema({
   price:            { type: Number, default: 0 },
   mrp:              { type: Number, default: 0 },
   sortOrder:        { type: Number, default: 0 },
+  date:             { type: Date },
   language:         { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
   isActive:         { type: Boolean, default: true, index: true },
 }, { timestamps: true })
