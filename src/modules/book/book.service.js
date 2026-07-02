@@ -22,7 +22,7 @@ class BookService extends BaseService {
             page: filters.page,
             limit: filters.limit,
             sort: { createdAt: -1 },
-            select: 'title author coverImage description price isFree section buyUrl pages rating tags exam subExam',
+            select: 'title author coverImage file description price isFree section buyUrl pages rating tags language',
         })
     }
 

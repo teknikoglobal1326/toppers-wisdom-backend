@@ -5,6 +5,7 @@ const blogSchema = new mongoose.Schema({
   longDescription: { type: String, required: true }, shortDescription: String, image: String,
   author: { name: String, avatar: String },
   category: { type: String, index: true }, tags: [String],
+  language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi', index: true },
   status: { type: String, enum: ['draft', 'published'], default: 'draft', index: true },
   publishedAt: Date, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true })
