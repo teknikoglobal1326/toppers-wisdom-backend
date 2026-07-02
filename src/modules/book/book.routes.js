@@ -1,4 +1,4 @@
-const router     = require('express').Router()
+const router = require('express').Router()
 const controller = require('./book.controller')
 const { authMiddleware } = require('../../middlewares/auth.middleware')
 const { validate, validateQuery } = require('../../core/validate')
