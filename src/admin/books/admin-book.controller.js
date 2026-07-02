@@ -4,55 +4,68 @@ const Book = require('../../models/Book.model')
 const AppError = require('../../core/AppError')
 
 const list = catchAsync(async (req, res) => {
-  const { status, section, page = 1, limit = 10, q } = req.query
-  const filter = { isDeleted: false }
-  if (status) filter.status = status
-  if (section) filter.section = section
-  if (q) filter.title = { $regex: q, $options: 'i' }
+    const { status, section, page = 1, limit = 10, q } = req.query
+    const filter = { isDeleted: false }
+    if (status) filter.status = status
+    if (section) filter.section = section
+    if (q) filter.title = { $regex: q, $options: 'i' }
 
-  const skip = (page - 1) * limit
-  const docs = await Book.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit)
-  const total = await Book.countDocuments(filter)
+    const skip = (page - 1) * limit
+    const docs = await Book.find(filter)
+        .populate('exam')
+        .populate('subExams')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+    const total = await Book.countDocuments(filter)
 
-  sendPaginated(res, docs, { page: Number(page), limit: Number(limit), total })
+    sendPaginated(res, docs, { page: Number(page), limit: Number(limit), total })
 })
 
 const getOne = catchAsync(async (req, res) => {
-  const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
-  if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
-  sendSuccess(res, book)
+    const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
+        .populate('exam')
+        .populate('subExams')
+    if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
+    sendSuccess(res, book)
 })
 
 const create = catchAsync(async (req, res) => {
-  const data = req.body
-  data.createdBy = req.admin?._id
-  const book = await Book.create(data)
-  sendCreated(res, book)
+    const data = { ...req.body, createdBy: req.admin?._id }
+    if (data.examId) data.exam = data.examId
+    if (data.subExamIds) data.subExams = data.subExamIds
+    if (data.subExamId && !data.subExamIds) data.subExams = [data.subExamId]
+    const book = await Book.create(data)
+    sendCreated(res, book)
 })
 
 const update = catchAsync(async (req, res) => {
-  const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
-  if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
-  Object.assign(book, req.body)
-  await book.save()
-  sendSuccess(res, book)
+    const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
+    if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
+    const updates = { ...req.body }
+    if (updates.examId) updates.exam = updates.examId
+    if (updates.subExamIds) updates.subExams = updates.subExamIds
+    if (updates.subExamId && !updates.subExamIds) updates.subExams = [updates.subExamId]
+    Object.assign(book, updates)
+    await book.save()
+    sendSuccess(res, book)
 })
 
 const remove = catchAsync(async (req, res) => {
-  const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
-  if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
-  book.isDeleted = true
-  await book.save()
-  sendSuccess(res, null, 'Book deleted')
+    const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
+    if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
+    book.isDeleted = true
+    await book.save()
+    sendSuccess(res, null, 'Book deleted')
 })
 
 const setBuyUrl = catchAsync(async (req, res) => {
-  const { buyUrl } = req.body
-  const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
-  if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
-  book.buyUrl = buyUrl
-  await book.save()
-  sendSuccess(res, book, 'Buy URL updated')
+    const { buyUrl } = req.body
+    const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
+    if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
+    book.buyUrl = buyUrl
+    await book.save()
+    sendSuccess(res, book, 'Buy URL updated')
 })
 
 module.exports = { list, getOne, create, update, remove, setBuyUrl }

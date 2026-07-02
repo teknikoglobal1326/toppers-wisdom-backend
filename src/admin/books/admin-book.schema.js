@@ -1,4 +1,7 @@
 const Joi = require('joi')
+const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/).messages({
+    'string.pattern.base': '{{#label}} must be a valid MongoDB ObjectId',
+})
 
 const createBookSchema = Joi.object({
   title: Joi.string().trim().required(),
@@ -35,7 +38,7 @@ const updateBookSchema = Joi.object({
 }).min(1)
 
 const setBuyUrlSchema = Joi.object({
-  buyUrl: Joi.string().uri().required(),
+    buyUrl: Joi.string().uri().required(),
 })
 
 module.exports = { createBookSchema, updateBookSchema, setBuyUrlSchema }

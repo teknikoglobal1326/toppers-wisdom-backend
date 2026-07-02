@@ -1,0 +1,53 @@
+const Joi = require('joi')
+
+const createCourseTestSchema = Joi.object({
+  course: Joi.string().hex().length(24).required(),
+  courseId: Joi.string().hex().length(24).optional(),
+  topic: Joi.string().hex().length(24).required(),
+  topicId: Joi.string().hex().length(24).optional(),
+  title: Joi.string().trim().required(),
+  slug: Joi.string().trim().required(),
+  description: Joi.string().trim().optional().allow('', null),
+  instruction: Joi.string().trim().optional().allow('', null),
+  image: Joi.string().trim().optional().allow('', null),
+  duration: Joi.number().min(1).required(),
+  totalQuestions: Joi.number().min(0).default(0),
+  totalMarks: Joi.number().min(0).default(0),
+  passingMarks: Joi.number().min(0).default(0),
+  marksPerQuestion: Joi.number().min(1).default(1),
+  negativeMarks: Joi.number().min(0).default(0),
+  maxAttempts: Joi.number().min(1).default(1),
+  difficulty: Joi.string().valid('easy', 'medium', 'hard').default('medium'),
+  testType: Joi.string().valid('practice', 'mock', 'exam').default('practice'),
+  startDate: Joi.date().optional(),
+  endDate: Joi.date().optional(),
+  language: Joi.string().valid('hi', 'en', 'both').default('hi'),
+  status: Joi.string().valid('draft', 'active', 'inactive').default('draft'),
+})
+
+const updateCourseTestSchema = Joi.object({
+  course: Joi.string().hex().length(24).optional(),
+  courseId: Joi.string().hex().length(24).optional(),
+  topic: Joi.string().hex().length(24).optional(),
+  topicId: Joi.string().hex().length(24).optional(),
+  title: Joi.string().trim(),
+  slug: Joi.string().trim(),
+  description: Joi.string().trim().optional().allow('', null),
+  instruction: Joi.string().trim().optional().allow('', null),
+  image: Joi.string().trim().optional().allow('', null),
+  duration: Joi.number().min(1),
+  totalQuestions: Joi.number().min(0),
+  totalMarks: Joi.number().min(0),
+  passingMarks: Joi.number().min(0),
+  marksPerQuestion: Joi.number().min(1),
+  negativeMarks: Joi.number().min(0),
+  maxAttempts: Joi.number().min(1),
+  difficulty: Joi.string().valid('easy', 'medium', 'hard'),
+  testType: Joi.string().valid('practice', 'mock', 'exam'),
+  startDate: Joi.date().optional(),
+  endDate: Joi.date().optional(),
+  language: Joi.string().valid('hi', 'en', 'both'),
+  status: Joi.string().valid('draft', 'active', 'inactive'),
+}).min(1)
+
+module.exports = { createCourseTestSchema, updateCourseTestSchema }

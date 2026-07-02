@@ -3,6 +3,7 @@ const AppError = require('../core/AppError')
 
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm']
+const ALLOWED_PDF_MIME = ['application/pdf']
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -22,6 +23,26 @@ const uploadVideo = multer({
   },
 })
 
+const uploadPdf = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [...ALLOWED_IMAGE_MIME, ...ALLOWED_PDF_MIME]
+    if (allowed.includes(file.mimetype)) return cb(null, true)
+    cb(new AppError('Only PDF and image files are allowed', 400, 'INVALID_FILE_TYPE'))
+  },
+})
+
+const uploadVideoImage = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [...ALLOWED_IMAGE_MIME, ...ALLOWED_VIDEO_MIME]
+    if (allowed.includes(file.mimetype)) return cb(null, true)
+    cb(new AppError('Only video and image files are allowed', 400, 'INVALID_FILE_TYPE'))
+  },
+})
+
 // Accepts both image and video fields in a single multipart request (used by shorts)
 const uploadShort = multer({
   storage: multer.memoryStorage(),
@@ -33,4 +54,4 @@ const uploadShort = multer({
   },
 })
 
-module.exports = { upload, uploadVideo, uploadShort }
+module.exports = { upload, uploadVideo, uploadPdf, uploadVideoImage, uploadShort }
