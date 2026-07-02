@@ -3,6 +3,7 @@ const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response
 const BaseService    = require('../../core/BaseService')
 const blogRepository = require('../../modules/blog/blog.repository')
 const { createLogger } = require('../../config/logger')
+const { createWithLanguage } = require('../../core/createWithLanguage')
 
 const generateSlug = (title) => {
   const base = title
@@ -23,7 +24,10 @@ class AdminBlogService extends BaseService {
   }
 
   async create(data) {
-    return super.create({ ...data, slug: generateSlug(data.title) })
+    return createWithLanguage(
+      (d) => super.create({ ...d, slug: generateSlug(d.title) }),
+      data,
+    )
   }
 
   async listAll(filters) {

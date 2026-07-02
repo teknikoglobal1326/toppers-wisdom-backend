@@ -4,11 +4,16 @@ const BaseService       = require('../../core/BaseService')
 const boosterRepository = require('../../modules/booster/booster.repository')
 const { getPresignedUploadUrl } = require('../../lib/s3')
 const { createLogger }  = require('../../config/logger')
+const { createWithLanguage } = require('../../core/createWithLanguage')
 
 class AdminBoosterService extends BaseService {
   constructor() {
     super(boosterRepository, 'admin:booster')
     this.logger = createLogger('admin:booster:service')
+  }
+
+  async create(data) {
+    return createWithLanguage((d) => super.create(d), data)
   }
 
   async listAll(f) {
