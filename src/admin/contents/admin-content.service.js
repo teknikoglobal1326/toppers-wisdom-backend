@@ -1,6 +1,8 @@
+const path = require('path')
 const BaseService = require('../../core/BaseService')
 const contentRepository = require('../../modules/content/content.repository')
 const AppError = require('../../core/AppError')
+const { uploadFile } = require('../../lib/fileUpload')
 
 class AdminContentService extends BaseService {
   constructor() {
@@ -74,4 +76,28 @@ class AdminContentService extends BaseService {
   }
 }
 
-module.exports = new AdminContentService()
+const adminContentService = new AdminContentService()
+
+adminContentService.attachUploadedFiles = async (req, _res, next) => {
+  try {
+    const folder = `contents/${req.params.id ?? `new-${Date.now()}`}`
+
+    if (req.files?.video?.[0]) {
+      const file = req.files.video[0]
+      const ext = path.extname(file.originalname) || '.mp4'
+      req.body.video = await uploadFile(file.buffer, `video${ext}`, folder, file.mimetype)
+    }
+
+    if (req.files?.image?.[0]) {
+      const file = req.files.image[0]
+      const ext = path.extname(file.originalname) || '.jpg'
+      req.body.image = await uploadFile(file.buffer, `image${ext}`, folder, file.mimetype)
+    }
+
+    next()
+  } catch (err) {
+    next(err)
+  }
+}
+
+module.exports = adminContentService

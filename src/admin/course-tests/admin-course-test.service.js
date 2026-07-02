@@ -1,6 +1,20 @@
+const path = require('path')
 const BaseService = require('../../core/BaseService')
 const courseTestRepository = require('../../modules/course-test/course-test.repository')
 const AppError = require('../../core/AppError')
+const { uploadFile } = require('../../lib/fileUpload')
+
+const generateSlug = (title) => {
+  const base = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  const suffix = Date.now().toString(36)
+  return base ? `${base}-${suffix}` : suffix
+}
 
 class AdminCourseTestService extends BaseService {
   constructor() {
@@ -56,7 +70,11 @@ class AdminCourseTestService extends BaseService {
   }
 
   async createCourseTest(data) {
-    return courseTestRepository.create(this.buildPayload(data))
+    const payload = this.buildPayload(data)
+    if (!payload.slug && payload.title) {
+      payload.slug = generateSlug(payload.title)
+    }
+    return courseTestRepository.create(payload)
   }
 
   async updateCourseTest(id, data) {
@@ -73,4 +91,22 @@ class AdminCourseTestService extends BaseService {
   }
 }
 
-module.exports = new AdminCourseTestService()
+const adminCourseTestService = new AdminCourseTestService()
+
+adminCourseTestService.attachUploadedFiles = async (req, _res, next) => {
+  try {
+    const folder = `course-tests/${req.params.id ?? `new-${Date.now()}`}`
+
+    if (req.files?.image?.[0]) {
+      const file = req.files.image[0]
+      const ext = path.extname(file.originalname) || '.jpg'
+      req.body.image = await uploadFile(file.buffer, `image${ext}`, folder, file.mimetype)
+    }
+
+    next()
+  } catch (err) {
+    next(err)
+  }
+}
+
+module.exports = adminCourseTestService

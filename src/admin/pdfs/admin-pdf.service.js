@@ -1,6 +1,8 @@
+const path = require('path')
 const BaseService = require('../../core/BaseService')
 const pdfRepository = require('../../modules/pdf/pdf.repository')
 const AppError = require('../../core/AppError')
+const { uploadFile } = require('../../lib/fileUpload')
 
 class AdminPdfService extends BaseService {
   constructor() {
@@ -77,4 +79,28 @@ class AdminPdfService extends BaseService {
   }
 }
 
-module.exports = new AdminPdfService()
+const adminPdfService = new AdminPdfService()
+
+adminPdfService.attachUploadedFiles = async (req, _res, next) => {
+  try {
+    const folder = `pdfs/${req.params.id ?? `new-${Date.now()}`}`
+
+    if (req.files?.pdfFile?.[0]) {
+      const file = req.files.pdfFile[0]
+      const ext = path.extname(file.originalname) || '.pdf'
+      req.body.pdfFile = await uploadFile(file.buffer, `pdfFile${ext}`, folder, file.mimetype)
+    }
+
+    if (req.files?.image?.[0]) {
+      const file = req.files.image[0]
+      const ext = path.extname(file.originalname) || '.jpg'
+      req.body.image = await uploadFile(file.buffer, `image${ext}`, folder, file.mimetype)
+    }
+
+    next()
+  } catch (err) {
+    next(err)
+  }
+}
+
+module.exports = adminPdfService
