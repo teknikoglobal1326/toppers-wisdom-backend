@@ -16,7 +16,7 @@ const courseTestSchema = new mongoose.Schema({
   negativeMarks: { type: Number, default: 0 },
   maxAttempts: { type: Number, default: 1 },
   difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
-  testType: { type: String, enum: ['practice', 'mock', 'exam'], default: 'practice' },
+  testType: { type: String, enum: ['practice', 'mock', 'exam', 'other'], default: 'other' },
   startDate: { type: Date },
   endDate: { type: Date },
   language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
