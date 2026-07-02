@@ -9,4 +9,5 @@ router.get('/qualifications', catchAsync(async (_req, res) => {
   sendSuccess(res, qualifications)
 }))
 
+
 module.exports = router

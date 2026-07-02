@@ -16,6 +16,7 @@ const createBoosterSchema = Joi.object({
   bannerImage:      Joi.string().max(500),
   tag:              Joi.array().items(Joi.string().max(50)).max(20),
   file:             Joi.string().max(500),
+  date:             Joi.date(),
   isFree:           Joi.boolean(),
   price:            Joi.number().min(0),
   mrp:              Joi.number().min(0),
