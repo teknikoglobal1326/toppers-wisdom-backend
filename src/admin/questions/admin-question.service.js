@@ -66,10 +66,10 @@ class AdminQuestionService extends BaseService {
 
     let result
     if (payload.language === 'both') {
-      result = await questionRepository.createSingle(payload)
-    } else {
       const [primary, secondary] = await questionRepository.createPair(payload)
       result = [primary, secondary]
+    } else {
+      result = await questionRepository.createSingle(payload)
     }
 
     if (payload.test) {
@@ -109,6 +109,20 @@ class AdminQuestionService extends BaseService {
       await this.syncQuestionCount(question.test)
     }
     this.logger.info({ questionId: id }, 'Question soft deleted')
+  }
+
+  async softDeleteByTest(testId) {
+    const courseTest = await courseTestRepository.findOne({ _id: testId, isDeleted: false })
+    if (!courseTest) throw new AppError('Course test not found', 404, 'NOT_FOUND')
+
+    const result = await questionRepository.updateMany(
+      { test: testId, isDeleted: false },
+      { isDeleted: true }
+    )
+
+    await this.syncQuestionCount(testId)
+    this.logger.info({ testId, deletedCount: result.modifiedCount }, 'Questions soft deleted by test')
+    return { deletedCount: result.modifiedCount || 0 }
   }
 }
 
