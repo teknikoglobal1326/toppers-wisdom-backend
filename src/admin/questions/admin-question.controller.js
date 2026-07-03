@@ -26,4 +26,8 @@ const remove = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Question deleted')
 })
 
-module.exports = { list, getOne, create, update, remove }
+const removeByTest = catchAsync(async (req, res) => {
+  sendSuccess(res, await adminQuestionService.softDeleteByTest(req.params.testId), 'Questions deleted')
+})
+
+module.exports = { list, getOne, create, update, remove, removeByTest }
