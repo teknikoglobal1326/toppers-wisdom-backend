@@ -1,6 +1,7 @@
 const path = require('path')
 const BaseService = require('../../core/BaseService')
 const courseTestRepository = require('../../modules/course-test/course-test.repository')
+const questionRepository = require('../../modules/question/question.repository')
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 
@@ -21,6 +22,20 @@ class AdminCourseTestService extends BaseService {
     super(courseTestRepository, 'admin:course-test')
   }
 
+  async attachMappedQuestionCounts(result) {
+    if (!result || !Array.isArray(result.data) || result.data.length === 0) return result
+
+    const counts = await Promise.all(result.data.map((courseTest) =>
+      questionRepository.count({ test: courseTest._id, isDeleted: false })
+    ))
+
+    result.data.forEach((courseTest, index) => {
+      courseTest.totalMappedQuestions = counts[index]
+    })
+
+    return result
+  }
+
   async listAll({ page, limit, status, course, topic, search } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
@@ -34,7 +49,7 @@ class AdminCourseTestService extends BaseService {
       ]
     }
 
-    return this.getAll(filter, {
+    const result = await this.getAll(filter, {
       page,
       limit,
       sort: { createdAt: -1 },
@@ -43,6 +58,8 @@ class AdminCourseTestService extends BaseService {
         { path: 'topic', select: 'topicName' },
       ],
     })
+
+    return this.attachMappedQuestionCounts(result)
   }
 
   async getOne(id) {
