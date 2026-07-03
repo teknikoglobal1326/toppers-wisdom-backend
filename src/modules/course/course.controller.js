@@ -3,7 +3,8 @@ const { sendSuccess, sendPaginated } = require('../../core/response')
 const courseService = require('./course.service')
 
 const listCourses = catchAsync(async (req, res) => {
-  const result = await courseService.listCourses(req.user._id, req.user.subExamId, req.query, req.lang)
+  console.log("req.user===============================>",req.user)
+  const result = await courseService.listCourses(req.user._id, req.user.subExamIds || [], req.query, req.lang)
   sendPaginated(res, result.data, result.pagination)
 })
 

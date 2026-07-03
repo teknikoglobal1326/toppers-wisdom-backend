@@ -33,6 +33,11 @@ const updatePassword = catchAsync(async (req, res) => {
   sendSuccess(res, data, 'Password updated successfully')
 })
 
+const getProfile = catchAsync(async (req, res) => {
+  const data = await authService.getProfile(req.user._id)
+  sendSuccess(res, data)
+})
+
 const updateProfile = catchAsync(async (req, res) => {
   const data = await authService.updateProfile(req.user._id, req.body)
   sendSuccess(res, data, 'Profile updated successfully')
@@ -48,4 +53,4 @@ const deleteAccount = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Account deleted successfully')
 })
 
-module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, updateProfile, login, deleteAccount }
+module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, getProfile, updateProfile, login, deleteAccount }
