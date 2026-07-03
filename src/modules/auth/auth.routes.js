@@ -11,6 +11,7 @@ router.post('/send-otp', otpLimiter, validate(sendOtpSchema), controller.sendOtp
 router.post('/verify-otp', validate(verifyOtpSchema), controller.verifyOtp)
 router.post('/refresh-token', validate(refreshTokenSchema), controller.refreshToken)
 router.post('/logout', authMiddleware, controller.logout)
+router.get('/profile', authMiddleware, controller.getProfile)
 router.put('/update-password', authMiddleware, validate(updatePasswordSchema), controller.updatePassword)
 router.put('/update-profile', authMiddleware, uploadAvatar, parseFormData, validate(updateProfileSchema), controller.updateProfile)
 router.delete('/delete-account', authMiddleware, controller.deleteAccount)

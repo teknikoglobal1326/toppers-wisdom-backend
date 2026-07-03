@@ -1,9 +1,10 @@
-const BaseService    = require('../../core/BaseService')
+const BaseService = require('../../core/BaseService')
 const courseRepository = require('./course.repository')
-const { checkAccess }  = require('../../lib/access')
+const { checkAccess } = require('../../lib/access')
 const { getPresignedDownloadUrl } = require('../../lib/s3')
 const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
+const User = require('../../models/User.model')
 
 class CourseService extends BaseService {
   constructor() {
@@ -11,18 +12,20 @@ class CourseService extends BaseService {
     this.logger = createLogger('course:service')
   }
 
-  async listCourses(userId, subExamId, filters, lang) {
-    this.logger.info({ userId, subExamId }, 'Listing courses')
+  async listCourses(userId, _ignored, filters, lang) {
+    const user = await User.findById(userId).select('subExams').lean()
+    const subExamIds = (user?.subExams || []).map((s) => s._id)
+    this.logger.info({ userId, subExamIds }, 'Listing courses')
 
-    const filter = { subExam: subExamId, status: 'published' }
-    if (filters.type)              filter.type   = filters.type
+    const filter = { subExam: { $in: subExamIds }, status: 'published' }
+    if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
-    if (lang && lang !== 'both')  filter.language = { $in: [lang, 'both'] }
+    if (lang && lang !== 'both') filter.language = { $in: [lang, 'both'] }
 
     // inherited: this.getAll() calls findMany (paginated)
     const result = await this.getAll(filter, {
       page: filters.page, limit: filters.limit,
-      select: 'title slug thumbnail type price isFree avgRating totalEnrollments instructor.name language',
+      select: 'title slug thumbnail type price isFree avgRating totalEnrollments instructor.name language description longDescription',
     })
 
     // Attach hasAccess flag to each course
@@ -37,7 +40,7 @@ class CourseService extends BaseService {
   async getCourse(courseId, userId) {
     this.logger.info({ courseId, userId }, 'Fetching course detail')
     // inherited: this.getById() throws 404 automatically if not found
-    const course    = await this.getById(courseId)
+    const course = await this.getById(courseId)
     const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId)
 
     if (!hasAccess) {
@@ -81,9 +84,9 @@ class CourseService extends BaseService {
     const enrollment = await courseRepository.findEnrollment(userId, courseId)
     if (!enrollment) throw new AppError('You must be enrolled to leave a review', 403)
 
-    const course   = await this.getById(courseId)
+    const course = await this.getById(courseId)
     const newTotal = course.totalReviews + 1
-    const newAvg   = parseFloat((((course.avgRating * course.totalReviews) + data.rating) / newTotal).toFixed(2))
+    const newAvg = parseFloat((((course.avgRating * course.totalReviews) + data.rating) / newTotal).toFixed(2))
 
     await courseRepository.updateRating(courseId, newAvg, newTotal)
     this.logger.info({ courseId, newAvg, newTotal }, 'Review added')
