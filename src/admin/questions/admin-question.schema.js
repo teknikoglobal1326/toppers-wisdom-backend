@@ -52,4 +52,9 @@ const updateQuestionSchema = Joi.object({
   status: Joi.string().valid('active', 'inactive'),
 }).min(1)
 
-module.exports = { createQuestionSchema, updateQuestionSchema }
+const createQuestionDualSchema = Joi.object({
+  hi: createQuestionSchema.required(),
+  en: createQuestionSchema.required(),
+})
+
+module.exports = { createQuestionSchema, createQuestionDualSchema, updateQuestionSchema }
