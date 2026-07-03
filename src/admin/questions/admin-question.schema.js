@@ -44,7 +44,7 @@ const createQuestionSchema = Joi.object({
 const updateQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).optional(),
   testId: Joi.string().hex().length(24).optional(),
-  language: Joi.string().valid('en', 'hi'),
+  language: Joi.string().valid('en', 'hi', 'both'),
   question: questionPayloadSchema.optional(),
   options: Joi.array().items(optionSchema).length(4),
   explanation: explanationPayloadSchema.optional(),

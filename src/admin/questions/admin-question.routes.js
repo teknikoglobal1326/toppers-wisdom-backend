@@ -13,6 +13,7 @@ const uploadQuestionFiles = upload.fields([
 
 router.get('/', controller.list)
 router.post('/', uploadQuestionFiles, attachUploadedFiles, validate(createQuestionSchema), controller.create)
+router.delete('/test/:testId', controller.removeByTest)
 router.get('/:id', controller.getOne)
 router.patch('/:id', uploadQuestionFiles, attachUploadedFiles, validate(updateQuestionSchema), controller.update)
 router.delete('/:id', controller.remove)
