@@ -57,16 +57,15 @@ class AdminQuestionService extends BaseService {
 
   async createQuestion(data) {
     const payload = this.buildPayload(data)
+    return questionRepository.createSingle(payload)
+  }
 
-    let result
-    if (payload.language === 'both') {
-      const [primary, secondary] = await questionRepository.createPair(payload)
-      result = [primary, secondary]
-    } else {
-      result = await questionRepository.createSingle(payload)
-    }
-
-    return result
+  async createQuestionDual({ hi, en }, createdBy) {
+    const [hiResult, enResult] = await Promise.all([
+      questionRepository.createSingle(this.buildPayload({ ...hi, createdBy })),
+      questionRepository.createSingle(this.buildPayload({ ...en, createdBy })),
+    ])
+    return [hiResult, enResult]
   }
 
   async updateQuestion(id, data) {
