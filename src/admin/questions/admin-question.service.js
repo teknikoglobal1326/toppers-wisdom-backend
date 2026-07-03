@@ -1,12 +1,18 @@
 const path = require('path')
 const BaseService = require('../../core/BaseService')
 const questionRepository = require('../../modules/question/question.repository')
+const courseTestRepository = require('../../modules/course-test/course-test.repository')
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 
 class AdminQuestionService extends BaseService {
   constructor() {
     super(questionRepository, 'admin:question')
+  }
+
+  async syncQuestionCount(testId) {
+    const count = await questionRepository.count({ test: testId, isDeleted: false })
+    await courseTestRepository.updateById(testId, { totalMappedQuestions: count })
   }
 
   async listAll({ page, limit, test, status, language, search } = {}) {
@@ -57,7 +63,9 @@ class AdminQuestionService extends BaseService {
 
   async createQuestion(data) {
     const payload = this.buildPayload(data)
-    return questionRepository.createSingle(payload)
+    const result = await questionRepository.createSingle(payload)
+    if (payload.test) await this.syncQuestionCount(payload.test)
+    return result
   }
 
   async createQuestionDual({ hi, en }, createdBy) {
@@ -65,6 +73,7 @@ class AdminQuestionService extends BaseService {
       questionRepository.createSingle(this.buildPayload({ ...hi, createdBy })),
       questionRepository.createSingle(this.buildPayload({ ...en, createdBy })),
     ])
+    if (hi?.test) await this.syncQuestionCount(hi.test)
     return [hiResult, enResult]
   }
 
@@ -74,6 +83,8 @@ class AdminQuestionService extends BaseService {
 
     const payload = this.buildPayload(data)
     const updated = await questionRepository.updateById(id, payload)
+    const testId = payload.test || question.test
+    if (testId) await this.syncQuestionCount(testId)
 
     return updated
   }
@@ -83,6 +94,7 @@ class AdminQuestionService extends BaseService {
     if (!question) throw new AppError('Question not found', 404, 'NOT_FOUND')
 
     await questionRepository.updateById(id, { isDeleted: true })
+    if (question.test) await this.syncQuestionCount(question.test)
     this.logger.info({ questionId: id }, 'Question soft deleted')
   }
 

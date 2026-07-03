@@ -11,6 +11,7 @@ const courseTestSchema = new mongoose.Schema({
   image: { type: String, default: '' },
   duration: { type: Number, required: true }, // in minutes
   totalQuestions: { type: Number, default: 0 },
+  totalMappedQuestions: { type: Number, default: 0 },
   totalMarks: { type: Number, default: 0 },
   passingMarks: { type: Number, default: 0 },
   marksPerQuestion: { type: Number, default: 1 },
