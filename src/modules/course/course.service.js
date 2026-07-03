@@ -12,6 +12,36 @@ class CourseService extends BaseService {
     this.logger = createLogger('course:service')
   }
 
+  async listCourseSubjects(userId) {
+    const user = await User.findById(userId).select('subExams').lean()
+    const subExamIds = (user?.subExams || []).map((s) => s._id)
+    this.logger.info({ userId, subExamIds }, 'Listing course subjects')
+
+    const pipeline = [
+      { $match: { subExam: { $in: subExamIds }, status: 'published' } },
+      { $unwind: { path: '$subjects', preserveNullAndEmpty: false } },
+      {
+        $lookup: {
+          from: 'subjects',
+          localField: 'subjects.subject',
+          foreignField: '_id',
+          as: 'subjectInfo',
+        },
+      },
+      { $unwind: '$subjectInfo' },
+      { $match: { 'subjectInfo.isDeleted': false, 'subjectInfo.status': 'active' } },
+      {
+        $group: {
+          _id: '$subjectInfo._id',
+          name: { $first: '$subjectInfo.name' },
+        },
+      },
+      { $sort: { name: 1 } },
+    ]
+
+    return this.repository.aggregate(pipeline)
+  }
+
   async listCourses(userId, _ignored, filters, lang) {
     const user = await User.findById(userId).select('subExams').lean()
     const subExamIds = (user?.subExams || []).map((s) => s._id)
@@ -21,14 +51,13 @@ class CourseService extends BaseService {
     if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
     if (lang && lang !== 'both') filter.language = { $in: [lang, 'both'] }
+    if (filters.subjectId) filter['subjects.subject'] = filters.subjectId
 
-    // inherited: this.getAll() calls findMany (paginated)
     const result = await this.getAll(filter, {
       page: filters.page, limit: filters.limit,
       select: 'title slug thumbnail type price isFree avgRating totalEnrollments instructor.name language description longDescription',
     })
 
-    // Attach hasAccess flag to each course
     result.data = await Promise.all(result.data.map(async (course) => ({
       ...course,
       hasAccess: course.isFree || await checkAccess(userId, 'course', course._id),
