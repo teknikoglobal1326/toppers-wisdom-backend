@@ -1,18 +1,12 @@
 const path = require('path')
 const BaseService = require('../../core/BaseService')
 const questionRepository = require('../../modules/question/question.repository')
-const courseTestRepository = require('../../modules/course-test/course-test.repository')
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 
 class AdminQuestionService extends BaseService {
   constructor() {
     super(questionRepository, 'admin:question')
-  }
-
-  async syncQuestionCount(testId) {
-    const count = await questionRepository.count({ test: testId, isDeleted: false })
-    await courseTestRepository.updateById(testId, { totalQuestions: count })
   }
 
   async listAll({ page, limit, test, status, language, search } = {}) {
@@ -72,10 +66,6 @@ class AdminQuestionService extends BaseService {
       result = [primary, secondary]
     }
 
-    if (payload.test) {
-      await this.syncQuestionCount(payload.test)
-    }
-
     return result
   }
 
@@ -86,17 +76,6 @@ class AdminQuestionService extends BaseService {
     const payload = this.buildPayload(data)
     const updated = await questionRepository.updateById(id, payload)
 
-    const previousTestId = question.test
-    const currentTestId = payload.test || previousTestId
-
-    if (previousTestId && currentTestId && previousTestId.toString() !== currentTestId.toString()) {
-      await this.syncQuestionCount(previousTestId)
-    }
-
-    if (currentTestId) {
-      await this.syncQuestionCount(currentTestId)
-    }
-
     return updated
   }
 
@@ -105,9 +84,6 @@ class AdminQuestionService extends BaseService {
     if (!question) throw new AppError('Question not found', 404, 'NOT_FOUND')
 
     await questionRepository.updateById(id, { isDeleted: true })
-    if (question.test) {
-      await this.syncQuestionCount(question.test)
-    }
     this.logger.info({ questionId: id }, 'Question soft deleted')
   }
 }
