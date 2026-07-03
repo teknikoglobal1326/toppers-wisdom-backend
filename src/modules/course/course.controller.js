@@ -2,9 +2,13 @@ const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendPaginated } = require('../../core/response')
 const courseService = require('./course.service')
 
+const listCourseSubjects = catchAsync(async (req, res) => {
+  const result = await courseService.listCourseSubjects(req.user._id)
+  sendSuccess(res, result)
+})
+
 const listCourses = catchAsync(async (req, res) => {
-  console.log("req.user===============================>",req.user)
-  const result = await courseService.listCourses(req.user._id, req.user.subExamIds || [], req.query, req.lang)
+  const result = await courseService.listCourses(req.user._id, [], req.query, req.lang)
   sendPaginated(res, result.data, result.pagination)
 })
 
@@ -28,4 +32,4 @@ const getTimetable = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.getTimetable(req.params.id))
 })
 
-module.exports = { listCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable }
+module.exports = { listCourseSubjects, listCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable }
