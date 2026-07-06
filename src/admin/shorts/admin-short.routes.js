@@ -1,15 +1,18 @@
 const router     = require('express').Router()
 const controller = require('./admin-short.controller')
 const { validate }                             = require('../../core/validate')
-const { uploadShort }                          = require('../../middlewares/upload.middleware')
-const { createShortSchema, updateShortSchema } = require('./admin-short.schema')
+const { uploadShortFiles, parseFormData }      = require('./admin-short.upload')
+const { createShortSchema, createShortDualSchema, updateShortSchema } = require('./admin-short.schema')
 
-const shortFields = uploadShort.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }])
+const validateCreate = (req, res, next) => {
+  const schema = (req.body.hi && req.body.en) ? createShortDualSchema : createShortSchema
+  return validate(schema)(req, res, next)
+}
 
 router.get('/',       controller.list)
-router.post('/',      shortFields, validate(createShortSchema), controller.create)
+router.post('/',      uploadShortFiles, parseFormData, validateCreate, controller.create)
 router.get('/:id',    controller.getOne)
-router.put('/:id',    shortFields, validate(updateShortSchema), controller.update)
+router.put('/:id',    uploadShortFiles, parseFormData, validate(updateShortSchema), controller.update)
 router.delete('/:id', controller.remove)
 
 module.exports = router
