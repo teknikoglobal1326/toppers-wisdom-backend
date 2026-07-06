@@ -3,7 +3,8 @@ const { sendSuccess, sendPaginated } = require('../../core/response')
 const courseService = require('./course.service')
 
 const listCourseSubjects = catchAsync(async (req, res) => {
-  const result = await courseService.listCourseSubjects(req.user._id)
+  console.log("check query data========>", req.query);
+  const result = await courseService.listCourseSubjects(req.user._id, req.query)
   sendSuccess(res, result)
 })
 

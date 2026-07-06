@@ -15,6 +15,8 @@ const bookSchema = new mongoose.Schema({
   tags:        { type: [String], default: [] },
   language:    { type: String, enum: ['hi', 'en', 'both'], default: 'hi', index: true },
   status:      { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
+  exam:        { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null },
+  subExams:    [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubExam' }],
   isDeleted:   { type: Boolean, default: false, index: true },
   createdBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
 }, { timestamps: true })
