@@ -1,6 +1,7 @@
 const BaseService        = require('../../core/BaseService')
 const subjectRepository  = require('../../modules/subject/subject.repository')
 const AppError           = require('../../core/AppError')
+const { createWithLanguage } = require('../../core/createWithLanguage')
 
 class AdminSubjectService extends BaseService {
   constructor() {
@@ -20,7 +21,15 @@ class AdminSubjectService extends BaseService {
   }
 
   async createSubject(data) {
-    return this.create(data)
+    return createWithLanguage((d) => this.create(d), data)
+  }
+
+  async createSubjectDual({ hi, en }) {
+    const [hiResult, enResult] = await Promise.all([
+      this.create({ ...hi, language: 'hi' }),
+      this.create({ ...en, language: 'en' }),
+    ])
+    return [hiResult, enResult]
   }
 
   async updateSubject(id, data) {
