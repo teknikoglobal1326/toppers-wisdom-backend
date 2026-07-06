@@ -2,6 +2,7 @@ const BaseService      = require('../../core/BaseService')
 const subExamRepository = require('../../modules/subexam/subexam.repository')
 const examRepository   = require('../../modules/exam/exam.repository')
 const AppError         = require('../../core/AppError')
+const { createWithLanguage } = require('../../core/createWithLanguage')
 
 class AdminSubExamService extends BaseService {
   constructor() {
@@ -25,9 +26,22 @@ class AdminSubExamService extends BaseService {
     const exam = await examRepository.findOne({ _id: data.examId, is_deleted: false })
     if (!exam) throw new AppError('Exam not found', 404, 'NOT_FOUND')
 
-    const subExam = await subExamRepository.create(data)
-    await examRepository.increment(data.examId, { subexamCount: 1 })
+    const subExam = await createWithLanguage((d) => subExamRepository.create(d), data)
+    await examRepository.increment(data.examId, { subexamCount: Array.isArray(subExam) ? 2 : 1 })
     return subExam
+  }
+
+  async createSubExamDual({ hi, en }) {
+    const examId = hi.examId
+    const exam = await examRepository.findOne({ _id: examId, is_deleted: false })
+    if (!exam) throw new AppError('Exam not found', 404, 'NOT_FOUND')
+
+    const [hiResult, enResult] = await Promise.all([
+      subExamRepository.create({ ...hi, language: 'hi' }),
+      subExamRepository.create({ ...en, language: 'en' }),
+    ])
+    await examRepository.increment(examId, { subexamCount: 2 })
+    return [hiResult, enResult]
   }
 
   async updateSubExam(id, data) {

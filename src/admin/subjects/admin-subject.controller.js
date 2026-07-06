@@ -4,7 +4,13 @@ const adminSubjectService = require('./admin-subject.service')
 
 const list   = catchAsync(async (req, res) => { const r = await adminSubjectService.listAll(req.query); sendPaginated(res, r.data, r.pagination) })
 const getOne = catchAsync(async (req, res) => { sendSuccess(res, await adminSubjectService.getOne(req.params.id)) })
-const create = catchAsync(async (req, res) => { sendCreated(res, await adminSubjectService.createSubject(req.body)) })
+const create = catchAsync(async (req, res) => {
+  if (req.body.hi && req.body.en) {
+    sendCreated(res, await adminSubjectService.createSubjectDual(req.body))
+  } else {
+    sendCreated(res, await adminSubjectService.createSubject(req.body))
+  }
+})
 const update = catchAsync(async (req, res) => { sendSuccess(res, await adminSubjectService.updateSubject(req.params.id, req.body)) })
 const remove = catchAsync(async (req, res) => { await adminSubjectService.softDelete(req.params.id); sendSuccess(res, null, 'Subject deleted') })
 

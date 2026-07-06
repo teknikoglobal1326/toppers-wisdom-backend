@@ -22,4 +22,16 @@ const updateBlogSchema = Joi.object({
   status: Joi.string().valid('draft', 'published'),
 }).min(1).messages({ 'object.min': 'At least one field is required to update' })
 
-module.exports = { createBlogSchema, updateBlogSchema }
+const createBlogDualSchema = Joi.object({
+  hi: createBlogSchema.required(),
+  en: createBlogSchema.required(),
+})
+
+const updateBlogDualSchema = Joi.object({
+  hiId: Joi.string().hex().length(24).required(),
+  enId: Joi.string().hex().length(24).required(),
+  hi: updateBlogSchema.required(),
+  en: updateBlogSchema.required(),
+})
+
+module.exports = { createBlogSchema, createBlogDualSchema, updateBlogSchema, updateBlogDualSchema }
