@@ -13,7 +13,7 @@ const bookSchema = new mongoose.Schema({
   pages:       { type: Number, default: 0 },
   rating:      { type: Number, default: 0 },
   tags:        { type: [String], default: [] },
-  language:    { type: String, enum: ['hi', 'en', 'both'], default: 'hi', index: true },
+  language:    { type: String, enum: ['hi', 'en', 'both'], default: 'both', index: true },
   status:      { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
   isDeleted:   { type: Boolean, default: false, index: true },
   createdBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
