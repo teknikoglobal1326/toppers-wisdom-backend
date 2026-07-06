@@ -2,20 +2,28 @@ const Joi = require('joi')
 
 const createBlogSchema = Joi.object({
   title: Joi.string().min(3).max(200).required(),
+  hiTitle: Joi.string().trim().allow('', null).optional(),
+  enTitle: Joi.string().trim().allow('', null).optional(),
   image: Joi.string().max(500).allow('', null),
   shortDescription: Joi.string().max(500).allow('', null),
+  hiShortDescription: Joi.string().max(500).allow('', null).optional(),
   longDescription: Joi.string().max(20000).required(),
+  hiLongDescription: Joi.string().max(20000).allow('', null).optional(),
   category: Joi.string().max(100).allow('', null),
   tags: Joi.array().items(Joi.string().max(50)).default([]),
-  language: Joi.string().valid('hi', 'en', 'both').default('hi'),
+  language: Joi.string().valid('hi', 'en', 'both').default('both'),
   status: Joi.string().valid('draft', 'published').default('draft'),
 })
 
 const updateBlogSchema = Joi.object({
   title: Joi.string().min(3).max(200),
+  hiTitle: Joi.string().trim().allow('', null).optional(),
+  enTitle: Joi.string().trim().allow('', null).optional(),
   image: Joi.string().max(500).allow('', null),
   shortDescription: Joi.string().max(500).allow('', null),
+  hiShortDescription: Joi.string().max(500).allow('', null).optional(),
   longDescription: Joi.string().max(20000),
+  hiLongDescription: Joi.string().max(20000).allow('', null).optional(),
   category: Joi.string().max(100).allow('', null),
   tags: Joi.array().items(Joi.string().max(50)),
   language: Joi.string().valid('hi', 'en', 'both'),
