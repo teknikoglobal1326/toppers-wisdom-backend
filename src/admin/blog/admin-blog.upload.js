@@ -16,27 +16,59 @@ const upload = multer({
   },
 })
 
-// image → single file (key: "image")
-const uploadBlogImage = upload.single('image')
+// Support both single image and dual images (image_hi, image_en)
+const uploadBlogImage = upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image_hi', maxCount: 1 }, { name: 'image_en', maxCount: 1 }])
 
 // Runs after multer: parses JSON-stringified fields and uploads the image if received
 const parseFormData = async (req, _res, next) => {
   try {
-    // tags arrives as a JSON string from form-data e.g. '["tag1","tag2"]'
+    // Parse hi/en JSON if provided as strings in multipart forms
+    if (req.body.hi && typeof req.body.hi === 'string') {
+      try { req.body.hi = JSON.parse(req.body.hi) } catch (_) { /* leave as-is, Joi will reject */ }
+    }
+    if (req.body.en && typeof req.body.en === 'string') {
+      try { req.body.en = JSON.parse(req.body.en) } catch (_) { /* leave as-is, Joi will reject */ }
+    }
+
+    // Parse tags JSON if provided as string
     if (req.body.tags && typeof req.body.tags === 'string') {
       try { req.body.tags = JSON.parse(req.body.tags) } catch (_) { /* leave as-is, Joi will reject */ }
     }
 
-    // longDescription can arrive as an array when multipart sends the field more than once;
-    // join the parts so Joi always receives a plain string
+    // Join longDescription if it arrives as array
     if (Array.isArray(req.body.longDescription)) {
       req.body.longDescription = req.body.longDescription.join('')
     }
 
-    if (req.file) {
-      const ext = req.file.originalname.split('.').pop().toLowerCase()
+    // Handle single image upload
+    if (req.files?.image?.[0]) {
+      const file = req.files.image[0]
+      const ext = file.originalname.split('.').pop().toLowerCase()
       const folder = `blog/${req.params.id ?? `new-${Date.now()}`}`
-      req.body.image = await uploadFile(req.file.buffer, `image-${Date.now()}.${ext}`, folder, req.file.mimetype)
+      req.body.image = await uploadFile(file.buffer, `image-${Date.now()}.${ext}`, folder, file.mimetype)
+    }
+
+    // Handle dual image uploads (for hi/en separate images)
+    if (req.files?.image_hi?.[0] || req.files?.image_en?.[0]) {
+      // Upload hi image
+      if (req.files?.image_hi?.[0]) {
+        const file = req.files.image_hi[0]
+        const ext = file.originalname.split('.').pop().toLowerCase()
+        const folder = `blog/${req.params.id ?? `new-${Date.now()}`}`
+        const uploadedUrl = await uploadFile(file.buffer, `image-hi-${Date.now()}.${ext}`, folder, file.mimetype)
+        if (req.body.hi) req.body.hi.image = uploadedUrl
+        else req.body.hi = { image: uploadedUrl }
+      }
+
+      // Upload en image
+      if (req.files?.image_en?.[0]) {
+        const file = req.files.image_en[0]
+        const ext = file.originalname.split('.').pop().toLowerCase()
+        const folder = `blog/${req.params.id ?? `new-${Date.now()}`}`
+        const uploadedUrl = await uploadFile(file.buffer, `image-en-${Date.now()}.${ext}`, folder, file.mimetype)
+        if (req.body.en) req.body.en.image = uploadedUrl
+        else req.body.en = { image: uploadedUrl }
+      }
     }
 
     next()

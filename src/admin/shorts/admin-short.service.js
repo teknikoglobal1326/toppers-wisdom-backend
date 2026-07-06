@@ -37,6 +37,14 @@ class AdminShortService extends BaseService {
     return createWithLanguage((d) => this.create(d), payload)
   }
 
+  async createShortDual({ hi, en }) {
+    const [hiResult, enResult] = await Promise.all([
+      this.create({ ...hi, language: 'hi' }),
+      this.create({ ...en, language: 'en' }),
+    ])
+    return [hiResult, enResult]
+  }
+
   async updateShort(id, data, files = {}) {
     const short = await shortRepository.findOne({ _id: id, isDeleted: false })
     if (!short) throw new AppError('Short not found', 404, 'NOT_FOUND')
