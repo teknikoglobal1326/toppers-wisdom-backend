@@ -9,6 +9,7 @@ const createExamSchema = Joi.object({
   name:             Joi.string().trim().required(),
   subexamCount:     Joi.number().integer().min(0).default(0),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
+  language:         Joi.string().valid('hi', 'en', 'both').default('both'),
   status:           Joi.string().valid('active', 'inactive').default('active'),
 })
 
@@ -17,7 +18,13 @@ const updateExamSchema = Joi.object({
   name:             Joi.string().trim(),
   subexamCount:     Joi.number().integer().min(0),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
+  language:         Joi.string().valid('hi', 'en', 'both'),
   status:           Joi.string().valid('active', 'inactive'),
 }).min(1)
 
-module.exports = { createExamSchema, updateExamSchema }
+const createExamDualSchema = Joi.object({
+  hi: createExamSchema.required(),
+  en: createExamSchema.required(),
+})
+
+module.exports = { createExamSchema, createExamDualSchema, updateExamSchema }

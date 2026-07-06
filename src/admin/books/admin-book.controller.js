@@ -2,13 +2,19 @@ const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response')
 const Book = require('../../models/Book.model')
 const AppError = require('../../core/AppError')
-const { createWithLanguage } = require('../../core/createWithLanguage')
+const {
+  getExactLanguageFilter,
+  isDualLanguagePayload,
+  makeLanguageRecords,
+} = require('../../core/languageUtils')
 
 const list = catchAsync(async (req, res) => {
-    const { status, section, page = 1, limit = 10, q } = req.query
+    const { status, section, language, page = 1, limit = 10, q } = req.query
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (section) filter.section = section
+    const exactLanguage = getExactLanguageFilter(language)
+    if (exactLanguage) filter.language = exactLanguage
     if (q) filter.title = { $regex: q, $options: 'i' }
 
     const skip = (page - 1) * limit
@@ -31,10 +37,27 @@ const getOne = catchAsync(async (req, res) => {
     sendSuccess(res, book)
 })
 
+const normalizeBookPayload = (data = {}) => {
+    const payload = { ...data }
+    if (payload.examId) payload.exam = payload.examId
+    if (payload.subExamIds) payload.subExams = payload.subExamIds
+    if (payload.subExamId && !payload.subExamIds) payload.subExams = [payload.subExamId]
+    delete payload.examId
+    delete payload.subExamIds
+    delete payload.subExamId
+    return payload
+}
+
 const create = catchAsync(async (req, res) => {
-  const data = { ...req.body, createdBy: req.admin?._id }
-  const result = await createWithLanguage((d) => Book.create(d), data)
-  sendCreated(res, result)
+    const createdBy = req.admin?._id
+
+    if (isDualLanguagePayload(req.body)) {
+        const records = makeLanguageRecords(req.body, { createdBy }).map(normalizeBookPayload)
+        sendCreated(res, await Book.insertMany(records))
+        return
+    }
+
+    sendCreated(res, await Book.create(normalizeBookPayload({ ...req.body, createdBy })))
 })
 
 const update = catchAsync(async (req, res) => {

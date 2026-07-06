@@ -1,7 +1,4 @@
 const Joi = require('joi')
-const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/).messages({
-    'string.pattern.base': '{{#label}} must be a valid MongoDB ObjectId',
-})
 
 const createBookSchema = Joi.object({
   title: Joi.string().trim().required(),
@@ -16,7 +13,7 @@ const createBookSchema = Joi.object({
   pages: Joi.number().integer().min(0).optional().default(0),
   rating: Joi.number().min(0).max(5).optional().default(0),
   tags: Joi.array().items(Joi.string()).optional().default([]),
-  language: Joi.string().valid('hi', 'en', 'both').default('hi'),
+  language: Joi.string().valid('hi', 'en', 'both').default('both'),
   status:      Joi.string().valid('active', 'inactive').default('active'),
 })
 
@@ -41,4 +38,9 @@ const setBuyUrlSchema = Joi.object({
     buyUrl: Joi.string().uri().required(),
 })
 
-module.exports = { createBookSchema, updateBookSchema, setBuyUrlSchema }
+const createBookDualSchema = Joi.object({
+  hi: createBookSchema.required(),
+  en: createBookSchema.required(),
+})
+
+module.exports = { createBookSchema, createBookDualSchema, updateBookSchema, setBuyUrlSchema }
