@@ -4,6 +4,8 @@ const { sendSuccess }      = require('../../core/response')
 const qualificationService = require('../../modules/qualification/qualification.service')
 const courseRepository = require('../../modules/course/course.repository')
 const topicRepository = require('../../modules/topic/topic.repository')
+const examRepository = require('../../modules/exam/exam.repository')
+const subexamRepository = require('../../modules/subexam/subexam.repository')
 
 
 // GET /api/v1/admin/common/qualifications
@@ -42,6 +44,28 @@ router.get('/chapters/:topicId', catchAsync(async (req, res) => {
     sendSuccess(res, topic.chapters);
   })
 );
+
+// GET /api/v1/admin/common/exams/:qualificationId
+router.get('/exams/:qualificationId', catchAsync(async (req, res) => {
+  const { qualificationId } = req.params
+  const exams = await examRepository.findAll(
+    { qualification: qualificationId, status: 'active', is_deleted: false },
+    { sort: { name: 1 }, select: 'name _id' }
+  )
+  sendSuccess(res, exams)
+}))
+
+// GET /api/v1/admin/common/subexams/:examId
+router.get('/subexams/:examId', catchAsync(async (req, res) => {
+  const { examId } = req.params
+  const subexams = await subexamRepository.findAll(
+    { examId, status: 'active', is_deleted: false },
+    { sort: { name: 1 }, select: 'name _id' }
+  )
+  sendSuccess(res, subexams)
+}))
+
+
 
 
 
