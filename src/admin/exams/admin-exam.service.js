@@ -4,6 +4,11 @@ const examRepository = require('../../modules/exam/exam.repository')
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 const { createLogger } = require('../../config/logger')
+const {
+  getExactLanguageFilter,
+  isDualLanguagePayload,
+  makeLanguageRecords,
+} = require('../../core/languageUtils')
 
 class AdminExamService extends BaseService {
   constructor() {
@@ -11,9 +16,11 @@ class AdminExamService extends BaseService {
     this.logger = createLogger('admin:exam:service')
   }
 
-  async listAll({ status, page, limit } = {}) {
+  async listAll({ status, language, page, limit } = {}) {
     const filter = { is_deleted: false }
     if (status) filter.status = status
+    const exactLanguage = getExactLanguageFilter(language)
+    if (exactLanguage) filter.language = exactLanguage
     return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
   }
 
@@ -23,13 +30,33 @@ class AdminExamService extends BaseService {
     return exam
   }
 
-  async createExam(data, file) {
-    const payload = { ...data }
-    if (file) {
-      const ext = path.extname(file.originalname) || '.jpg'
-      const filename = `${Date.now()}${ext}`
-      payload.image = await uploadFile(file.buffer, filename, 'exams', file.mimetype)
+  async uploadImage(file) {
+    if (!file) return null
+    const ext = path.extname(file.originalname) || '.jpg'
+    const filename = `${Date.now()}${ext}`
+    return uploadFile(file.buffer, filename, 'exams', file.mimetype)
+  }
+
+  async createExam(data, files = {}) {
+    if (isDualLanguagePayload(data)) {
+      const [hiImage, enImage] = await Promise.all([
+        this.uploadImage(files.hiImage?.[0]),
+        this.uploadImage(files.enImage?.[0]),
+      ])
+
+      const records = makeLanguageRecords(data).map((record) => {
+        const image = record.language === 'hi' ? hiImage : enImage
+        return {
+          ...record,
+          ...(image ? { image } : {}),
+        }
+      })
+      return examRepository.insertMany(records)
     }
+
+    const payload = { ...data }
+    const image = await this.uploadImage(files.image?.[0])
+    if (image) payload.image = image
     return this.create(payload)
   }
 

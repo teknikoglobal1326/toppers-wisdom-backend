@@ -2,14 +2,21 @@ const Joi = require('joi')
 
 const createQualificationSchema = Joi.object({
   name:      Joi.string().trim().required(),
+  language:  Joi.string().valid('hi', 'en', 'both').default('both'),
   isActive:  Joi.boolean().default(true),
   sortOrder: Joi.number().integer().min(0).default(0),
 })
 
 const updateQualificationSchema = Joi.object({
   name:      Joi.string().trim(),
+  language:  Joi.string().valid('hi', 'en', 'both'),
   isActive:  Joi.boolean(),
   sortOrder: Joi.number().integer().min(0),
 }).min(1)
 
-module.exports = { createQualificationSchema, updateQualificationSchema }
+const createQualificationDualSchema = Joi.object({
+  hi: createQualificationSchema.required(),
+  en: createQualificationSchema.required(),
+})
+
+module.exports = { createQualificationSchema, createQualificationDualSchema, updateQualificationSchema }
