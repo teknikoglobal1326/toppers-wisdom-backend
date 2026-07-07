@@ -3,18 +3,24 @@ const BaseService    = require('../../core/BaseService')
 const bannerRepository = require('../../modules/banner/banner.repository')
 const AppError       = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
-const { createWithLanguage } = require('../../core/createWithLanguage')
+const {
+  getExactLanguageFilter,
+  isDualLanguagePayload,
+  makeLanguageRecords,
+} = require('../../core/languageUtils')
 
 class AdminBannerService extends BaseService {
   constructor() {
     super(bannerRepository, 'admin:banner')
   }
 
-  async listAll({ examId, subexamId, status, page, limit } = {}) {
+  async listAll({ examId, subexamId, status, language, page, limit } = {}) {
     const filter = { isDeleted: false }
     if (examId)    filter.examId    = examId
     if (subexamId) filter.subexamId = subexamId
     if (status)    filter.status    = status
+    const exactLanguage = getExactLanguageFilter(language)
+    if (exactLanguage) filter.language = exactLanguage
     return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
   }
 
@@ -24,14 +30,34 @@ class AdminBannerService extends BaseService {
     return banner
   }
 
-  async createBanner(data, file) {
-    const payload = { ...data }
-    if (file) {
-      const ext      = path.extname(file.originalname) || '.jpg'
-      const filename = `${Date.now()}${ext}`
-      payload.image  = await uploadFile(file.buffer, filename, 'banners', file.mimetype)
+  async uploadImage(file) {
+    if (!file) return null
+    const ext      = path.extname(file.originalname) || '.jpg'
+    const filename = `${Date.now()}${ext}`
+    return uploadFile(file.buffer, filename, 'banners', file.mimetype)
+  }
+
+  async createBanner(data, files = {}) {
+    if (isDualLanguagePayload(data)) {
+      const [hiImage, enImage] = await Promise.all([
+        this.uploadImage(files.hiImage?.[0]),
+        this.uploadImage(files.enImage?.[0]),
+      ])
+
+      const records = makeLanguageRecords(data).map((record) => {
+        const image = record.language === 'hi' ? hiImage : enImage
+        return {
+          ...record,
+          ...(image ? { image } : {}),
+        }
+      })
+      return bannerRepository.insertMany(records)
     }
-    return createWithLanguage((d) => this.create(d), payload)
+
+    const payload = { ...data }
+    const image = await this.uploadImage(files.image?.[0])
+    if (image) payload.image = image
+    return this.create(payload)
   }
 
   async updateBanner(id, data, file) {

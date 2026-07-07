@@ -1,6 +1,12 @@
 const BaseService = require('../../core/BaseService')
 const qualificationRepository = require('../../modules/qualification/qualification.repository')
 const { createLogger } = require('../../config/logger')
+const {
+  generateSlug,
+  getExactLanguageFilter,
+  isDualLanguagePayload,
+  makeLanguageRecords,
+} = require('../../core/languageUtils')
 
 class AdminQualificationService extends BaseService {
   constructor() {
@@ -25,12 +31,20 @@ class AdminQualificationService extends BaseService {
     return this.repository.findOneOrFail({ _id: id, isDelted: false }, 'Qualification not found')
   }
 
+  buildPayload(data, { slugSuffix } = {}) {
+    const payload = { ...data }
+    if (payload.name) payload.slug = generateSlug(payload.name, slugSuffix)
+    return payload
+  }
+
   async createQualification(data) {
     this.logger.info({ data }, 'Creating qualification (admin)')
-    if (data.name) {
-      data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+    if (isDualLanguagePayload(data)) {
+      return this.repository.insertMany(
+        makeLanguageRecords(data).map((record) => this.buildPayload(record, { slugSuffix: record.language }))
+      )
     }
-    return this.repository.create(data)
+    return this.repository.create(this.buildPayload(data))
   }
 
   async updateQualification(id, data) {
