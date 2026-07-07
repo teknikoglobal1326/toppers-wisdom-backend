@@ -3,6 +3,11 @@ const courseRepository = require('../../modules/course/course.repository')
 const { getPresignedUploadUrl } = require('../../lib/s3')
 const { createLogger } = require('../../config/logger')
 
+const COURSE_NAME_POPULATE = [
+  { path: 'exam', select: 'name' },
+  { path: 'subExam', select: 'name' },
+]
+
 const generateSlug = (title) => {
   const base = title
     .toLowerCase()
@@ -32,8 +37,17 @@ class AdminCourseService extends BaseService {
     if (filters.status)  filter.status  = filters.status
     if (filters.examId)  filter.exam    = filters.examId
     if (filters.subExam) filter.subExam = filters.subExam
+    if (filters.subExamId) filter.subExam = filters.subExamId
     // inherited getAll
-    return this.getAll(filter, { page: filters.page, limit: filters.limit })
+    return this.getAll(filter, {
+      page: filters.page,
+      limit: filters.limit,
+      populate: COURSE_NAME_POPULATE,
+    })
+  }
+
+  async getById(id) {
+    return super.getById(id, { populate: COURSE_NAME_POPULATE })
   }
 
   async publish(courseId) {
