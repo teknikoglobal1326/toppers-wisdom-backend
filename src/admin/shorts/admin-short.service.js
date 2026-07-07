@@ -26,11 +26,11 @@ class AdminShortService extends BaseService {
 
   async createShort(data, files = {}) {
     const payload = { ...data }
-    if (files.video?.[0]) {
+    if (!payload.videoUrl && files.video?.[0]) {
       const v = files.video[0]
       payload.videoUrl = await uploadFile(v.buffer, `${Date.now()}${path.extname(v.originalname) || '.mp4'}`, 'shorts', v.mimetype)
     }
-    if (files.thumbnail?.[0]) {
+    if (!payload.thumbnail && files.thumbnail?.[0]) {
       const t = files.thumbnail[0]
       payload.thumbnail = await uploadFile(t.buffer, `${Date.now()}-thumb${path.extname(t.originalname) || '.jpg'}`, 'shorts/thumbnails', t.mimetype)
     }
@@ -49,11 +49,11 @@ class AdminShortService extends BaseService {
     const short = await shortRepository.findOne({ _id: id, isDeleted: false })
     if (!short) throw new AppError('Short not found', 404, 'NOT_FOUND')
     const payload = { ...data }
-    if (files.video?.[0]) {
+    if (!payload.videoUrl && files.video?.[0]) {
       const v = files.video[0]
       payload.videoUrl = await uploadFile(v.buffer, `${Date.now()}${path.extname(v.originalname) || '.mp4'}`, 'shorts', v.mimetype)
     }
-    if (files.thumbnail?.[0]) {
+    if (!payload.thumbnail && files.thumbnail?.[0]) {
       const t = files.thumbnail[0]
       payload.thumbnail = await uploadFile(t.buffer, `${Date.now()}-thumb${path.extname(t.originalname) || '.jpg'}`, 'shorts/thumbnails', t.mimetype)
     }
