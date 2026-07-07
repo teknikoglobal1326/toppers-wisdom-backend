@@ -10,7 +10,10 @@ class AdminQualificationService extends BaseService {
 
   async listAll(query) {
     this.logger.info('Listing all qualifications (admin)')
-    return this.getAll(query.filter || {}, {
+    const filter = { ...(query.filter || {}) }
+    if (query.includeDeleted !== 'true') filter.isDelted = false
+
+    return this.getAll(filter, {
       page:  parseInt(query.page) || 1,
       limit: parseInt(query.limit) || 10,
       sort:  query.sort || { sortOrder: 1, createdAt: -1 },
@@ -19,7 +22,7 @@ class AdminQualificationService extends BaseService {
 
   async getOne(id) {
     this.logger.info({ id }, 'Get qualification details (admin)')
-    return this.repository.findByIdOrFail(id, 'Qualification not found')
+    return this.repository.findOneOrFail({ _id: id, isDelted: false }, 'Qualification not found')
   }
 
   async createQualification(data) {
@@ -35,14 +38,14 @@ class AdminQualificationService extends BaseService {
     if (data.name) {
       data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
     }
-    await this.repository.assertExists(id, 'Qualification not found')
+    await this.repository.findOneOrFail({ _id: id, isDelted: false }, 'Qualification not found')
     return this.repository.updateById(id, data)
   }
 
   async softDelete(id) {
     this.logger.info({ id }, 'Soft deleting qualification (admin)')
-    await this.repository.assertExists(id, 'Qualification not found')
-    return this.repository.updateById(id, { isActive: false })
+    await this.repository.findOneOrFail({ _id: id, isDelted: false }, 'Qualification not found')
+    return this.repository.updateById(id, { isDelted: true, isActive: false })
   }
 }
 

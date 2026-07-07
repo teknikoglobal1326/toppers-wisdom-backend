@@ -61,10 +61,8 @@ class AdminSubExamService extends BaseService {
     if (!subExam) throw new AppError('SubExam not found', 404, 'NOT_FOUND')
 
     await subExamRepository.updateById(id, { is_deleted: true })
-    await examRepository.updateOne(
-      { _id: subExam.examId },
-      { $inc: { subexamCount: -1 }, $max: { subexamCount: 0 } }
-    )
+    await examRepository.updateOne({ _id: subExam.examId }, { $inc: { subexamCount: -1 } })
+    await examRepository.updateOne({ _id: subExam.examId, subexamCount: { $lt: 0 } }, { subexamCount: 0 })
     this.logger.info({ subExamId: id, examId: subExam.examId }, 'SubExam soft deleted')
   }
 }
