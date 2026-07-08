@@ -3,13 +3,25 @@ const { sendSuccess, sendPaginated } = require('../../core/response')
 const courseService = require('./course.service')
 
 const listCourseSubjects = catchAsync(async (req, res) => {
-  console.log("check query data========>", req.query);
+  console.log("req.user========>", req.user);
   const result = await courseService.listCourseSubjects(req.user._id, req.query)
+
+  if (result && result.length > 0) {
+    result.unshift({ _id: 'all', name: 'All' });
+  }
+
   sendSuccess(res, result)
 })
 
 const listCourses = catchAsync(async (req, res) => {
+  const subjectParam = req.query.subject || req.query.subjectId;
+  if (subjectParam && String(subjectParam).toLowerCase() === 'all') {
+    delete req.query.subject;
+    delete req.query.subjectId;
+  }
+
   const result = await courseService.listCourses(req.user._id, [], req.query, req.lang)
+  console.log("result========>", result);
   sendPaginated(res, result.data, result.pagination)
 })
 
@@ -33,4 +45,8 @@ const getTimetable = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.getTimetable(req.params.id))
 })
 
-module.exports = { listCourseSubjects, listCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable }
+const checkout = catchAsync(async (req, res) => {
+  sendSuccess(res, await courseService.checkout(req.params.id, req.user._id))
+})
+
+module.exports = { listCourseSubjects, listCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable, checkout }
