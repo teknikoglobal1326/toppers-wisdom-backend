@@ -1,9 +1,9 @@
 const router = require('express').Router()
 const controller = require('./admin-exam.controller')
-const { validate } = require('../../core/validate')
+const { validate, validateQuery } = require('../../core/validate')
 const { upload } = require('../../middlewares/upload.middleware')
 const { isDualLanguagePayload, parseDualLanguageFields } = require('../../core/languageUtils')
-const { createExamSchema, createExamDualSchema, updateExamSchema } = require('./admin-exam.schema')
+const { createExamSchema, createExamDualSchema, updateExamSchema, listExamQuerySchema } = require('./admin-exam.schema')
 
 const uploadExamCreateFiles = upload.fields([
   { name: 'image', maxCount: 1 },
@@ -16,7 +16,7 @@ const validateCreate = (req, res, next) => {
   return validate(schema)(req, res, next)
 }
 
-router.get('/', controller.list)
+router.get('/', validateQuery(listExamQuerySchema), controller.list)
 router.post('/', uploadExamCreateFiles, parseDualLanguageFields, validateCreate, controller.create)
 router.get('/:id', controller.getOne)
 router.put('/:id', upload.single('image'), validate(updateExamSchema), controller.update)
