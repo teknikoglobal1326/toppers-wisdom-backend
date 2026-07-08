@@ -47,4 +47,19 @@ const loginSchema = Joi.object({
     }),
 })
 
-module.exports = { sendOtpSchema, verifyOtpSchema, refreshTokenSchema, updatePasswordSchema, updateProfileSchema, loginSchema }
+const forgotPasswordSchema = Joi.object({
+  phone: Joi.string().pattern(/^[6-9]\d{9}$/).required()
+    .messages({ 'string.pattern.base': 'Provide a valid 10-digit Indian mobile number' }),
+})
+
+const verifyResetOtpSchema = Joi.object({
+  phone: Joi.string().pattern(/^[6-9]\d{9}$/).required(),
+  otp: Joi.string().length(4).pattern(/^\d+$/).required(),
+})
+
+const resetPasswordSchema = Joi.object({
+  resetToken: Joi.string().required(),
+  password: Joi.string().min(6).required(),
+})
+
+module.exports = { sendOtpSchema, verifyOtpSchema, refreshTokenSchema, updatePasswordSchema, updateProfileSchema, loginSchema, forgotPasswordSchema, verifyResetOtpSchema, resetPasswordSchema }

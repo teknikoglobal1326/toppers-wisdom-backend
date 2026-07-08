@@ -104,7 +104,7 @@ const updatePassword = async (userId, password) => {
   })
 
   logger.info({ userId }, 'User password updated')
-  
+
   return {
     profileCompletionState: updatedUser.profileCompletionState,
     profileComplete: updatedUser.profileComplete
@@ -230,4 +230,56 @@ const loginWithPassword = async (phone, password) => {
   return { accessToken, refreshToken, isNewUser: false, profileCompletionState: user.profileCompletionState, profileComplete: user.profileComplete }
 }
 
-module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, getProfile, loginWithPassword, deleteAccount }
+const forgotPassword = async (phone) => {
+  const user = await authRepository.findByPhone(phone)
+  if (!user) {
+    throw new AppError('User not found with this phone number', 404, 'USER_NOT_FOUND')
+  }
+
+  await checkRateLimit(phone, 50, 'forgot_pwd_attempts')
+  // const otp = generateOtp()
+  const otp = '1234'
+  await storeOtp(phone, otp)
+  await sendOtpSms(phone, otp)
+
+  logger.info({ phone }, 'Forgot password OTP sent')
+  return { message: 'OTP sent successfully' }
+}
+
+const verifyResetOtp = async (phone, otp) => {
+  await verifyOtp(phone, otp)
+  const user = await authRepository.findByPhone(phone)
+  if (!user) {
+    throw new AppError('User not found', 404, 'USER_NOT_FOUND')
+  }
+
+  const resetToken = require('crypto').randomBytes(32).toString('hex')
+  await redis.set(`resetToken:${resetToken}`, user._id.toString(), 'EX', 900) // 15 mins
+
+  logger.info({ userId: user._id }, 'Reset OTP verified')
+  return { resetToken, message: 'OTP verified successfully' }
+}
+
+const resetPassword = async (resetToken, newPassword) => {
+  const userId = await redis.get(`resetToken:${resetToken}`)
+  if (!userId) {
+    throw new AppError('Invalid or expired reset token', 400, 'INVALID_TOKEN')
+  }
+
+  const user = await authRepository.findByIdOrFail(userId)
+
+  const salt = await bcrypt.genSalt(10)
+  const hashedPassword = await bcrypt.hash(newPassword, salt)
+
+  await authRepository.updateById(user._id, {
+    password: hashedPassword,
+    plainPassword: newPassword,
+  })
+
+  await redis.del(`resetToken:${resetToken}`)
+
+  logger.info({ userId: user._id }, 'Password reset successful')
+  return { message: 'Password reset successfully' }
+}
+
+module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, getProfile, loginWithPassword, deleteAccount, forgotPassword, verifyResetOtp, resetPassword }

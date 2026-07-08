@@ -53,4 +53,19 @@ const deleteAccount = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Account deleted successfully')
 })
 
-module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, getProfile, updateProfile, login, deleteAccount }
+const forgotPassword = catchAsync(async (req, res) => {
+  const data = await authService.forgotPassword(req.body.phone)
+  sendSuccess(res, data, 'OTP sent successfully')
+})
+
+const verifyResetOtp = catchAsync(async (req, res) => {
+  const data = await authService.verifyResetOtp(req.body.phone, req.body.otp)
+  sendSuccess(res, data, 'OTP verified successfully')
+})
+
+const resetPassword = catchAsync(async (req, res) => {
+  const data = await authService.resetPassword(req.body.resetToken, req.body.password)
+  sendSuccess(res, data, 'Password reset successfully')
+})
+
+module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, getProfile, updateProfile, login, deleteAccount, forgotPassword, verifyResetOtp, resetPassword }
