@@ -5,10 +5,20 @@ const courseService = require('./course.service')
 const listCourseSubjects = catchAsync(async (req, res) => {
   console.log("check query data========>", req.query);
   const result = await courseService.listCourseSubjects(req.user._id, req.query)
+  
+  if (result && result.length > 0) {
+    result.unshift({ _id: 'all', name: 'All' });
+  }
+  
   sendSuccess(res, result)
 })
 
 const listCourses = catchAsync(async (req, res) => {
+  const subjectParam = req.query.subject || req.query.subjectId;
+  if (subjectParam && String(subjectParam).toLowerCase() === 'all') {
+    delete req.query.subject;
+    delete req.query.subjectId;
+  }
   const result = await courseService.listCourses(req.user._id, [], req.query, req.lang)
   sendPaginated(res, result.data, result.pagination)
 })

@@ -60,7 +60,9 @@ class CourseService extends BaseService {
     if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
     if (lang && lang !== 'both') filter.language = { $in: [lang, 'both'] }
-    if (filters.subjectId) filter['subjects.subject'] = filters.subjectId
+    
+    const subjectParam = filters.subject || filters.subjectId;
+    if (subjectParam) filter['subjects.subject'] = subjectParam;
 
     const result = await this.getAll(filter, {
       page: filters.page, limit: filters.limit,
