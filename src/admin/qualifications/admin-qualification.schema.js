@@ -23,4 +23,11 @@ const createQualificationDualSchema = Joi.object({
   en: createQualificationSchema.required(),
 })
 
-module.exports = { createQualificationSchema, createQualificationDualSchema, updateQualificationSchema }
+const listQualificationQuerySchema = Joi.object({
+  includeDeleted: Joi.string().valid('true', 'false').default('false'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+}).unknown(true)
+
+module.exports = { createQualificationSchema, createQualificationDualSchema, updateQualificationSchema, listQualificationQuerySchema }

@@ -6,6 +6,7 @@ const bookSchema = new mongoose.Schema({
   coverImage:  { type: String, default: null },
   description: { type: String, default: null },
   price:       { type: Number, default: 0 },
+  sortOrder:   { type: Number, default: 0, index: true },
   isFree:      { type: Boolean, default: false, index: true },
   section:     { type: String, enum: ['myBooks', 'eBooks', 'books', 'audioBooks'], default: 'books', index: true },
   file:        { type: String, default: null },

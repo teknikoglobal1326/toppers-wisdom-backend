@@ -8,10 +8,11 @@ class AdminSubjectService extends BaseService {
     super(subjectRepository, 'admin:subject')
   }
 
-  async listAll({ status, page, limit } = {}) {
+  async listAll({ status, sortOrder, page, limit } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
-    return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
+    const direction = sortOrder === 'desc' ? -1 : 1
+    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
   }
 
   async getOne(id) {
@@ -21,7 +22,12 @@ class AdminSubjectService extends BaseService {
   }
 
   async createSubject(data) {
-    return createWithLanguage((d) => this.create(d), data)
+    const payload = { ...data }
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
+    return createWithLanguage((d) => this.create(d), payload)
   }
 
   async createSubjectDual({ hi, en }) {
@@ -35,7 +41,12 @@ class AdminSubjectService extends BaseService {
   async updateSubject(id, data) {
     const subject = await subjectRepository.findOne({ _id: id, isDeleted: false })
     if (!subject) throw new AppError('Subject not found', 404, 'NOT_FOUND')
-    return subjectRepository.updateById(id, data)
+    const payload = { ...data }
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
+    return subjectRepository.updateById(id, payload)
   }
 
   async softDelete(id) {

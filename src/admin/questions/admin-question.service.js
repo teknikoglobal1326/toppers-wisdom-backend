@@ -15,7 +15,7 @@ class AdminQuestionService extends BaseService {
     await courseTestRepository.updateById(testId, { totalMappedQuestions: count })
   }
 
-  async listAll({ page, limit, test, status, language, search } = {}) {
+  async listAll({ page, limit, test, status, language, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
 
     if (test) filter.test = test
@@ -29,10 +29,12 @@ class AdminQuestionService extends BaseService {
       ]
     }
 
+    const direction = sortOrder === 'desc' ? -1 : 1
+
     return this.getAll(filter, {
       page,
       limit,
-      sort: { order: 1, createdAt: -1 },
+      sort: { sortOrder: direction, order: 1, createdAt: -1 },
       populate: [{ path: 'test', select: 'title slug' }],
     })
   }
@@ -57,6 +59,10 @@ class AdminQuestionService extends BaseService {
     if (payload.question?.image === '') payload.question.image = ''
     if (payload.explanation?.text === '') payload.explanation.text = ''
     if (payload.explanation?.image === '') payload.explanation.image = ''
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
 
     return payload
   }

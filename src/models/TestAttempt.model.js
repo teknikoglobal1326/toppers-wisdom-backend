@@ -10,6 +10,7 @@ const testAttemptSchema = new mongoose.Schema({
   accuracy:    { type: Number, default: 0 },
   timeTaken:   Number,
   rank:        Number,
+  sortOrder:   { type: Number, default: 0, index: true },
   correct:     { type: Number, default: 0 },
   wrong:       { type: Number, default: 0 },
   unattempted: { type: Number, default: 0 },

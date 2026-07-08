@@ -3,11 +3,17 @@ const { requirePermission } = require('../middlewares/permission.middleware')
 
 // Common lookup endpoints — no specific permission required, just admin auth
 router.use('/common', require('./common/admin-common.routes'))
-router.use('/cms',         require('./cms/admin-cms.routes'))
+router.use('/cms', require('./cms/admin-cms.routes'))
 router.use('/app-version', require('./app-version/admin-app-version.routes'))
 
 router.use('/courses', requirePermission('courses'), require('./courses/admin-course.routes'))
 router.use('/tests', requirePermission('tests'), require('./tests/admin-test.routes'))
+router.use('/test-series', requirePermission('tests'), require('./test-series/admin-test-series.routes'))
+router.use('/test-series-tests', requirePermission('tests'), require('./test-series-tests/admin-test-series-test.routes'))
+router.use('/previous-year-papers', requirePermission('tests'), require('./previous-year-papers/admin-previous-year-paper.routes'))
+router.use('/previous-year-paper-tests', requirePermission('tests'), require('./previous-year-paper-tests/admin-previous-year-paper-test.routes'))
+router.use('/today-quizzes', requirePermission('tests'), require('./today-quizzes/admin-today-quiz.routes'))
+router.use('/live-tests', requirePermission('tests'), require('./live-tests/admin-live-test.routes'))
 router.use('/boosters', requirePermission('boosters'), require('./boosters/admin-booster.routes'))
 router.use('/users', requirePermission('users'), require('./users/admin-user.routes'))
 router.use('/blog', requirePermission('blog'), require('./blog/admin-blog.routes'))
@@ -26,6 +32,10 @@ router.use('/questions', requirePermission('tests'), require('./questions/admin-
 router.use('/books', requirePermission('books'), require('./books/admin-book.routes'))
 router.use('/shorts', requirePermission('shorts'), require('./shorts/admin-short.routes'))
 router.use('/qualifications', requirePermission('qualifications'), require('./qualifications/admin-qualification.routes'))
+router.use('/vocabulary', requirePermission('vocabulary'), require('./vocabulary/admin-vocabulary.routes'))
+router.use('/editorials', requirePermission('editorial'), require('./editorials/admin-editorial.routes'))
+router.use('/editorial-tests', requirePermission('editorial'), require('./editorial-tests/admin-editorial-test.routes'))
+router.use('/editorial-questions', requirePermission('editorial'), require('./editorial-questions/admin-editorial-question.routes'))
 
 
 module.exports = router

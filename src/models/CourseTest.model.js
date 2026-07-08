@@ -5,11 +5,12 @@ const courseTestSchema = new mongoose.Schema({
   topic: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic', required: true, index: true },
   chapter: { type: String, default: '' },
   title: { type: String, required: true, trim: true },
-  slug: { type: String, required: true, unique: true, trim: true },
+  slug: { type: String, required: true },
   description: { type: String, default: '' },
   instruction: { type: String, default: '' },
   image: { type: String, default: '' },
   duration: { type: Number, required: true }, // in minutes
+  sortOrder: { type: Number, default: 0, index: true },
   totalQuestions: { type: Number, default: 0 },
   totalMappedQuestions: { type: Number, default: 0 },
   totalMarks: { type: Number, default: 0 },

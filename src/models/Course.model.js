@@ -24,6 +24,8 @@ const courseSchema = new mongoose.Schema({
   mrp: { type: Number, default: 0 },
   price: { type: Number, default: 0 },
   isFree: { type: Boolean, default: false, index: true },
+  isDeleted: { type: Boolean, default: false, index: true },
+  sortOrder: { type: Number, default: 0, index: true },
   thumbnail: String,
   bannerImage: [String],
   instructor: { name: String, avatar: String, bio: String },
@@ -37,5 +39,5 @@ const courseSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true })
 
-courseSchema.index({ subExam: 1, status: 1, isFree: 1 })
+courseSchema.index({ subExam: 1, status: 1, isFree: 1, isDeleted: 1 })
 module.exports = mongoose.model('Course', courseSchema)

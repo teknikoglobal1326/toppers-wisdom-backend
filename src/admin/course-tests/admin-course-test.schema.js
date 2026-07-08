@@ -7,11 +7,12 @@ const createCourseTestSchema = Joi.object({
   topicId: Joi.string().hex().length(24).optional(),
   chapter: Joi.string().trim().optional().allow('', null),
   title: Joi.string().trim().required(),
-  slug: Joi.string().trim().required(),
+  slug: Joi.string().trim(),
   description: Joi.string().trim().optional().allow('', null),
   instruction: Joi.string().trim().optional().allow('', null),
   image: Joi.string().trim().optional().allow('', null),
   duration: Joi.number().min(1).required(),
+  sortOrder: Joi.number().integer().min(0).default(0),
   totalQuestions: Joi.number().min(0).default(0),
   totalMarks: Joi.number().min(0).default(0),
   passingMarks: Joi.number().min(0).default(0),
@@ -38,6 +39,7 @@ const updateCourseTestSchema = Joi.object({
   instruction: Joi.string().trim().optional().allow('', null),
   image: Joi.string().trim().optional().allow('', null),
   duration: Joi.number().min(1),
+  sortOrder: Joi.number().integer().min(0),
   totalQuestions: Joi.number().min(0),
   totalMarks: Joi.number().min(0),
   passingMarks: Joi.number().min(0),
@@ -52,4 +54,14 @@ const updateCourseTestSchema = Joi.object({
   status: Joi.string().valid('draft', 'active', 'inactive'),
 }).min(1)
 
-module.exports = { createCourseTestSchema, updateCourseTestSchema }
+const listCourseTestQuerySchema = Joi.object({
+  status: Joi.string().valid('draft', 'active', 'inactive'),
+  course: Joi.string().hex().length(24),
+  topic: Joi.string().hex().length(24),
+  search: Joi.string().trim().max(200),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+})
+
+module.exports = { createCourseTestSchema, updateCourseTestSchema, listCourseTestQuerySchema }

@@ -5,6 +5,7 @@ const createBlogSchema = Joi.object({
   hiTitle: Joi.string().trim().allow('', null).optional(),
   enTitle: Joi.string().trim().allow('', null).optional(),
   image: Joi.string().max(500).allow('', null),
+  sortOrder: Joi.number().integer().min(0).default(0),
   shortDescription: Joi.string().max(500).allow('', null),
   hiShortDescription: Joi.string().max(500).allow('', null).optional(),
   longDescription: Joi.string().max(20000).required(),
@@ -20,6 +21,7 @@ const updateBlogSchema = Joi.object({
   hiTitle: Joi.string().trim().allow('', null).optional(),
   enTitle: Joi.string().trim().allow('', null).optional(),
   image: Joi.string().max(500).allow('', null),
+  sortOrder: Joi.number().integer().min(0),
   shortDescription: Joi.string().max(500).allow('', null),
   hiShortDescription: Joi.string().max(500).allow('', null).optional(),
   longDescription: Joi.string().max(20000),
@@ -42,4 +44,11 @@ const updateBlogDualSchema = Joi.object({
   en: updateBlogSchema.required(),
 })
 
-module.exports = { createBlogSchema, createBlogDualSchema, updateBlogSchema, updateBlogDualSchema }
+const listBlogQuerySchema = Joi.object({
+  status: Joi.string().valid('draft', 'published'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+})
+
+module.exports = { createBlogSchema, createBlogDualSchema, updateBlogSchema, updateBlogDualSchema, listBlogQuerySchema }

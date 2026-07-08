@@ -9,7 +9,7 @@ class AdminPdfService extends BaseService {
     super(pdfRepository, 'admin:pdf')
   }
 
-  async listAll({ page, limit, status, course, topic, search } = {}) {
+  async listAll({ page, limit, status, course, topic, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
@@ -22,10 +22,12 @@ class AdminPdfService extends BaseService {
       ]
     }
 
+    const direction = sortOrder === 'desc' ? -1 : 1
+
     return this.getAll(filter, {
       page,
       limit,
-      sort: { createdAt: -1 },
+      sort: { sortOrder: direction, createdAt: -1 },
       populate: [
         { path: 'course', select: 'title slug' },
         { path: 'topic', select: 'topicName' },
@@ -55,6 +57,9 @@ class AdminPdfService extends BaseService {
     delete payload.topicId
     if (payload.pdfFile === '') delete payload.pdfFile
     if (payload.image === '') delete payload.image
+    if (payload.chapter && typeof payload.chapter === 'object' && typeof payload.chapter.title === 'string') {
+      payload.chapter = { ...payload.chapter, title: payload.chapter.title.trim() }
+    }
     return payload
   }
 

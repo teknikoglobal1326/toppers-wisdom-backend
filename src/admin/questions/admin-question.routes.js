@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const controller = require('./admin-question.controller')
-const { validate } = require('../../core/validate')
-const { createQuestionSchema, createQuestionDualSchema, updateQuestionSchema } = require('./admin-question.schema')
+const { validate, validateQuery } = require('../../core/validate')
+const { createQuestionSchema, createQuestionDualSchema, updateQuestionSchema, listQuestionQuerySchema } = require('./admin-question.schema')
 const { upload } = require('../../middlewares/upload.middleware')
 const { attachUploadedFiles } = require('./admin-question.service')
 
@@ -16,7 +16,7 @@ const validateCreate = (req, res, next) => {
   return validate(schema)(req, res, next)
 }
 
-router.get('/', controller.list)
+router.get('/', validateQuery(listQuestionQuerySchema), controller.list)
 router.post('/', uploadQuestionFiles, attachUploadedFiles, validateCreate, controller.create)
 router.delete('/test/:testId', controller.removeByTest)
 router.get('/:id', controller.getOne)
