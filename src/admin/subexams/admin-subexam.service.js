@@ -9,11 +9,12 @@ class AdminSubExamService extends BaseService {
     super(subExamRepository, 'admin:subexam')
   }
 
-  async listAll({ examId, status, page, limit } = {}) {
+  async listAll({ examId, status, sortOrder, page, limit } = {}) {
     const filter = { is_deleted: false }
     if (examId) filter.examId = examId
     if (status) filter.status = status
-    return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
+    const direction = sortOrder === 'desc' ? -1 : 1
+    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
   }
 
   async getOne(id) {
@@ -23,11 +24,17 @@ class AdminSubExamService extends BaseService {
   }
 
   async createSubExam(data) {
-    const exam = await examRepository.findOne({ _id: data.examId, is_deleted: false })
+    const payload = { ...data }
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
+
+    const exam = await examRepository.findOne({ _id: payload.examId, is_deleted: false })
     if (!exam) throw new AppError('Exam not found', 404, 'NOT_FOUND')
 
-    const subExam = await createWithLanguage((d) => subExamRepository.create(d), data)
-    await examRepository.increment(data.examId, { subexamCount: Array.isArray(subExam) ? 2 : 1 })
+    const subExam = await createWithLanguage((d) => subExamRepository.create(d), payload)
+    await examRepository.increment(payload.examId, { subexamCount: Array.isArray(subExam) ? 2 : 1 })
     return subExam
   }
 
@@ -48,12 +55,18 @@ class AdminSubExamService extends BaseService {
     const subExam = await subExamRepository.findOne({ _id: id, is_deleted: false })
     if (!subExam) throw new AppError('SubExam not found', 404, 'NOT_FOUND')
 
-    if (data.examId && String(data.examId) !== String(subExam.examId)) {
-      const exam = await examRepository.findOne({ _id: data.examId, is_deleted: false })
+    const payload = { ...data }
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
+
+    if (payload.examId && String(payload.examId) !== String(subExam.examId)) {
+      const exam = await examRepository.findOne({ _id: payload.examId, is_deleted: false })
       if (!exam) throw new AppError('Exam not found', 404, 'NOT_FOUND')
     }
 
-    return subExamRepository.updateById(id, data)
+    return subExamRepository.updateById(id, payload)
   }
 
   async softDelete(id) {

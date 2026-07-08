@@ -16,8 +16,8 @@ router.get('/qualifications', catchAsync(async (_req, res) => {
 
 // GET /api/v1/admin/common/courses
 router.get('/courses',catchAsync(async (req, res) => {
-    const courses = await courseRepository.findAll({},
-      { sort: { createdAt: -1 }, select: '_id title', });
+    const courses = await courseRepository.findAll({ isDeleted: false },
+      { sort: { sortOrder: 1, createdAt: -1 }, select: '_id title sortOrder', });
     sendSuccess(res, courses);
   })
 );

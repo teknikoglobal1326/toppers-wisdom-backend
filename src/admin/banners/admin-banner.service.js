@@ -14,14 +14,15 @@ class AdminBannerService extends BaseService {
     super(bannerRepository, 'admin:banner')
   }
 
-  async listAll({ examId, subexamId, status, language, page, limit } = {}) {
+  async listAll({ examId, subexamId, status, language, sortOrder, page, limit } = {}) {
     const filter = { isDeleted: false }
     if (examId)    filter.examId    = examId
     if (subexamId) filter.subexamId = subexamId
     if (status)    filter.status    = status
     const exactLanguage = getExactLanguageFilter(language)
     if (exactLanguage) filter.language = exactLanguage
-    return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
+    const direction = sortOrder === 'desc' ? -1 : 1
+    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
   }
 
   async getOne(id) {
@@ -55,6 +56,10 @@ class AdminBannerService extends BaseService {
     }
 
     const payload = { ...data }
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
     const image = await this.uploadImage(files.image?.[0])
     if (image) payload.image = image
     return this.create(payload)
@@ -64,6 +69,10 @@ class AdminBannerService extends BaseService {
     const banner = await bannerRepository.findOne({ _id: id, isDeleted: false })
     if (!banner) throw new AppError('Banner not found', 404, 'NOT_FOUND')
     const payload = { ...data }
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
     if (file) {
       const ext      = path.extname(file.originalname) || '.jpg'
       const filename = `${Date.now()}${ext}`

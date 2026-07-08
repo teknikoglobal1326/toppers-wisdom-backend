@@ -36,7 +36,9 @@ class AdminCourseTestService extends BaseService {
     return result
   }
 
-  async listAll({ page, limit, status, course, topic, search } = {}) {
+
+  
+  async listAll({ page, limit, status, course, topic, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
@@ -49,10 +51,12 @@ class AdminCourseTestService extends BaseService {
       ]
     }
 
+    const direction = sortOrder === 'desc' ? -1 : 1
+
     const result = await this.getAll(filter, {
       page,
       limit,
-      sort: { createdAt: -1 },
+      sort: { sortOrder: direction, createdAt: -1 },
       populate: [
         { path: 'course', select: 'title slug' },
         { path: 'topic', select: 'topicName' },
@@ -82,6 +86,10 @@ class AdminCourseTestService extends BaseService {
     if (payload.topicId && !payload.topic) payload.topic = payload.topicId
     delete payload.courseId
     delete payload.topicId
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
     if (payload.image === '') delete payload.image
     return payload
   }

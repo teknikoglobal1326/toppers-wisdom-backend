@@ -27,10 +27,10 @@ const getHome = async (examId) => {
       .limit(6)
       .select('title videoUrl thumbnail examId subexamId')
       .lean(),
-    Course.find({ exam: examId, status: 'published' })
-      .sort({ createdAt: -1 })
+    Course.find({ exam: examId, status: 'published', isDeleted: false })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .limit(2)
-      .select('title slug thumbnail price mrp isFree avgRating totalEnrollments')
+      .select('title slug thumbnail price mrp isFree sortOrder avgRating totalEnrollments')
       .lean(),
   ])
 
