@@ -15,11 +15,11 @@ const verifyOtp = async (phone, otp) => {
   logger.info({ phone }, 'OTP verified')
 }
 
-const checkRateLimit = async (phone) => {
-  const key   = `otp_attempts:${phone}`
+const checkRateLimit = async (phone, limit = 10, prefix = 'otp_attempts') => {
+  const key   = `${prefix}:${phone}`
   const count = await redis.incr(key)
   if (count === 1) await redis.expire(key, 3600)
-  if (count > 5) { logger.warn({ phone, count }, 'OTP rate limit hit'); throw new AppError('Too many OTP requests. Try after 1 hour.', 429, 'RATE_LIMIT') }
+  if (count > limit) { logger.warn({ phone, count, prefix }, 'OTP rate limit hit'); throw new AppError('Too many OTP requests. Try after 1 hour.', 429, 'RATE_LIMIT') }
 }
 
 module.exports = { generateOtp, storeOtp, verifyOtp, checkRateLimit }
