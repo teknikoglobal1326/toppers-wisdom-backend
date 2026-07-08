@@ -70,6 +70,12 @@ const questionSchema = new mongoose.Schema(
       index: true,
     },
 
+    sortOrder: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+
     status: {
       type: String,
       enum: ["active", "inactive"],

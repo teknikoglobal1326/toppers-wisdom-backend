@@ -6,6 +6,7 @@ const examSchema = new mongoose.Schema({
   hiName:           { type: String, trim: true },
   enName:           { type: String, trim: true },
   image:            { type: String, default: null },
+  sortOrder:        { type: Number, default: 0, index: true },
   subexamCount:     { type: Number, default: 0, min: 0 },
   shortDescription: { type: String, trim: true, default: null },
   language:         { type: String, enum: ['hi', 'en', 'both'], default: 'both', index: true },

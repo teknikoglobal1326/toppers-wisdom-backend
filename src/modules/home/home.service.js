@@ -7,10 +7,10 @@ const logger = createLogger('home:service')
 
 // Static placeholder data until a Testimonial model/admin CRUD is built
 const TESTIMONIALS = [
-  { _id: '1', name: 'Ravi Kumar', designation: 'SSC CGL 2024', photo: null, message: 'Toppers Wisdom helped me crack SSC CGL in my first attempt!', rating: 5 },
-  { _id: '2', name: 'Priya Sharma', designation: 'IBPS PO 2024', photo: null, message: 'The mock tests were exactly like the real exam pattern.', rating: 5 },
-  { _id: '3', name: 'Amit Singh', designation: 'Railway Group D', photo: null, message: 'Best platform for railway exam preparation in Hindi.', rating: 4 },
-  { _id: '4', name: 'Sneha Verma', designation: 'UPSC Prelims 2024', photo: null, message: 'Quality content and very affordable courses.', rating: 5 },
+  { _id: '1', name: 'Ravi Kumar', designation: 'SSC CGL 2024', photo: "/uploads/banners/Container.png", message: 'Toppers Wisdom helped me crack SSC CGL in my first attempt!', rating: 5 },
+  { _id: '2', name: 'Priya Sharma', designation: 'IBPS PO 2024', photo: "/uploads/banners/Container.png", message: 'The mock tests were exactly like the real exam pattern.', rating: 5 },
+  { _id: '3', name: 'Amit Singh', designation: 'Railway Group D', photo: "/uploads/banners/Container.png", message: 'Best platform for railway exam preparation in Hindi.', rating: 4 },
+  { _id: '4', name: 'Sneha Verma', designation: 'UPSC Prelims 2024', photo: "/uploads/banners/Container.png", message: 'Quality content and very affordable courses.', rating: 5 },
 ]
 
 const getHome = async (examId) => {
@@ -27,10 +27,10 @@ const getHome = async (examId) => {
       .limit(6)
       .select('title videoUrl thumbnail examId subexamId')
       .lean(),
-    Course.find({ exam: examId, status: 'published' })
-      .sort({ createdAt: -1 })
+    Course.find({ exam: examId, status: 'published', isDeleted: false })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .limit(2)
-      .select('title slug thumbnail price mrp isFree avgRating totalEnrollments')
+      .select('title slug thumbnail price mrp isFree sortOrder avgRating totalEnrollments')
       .lean(),
   ])
 

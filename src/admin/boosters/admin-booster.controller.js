@@ -13,7 +13,14 @@ class AdminBoosterService extends BaseService {
   }
 
   async create(data) {
-    return createWithLanguage((d) => super.create(d), data)
+    return createWithLanguage((d) => {
+      const payload = { ...d }
+      if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+        const parsedSortOrder = Number(payload.sortOrder)
+        if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+      }
+      return super.create(payload)
+    }, data)
   }
 
   async listAll(f) {
@@ -21,7 +28,17 @@ class AdminBoosterService extends BaseService {
     if (f.exam)    filter.exam    = f.exam
     if (f.subExam) filter.subExam = f.subExam
     if (f.type)    filter.type    = f.type
-    return this.getAll(filter, { page: f.page, limit: f.limit })
+    const direction = f.sortOrder === 'desc' ? -1 : 1
+    return this.getAll(filter, { page: f.page, limit: f.limit, sort: { sortOrder: direction, createdAt: -1 } })
+  }
+
+  async update(id, data) {
+    const payload = { ...data }
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
+    return super.update(id, payload)
   }
 
   async getUploadUrl(id, field, contentType) {

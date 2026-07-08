@@ -5,6 +5,7 @@ const subExamSchema = new mongoose.Schema({
   hiName:           { type: String, trim: true },
   enName:           { type: String, trim: true },
   shortDescription: { type: String, trim: true, default: null },
+  sortOrder:        { type: Number, default: 0, index: true },
   examId:           { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true, index: true },
   language:         { type: String, enum: ['hi', 'en', 'both'], default: 'both', index: true },
   status:           { type: String, enum: ['active', 'inactive'], default: 'active', index: true },

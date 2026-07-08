@@ -5,6 +5,7 @@ const createShortSchema = Joi.object({
   hiTitle:   Joi.string().trim().allow('', null).optional(),
   enTitle:   Joi.string().trim().allow('', null).optional(),
   videoUrl:  Joi.string().max(500).optional().allow(null, ''),
+  sortOrder: Joi.number().integer().min(0).default(0),
   examId:    Joi.string().hex().length(24).optional().allow(null, ''),
   subexamId: Joi.string().hex().length(24).optional().allow(null, ''),
   language:  Joi.string().valid('hi', 'en', 'both').default('both'),
@@ -17,6 +18,7 @@ const updateShortSchema = Joi.object({
   hiTitle:   Joi.string().trim().allow('', null).optional(),
   enTitle:   Joi.string().trim().allow('', null).optional(),
   videoUrl:  Joi.string().max(500).optional().allow(null, ''),
+  sortOrder: Joi.number().integer().min(0),
   examId:    Joi.string().hex().length(24).optional().allow(null, ''),
   subexamId: Joi.string().hex().length(24).optional().allow(null, ''),
   language:  Joi.string().valid('hi', 'en', 'both'),
@@ -29,4 +31,13 @@ const createShortDualSchema = Joi.object({
   en: createShortSchema.required(),
 })
 
-module.exports = { createShortSchema, createShortDualSchema, updateShortSchema }
+const listShortQuerySchema = Joi.object({
+  examId: Joi.string().hex().length(24),
+  subexamId: Joi.string().hex().length(24),
+  status: Joi.string().valid('active', 'inactive'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+}).unknown(true)
+
+module.exports = { createShortSchema, createShortDualSchema, updateShortSchema, listShortQuerySchema }

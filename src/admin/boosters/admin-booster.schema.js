@@ -30,4 +30,13 @@ const updateBoosterSchema = createBoosterSchema.fork(
   (field) => field.optional()
 )
 
-module.exports = { createBoosterSchema, updateBoosterSchema }
+const listBoosterQuerySchema = Joi.object({
+  exam: Joi.string().hex().length(24),
+  subExam: Joi.string().hex().length(24),
+  type: Joi.string().valid('vocabulary', 'editorial', 'grammar', 'math'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+})
+
+module.exports = { createBoosterSchema, updateBoosterSchema, listBoosterQuerySchema }
