@@ -59,11 +59,12 @@ class CourseService extends BaseService {
     const filter = { subExam: { $in: subExamIds }, status: 'published' }
     if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
-    if (lang && lang !== 'both') filter.language = { $in: [lang, 'both'] }
-    
+    // if (lang && lang !== 'both') filter.language = { $in: [lang, 'both'] }
+
     const subjectParam = filters.subject || filters.subjectId;
     if (subjectParam) filter['subjects.subject'] = subjectParam;
 
+    console.log("filter============>", filter);
     const result = await this.getAll(filter, {
       page: filters.page, limit: filters.limit,
       select: 'title slug thumbnail type mrp price isFree avgRating totalEnrollments instructor.name language description longDescription subjects',
@@ -93,12 +94,20 @@ class CourseService extends BaseService {
     }
 
     const enrollment = await courseRepository.findEnrollment(userId, courseId)
-    
+
     const [pdfs, contents, tests, courseTests, topics] = await Promise.all([
-      Pdf.find({ course: courseId, isDeleted: false, status: 'active' }).lean(),
-      Content.find({ course: courseId, isDeleted: false, status: 'active' }).lean(),
-      Test.find({ course: courseId, status: 'published' }).lean(),
-      CourseTest.find({ course: courseId, isDeleted: false, status: { $in: ['active', 'published'] } }).lean(),
+      Pdf.find({ course: courseId, isDeleted: false, status: 'active' })
+        .select('title description pdfFile image topic chapter')
+        .lean(),
+      Content.find({ course: courseId, isDeleted: false, status: 'active' })
+        .select('title description video image topic chapter')
+        .lean(),
+      Test.find({ course: courseId, status: 'published' })
+        .select('title slug description image duration totalQuestion totalMarks difficulty')
+        .lean(),
+      CourseTest.find({ course: courseId, isDeleted: false, status: { $in: ['active', 'published'] } })
+        .select('title slug description image duration totalQuestion totalMarks difficulty topic chapter')
+        .lean(),
       Topic.find({ course: courseId, isDeleted: false, status: 'active' }).lean()
     ])
 
@@ -110,42 +119,60 @@ class CourseService extends BaseService {
 
     topics.forEach(topic => {
       const topicId = topic._id.toString();
-      const chapterTitles = (topic.chapters || []).map(c => c.title);
-      
+      const chapterIdentifiers = (topic.chapters || []).flatMap(c => [c.title, c._id?.toString()]).filter(Boolean);
+
       const contentChapters = [];
       const pdfChapters = [];
       const testChapters = [];
 
       (topic.chapters || []).forEach(chapter => {
         const chapterTitle = chapter.title;
-        
-        const chapterContents = contents.filter(c => c.topic?.toString() === topicId && c.chapter === chapterTitle);
-        if (chapterContents.length > 0) {
-          contentChapters.push({ title: chapterTitle, data: chapterContents });
+        const chapterId = chapter._id?.toString();
+
+        const matchChapter = (item) => item.chapter === chapterTitle || item.chapter?.toString() === chapterId;
+
+        const chapterContents = contents.filter(c => c.topic?.toString() === topicId && matchChapter(c));
+        const chapterPdfs = pdfs.filter(p => p.topic?.toString() === topicId && matchChapter(p));
+        const chapterTests = courseTests.filter(t => t.topic?.toString() === topicId && matchChapter(t));
+
+        const combinedData = [
+          ...chapterContents.map(c => ({ ...c, materialType: 'content' })),
+          ...chapterPdfs.map(p => ({ ...p, materialType: 'pdf' })),
+          ...chapterTests.map(t => ({ ...t, materialType: 'test' }))
+        ];
+
+        if (combinedData.length > 0) {
+          contentChapters.push({ title: chapterTitle, data: combinedData });
         }
 
-        const chapterPdfs = pdfs.filter(p => p.topic?.toString() === topicId && p.chapter === chapterTitle);
         if (chapterPdfs.length > 0) {
           pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
         }
 
-        const chapterTests = courseTests.filter(t => t.topic?.toString() === topicId && t.chapter === chapterTitle);
         if (chapterTests.length > 0) {
           testChapters.push({ title: chapterTitle, data: chapterTests });
         }
       });
 
-      const unassignedContents = contents.filter(c => c.topic?.toString() === topicId && (!c.chapter || !chapterTitles.includes(c.chapter)));
-      if (contentChapters.length > 0 || unassignedContents.length > 0) {
+      const unassignedContents = contents.filter(c => c.topic?.toString() === topicId && (!c.chapter || !chapterIdentifiers.includes(c.chapter?.toString())));
+      const unassignedPdfs = pdfs.filter(p => p.topic?.toString() === topicId && (!p.chapter || !chapterIdentifiers.includes(p.chapter?.toString())));
+      const unassignedTests = courseTests.filter(t => t.topic?.toString() === topicId && (!t.chapter || !chapterIdentifiers.includes(t.chapter?.toString())));
+
+      const combinedUnassigned = [
+        ...unassignedContents.map(c => ({ ...c, materialType: 'content' })),
+        ...unassignedPdfs.map(p => ({ ...p, materialType: 'pdf' })),
+        ...unassignedTests.map(t => ({ ...t, materialType: 'test' }))
+      ];
+
+      if (contentChapters.length > 0 || combinedUnassigned.length > 0) {
         syllabus.content.push({
           _id: topic._id,
           topicName: topic.topicName,
           chapters: contentChapters,
-          ...(unassignedContents.length > 0 && { unassignedData: unassignedContents })
+          ...(combinedUnassigned.length > 0 && { unassignedData: combinedUnassigned })
         });
       }
 
-      const unassignedPdfs = pdfs.filter(p => p.topic?.toString() === topicId && (!p.chapter || !chapterTitles.includes(p.chapter)));
       if (pdfChapters.length > 0 || unassignedPdfs.length > 0) {
         syllabus.pdf.push({
           _id: topic._id,
@@ -155,7 +182,6 @@ class CourseService extends BaseService {
         });
       }
 
-      const unassignedTests = courseTests.filter(t => t.topic?.toString() === topicId && (!t.chapter || !chapterTitles.includes(t.chapter)));
       if (testChapters.length > 0 || unassignedTests.length > 0) {
         syllabus.test.push({
           _id: topic._id,
@@ -166,9 +192,9 @@ class CourseService extends BaseService {
       }
     });
 
-    return { 
-      ...course, 
-      hasAccess, 
+    return {
+      ...course,
+      hasAccess,
       enrollmentProgress: enrollment?.progressPercent || 0,
       syllabus,
       tests // kept root level tests in case they are needed
@@ -220,6 +246,49 @@ class CourseService extends BaseService {
     const course = await this.repository.findById(courseId, { select: 'title timetable lessons' })
     if (!course) throw new AppError('Course not found', 404)
     return { courseId, timetable: course.timetable || [], lessons: course.lessons || [] }
+  }
+
+  async checkout(courseId, userId) {
+    this.logger.info({ courseId, userId }, 'Checkout preview requested')
+
+    const existing = await courseRepository.findEnrollment(userId, courseId)
+    if (existing) throw new AppError('Already enrolled', 409, 'DUPLICATE_ERROR')
+
+    const course = await this.getById(courseId, { select: 'title mrp price isFree description thumbnail' })
+
+    if (course.isFree) {
+      return {
+        courseId,
+        title: course.title,
+        description: course.description,
+        thumbnail: course.thumbnail,
+        mrp: course.mrp,
+        subtotal: 0,
+        gstRate: 0,
+        gstAmount: 0,
+        grandTotal: 0,
+        isFree: true
+      }
+    }
+
+    const gstRate = 18; // 18% standard GST
+    const subtotal = course.price || 0;
+    const gstAmount = parseFloat(((subtotal * gstRate) / 100).toFixed(2));
+    const grandTotal = parseFloat((subtotal + gstAmount).toFixed(2));
+
+    return {
+      courseId,
+      title: course.title,
+      mrp: course.mrp,
+      description: course.description,
+      thumbnail: course.thumbnail,
+      price: course.price,
+      subtotal,
+      gstRate,
+      gstAmount,
+      grandTotal,
+      isFree: false
+    }
   }
 }
 
