@@ -7,6 +7,7 @@ const createBookSchema = Joi.object({
   file: Joi.string().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
   price: Joi.number().min(0).optional().default(0),
+  sortOrder: Joi.number().integer().min(0).optional().default(0),
   isFree: Joi.boolean().optional().default(false),
   section: Joi.string().valid('eBooks', 'books', 'audioBooks').default('books'),
   buyUrl: Joi.string().uri().optional().allow(null, ''),
@@ -24,6 +25,7 @@ const updateBookSchema = Joi.object({
   file:        Joi.string().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
   price:       Joi.number().min(0).optional(),
+  sortOrder:   Joi.number().integer().min(0).optional(),
   isFree:      Joi.boolean().optional(),
   section:     Joi.string().valid('myBooks', 'eBooks', 'books', 'audioBooks'),
   buyUrl:      Joi.string().uri().optional().allow(null, ''),
@@ -43,4 +45,14 @@ const createBookDualSchema = Joi.object({
   en: createBookSchema.required(),
 })
 
-module.exports = { createBookSchema, createBookDualSchema, updateBookSchema, setBuyUrlSchema }
+const listBookQuerySchema = Joi.object({
+  status: Joi.string().valid('active', 'inactive'),
+  section: Joi.string().valid('myBooks', 'eBooks', 'books', 'audioBooks'),
+  language: Joi.string().valid('hi', 'en', 'both'),
+  q: Joi.string().trim().max(200),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+})
+
+module.exports = { createBookSchema, createBookDualSchema, updateBookSchema, setBuyUrlSchema, listBookQuerySchema }

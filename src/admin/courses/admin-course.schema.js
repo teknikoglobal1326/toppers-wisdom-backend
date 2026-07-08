@@ -4,12 +4,6 @@ const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/).messages({
   'string.pattern.base': '{{#label}} must be a valid MongoDB ObjectId',
 })
 
-const instructorSchema = Joi.object({
-  name: Joi.string().max(100),
-  avatar: Joi.string().max(500),
-  bio: Joi.string().max(500),
-})
-
 const subjectItemSchema = Joi.object({
   subject: objectId.required().label('subject'),
   sortOrder: Joi.number().integer().min(0).default(0),
@@ -26,6 +20,7 @@ const createCourseSchema = Joi.object({
   mrp: Joi.number().min(0).default(0),
   price: Joi.number().min(0).default(0),
   isFree: Joi.boolean().default(false),
+  sortOrder: Joi.number().integer().min(0).default(0),
   thumbnail: Joi.string().max(500).allow('', null),
   bannerImage: Joi.array().items(Joi.string().max(500)).max(3).default([]),
   // instructor:  instructorSchema,
@@ -43,6 +38,7 @@ const updateCourseSchema = Joi.object({
   mrp: Joi.number().min(0),
   price: Joi.number().min(0),
   isFree: Joi.boolean(),
+  sortOrder: Joi.number().integer().min(0),
   thumbnail: Joi.string().max(500).allow('', null),
   bannerImage: Joi.array().items(Joi.string().max(500)).max(3).default([]),
   // instructor:  instructorSchema,
@@ -77,8 +73,14 @@ const imageUploadSchema = Joi.object({
 
 const listQuerySchema = Joi.object({
   status: Joi.string().valid('draft', 'published', 'archived'),
+  type: Joi.string().valid('recorded', 'live', 'free'),
   examId: objectId.label('examId'),
   subExam: objectId.label('subExam'),
+  subExamId: objectId.label('subExamId'),
+  search: Joi.string().trim().max(200),
+  title: Joi.string().trim().max(200),
+  sortBy: Joi.string().valid('createdAt', 'price', 'sortOrder').default('createdAt'),
+  order: Joi.string().valid('asc', 'desc').default('desc'),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 })

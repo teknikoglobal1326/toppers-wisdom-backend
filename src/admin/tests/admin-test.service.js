@@ -9,12 +9,35 @@ class AdminTestService extends BaseService {
     this.logger = createLogger('admin:test:service')
   }
 
+  normalizePayload(data = {}) {
+    const payload = { ...data }
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSortOrder = Number(payload.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
+    return payload
+  }
+
   async listAll(filters) {
     const filter = {}
     if (filters.status)  filter.status  = filters.status
     if (filters.subExam) filter.subExam = filters.subExam
     if (filters.type)    filter.type    = filters.type
-    return this.getAll(filter, { page: filters.page, limit: filters.limit, select: '-subTests.questions' })
+    const direction = filters.sortOrder === 'desc' ? -1 : 1
+    return this.getAll(filter, {
+      page: filters.page,
+      limit: filters.limit,
+      sort: { sortOrder: direction, createdAt: -1 },
+      select: '-subTests.questions',
+    })
+  }
+
+  async create(data) {
+    return super.create(this.normalizePayload(data))
+  }
+
+  async update(id, data) {
+    return super.update(id, this.normalizePayload(data))
   }
 
   async publish(testId) {

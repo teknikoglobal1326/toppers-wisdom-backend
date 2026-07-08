@@ -3,6 +3,7 @@ const Joi = require('joi')
 const createBlogSchema = Joi.object({
   title: Joi.string().min(3).max(200).required(),
   image: Joi.string().max(500).allow('', null),
+  sortOrder: Joi.number().integer().min(0).default(0),
   shortDescription: Joi.string().max(500).allow('', null),
   longDescription: Joi.string().max(20000).required(),
   category: Joi.string().max(100).allow('', null),
@@ -14,6 +15,7 @@ const createBlogSchema = Joi.object({
 const updateBlogSchema = Joi.object({
   title: Joi.string().min(3).max(200),
   image: Joi.string().max(500).allow('', null),
+  sortOrder: Joi.number().integer().min(0),
   shortDescription: Joi.string().max(500).allow('', null),
   longDescription: Joi.string().max(20000),
   category: Joi.string().max(100).allow('', null),
@@ -34,4 +36,11 @@ const updateBlogDualSchema = Joi.object({
   en: updateBlogSchema.required(),
 })
 
-module.exports = { createBlogSchema, createBlogDualSchema, updateBlogSchema, updateBlogDualSchema }
+const listBlogQuerySchema = Joi.object({
+  status: Joi.string().valid('draft', 'published'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+})
+
+module.exports = { createBlogSchema, createBlogDualSchema, updateBlogSchema, updateBlogDualSchema, listBlogQuerySchema }

@@ -4,6 +4,7 @@ const shortSchema = new mongoose.Schema({
   title:     { type: String, required: true, trim: true },
   videoUrl:  { type: String, default: null },
   thumbnail: { type: String, default: null },
+  sortOrder: { type: Number, default: 0, index: true },
   examId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null, index: true },
   subexamId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', default: null, index: true },
   language:  { type: String, enum: ['hi', 'en', 'both'], default: 'hi', index: true },
