@@ -7,6 +7,7 @@ const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/).messages({
 const createExamSchema = Joi.object({
   qualification:    objectId.required().label('qualification'),
   name:             Joi.string().trim().required(),
+  sortOrder:        Joi.number().integer().min(0).default(0),
   subexamCount:     Joi.number().integer().min(0).default(0),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
   language:         Joi.string().valid('hi', 'en', 'both').default('both'),
@@ -16,6 +17,7 @@ const createExamSchema = Joi.object({
 const updateExamSchema = Joi.object({
   qualification:    objectId.label('qualification'),
   name:             Joi.string().trim(),
+  sortOrder:        Joi.number().integer().min(0),
   subexamCount:     Joi.number().integer().min(0),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
   language:         Joi.string().valid('hi', 'en', 'both'),
@@ -27,4 +29,12 @@ const createExamDualSchema = Joi.object({
   en: createExamSchema.required(),
 })
 
-module.exports = { createExamSchema, createExamDualSchema, updateExamSchema }
+const listExamQuerySchema = Joi.object({
+  status: Joi.string().valid('active', 'inactive'),
+  language: Joi.string().valid('hi', 'en', 'both'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+}).unknown(true)
+
+module.exports = { createExamSchema, createExamDualSchema, updateExamSchema, listExamQuerySchema }

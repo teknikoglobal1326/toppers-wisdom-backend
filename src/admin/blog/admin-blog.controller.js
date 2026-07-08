@@ -41,7 +41,13 @@ class AdminBlogService extends BaseService {
   async listAll(filters) {
     const filter = {}
     if (filters.status) filter.status = filters.status
-    return this.getAll(filter, { page: filters.page, limit: filters.limit, select: 'title slug image shortDescription status category publishedAt createdAt' })
+    const direction = filters.sortOrder === 'desc' ? -1 : 1
+    return this.getAll(filter, {
+      page: filters.page,
+      limit: filters.limit,
+      sort: { sortOrder: direction, createdAt: -1 },
+      select: 'title slug image shortDescription sortOrder status category publishedAt createdAt',
+    })
   }
 
   async publish(id) {

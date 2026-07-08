@@ -28,6 +28,11 @@ const parseFormData = async (req, _res, next) => {
       try { req.body.subjects = JSON.parse(req.body.subjects) } catch (_) { /* leave as-is, Joi will reject */ }
     }
 
+    if (req.body.sortOrder !== undefined && req.body.sortOrder !== null && req.body.sortOrder !== '') {
+      const parsedSortOrder = Number(req.body.sortOrder)
+      if (!Number.isNaN(parsedSortOrder)) req.body.sortOrder = parsedSortOrder
+    }
+
     const folder = `courses/${req.params.id ?? `new-${Date.now()}`}`
 
     if (req.files?.thumbnail?.[0]) {

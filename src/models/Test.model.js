@@ -20,6 +20,7 @@ const testSchema = new mongoose.Schema({
   subExam:         { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', required: true, index: true },
   course:          { type: mongoose.Schema.Types.ObjectId, ref: 'Course', default: null },
   title:           { type: String, required: true },
+  sortOrder:       { type: Number, default: 0, index: true },
   type:            { type: String, enum: ['practice','mock','pyp','sectional','ai_generated','daily_quiz'], required: true, index: true },
   language:        { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
   isFree:          { type: Boolean, default: false, index: true },

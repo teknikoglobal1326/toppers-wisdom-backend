@@ -11,6 +11,13 @@ const Test = require('../../models/Test.model')
 const CourseTest = require('../../models/CourseTest.model')
 const Topic = require('../../models/Topic.model')
 
+const getPdfChapterTitle = (chapter) => {
+  if (!chapter) return ''
+  if (typeof chapter === 'string') return chapter
+  if (typeof chapter === 'object' && typeof chapter.title === 'string') return chapter.title
+  return ''
+}
+
 class CourseService extends BaseService {
   constructor() {
     super(courseRepository, 'course')
@@ -22,7 +29,7 @@ class CourseService extends BaseService {
     const subExamIds = (user?.subExams || []).map((s) => s._id)
     this.logger.info({ userId, subExamIds, filters }, 'Listing course subjects')
 
-    const matchQuery = { subExam: { $in: subExamIds }, status: 'published' }
+    const matchQuery = { subExam: { $in: subExamIds }, status: 'published', isDeleted: false }
     if (filters.type) matchQuery.type = filters.type
     if (filters.isFree !== undefined) matchQuery.isFree = filters.isFree === 'true'
     console.log("matchQuery==================>", matchQuery);
@@ -56,15 +63,24 @@ class CourseService extends BaseService {
     const subExamIds = (user?.subExams || []).map((s) => s._id)
     this.logger.info({ userId, subExamIds }, 'Listing courses')
 
-    const filter = { subExam: { $in: subExamIds }, status: 'published' }
+    const filter = { subExam: { $in: subExamIds }, status: 'published', isDeleted: false }
     if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
     if (lang && lang !== 'both') filter.language = { $in: [lang, 'both'] }
     if (filters.subjectId) filter['subjects.subject'] = filters.subjectId
 
+    const sortBy = filters.sortBy || 'createdAt'
+    const order = filters.order === 'asc' ? 1 : -1
+    const sort = sortBy === 'price'
+      ? { price: order, createdAt: -1 }
+      : sortBy === 'sortOrder'
+        ? { sortOrder: order, createdAt: -1 }
+        : { createdAt: order, sortOrder: 1 }
+
     const result = await this.getAll(filter, {
       page: filters.page, limit: filters.limit,
-      select: 'title slug thumbnail type mrp price isFree avgRating totalEnrollments instructor.name language description longDescription subjects',
+      sort,
+      select: 'title slug thumbnail type mrp price isFree sortOrder avgRating totalEnrollments instructor.name language description longDescription subjects',
       populate: [{ path: 'subjects.subject', select: 'name' }]
     })
 
@@ -82,6 +98,7 @@ class CourseService extends BaseService {
     const course = await this.getById(courseId, {
       select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects'
     })
+    if (course.isDeleted) throw new AppError('Course not found', 404, 'NOT_FOUND')
     const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId)
 
     if (!hasAccess && course.lessons) {
@@ -122,7 +139,7 @@ class CourseService extends BaseService {
           contentChapters.push({ title: chapterTitle, data: chapterContents });
         }
 
-        const chapterPdfs = pdfs.filter(p => p.topic?.toString() === topicId && p.chapter === chapterTitle);
+        const chapterPdfs = pdfs.filter((p) => p.topic?.toString() === topicId && getPdfChapterTitle(p.chapter) === chapterTitle);
         if (chapterPdfs.length > 0) {
           pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
         }
@@ -143,7 +160,10 @@ class CourseService extends BaseService {
         });
       }
 
-      const unassignedPdfs = pdfs.filter(p => p.topic?.toString() === topicId && (!p.chapter || !chapterTitles.includes(p.chapter)));
+      const unassignedPdfs = pdfs.filter((p) => {
+        const chapterTitle = getPdfChapterTitle(p.chapter)
+        return p.topic?.toString() === topicId && (!chapterTitle || !chapterTitles.includes(chapterTitle))
+      });
       if (pdfChapters.length > 0 || unassignedPdfs.length > 0) {
         syllabus.pdf.push({
           _id: topic._id,

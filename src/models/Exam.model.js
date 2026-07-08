@@ -4,6 +4,7 @@ const examSchema = new mongoose.Schema({
   qualification:    { type: mongoose.Schema.Types.ObjectId, ref: 'Qualification', required: true, index: true },
   name:             { type: String, required: true, trim: true },
   image:            { type: String, default: null },
+  sortOrder:        { type: Number, default: 0, index: true },
   subexamCount:     { type: Number, default: 0, min: 0 },
   shortDescription: { type: String, trim: true, default: null },
   language:         { type: String, enum: ['hi', 'en', 'both'], default: 'both', index: true },

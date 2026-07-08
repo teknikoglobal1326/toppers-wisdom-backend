@@ -24,6 +24,7 @@ const createQuestionSchema = Joi.object({
   options: Joi.array().items(optionSchema).length(4).required(),
   explanation: explanationPayloadSchema.optional(),
   order: Joi.number().integer().min(1).required(),
+  sortOrder: Joi.number().integer().min(0).default(0),
   status: Joi.string().valid('active', 'inactive').default('active'),
 }).custom((value, helpers) => {
   const hasText = value.options?.some((opt) => opt.text && opt.text.trim())
@@ -49,6 +50,7 @@ const updateQuestionSchema = Joi.object({
   options: Joi.array().items(optionSchema).length(4),
   explanation: explanationPayloadSchema.optional(),
   order: Joi.number().integer().min(1),
+  sortOrder: Joi.number().integer().min(0),
   status: Joi.string().valid('active', 'inactive'),
 }).min(1)
 
@@ -57,4 +59,14 @@ const createQuestionDualSchema = Joi.object({
   en: createQuestionSchema.required(),
 })
 
-module.exports = { createQuestionSchema, createQuestionDualSchema, updateQuestionSchema }
+const listQuestionQuerySchema = Joi.object({
+  test: Joi.string().hex().length(24),
+  status: Joi.string().valid('active', 'inactive'),
+  language: Joi.string().valid('en', 'hi', 'both'),
+  search: Joi.string().trim().max(200),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+}).unknown(true)
+
+module.exports = { createQuestionSchema, createQuestionDualSchema, updateQuestionSchema, listQuestionQuerySchema }

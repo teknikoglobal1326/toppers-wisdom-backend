@@ -7,10 +7,11 @@ class AdminTopicService extends BaseService {
     super(topicRepository, 'admin:topic')
   }
 
-  async listAll({ page, limit, search, status, course } = {}) {
+  async listAll({ page, limit, search, status, course, chapter, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
+    if (chapter) filter['chapters.title'] = { $regex: chapter, $options: 'i' }
 
     if (search) {
       filter.$or = [
@@ -19,10 +20,12 @@ class AdminTopicService extends BaseService {
       ]
     }
 
+    const direction = sortOrder === 'desc' ? -1 : 1
+
     return this.getAll(filter, {
       page,
       limit,
-      sort: { createdAt: -1 },
+      sort: { sortOrder: direction, createdAt: -1 },
       populate: { path: 'course', select: 'title slug' },
     })
   }
@@ -43,10 +46,23 @@ class AdminTopicService extends BaseService {
     }
     delete payload.courseId
 
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      payload.sortOrder = Number(payload.sortOrder)
+      if (Number.isNaN(payload.sortOrder)) delete payload.sortOrder
+    }
+
     if (Array.isArray(payload.chapters)) {
       payload.chapters = payload.chapters.map((chapter) => {
-        if (typeof chapter === 'string') return { title: chapter }
-        return chapter
+        if (typeof chapter === 'string') {
+          return { title: chapter, sortOrder: 0 }
+        }
+
+        const chapterPayload = { ...chapter }
+        if (chapterPayload.sortOrder !== undefined && chapterPayload.sortOrder !== null && chapterPayload.sortOrder !== '') {
+          chapterPayload.sortOrder = Number(chapterPayload.sortOrder)
+          if (Number.isNaN(chapterPayload.sortOrder)) delete chapterPayload.sortOrder
+        }
+        return chapterPayload
       })
     }
 
