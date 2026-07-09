@@ -5,6 +5,7 @@ const { createTestSeriesTestSchema, updateTestSeriesTestSchema } = require('./ad
 const { uploadThumbnail, parseThumbnail } = require('../test-management-thumbnail.upload')
 
 router.get('/', controller.list)
+router.get('/metadata/options', controller.metadata)
 router.post('/', uploadThumbnail, parseThumbnail('test-series-tests/thumbnails'), validate(createTestSeriesTestSchema), controller.create)
 router.get('/:id', controller.getOne)
 router.put('/:id', uploadThumbnail, parseThumbnail('test-series-tests/thumbnails'), validate(updateTestSeriesTestSchema), controller.update)

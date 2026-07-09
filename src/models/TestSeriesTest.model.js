@@ -8,6 +8,9 @@ const localizedBlock = {
 
 const testSeriesTestSchema = new mongoose.Schema({
     testSeries: { type: mongoose.Schema.Types.ObjectId, ref: 'TestSeries', required: true, index: true },
+    subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null, index: true },
+    topicIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Topic' }],
+    chapterTitles: [{ type: String, trim: true }],
     title: { type: String, required: true, trim: true },
     description: { type: String, default: null },
     thumbnail: { type: String, default: null },

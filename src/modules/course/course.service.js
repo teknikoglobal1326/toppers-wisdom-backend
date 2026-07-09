@@ -158,7 +158,7 @@ class CourseService extends BaseService {
           contentChapters.push({ title: chapterTitle, data: combinedData });
         }
 
-        const chapterPdfs = pdfs.filter((p) => p.topic?.toString() === topicId && getPdfChapterTitle(p.chapter) === chapterTitle);
+        chapterPdfs = pdfs.filter((p) => p.topic?.toString() === topicId && getPdfChapterTitle(p.chapter) === chapterTitle);
         if (chapterPdfs.length > 0) {
           pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
         }
@@ -187,7 +187,7 @@ class CourseService extends BaseService {
         });
       }
 
-      const unassignedPdfs = pdfs.filter((p) => {
+      unassignedPdfs = pdfs.filter((p) => {
         const chapterTitle = getPdfChapterTitle(p.chapter)
         return p.topic?.toString() === topicId && (!chapterTitle || !chapterTitles.includes(chapterTitle))
       });

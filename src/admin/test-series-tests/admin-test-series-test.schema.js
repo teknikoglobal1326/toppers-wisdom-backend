@@ -20,11 +20,17 @@ const baseSchema = {
 
 const createTestSeriesTestSchema = Joi.object({
     testSeriesId: objectId.required(),
+    subjectId: objectId.required(),
+    topicIds: Joi.array().items(objectId).default([]),
+    chapterTitles: Joi.array().items(Joi.string().trim()).default([]),
     ...baseSchema,
 })
 
 const updateTestSeriesTestSchema = Joi.object({
     testSeriesId: objectId.optional(),
+    subjectId: objectId.optional().allow(null),
+    topicIds: Joi.array().items(objectId).optional(),
+    chapterTitles: Joi.array().items(Joi.string().trim()).optional(),
     title: Joi.string().trim(),
     description: Joi.string().optional().allow(null, ''),
     thumbnail: Joi.string().optional().allow(null, ''),
