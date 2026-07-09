@@ -5,6 +5,7 @@ const { createPreviousYearPaperTestSchema, updatePreviousYearPaperTestSchema } =
 const { uploadThumbnail, parseThumbnail } = require('../test-management-thumbnail.upload')
 
 router.get('/', controller.list)
+router.get('/metadata/options', controller.metadata)
 router.post('/', uploadThumbnail, parseThumbnail('previous-year-paper-tests/thumbnails'), validate(createPreviousYearPaperTestSchema), controller.create)
 router.get('/:id', controller.getOne)
 router.put('/:id', uploadThumbnail, parseThumbnail('previous-year-paper-tests/thumbnails'), validate(updatePreviousYearPaperTestSchema), controller.update)
