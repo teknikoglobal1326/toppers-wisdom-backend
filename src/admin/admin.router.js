@@ -32,6 +32,10 @@ router.use('/questions', requirePermission('tests'), require('./questions/admin-
 router.use('/books', requirePermission('books'), require('./books/admin-book.routes'))
 router.use('/shorts', requirePermission('shorts'), require('./shorts/admin-short.routes'))
 router.use('/qualifications', requirePermission('qualifications'), require('./qualifications/admin-qualification.routes'))
+router.use('/vocabulary', requirePermission('vocabulary'), require('./vocabulary/admin-vocabulary.routes'))
+router.use('/editorials', requirePermission('editorial'), require('./editorials/admin-editorial.routes'))
+router.use('/editorial-tests', requirePermission('editorial'), require('./editorial-tests/admin-editorial-test.routes'))
+router.use('/editorial-questions', requirePermission('editorial'), require('./editorial-questions/admin-editorial-question.routes'))
 
 
 module.exports = router
