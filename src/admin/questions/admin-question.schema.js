@@ -24,6 +24,8 @@ const createQuestionSchema = Joi.object({
   options: Joi.array().items(optionSchema).length(4).required(),
   explanation: explanationPayloadSchema.optional(),
   order: Joi.number().integer().min(1).required(),
+  marks: Joi.number().min(0).default(1),
+  negativeMarks: Joi.number().min(0).default(0),
   sortOrder: Joi.number().integer().min(0).default(0),
   status: Joi.string().valid('active', 'inactive').default('active'),
 }).custom((value, helpers) => {
@@ -50,6 +52,8 @@ const updateQuestionSchema = Joi.object({
   options: Joi.array().items(optionSchema).length(4),
   explanation: explanationPayloadSchema.optional(),
   order: Joi.number().integer().min(1),
+  marks: Joi.number().min(0),
+  negativeMarks: Joi.number().min(0),
   sortOrder: Joi.number().integer().min(0),
   status: Joi.string().valid('active', 'inactive'),
 }).min(1)

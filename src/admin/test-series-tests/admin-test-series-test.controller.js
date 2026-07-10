@@ -91,7 +91,13 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
-    const payload = normalizePayload({ ...req.body, createdBy: req.admin?._id || null })
+    const payload = normalizePayload({
+        subjectId: null,
+        topicIds: [],
+        chapterTitles: [],
+        ...req.body,
+        createdBy: req.admin?._id || null,
+    })
     sendCreated(res, await TestSeriesTest.create(payload))
 })
 
