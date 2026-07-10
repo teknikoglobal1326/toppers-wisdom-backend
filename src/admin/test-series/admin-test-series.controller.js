@@ -20,6 +20,16 @@ const normalizePayload = (data = {}) => {
         }
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, 'subjectIds')) {
+        if (Array.isArray(payload.subjectIds)) {
+            payload.subjectIds = payload.subjectIds.filter(Boolean)
+        } else if (typeof payload.subjectIds === 'string' && payload.subjectIds) {
+            payload.subjectIds = [payload.subjectIds]
+        } else {
+            payload.subjectIds = []
+        }
+    }
+
     delete payload.examId
     delete payload.subExamIds
     return payload
@@ -43,6 +53,7 @@ const list = catchAsync(async (req, res) => {
     const docs = await TestSeries.find(filter)
         .populate('exam')
         .populate('subExams')
+        .populate('subjectIds')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -56,6 +67,7 @@ const getOne = catchAsync(async (req, res) => {
     const testSeries = await TestSeries.findOne({ _id: req.params.id, isDeleted: false })
         .populate('exam')
         .populate('subExams')
+        .populate('subjectIds')
 
     if (!testSeries) throw new AppError('Test series not found', 404, 'NOT_FOUND')
     sendSuccess(res, testSeries)
