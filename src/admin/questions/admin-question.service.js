@@ -156,6 +156,24 @@ adminQuestionService.attachUploadedFiles = async (req, _res, next) => {
       req.body.options = options
     }
 
+    const indexedOptionFields = ['option0Image', 'option1Image', 'option2Image', 'option3Image']
+    if (indexedOptionFields.some((field) => req.files?.[field]?.[0])) {
+      const options = Array.isArray(req.body.options)
+        ? req.body.options
+        : (req.body.options ? JSON.parse(req.body.options) : [])
+
+      for (let index = 0; index < indexedOptionFields.length; index += 1) {
+        const fieldName = indexedOptionFields[index]
+        const file = req.files?.[fieldName]?.[0]
+        if (!file || !options[index]) continue
+
+        const ext = path.extname(file.originalname) || '.jpg'
+        options[index].image = await uploadFile(file.buffer, `option-${index + 1}${ext}`, folder, file.mimetype)
+      }
+
+      req.body.options = options
+    }
+
     if (req.body.question && typeof req.body.question === 'string') {
       req.body.question = JSON.parse(req.body.question)
     }

@@ -158,16 +158,10 @@ class CourseService extends BaseService {
         if (combinedData.length > 0) {
           contentChapters.push({ title: chapterTitle, data: combinedData });
         }
-        const pdfChapterItems = pdfs.filter((p) =>
-          p.topic?.toString() === topicId &&
-          getPdfChapterTitle(p.chapter) === chapterTitle
-        );
 
-        if (pdfChapterItems.length > 0) {
-          pdfChapters.push({
-            title: chapterTitle,
-            data: pdfChapterItems
-          });
+        chapterPdfs = pdfs.filter((p) => p.topic?.toString() === topicId && getPdfChapterTitle(p.chapter) === chapterTitle);
+        if (chapterPdfs.length > 0) {
+          pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
         }
 
         // const chapterPdfs = pdfs.filter((p) => p.topic?.toString() === topicId && getPdfChapterTitle(p.chapter) === chapterTitle);
@@ -202,6 +196,10 @@ class CourseService extends BaseService {
         });
       }
 
+      unassignedPdfs = pdfs.filter((p) => {
+        const chapterTitle = getPdfChapterTitle(p.chapter)
+        return p.topic?.toString() === topicId && (!chapterTitle || !chapterTitles.includes(chapterTitle))
+      });
       if (pdfChapters.length > 0 || unassignedPdfs.length > 0) {
         syllabus.pdf.push({
           _id: topic._id,
