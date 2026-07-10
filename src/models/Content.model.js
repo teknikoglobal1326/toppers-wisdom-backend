@@ -7,11 +7,15 @@ const contantSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, default: '' },
   sortOrder: { type: Number, default: 0, index: true },
-  video: { type: String, required: true },
+  video: { type: String, required: function() { return !this.isLive; } },
   image: { type: String, default: '' },
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
   isDeleted: { type: Boolean, default: false, index: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  isLive: { type: Boolean, default: false },
+  agoraChannel: { type: String },
+  scheduledStartTime: { type: Date },
+  scheduledEndTime: { type: Date }
 }, { timestamps: true })
 
 module.exports = mongoose.model('Contant', contantSchema)
