@@ -1,10 +1,10 @@
 const BaseRepository = require('../../core/BaseRepository')
-const Order      = require('../../models/Order.model')
+const CourseOrder      = require('../../models/CourseOrder.model')
 const Enrollment = require('../../models/Enrollment.model')
 
 class PaymentRepository extends BaseRepository {
   constructor() {
-    super(Order, 'payment')
+    super(CourseOrder, 'payment')
   }
 
   async findByRazorpayOrderId(razorpayOrderId) {
@@ -13,7 +13,15 @@ class PaymentRepository extends BaseRepository {
 
   async createEnrollmentsForOrder(userId, courseItems) {
     if (!courseItems.length) return []
-    const docs = courseItems.map((item) => ({ user: userId, course: item.itemId }))
+    const docs = courseItems.map((item) => {
+      const doc = { user: userId, course: item.itemId }
+      if (!item.isLifetime && item.validityInMonths) {
+        const expiresAt = new Date()
+        expiresAt.setMonth(expiresAt.getMonth() + item.validityInMonths)
+        doc.expiresAt = expiresAt
+      }
+      return doc
+    })
     return Enrollment.insertMany(docs, { ordered: false }).catch(() => [])
   }
 }

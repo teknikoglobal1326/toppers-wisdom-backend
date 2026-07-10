@@ -8,7 +8,7 @@ const userRepository = require('./user.repository')
 const Qualification  = require('../../models/Qualification.model')
 const ExamType       = require('../../models/ExamType.model')
 const SubExam        = require('../../models/SubExam.model')
-const Order          = require('../../models/Order.model')
+const CourseOrder    = require('../../models/CourseOrder.model')
 const Notification   = require('../../models/Notification.model')
 const TestAttempt    = require('../../models/TestAttempt.model')
 const Enrollment     = require('../../models/Enrollment.model')
@@ -76,7 +76,7 @@ class UserService extends BaseService {
   }
 
   async getOrders(userId, opts) {
-    return paginate(Order, { user: userId }, { ...opts, sort: { createdAt: -1 } })
+    return paginate(CourseOrder, { user: userId }, { ...opts, sort: { createdAt: -1 } })
   }
 
   async getNotifications(userId, opts) {

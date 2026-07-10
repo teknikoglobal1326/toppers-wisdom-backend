@@ -26,6 +26,8 @@ const courseSchema = new mongoose.Schema({
   isFree: { type: Boolean, default: false, index: true },
   isDeleted: { type: Boolean, default: false, index: true },
   sortOrder: { type: Number, default: 0, index: true },
+  validityInMonths: { type: Number },
+  isLifetime: { type: Boolean, default: false },
   thumbnail: String,
   bannerImage: [String],
   instructor: { name: String, avatar: String, bio: String },
