@@ -26,4 +26,14 @@ const remove = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Content deleted')
 })
 
-module.exports = { list, getOne, create, update, remove }
+const createLiveClass = catchAsync(async (req, res) => {
+  const payload = {
+    ...req.body,
+    createdBy: req.admin?._id,
+    isLive: true,
+    agoraChannel: `channel_${Date.now()}_${Math.floor(Math.random() * 10000)}`
+  }
+  sendCreated(res, await adminContentService.createContent(payload))
+})
+
+module.exports = { list, getOne, create, update, remove, createLiveClass }

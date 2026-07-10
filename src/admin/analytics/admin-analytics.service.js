@@ -1,6 +1,6 @@
 const User       = require('../../models/User.model')
 const Enrollment = require('../../models/Enrollment.model')
-const Order      = require('../../models/Order.model')
+const CourseOrder      = require('../../models/CourseOrder.model')
 const Test       = require('../../models/Test.model')
 const { createLogger } = require('../../config/logger')
 
@@ -11,7 +11,7 @@ const overview = async () => {
   const [totalUsers, totalEnrollments, revenueResult, activeTests] = await Promise.all([
     User.countDocuments({ role: 'user' }),
     Enrollment.countDocuments(),
-    Order.aggregate([{ $match: { status: 'paid' } }, { $group: { _id: null, total: { $sum: '$totalAmount' } } }]),
+    CourseOrder.aggregate([{ $match: { status: 'paid' } }, { $group: { _id: null, total: { $sum: '$totalAmount' } } }]),
     Test.countDocuments({ status: 'published' }),
   ])
   return { totalUsers, totalEnrollments, totalRevenue: revenueResult[0]?.total || 0, activeTests }
@@ -19,7 +19,7 @@ const overview = async () => {
 
 const revenue = async (from, to) => {
   logger.info({ from, to }, 'Fetching revenue report')
-  return Order.aggregate([
+  return CourseOrder.aggregate([
     { $match: { status: 'paid', paidAt: { $gte: new Date(from), $lte: new Date(to) } } },
     { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt' } }, total: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
     { $sort: { _id: 1 } },
