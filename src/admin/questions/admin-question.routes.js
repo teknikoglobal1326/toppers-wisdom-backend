@@ -9,6 +9,10 @@ const uploadQuestionFiles = upload.fields([
   { name: 'questionImage', maxCount: 1 },
   { name: 'explanationImage', maxCount: 1 },
   { name: 'optionImages', maxCount: 4 },
+  { name: 'option0Image', maxCount: 1 },
+  { name: 'option1Image', maxCount: 1 },
+  { name: 'option2Image', maxCount: 1 },
+  { name: 'option3Image', maxCount: 1 },
 ])
 
 const validateCreate = (req, res, next) => {
