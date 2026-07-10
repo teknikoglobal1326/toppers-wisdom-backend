@@ -49,4 +49,15 @@ const checkout = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.checkout(req.params.id, req.user._id))
 })
 
-module.exports = { listCourseSubjects, listCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable, checkout }
+const createRazorpayOrder = catchAsync(async (req, res) => {
+  const { amount, discount, gstRate, gstAmount, grandTotal } = req.body;
+  const amountDetails = { amount, discount, gstRate, gstAmount, grandTotal };
+  sendSuccess(res, await courseService.createRazorpayOrder(req.params.id, req.user._id, amountDetails))
+})
+
+const verifyPayment = catchAsync(async (req, res) => {
+  const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+  sendSuccess(res, await courseService.verifyPayment(req.user._id, razorpayOrderId, razorpayPaymentId, razorpaySignature), 'Payment verified successfully')
+})
+
+module.exports = { listCourseSubjects, listCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment }

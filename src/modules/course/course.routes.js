@@ -11,5 +11,7 @@ router.post('/:id/enroll', controller.enrollFree)
 router.post('/:id/review', validate(reviewSchema), controller.addReview)
 router.get('/:id/timetable', controller.getTimetable)
 router.get('/:id/checkout', require('../../middlewares/auth.middleware').authMiddleware, controller.checkout)
+router.post('/:id/create-razorpay-order', require('../../middlewares/auth.middleware').authMiddleware, controller.createRazorpayOrder)
+router.post('/:id/verify-payment', require('../../middlewares/auth.middleware').authMiddleware, controller.verifyPayment)
 
 module.exports = router
