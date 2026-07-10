@@ -25,6 +25,8 @@ router.use('/subexams', requirePermission('subexams'), require('./subexams/admin
 router.use('/subjects', requirePermission('subjects'), require('./subjects/admin-subject.routes'))
 router.use('/banners', requirePermission('banners'), require('./banners/admin-banner.routes'))
 router.use('/topics', requirePermission('topics'), require('./topics/admin-topic.routes'))
+router.use('/grammars', requirePermission('grammars'), require('./grammars/admin-grammar.routes'))
+router.use('/faqs', requirePermission('faqs'), require('./faqs/admin-faq.routes'))
 router.use('/pdfs', requirePermission('pdfs'), require('./pdfs/admin-pdf.routes'))
 router.use('/contents', requirePermission('pdfs'), require('./contents/admin-content.routes'))
 router.use('/course-tests', requirePermission('tests'), require('./course-tests/admin-course-test.routes'))
