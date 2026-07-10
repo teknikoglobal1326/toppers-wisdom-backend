@@ -133,6 +133,7 @@ class CourseService extends BaseService {
     topics.forEach(topic => {
       const topicId = topic._id.toString();
       const chapterIdentifiers = (topic.chapters || []).flatMap(c => [c.title, c._id?.toString()]).filter(Boolean);
+      const chapterTitles = (topic.chapters || []).map((c) => c.title).filter(Boolean);
 
       const contentChapters = [];
       const pdfChapters = [];
@@ -163,13 +164,21 @@ class CourseService extends BaseService {
           pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
         }
 
-        if (chapterTests.length > 0) {
-          testChapters.push({ title: chapterTitle, data: chapterTests });
-        }
+        // const chapterPdfs = pdfs.filter((p) => p.topic?.toString() === topicId && getPdfChapterTitle(p.chapter) === chapterTitle);
+        // if (chapterPdfs.length > 0) {
+        //   pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
+        // }
+
+        // if (chapterTests.length > 0) {
+        //   testChapters.push({ title: chapterTitle, data: chapterTests });
+        // }
       });
 
       const unassignedContents = contents.filter(c => c.topic?.toString() === topicId && (!c.chapter || !chapterIdentifiers.includes(c.chapter?.toString())));
-      const unassignedPdfs = pdfs.filter(p => p.topic?.toString() === topicId && (!p.chapter || !chapterIdentifiers.includes(p.chapter?.toString())));
+      const unassignedPdfs = pdfs.filter((p) => {
+        const chapterTitle = getPdfChapterTitle(p.chapter)
+        return p.topic?.toString() === topicId && (!chapterTitle || !chapterTitles.includes(chapterTitle))
+      });
       const unassignedTests = courseTests.filter(t => t.topic?.toString() === topicId && (!t.chapter || !chapterIdentifiers.includes(t.chapter?.toString())));
 
       const combinedUnassigned = [
