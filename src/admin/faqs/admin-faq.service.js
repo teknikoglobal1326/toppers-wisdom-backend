@@ -7,10 +7,11 @@ class AdminFaqService extends BaseService {
     super(faqRepository, 'admin:faq')
   }
 
-  buildFilter({ status, question, search } = {}) {
+  buildFilter({ status, question, search, courseId } = {}) {
     const filter = { isDeleted: false }
 
     if (status) filter.status = status
+    if (courseId) filter.course = courseId
     if (question) filter.question = { $regex: question, $options: 'i' }
 
     if (search) {
@@ -22,6 +23,11 @@ class AdminFaqService extends BaseService {
 
   buildPayload(data = {}) {
     const payload = { ...data }
+
+    if (payload.courseId !== undefined) {
+      payload.course = payload.courseId || null
+      delete payload.courseId
+    }
 
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)

@@ -56,6 +56,7 @@ app.use('/api/v1/shorts', authMiddleware, require('./modules/short/short.routes'
 app.use('/api/v1/vocabulary', authMiddleware, require('./modules/vocabulary/vocabulary.routes'))
 app.use('/api/v1/editorials', authMiddleware, require('./modules/editorial/editorial.routes'))
 app.use('/api/v1/grammars', authMiddleware, require('./modules/grammar/grammar.routes'))
+app.use('/api/v1/faqs', authMiddleware, require('./modules/faq/faq.routes'))
 
 // ── Admin API ─────────────────────────────────
 app.use('/api/v1/admin', adminLimiter, adminAuthMiddleware, require('./admin/admin.router'))

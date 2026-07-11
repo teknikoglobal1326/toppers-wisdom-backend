@@ -169,7 +169,7 @@ class VocabularyService extends BaseService {
     }
 
     async markAsRead(vocabularyId, userId) {
-        const vocabulary = await vocabularyRepository.findOne({ _id: vocabularyId, isDeleted: false, status: 'active' })
+        const vocabulary = await vocabularyRepository.findOne({ _id: vocabularyId, isDeleted: false, })
         if (!vocabulary) throw new AppError('Vocabulary not found', 404, 'NOT_FOUND')
 
         return VocabularyUserState.findOneAndUpdate(
@@ -183,7 +183,7 @@ class VocabularyService extends BaseService {
     }
 
     async setBookmark(vocabularyId, userId, isBookmarked = true) {
-        const vocabulary = await vocabularyRepository.findOne({ _id: vocabularyId, isDeleted: false, status: 'active' })
+        const vocabulary = await vocabularyRepository.findOne({ _id: vocabularyId, isDeleted: false, })
         if (!vocabulary) throw new AppError('Vocabulary not found', 404, 'NOT_FOUND')
 
         return VocabularyUserState.findOneAndUpdate(
