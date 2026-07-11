@@ -2,6 +2,7 @@ const Joi = require('joi')
 
 const listGrammarQuerySchema = Joi.object({
   status: Joi.string().valid('active', 'inactive').default('active'),
+  listType: Joi.string().valid('all', 'read', 'bookmarked', 'unread').default('all'),
   title: Joi.string().trim().max(200),
   topicName: Joi.string().trim().max(200),
   search: Joi.string().trim().max(200),
@@ -16,4 +17,12 @@ const setGrammarChapterLikeSchema = Joi.object({
   isLiked: Joi.boolean().default(true),
 })
 
-module.exports = { listGrammarQuerySchema, setGrammarChapterLikeSchema }
+const setGrammarChapterReadSchema = Joi.object({
+  isRead: Joi.boolean().default(true),
+})
+
+const setGrammarChapterBookmarkSchema = Joi.object({
+  isBookmarked: Joi.boolean().default(true),
+})
+
+module.exports = { listGrammarQuerySchema, setGrammarChapterLikeSchema, setGrammarChapterReadSchema, setGrammarChapterBookmarkSchema }
