@@ -11,6 +11,22 @@ const getOne = catchAsync(async (req, res) => {
   sendSuccess(res, await grammarService.getOne(req.params.id, req.query.topicSortOrder, req.user?._id))
 })
 
+const setChapterRead = catchAsync(async (req, res) => {
+  sendSuccess(
+    res,
+    await grammarService.setChapterRead(req.params.id, req.params.chapterId, req.user?._id, req.body.isRead),
+    'Chapter read state updated'
+  )
+})
+
+const setChapterBookmark = catchAsync(async (req, res) => {
+  sendSuccess(
+    res,
+    await grammarService.setChapterBookmark(req.params.id, req.params.chapterId, req.user?._id, req.body.isBookmarked),
+    'Chapter bookmark updated'
+  )
+})
+
 const setChapterLike = catchAsync(async (req, res) => {
   sendSuccess(
     res,
@@ -19,4 +35,4 @@ const setChapterLike = catchAsync(async (req, res) => {
   )
 })
 
-module.exports = { list, getOne, setChapterLike }
+module.exports = { list, getOne, setChapterRead, setChapterBookmark, setChapterLike }
