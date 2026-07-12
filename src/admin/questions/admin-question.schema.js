@@ -19,11 +19,11 @@ const explanationPayloadSchema = Joi.object({
 const createQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).required(),
   testId: Joi.string().hex().length(24).optional(),
-  language: Joi.string().valid('en', 'hi', 'both').default('both'),
+  language: Joi.string().valid('en', 'hi').default('en'),
   question: questionPayloadSchema.required(),
   options: Joi.array().items(optionSchema).length(4).required(),
   explanation: explanationPayloadSchema.optional(),
-  order: Joi.number().integer().min(1).required(),
+  order: Joi.number().integer().min(1).optional(),
   marks: Joi.number().min(0).default(1),
   negativeMarks: Joi.number().min(0).default(0),
   sortOrder: Joi.number().integer().min(0).default(0),
@@ -47,7 +47,7 @@ const createQuestionSchema = Joi.object({
 const updateQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).optional(),
   testId: Joi.string().hex().length(24).optional(),
-  language: Joi.string().valid('en', 'hi', 'both'),
+  language: Joi.string().valid('en', 'hi'),
   question: questionPayloadSchema.optional(),
   options: Joi.array().items(optionSchema).length(4),
   explanation: explanationPayloadSchema.optional(),
@@ -66,7 +66,7 @@ const createQuestionDualSchema = Joi.object({
 const listQuestionQuerySchema = Joi.object({
   test: Joi.string().hex().length(24),
   status: Joi.string().valid('active', 'inactive'),
-  language: Joi.string().valid('en', 'hi', 'both'),
+  language: Joi.string().valid('en', 'hi'),
   search: Joi.string().trim().max(200),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
   page: Joi.number().integer().min(1).default(1),
