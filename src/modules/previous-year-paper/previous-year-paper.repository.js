@@ -4,7 +4,6 @@ const PreviousYearPaper = require('../../models/PreviousYearPaper.model')
 const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
 const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
 const Question = require('../../models/Question.model')
-const Order = require('../../models/Order.model')
 
 class PreviousYearPaperRepository extends BaseRepository {
     constructor() {
@@ -113,30 +112,11 @@ class PreviousYearPaperRepository extends BaseRepository {
         }, {})
     }
 
-    async getPurchasedTestItemIds(userId) {
-        const orders = await Order.find({
-            user: userId,
-            status: 'paid',
-            'items.itemType': 'test',
-        }).select('items.itemId').lean()
-
-        const ids = new Set()
-        for (const order of orders) {
-            for (const item of order.items || []) {
-                if (item?.itemId) ids.add(item.itemId.toString())
-            }
-        }
-
-        return ids
-    }
-
-    async findQuestionsForTest(testId, language) {
-        const allowedLanguages = language === 'en' ? ['en', 'both'] : ['hi', 'both']
+    async findQuestionsForTest(testId) {
         return Question.find({
             test: testId,
             isDeleted: false,
             status: 'active',
-            language: { $in: allowedLanguages },
         })
             .select('language question options.text options.image options.isCorrect order sortOrder')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
