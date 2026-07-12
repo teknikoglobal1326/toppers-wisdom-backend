@@ -1,4 +1,5 @@
 const path = require('path')
+const mongoose = require('mongoose')
 const BaseService = require('../../core/BaseService')
 const questionRepository = require('../../modules/question/question.repository')
 const courseTestRepository = require('../../modules/course-test/course-test.repository')
@@ -67,19 +68,35 @@ class AdminQuestionService extends BaseService {
     return payload
   }
 
+  // Next available order for a test (auto-increment on add).
+  async nextOrder(testId) {
+    if (!testId) return 1
+    const max = await questionRepository.getMaxOrder(testId)
+    return max + 1
+  }
+
   async createQuestion(data) {
     const payload = this.buildPayload(data)
+    if (payload.order === undefined || payload.order === null) {
+      payload.order = await this.nextOrder(payload.test)
+    }
+    if (!payload.groupId) payload.groupId = new mongoose.Types.ObjectId()
     const result = await questionRepository.createSingle(payload)
     if (payload.test) await this.syncQuestionCount(payload.test)
     return result
   }
 
   async createQuestionDual({ hi, en }, createdBy) {
+    const testId = hi?.test || hi?.testId || en?.test || en?.testId
+    // Same logical question in both languages → shared order + shared groupId.
+    const order = await this.nextOrder(testId)
+    const groupId = new mongoose.Types.ObjectId()
+
     const [hiResult, enResult] = await Promise.all([
-      questionRepository.createSingle(this.buildPayload({ ...hi, createdBy })),
-      questionRepository.createSingle(this.buildPayload({ ...en, createdBy })),
+      questionRepository.createSingle(this.buildPayload({ ...hi, language: 'hi', order, groupId, createdBy })),
+      questionRepository.createSingle(this.buildPayload({ ...en, language: 'en', order, groupId, createdBy })),
     ])
-    if (hi?.test) await this.syncQuestionCount(hi.test)
+    if (testId) await this.syncQuestionCount(testId)
     return [hiResult, enResult]
   }
 
