@@ -1,12 +1,12 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 
-const MODULES = ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'admins', 'exams', 'subexams', 'subjects', 'banners', 'topics', 'grammars', 'faqs', 'pdfs', 'shorts', 'qualifications', 'books', 'vocabulary', 'editorial']
+const MODULES = ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'admins', 'exams', 'subexams', 'subjects', 'banners', 'topics', 'grammars', 'faqs', 'pdfs', 'shorts', 'qualifications', 'books', 'vocabulary', 'editorial', 'subscriptions']
 
 const ROLE_PERMISSIONS = {
   superadmin: MODULES,
-  manager: ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'exams', 'subexams', 'subjects', 'banners', 'topics', 'grammars', 'faqs', 'pdfs', 'shorts', 'qualifications', 'books', 'vocabulary', 'editorial'],
-  editor: ['courses', 'tests', 'boosters', 'blog', 'exams', 'subexams', 'subjects', 'banners', 'topics', 'grammars', 'faqs', 'pdfs', 'shorts', 'qualifications', 'books', 'vocabulary', 'editorial'],
+  manager: ['courses', 'tests', 'boosters', 'users', 'blog', 'analytics', 'notifications', 'exams', 'subexams', 'subjects', 'banners', 'topics', 'grammars', 'faqs', 'pdfs', 'shorts', 'qualifications', 'books', 'vocabulary', 'editorial', 'subscriptions'],
+  editor: ['courses', 'tests', 'boosters', 'blog', 'exams', 'subexams', 'subjects', 'banners', 'topics', 'grammars', 'faqs', 'pdfs', 'shorts', 'qualifications', 'books', 'vocabulary', 'editorial', 'subscriptions'],
   viewer: ['analytics'],
 }
 
