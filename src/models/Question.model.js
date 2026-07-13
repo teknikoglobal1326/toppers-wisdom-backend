@@ -30,9 +30,15 @@ const questionSchema = new mongoose.Schema(
 
     language: {
       type: String,
-      enum: ["en", "hi", "both"],
+      enum: ["en", "hi"],
       required: true,
-      default: "both",
+      default: "en",
+    },
+
+    // Links the en/hi versions of the same logical question (dual create shares one groupId).
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      index: true,
     },
 
     question: {
@@ -74,6 +80,18 @@ const questionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       index: true,
+    },
+
+    marks: {
+      type: Number,
+      default: 1,
+      min: 0,
+    },
+
+    negativeMarks: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
 
     status: {

@@ -12,8 +12,10 @@ class CourseRepository extends BaseRepository {
     return Enrollment.findOne({ user: userId, course: courseId }).lean()
   }
 
-  async createEnrollment(userId, courseId) {
-    return Enrollment.create({ user: userId, course: courseId })
+  async createEnrollment(userId, courseId, expiresAt = null) {
+    const data = { user: userId, course: courseId }
+    if (expiresAt) data.expiresAt = expiresAt;
+    return Enrollment.create(data)
   }
 
   async addLesson(courseId, lesson) {
