@@ -17,6 +17,24 @@ const normalizePayload = (data = {}) => {
     payload.localizedContent.en.description = description
     payload.localizedContent.en.instructions = instructions
 
+    const titleHi = payload.titleHi || null
+    const descriptionHi = payload.descriptionHi || null
+    const instructionsHi = payload.instructionsHi || null
+    const hasHi = [titleHi, descriptionHi, instructionsHi].some((val) => val !== null && val !== '')
+
+    if (hasHi) {
+        if (!payload.localizedContent.hi) payload.localizedContent.hi = {}
+        payload.localizedContent.hi.title = titleHi
+        payload.localizedContent.hi.description = descriptionHi
+        payload.localizedContent.hi.instructions = instructionsHi
+    } else {
+        payload.localizedContent.hi = null
+    }
+
+    delete payload.titleHi
+    delete payload.descriptionHi
+    delete payload.instructionsHi
+
     return payload
 }
 

@@ -15,6 +15,7 @@ const previousYearPaperTestSchema = new mongoose.Schema({
     description: { type: String, default: null },
     thumbnail: { type: String, default: null },
     duration: { type: Number, required: true, min: 1 },
+    isPerQuestionTime: { type: Boolean, default: true }, // when true, each mapped question carries its own perQuestionTime (in seconds)
     totalQuestions: { type: Number, required: true, min: 1 },
     totalMarks: { type: Number, required: true, min: 0 },
     marksPerQuestion: { type: Number, required: true, min: 0 },
