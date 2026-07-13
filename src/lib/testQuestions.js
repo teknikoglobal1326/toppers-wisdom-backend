@@ -15,7 +15,7 @@ const sanitizeQuestion = (question) => ({
 // Build the always-present i18n payload: { <order>: { en: {...}, hi: {...} } }.
 // Every order key always carries both `en` and `hi`; whichever language has no
 // question for that order gets `{}` (present, empty) instead of being omitted.
-// Legacy `language: 'both'` rows are surfaced under both languages.
+// Each question document is stored in exactly one language ('en' | 'hi').
 const groupQuestionsByLanguage = (questions = []) => {
   const grouped = {}
 
@@ -23,12 +23,9 @@ const groupQuestionsByLanguage = (questions = []) => {
     const orderKey = String(question.order)
     if (!grouped[orderKey]) grouped[orderKey] = { en: {}, hi: {} }
 
-    const langs = question.language === 'both' ? ['en', 'hi'] : [question.language]
-    const sanitized = sanitizeQuestion(question)
-    for (const lang of langs) {
-      if (lang !== 'en' && lang !== 'hi') continue
-      grouped[orderKey][lang] = sanitized
-    }
+    const lang = question.language
+    if (lang !== 'en' && lang !== 'hi') continue
+    grouped[orderKey][lang] = sanitizeQuestion(question)
   }
 
   return grouped

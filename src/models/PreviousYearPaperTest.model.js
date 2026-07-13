@@ -25,7 +25,14 @@ const previousYearPaperTestSchema = new mongoose.Schema({
     instructions: { type: String, default: null },
     isPaid: { type: Boolean, default: false, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
-    language: { type: String, enum: ['en', 'hi'], default: 'en' },
+    // Languages this test is authored in. ['en'] | ['hi'] | ['en','hi'].
+    // Drives which language question forms the admin fills and which language(s)
+    // questions may be created in. No 'both' value — both = the array holding both.
+    languages: {
+        type: [{ type: String, enum: ['en', 'hi'] }],
+        default: ['en'],
+        validate: [(v) => Array.isArray(v) && v.length >= 1, 'At least one language is required'],
+    },
     localizedContent: {
         en: { type: localizedBlock, default: {} },
         hi: { type: localizedBlock, default: null },
