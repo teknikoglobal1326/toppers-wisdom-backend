@@ -7,6 +7,11 @@ const login = catchAsync(async (req, res) => {
   sendSuccess(res, data, 'Admin login successful')
 })
 
+const memberLogin = catchAsync(async (req, res) => {
+  const data = await adminAuthService.memberLogin(req.body.email, req.body.password)
+  sendSuccess(res, data, 'Member login successful')
+})
+
 const refreshToken = catchAsync(async (req, res) => {
   const data = await adminAuthService.refreshToken(req.body.refreshToken)
   sendSuccess(res, data)
@@ -32,5 +37,5 @@ const resetPassword = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Password reset successfully')
 })
 
-module.exports = { login, refreshToken, logout, changePassword, forgotPassword, resetPassword }
+module.exports = { login, memberLogin, refreshToken, logout, changePassword, forgotPassword, resetPassword }
 
