@@ -36,6 +36,7 @@ app.use('/api/v1/admin-auth', require('./modules/admin-auth/admin-auth.routes'))
 
 // ── Common (public, no auth) ──────────────────
 app.use('/api/v1/common', require('./common/common.routes'))
+app.use('/api/v1/admin/common', require('./admin/common/admin-common.routes'))
 
 // ── User API ──────────────────────────────────
 app.use('/api/v1/auth', require('./modules/auth/auth.routes'))
