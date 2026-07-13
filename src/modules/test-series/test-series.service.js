@@ -2,6 +2,7 @@ const BaseService = require('../../core/BaseService')
 const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
+const crypto = require('crypto')
 const { groupQuestionsByLanguage, scoreAnswers } = require('../../lib/testQuestions')
 const testSeriesRepository = require('./test-series.repository')
 
@@ -240,6 +241,120 @@ class TestSeriesService extends BaseService {
             passingMarks: Number(test.passingMarks || 0),
             isPassed: score >= Number(test.passingMarks || 0),
             accuracy,
+            correct,
+            wrong,
+            unattempted,
+        }
+    }
+
+    async startSession(testId, userId, language = 'hi') {
+        const test = await this.repository.getSeriesTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const series = await this.repository.getSeriesById(test.testSeries)
+        if (!series || series.isDeleted || series.status !== 'active') {
+            throw new AppError('Test series not found', 404, 'NOT_FOUND')
+        }
+
+        const hasAccess = !test.isPaid
+        if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
+
+        const questions = await this.repository.findQuestionsForTest(testId)
+        if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
+
+        const sessionId = crypto.randomUUID()
+        
+        // Ensure totalMarks is calculated
+        const totalQuestions = new Set(questions.map(q => q.order)).size
+        const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
+
+        const attempt = await this.repository.createAttempt({
+            user: userId,
+            testSeries: series._id,
+            test: test._id,
+            sessionId,
+            totalTime: test.duration * 60, // Assuming duration is in minutes
+            totalMarks,
+            status: 'started',
+            answers: []
+        })
+
+        const groupedQuestions = groupQuestionsByLanguage(questions)
+
+        return {
+            sessionId,
+            series: {
+                _id: series._id,
+                title: series.title,
+                thumbnail: series.thumbnail,
+            },
+            test: {
+                _id: test._id,
+                title: test.title,
+                duration: test.duration,
+                isPerQuestionTime: test.isPerQuestionTime !== false,
+                totalQuestions: test.totalQuestions,
+                totalMarks,
+                passingMarks: test.passingMarks,
+                negativeMarks: test.negativeMarks,
+            },
+            hasAccess,
+            questions: groupedQuestions,
+        }
+    }
+
+    async updateSession(testId, sessionId, userId, payload = {}) {
+        const test = await this.repository.getSeriesTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        if (!attempt) {
+            throw new AppError('Session not found', 404, 'NOT_FOUND')
+        }
+
+        if (attempt.status === 'completed' || attempt.status === 'abandoned') {
+            throw new AppError('Session already closed', 400, 'VALIDATION_ERROR')
+        }
+
+        const questions = await this.repository.findQuestionsForTest(testId)
+        const { score, correct, wrong, unattempted, totalQuestions } = scoreAnswers(questions, payload.answers || [], test)
+        
+        const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
+        const accuracy = totalQuestions > 0
+            ? parseFloat(((correct / totalQuestions) * 100).toFixed(2))
+            : 0
+
+        // Calculate total time taken from answers array
+        const timeTaken = (payload.answers || []).reduce((acc, ans) => acc + (ans.timeTaken || 0), 0)
+
+        const status = payload.status || 'ongoing'
+
+        const updatedAttempt = await this.repository.updateAttemptBySession(sessionId, userId, {
+            answers: payload.answers,
+            score,
+            totalMarks,
+            accuracy,
+            timeTaken,
+            correct,
+            wrong,
+            unattempted,
+            status,
+        })
+
+        return {
+            attemptId: updatedAttempt._id,
+            sessionId,
+            status,
+            score,
+            totalMarks,
+            passingMarks: Number(test.passingMarks || 0),
+            isPassed: score >= Number(test.passingMarks || 0),
+            accuracy,
+            timeTaken,
             correct,
             wrong,
             unattempted,
