@@ -57,6 +57,7 @@ const { signAdminAccessToken, signAdminRefreshToken, verifyAdminRefreshToken } =
 const AppError = require('../../core/AppError')
 const redis = require('../../config/redis')
 const config = require('../../config/env')
+const Member = require('../../models/Member.model')
 const { createLogger } = require('../../config/logger')
 
 const logger = createLogger('admin-auth:service')
@@ -87,8 +88,54 @@ const login = async (email, password) => {
   return { accessToken, refreshToken, admin: adminObj }
 }
 
+const memberLogin = async (email, password) => {
+  logger.info({ email }, 'Member login attempt')
+
+  const member = await Member.findOne({ email, isDeleted: false }).select('+password').populate({
+    path: 'role',
+    match: { isDeleted: false, isActive: true },
+    select: 'name permissions',
+  })
+
+  if (!member || !member.isActive || !member.role) {
+    throw new AppError('Invalid credentials', 401, 'UNAUTHORIZED')
+  }
+
+  const isMatch = await member.comparePassword(password)
+  if (!isMatch) {
+    throw new AppError('Invalid credentials', 401, 'UNAUTHORIZED')
+  }
+
+  const payload = { _id: member._id, email: member.email, accountType: 'member' }
+  const accessToken = signAdminAccessToken(payload)
+  const refreshToken = signAdminRefreshToken({ _id: member._id, accountType: 'member' })
+
+  logger.info({ memberId: member._id, roleId: member.role?._id }, 'Member logged in')
+
+  const memberObj = member.toObject()
+  delete memberObj.password
+  return { accessToken, refreshToken, member: memberObj }
+}
+
 const refreshToken = async (token) => {
   const payload = verifyAdminRefreshToken(token)
+
+  if (payload.accountType === 'member') {
+    const member = await Member.findById(payload._id).populate({
+      path: 'role',
+      match: { isDeleted: false, isActive: true },
+      select: '_id',
+    })
+
+    if (!member || !member.isActive || member.isDeleted || !member.role) {
+      throw new AppError('Member account deactivated', 401, 'UNAUTHORIZED')
+    }
+
+    const accessToken = signAdminAccessToken({ _id: member._id, email: member.email, accountType: 'member' })
+    logger.info({ memberId: member._id }, 'Member token refreshed')
+    return { accessToken }
+  }
+
   const admin = await adminAuthRepository.findByIdOrFail(payload._id, 'Admin not found')
   if (!admin.isActive) throw new AppError('Admin account deactivated', 401, 'UNAUTHORIZED')
   const accessToken = signAdminAccessToken({ _id: admin._id, email: admin.email, role: admin.role })
@@ -149,4 +196,4 @@ const resetPassword = async (token, newPassword) => {
   logger.info({ adminId: admin._id }, 'Admin password reset successfully')
 }
 
-module.exports = { login, refreshToken, logout, changePassword, forgotPassword, resetPassword }
+module.exports = { login, memberLogin, refreshToken, logout, changePassword, forgotPassword, resetPassword }

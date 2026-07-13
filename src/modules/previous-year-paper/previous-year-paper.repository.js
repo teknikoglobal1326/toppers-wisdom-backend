@@ -31,14 +31,14 @@ class PreviousYearPaperRepository extends BaseRepository {
     async listPreviousYearPaperTests(filter, options = {}) {
         return paginate(PreviousYearPaperTest, filter, {
             ...options,
-            select: 'previousYearPaper subjectId topicIds chapterTitles title description thumbnail duration totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status language createdAt',
+            select: 'previousYearPaper subjectId topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status language createdAt',
             populate: [{ path: 'subjectId', select: 'name' }, { path: 'topicIds', select: 'topicName' }],
         })
     }
 
     async getPreviousYearPaperTestById(testId) {
         return PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false })
-            .select('previousYearPaper title duration totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
+            .select('previousYearPaper title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
             .lean()
     }
 
@@ -118,7 +118,7 @@ class PreviousYearPaperRepository extends BaseRepository {
             isDeleted: false,
             status: 'active',
         })
-            .select('language question options.text options.image options.isCorrect order sortOrder')
+            .select('language question options.text options.image options.isCorrect order sortOrder perQuestionTime')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
     }

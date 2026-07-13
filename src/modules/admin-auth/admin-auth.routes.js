@@ -5,6 +5,7 @@ const { adminAuthMiddleware } = require('../../middlewares/adminAuth.middleware'
 const { loginSchema, refreshTokenSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } = require('./admin-auth.schema')
 
 router.post('/login',            validate(loginSchema),           controller.login)
+router.post('/member-login',     validate(loginSchema),           controller.memberLogin)
 router.post('/refresh-token',    validate(refreshTokenSchema),    controller.refreshToken)
 router.post('/logout',           adminAuthMiddleware,              controller.logout)
 router.patch('/change-password', adminAuthMiddleware, validate(changePasswordSchema), controller.changePassword)
