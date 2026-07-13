@@ -31,14 +31,14 @@ class TestSeriesRepository extends BaseRepository {
     async listSeriesTests(filter, options = {}) {
         return paginate(TestSeriesTest, filter, {
             ...options,
-            select: 'testSeries subjectId topicIds chapterTitles title description thumbnail duration totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status language createdAt',
+            select: 'testSeries subjectId topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status language createdAt',
             populate: [{ path: 'subjectId', select: 'name' }, { path: 'topicIds', select: 'topicName' }],
         })
     }
 
     async getSeriesTestById(testId) {
         return TestSeriesTest.findOne({ _id: testId, isDeleted: false })
-            .select('testSeries title duration totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
+            .select('testSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
             .lean()
     }
 
@@ -118,7 +118,7 @@ class TestSeriesRepository extends BaseRepository {
             isDeleted: false,
             status: 'active',
         })
-            .select('language question options.text options.image options.isCorrect order sortOrder')
+            .select('language question options.text options.image options.isCorrect order sortOrder perQuestionTime')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
     }

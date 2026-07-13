@@ -1,8 +1,6 @@
 const router = require('express').Router()
 const { requirePermission } = require('../middlewares/permission.middleware')
 
-// Common lookup endpoints — no specific permission required, just admin auth
-router.use('/common', require('./common/admin-common.routes'))
 router.use('/cms', require('./cms/admin-cms.routes'))
 router.use('/app-version', require('./app-version/admin-app-version.routes'))
 
@@ -20,6 +18,9 @@ router.use('/blog', requirePermission('blog'), require('./blog/admin-blog.routes
 router.use('/analytics', requirePermission('analytics'), require('./analytics/admin-analytics.routes'))
 router.use('/notifications', requirePermission('notifications'), require('./notifications/admin-notification.routes'))
 router.use('/admins', requirePermission('admins'), require('./admins/admin-admins.routes'))
+router.use('/permissions', requirePermission('admins'), require('./permissions/admin-permission.routes'))
+router.use('/roles', requirePermission('admins'), require('./roles/admin-role.routes'))
+router.use('/members', requirePermission('admins'), require('./members/admin-member.routes'))
 router.use('/exams', requirePermission('exams'), require('./exams/admin-exam.routes'))
 router.use('/subexams', requirePermission('subexams'), require('./subexams/admin-subexam.routes'))
 router.use('/subjects', requirePermission('subjects'), require('./subjects/admin-subject.routes'))
