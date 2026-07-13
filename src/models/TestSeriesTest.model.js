@@ -15,6 +15,7 @@ const testSeriesTestSchema = new mongoose.Schema({
     description: { type: String, default: null },
     thumbnail: { type: String, default: null },
     duration: { type: Number, required: true, min: 1 },
+    isPerQuestionTime: { type: Boolean, default: true }, // when true, each mapped question carries its own perQuestionTime (in seconds)
     totalQuestions: { type: Number, required: true, min: 1 },
     totalMarks: { type: Number, required: true, min: 0 },
     marksPerQuestion: { type: Number, required: true, min: 0 },
@@ -23,7 +24,7 @@ const testSeriesTestSchema = new mongoose.Schema({
     instructions: { type: String, default: null },
     isPaid: { type: Boolean, default: false, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
-    language: { type: String, enum: ['en', 'hi'], default: 'en' },
+    language: { type: String, enum: ['en', 'hi', 'both'], default: 'en' },
     localizedContent: {
         en: { type: localizedBlock, default: {} },
         hi: { type: localizedBlock, default: null },
