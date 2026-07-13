@@ -127,6 +127,18 @@ class TestSeriesRepository extends BaseRepository {
         return TestSeriesAttempt.create(payload)
     }
 
+    async getAttemptBySession(sessionId, userId) {
+        return TestSeriesAttempt.findOne({ sessionId, user: userId })
+    }
+
+    async updateAttemptBySession(sessionId, userId, updateData) {
+        return TestSeriesAttempt.findOneAndUpdate(
+            { sessionId, user: userId },
+            { $set: updateData },
+            { new: true }
+        )
+    }
+
     async listAttemptsByUser(userId, filter = {}, options = {}) {
         return paginate(
             TestSeriesAttempt,
