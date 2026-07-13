@@ -17,6 +17,7 @@ const Vocabulary = require('../../models/Vocabulary.model')
 const VocabularyUserState = require('../../models/VocabularyUserState.model')
 const Editorial = require('../../models/Editorial.model')
 const UserEditorialLike = require('../../models/EditorialLike.model')
+const UserReport = require('../../models/UserReport.model')
 const Grammar = require('../../models/Grammar.model')
 const UserGrammarChapterLike = require('../../models/GrammarChapterLike.model')
 const AppError = require('../../core/AppError')
@@ -262,6 +263,51 @@ class UserService extends BaseService {
 
     async updateFcmToken(userId, fcmToken) {
         return userRepository.updateById(userId, { fcmToken })
+    }
+
+    async createReport(userId, data) {
+        const itemModel = data.itemType === 'vocabulary' ? Vocabulary : Editorial
+        const item = await itemModel.findOne({ _id: data.itemId, isDeleted: false }).lean()
+
+        if (!item) {
+            throw new AppError(`${data.itemType} not found`, 404, 'NOT_FOUND')
+        }
+
+        const report = await UserReport.create({
+            user: userId,
+            itemType: data.itemType,
+            itemId: item._id,
+            contentType: item.type || data.itemType,
+            itemTitle: item.title || item.word || '',
+            description: data.description,
+        })
+
+        return report.toObject()
+    }
+
+    async getMyReports(userId, opts = {}) {
+        return paginate(
+            UserReport,
+            { user: userId, isDeleted: false },
+            {
+                ...opts,
+                sort: { reportedAt: -1, createdAt: -1 },
+            }
+        )
+    }
+
+    async getMyReportByItemId(userId, itemId) {
+        const report = await UserReport.findOne({
+            user: userId,
+            itemId,
+            isDeleted: false,
+        }).sort({ reportedAt: -1, createdAt: -1 }).lean()
+
+        if (!report) {
+            throw new AppError('Report not found', 404, 'NOT_FOUND')
+        }
+
+        return report
     }
 }
 

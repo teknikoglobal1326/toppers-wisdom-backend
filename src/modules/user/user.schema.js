@@ -20,4 +20,10 @@ const updateFcmSchema = Joi.object({
   fcmToken: Joi.string().required(),
 })
 
-module.exports = { updateProfileSchema, setupProfileSchema, updateFcmSchema }
+const createReportSchema = Joi.object({
+  itemType: Joi.string().valid('vocabulary', 'editorial').required(),
+  itemId: Joi.string().hex().length(24).required(),
+  description: Joi.string().trim().min(2).max(1000).required(),
+})
+
+module.exports = { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema }
