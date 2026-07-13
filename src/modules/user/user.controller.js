@@ -5,7 +5,7 @@
  * 3. send response
  */
 const catchAsync = require('../../core/catchAsync')
-const { sendSuccess, sendPaginated } = require('../../core/response')
+const { sendSuccess, sendPaginated, sendCreated } = require('../../core/response')
 const userService = require('./user.service')
 
 const getMe = catchAsync(async (req, res) => { sendSuccess(res, await userService.getMe(req.user._id)) })
@@ -16,6 +16,7 @@ const getCommonStudyStats = catchAsync(async (req, res) => { sendSuccess(res, aw
 const removeSaved = catchAsync(async (req, res) => { await userService.removeSaved(req.user._id, req.params.itemId); sendSuccess(res, null, 'Removed') })
 const markNotifRead = catchAsync(async (req, res) => { await userService.markNotificationRead(req.user._id, req.params.id); sendSuccess(res, null, 'Marked as read') })
 const updateFcmToken = catchAsync(async (req, res) => { await userService.updateFcmToken(req.user._id, req.body.fcmToken); sendSuccess(res, null, 'Updated') })
+const createReport = catchAsync(async (req, res) => { sendCreated(res, await userService.createReport(req.user._id, req.body), 'Report submitted') })
 
 const getSaved = catchAsync(async (req, res) => {
   const r = await userService.getSaved(req.user._id, req.query)
@@ -32,4 +33,13 @@ const getNotifications = catchAsync(async (req, res) => {
   sendPaginated(res, r.data, r.pagination)
 })
 
-module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, markNotifRead, updateFcmToken }
+const getMyReports = catchAsync(async (req, res) => {
+  const r = await userService.getMyReports(req.user._id, req.query)
+  sendPaginated(res, r.data, r.pagination)
+})
+
+const getMyReportByItemId = catchAsync(async (req, res) => {
+  sendSuccess(res, await userService.getMyReportByItemId(req.user._id, req.params.itemId))
+})
+
+module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, markNotifRead, updateFcmToken, createReport, getMyReports, getMyReportByItemId }
