@@ -74,24 +74,72 @@ class EditorialService extends BaseService {
     return sort
   }
 
+  async getStateEditorialIds(userId, listType = 'all') {
+    if (!userId || listType === 'all') return []
+
+    const filter = { userId }
+
+    if (listType === 'read') {
+      filter.isRead = true
+    } else if (listType === 'bookmarked') {
+      filter.$or = [{ isBookmarked: true }, { isLiked: true }]
+    } else if (listType === 'unread') {
+      filter.$or = [{ isRead: true }, { isBookmarked: true }, { isLiked: true }]
+    }
+
+    return UserEditorialLike.distinct('editorialId', filter)
+  }
+
+  async buildListFilter(query = {}, userId) {
+    const filter = this.buildFilter(query)
+    const listType = query.listType || 'all'
+
+    if (!userId || listType === 'all') {
+      return filter
+    }
+
+    const stateEditorialIds = await this.getStateEditorialIds(userId, listType)
+
+    if (listType === 'read' || listType === 'bookmarked') {
+      filter._id = { $in: stateEditorialIds }
+      return filter
+    }
+
+    if (stateEditorialIds.length) {
+      filter._id = { $nin: stateEditorialIds }
+    }
+
+    return filter
+  }
+
   async attachLikeState(items = [], userId) {
     const ids = items.map((item) => item._id)
     if (!userId || !ids.length) {
-      return items.map((item) => ({ ...item, isLiked: false }))
+      return items.map((item) => ({ ...item, isRead: false, isBookmarked: false, isLiked: false }))
     }
 
     const likes = await UserEditorialLike.find({
       userId,
       editorialId: { $in: ids },
-      isLiked: true,
     }).lean()
 
-    const likedIds = new Set(likes.map((like) => String(like.editorialId)))
-    return items.map((item) => ({ ...item, isLiked: likedIds.has(String(item._id)) }))
+    const stateMap = new Map(likes.map((item) => [String(item.editorialId), item]))
+    return items.map((item) => {
+      const state = stateMap.get(String(item._id))
+      const isBookmarked = !!(state?.isBookmarked || state?.isLiked)
+      return {
+        ...item,
+        isRead: !!state?.isRead,
+        isBookmarked,
+        isLiked: isBookmarked,
+        readAt: state?.readAt || null,
+        bookmarkedAt: state?.bookmarkedAt || null,
+      }
+    })
   }
 
   async listAll(query = {}, userId) {
-    const filter = this.buildFilter(query)
+    const filter = await this.buildListFilter(query, userId)
     const sort = this.buildSort(query)
 
     const result = await this.getAll(filter, {
@@ -120,22 +168,52 @@ class EditorialService extends BaseService {
   }
 
   async setLike(editorialId, userId, isLiked = true) {
-    const editorial = await editorialRepository.findOne({ _id: editorialId, isDeleted: false, status: 'published' })
+    return this.setBookmark(editorialId, userId, isLiked)
+  }
+
+  async setRead(editorialId, userId, isRead = true) {
+    const editorial = await editorialRepository.findOne({ _id: editorialId, isDeleted: false,  })
+    if (!editorial) {
+      throw new AppError('Editorial not found', 404, 'NOT_FOUND')
+    }
+
+    return UserEditorialLike.findOneAndUpdate(
+      { userId, editorialId },
+      {
+        $set: {
+          isRead: !!isRead,
+          readAt: isRead ? new Date() : null,
+        },
+        $setOnInsert: { isLiked: false, isBookmarked: false, bookmarkedAt: null },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean()
+  }
+
+  async setBookmark(editorialId, userId, isBookmarked = true) {
+    const editorial = await editorialRepository.findOne({ _id: editorialId, isDeleted: false })
     if (!editorial) {
       throw new AppError('Editorial not found', 404, 'NOT_FOUND')
     }
 
     const existing = await UserEditorialLike.findOne({ userId, editorialId }).lean()
-    const previous = !!existing?.isLiked
-    const nextValue = !!isLiked
+    const previous = !!(existing?.isBookmarked || existing?.isLiked)
+    const nextValue = !!isBookmarked
 
     if (!existing && !nextValue) {
-      return { editorialId, isLiked: false }
+      return { editorialId, isBookmarked: false, isLiked: false }
     }
 
     await UserEditorialLike.findOneAndUpdate(
       { userId, editorialId },
-      { $set: { isLiked: nextValue } },
+      {
+        $set: {
+          isBookmarked: nextValue,
+          isLiked: nextValue,
+          bookmarkedAt: nextValue ? new Date() : null,
+        },
+        $setOnInsert: { isRead: false, readAt: null },
+      },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     )
 
@@ -145,7 +223,7 @@ class EditorialService extends BaseService {
       await Editorial.updateOne({ _id: editorialId }, { $max: { totalLikes: 0 } })
     }
 
-    return { editorialId, isLiked: nextValue }
+    return { editorialId, isBookmarked: nextValue, isLiked: nextValue }
   }
 }
 

@@ -36,33 +36,69 @@ class GrammarService extends BaseService {
     })
   }
 
+  filterChaptersByListType(chapters = [], listType = 'all') {
+    if (listType === 'all') return chapters
+
+    if (listType === 'read') {
+      return chapters.filter((chapter) => chapter.isRead)
+    }
+
+    if (listType === 'bookmarked') {
+      return chapters.filter((chapter) => chapter.isBookmarked)
+    }
+
+    if (listType === 'unread') {
+      return chapters.filter((chapter) => !chapter.isRead && !chapter.isBookmarked)
+    }
+
+    return chapters
+  }
+
   async getLikeMap(userId, grammarIds = []) {
     if (!userId || !grammarIds.length) return new Map()
 
     const likes = await UserGrammarChapterLike.find({
       userId,
       grammarId: { $in: grammarIds },
-      isLiked: true,
-    }).select('grammarId chapterId').lean()
+    }).select('grammarId chapterId isRead isBookmarked isLiked').lean()
 
     const map = new Map()
     for (const like of likes) {
-      map.set(`${String(like.grammarId)}:${String(like.chapterId)}`, true)
+      map.set(`${String(like.grammarId)}:${String(like.chapterId)}`, {
+        isRead: !!like.isRead,
+        isBookmarked: !!(like.isBookmarked || like.isLiked),
+      })
     }
     return map
   }
 
-  async attachChapterLikeState(items = [], userId, topicSortOrder = 'asc') {
+  async attachChapterLikeState(items = [], userId, topicSortOrder = 'asc', listType = 'all') {
     const grammarIds = items.map((item) => item._id)
     const likeMap = await this.getLikeMap(userId, grammarIds)
 
-    return items.map((item) => ({
+    const withState = items.map((item) => ({
       ...item,
-      chapters: this.sortChapters(item.chapters || [], topicSortOrder).map((chapter) => ({
-        ...chapter,
-        isLiked: likeMap.has(`${String(item._id)}:${String(chapter._id)}`),
-      })),
+      chapters: this.sortChapters(item.chapters || [], topicSortOrder).map((chapter) => {
+        const key = `${String(item._id)}:${String(chapter._id)}`
+        const state = likeMap.get(key)
+        const isBookmarked = !!state?.isBookmarked
+        return {
+          ...chapter,
+          isRead: !!state?.isRead,
+          isBookmarked,
+          isLiked: isBookmarked,
+        }
+      }),
     }))
+
+    if (listType === 'all') return withState
+
+    return withState
+      .map((item) => ({
+        ...item,
+        chapters: this.filterChaptersByListType(item.chapters || [], listType),
+      }))
+      .filter((item) => (item.chapters || []).length > 0)
   }
 
   async listAll(query = {}, userId) {
@@ -76,7 +112,7 @@ class GrammarService extends BaseService {
       sort: { [sortBy]: direction, createdAt: -1 },
     })
 
-    const data = await this.attachChapterLikeState(result.data, userId, query.topicSortOrder)
+    const data = await this.attachChapterLikeState(result.data, userId, query.topicSortOrder, query.listType || 'all')
     return { ...result, data }
   }
 
@@ -84,28 +120,59 @@ class GrammarService extends BaseService {
     const grammar = await grammarRepository.findOne({ _id: id, isDeleted: false, status: 'active' })
     if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
 
-    const [withState] = await this.attachChapterLikeState([grammar], userId, topicSortOrder)
+    const [withState] = await this.attachChapterLikeState([grammar], userId, topicSortOrder, 'all')
     return withState
   }
 
   async setChapterLike(grammarId, chapterId, userId, isLiked = true) {
-    const grammar = await Grammar.findOne({ _id: grammarId, isDeleted: false, status: 'active' }).select('chapters').lean()
+    return this.setChapterBookmark(grammarId, chapterId, userId, isLiked)
+  }
+
+  async setChapterRead(grammarId, chapterId, userId, isRead = true) {
+    const grammar = await Grammar.findOne({ _id: grammarId, isDeleted: false, }).select('chapters').lean()
+    if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
+
+    const chapter = (grammar.chapters || []).find((item) => String(item._id) === String(chapterId))
+    if (!chapter) throw new AppError('Chapter not found', 404, 'NOT_FOUND')
+
+    return UserGrammarChapterLike.findOneAndUpdate(
+      { userId, grammarId, chapterId },
+      {
+        $set: {
+          isRead: !!isRead,
+          readAt: isRead ? new Date() : null,
+        },
+        $setOnInsert: { isLiked: false, isBookmarked: false, bookmarkedAt: null },
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean()
+  }
+
+  async setChapterBookmark(grammarId, chapterId, userId, isBookmarked = true) {
+    const grammar = await Grammar.findOne({ _id: grammarId, isDeleted: false }).select('chapters').lean()
     if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
 
     const chapter = (grammar.chapters || []).find((item) => String(item._id) === String(chapterId))
     if (!chapter) throw new AppError('Chapter not found', 404, 'NOT_FOUND')
 
     const existing = await UserGrammarChapterLike.findOne({ userId, grammarId, chapterId }).lean()
-    const previous = !!existing?.isLiked
-    const nextValue = !!isLiked
+    const previous = !!(existing?.isBookmarked || existing?.isLiked)
+    const nextValue = !!isBookmarked
 
     if (!existing && !nextValue) {
-      return { grammarId, chapterId, isLiked: false, totalLikes: chapter.totalLikes || 0 }
+      return { grammarId, chapterId, isBookmarked: false, isLiked: false, totalLikes: chapter.totalLikes || 0 }
     }
 
     await UserGrammarChapterLike.findOneAndUpdate(
       { userId, grammarId, chapterId },
-      { $set: { isLiked: nextValue } },
+      {
+        $set: {
+          isBookmarked: nextValue,
+          isLiked: nextValue,
+          bookmarkedAt: nextValue ? new Date() : null,
+        },
+        $setOnInsert: { isRead: false, readAt: null },
+      },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     )
 
@@ -121,6 +188,7 @@ class GrammarService extends BaseService {
     return {
       grammarId,
       chapterId,
+      isBookmarked: nextValue,
       isLiked: nextValue,
       totalLikes: refreshedChapter.totalLikes || 0,
     }

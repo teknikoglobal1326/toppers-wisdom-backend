@@ -1,9 +1,39 @@
 const BaseRepository = require('../../core/BaseRepository')
 const Enrollment     = require('../../models/Enrollment.model')
 const User           = require('../../models/User.model')
+const TestSeriesTest         = require('../../models/TestSeriesTest.model')
+const PreviousYearPaperTest  = require('../../models/PreviousYearPaperTest.model')
+const TestSeriesAttempt      = require('../../models/TestSeriesAttempt.model')
+const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
 
 class ProgressRepository extends BaseRepository {
   constructor() { super(Enrollment, 'progress') }
+
+  // Count of active, non-deleted tests available across a module.
+  async countActiveTests(Model) {
+    return Model.countDocuments({ isDeleted: false, status: 'active' })
+  }
+
+  // Per-test best attempt stats for a user (one row per distinct test attempted).
+  async getBestAttemptStats(userId, Model) {
+    return Model.aggregate([
+      { $match: { user: userId } },
+      {
+        $group: {
+          _id: '$test',
+          bestScore: { $max: '$score' },
+          bestAccuracy: { $max: '$accuracy' },
+          totalMarks: { $max: '$totalMarks' },
+          attempts: { $sum: 1 },
+        },
+      },
+    ])
+  }
+
+  countActiveTestSeriesTests() { return this.countActiveTests(TestSeriesTest) }
+  countActivePreviousYearPaperTests() { return this.countActiveTests(PreviousYearPaperTest) }
+  getTestSeriesAttemptStats(userId) { return this.getBestAttemptStats(userId, TestSeriesAttempt) }
+  getPreviousYearPaperAttemptStats(userId) { return this.getBestAttemptStats(userId, PreviousYearPaperAttempt) }
 
   async getEnrollment(userId, courseId) {
     return this.findOne({ user: userId, course: courseId })

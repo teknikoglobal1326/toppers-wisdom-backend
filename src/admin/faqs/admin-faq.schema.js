@@ -1,6 +1,7 @@
 const Joi = require('joi')
 
 const createFaqSchema = Joi.object({
+  courseId: Joi.string().hex().length(24).allow(null, ''),
   question: Joi.string().trim().required(),
   answer: Joi.string().trim().required(),
   sortOrder: Joi.number().integer().min(0).default(0),
@@ -8,6 +9,7 @@ const createFaqSchema = Joi.object({
 })
 
 const updateFaqSchema = Joi.object({
+  courseId: Joi.string().hex().length(24).allow(null, ''),
   question: Joi.string().trim(),
   answer: Joi.string().trim(),
   sortOrder: Joi.number().integer().min(0),
@@ -15,10 +17,11 @@ const updateFaqSchema = Joi.object({
 }).min(1)
 
 const listFaqQuerySchema = Joi.object({
+  courseId: Joi.string().hex().length(24),
   status: Joi.string().valid('active', 'inactive'),
   question: Joi.string().trim().max(300),
   search: Joi.string().trim().max(300),
-  sortBy: Joi.string().valid('sortOrder', 'question', 'status', 'createdAt', 'updatedAt').default('sortOrder'),
+  sortBy: Joi.string().valid('sortOrder', 'question', 'status', 'course', 'createdAt', 'updatedAt').default('sortOrder'),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
