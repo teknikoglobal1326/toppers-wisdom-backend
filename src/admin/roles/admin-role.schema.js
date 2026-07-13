@@ -3,18 +3,24 @@ const Joi = require('joi')
 const createRoleSchema = Joi.object({
   name: Joi.string().trim().required(),
   description: Joi.string().trim().allow('', null),
-  permissions: Joi.array().items(Joi.string().hex().length(24)).default([]),
+  permissions: Joi.alternatives().try(
+    Joi.object().unknown(true),
+    Joi.array().items(Joi.any()),
+    Joi.boolean(),
+  ).default({}),
   sortOrder: Joi.number().integer().min(0).default(0),
-  profileImage: Joi.string().trim().allow('', null),
   isActive: Joi.boolean().default(true),
 })
 
 const updateRoleSchema = Joi.object({
   name: Joi.string().trim(),
   description: Joi.string().trim().allow('', null),
-  permissions: Joi.array().items(Joi.string().hex().length(24)),
+  permissions: Joi.alternatives().try(
+    Joi.object().unknown(true),
+    Joi.array().items(Joi.any()),
+    Joi.boolean(),
+  ),
   sortOrder: Joi.number().integer().min(0),
-  profileImage: Joi.string().trim().allow('', null),
   isActive: Joi.boolean(),
 }).min(1)
 
