@@ -49,6 +49,20 @@ const normalizePayload = (data = {}) => {
     payload.localizedContent.en.description = description
     payload.localizedContent.en.instructions = instructions
 
+    // Hindi localized content is optional; only populate when any field is provided.
+    const hasHi = [payload.titleHi, payload.descriptionHi, payload.instructionsHi]
+        .some((value) => value !== undefined && value !== null && value !== '')
+    payload.localizedContent.hi = hasHi
+        ? {
+            title: payload.titleHi || null,
+            description: payload.descriptionHi || null,
+            instructions: payload.instructionsHi || null,
+        }
+        : null
+
+    delete payload.titleHi
+    delete payload.descriptionHi
+    delete payload.instructionsHi
     delete payload.testSeriesId
     return payload
 }

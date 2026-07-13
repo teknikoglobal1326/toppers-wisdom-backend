@@ -181,6 +181,7 @@ class PreviousYearPaperService extends BaseService {
                 _id: test._id,
                 title: test.title,
                 duration: test.duration,
+                isPerQuestionTime: test.isPerQuestionTime !== false,
                 totalQuestions: test.totalQuestions,
                 totalMarks: test.totalMarks,
                 passingMarks: test.passingMarks,
