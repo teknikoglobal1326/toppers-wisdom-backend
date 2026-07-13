@@ -15,8 +15,33 @@ class AdminQuestionService extends BaseService {
   }
 
   async syncQuestionCount(testId) {
-    const count = await questionRepository.count({ test: testId, isDeleted: false })
-    await courseTestRepository.updateById(testId, { totalMappedQuestions: count })
+    const groupIds = await questionRepository.model.distinct('groupId', {
+      test: testId,
+      isDeleted: false,
+      groupId: { $ne: null },
+    })
+    const ungroupedCount = await questionRepository.count({
+      test: testId,
+      isDeleted: false,
+      $or: [{ groupId: null }, { groupId: { $exists: false } }],
+    })
+    const count = groupIds.length + ungroupedCount
+    const update = { totalMappedQuestions: count }
+    const updatedCourseTest = await courseTestRepository.updateById(testId, update)
+    if (updatedCourseTest) return
+
+    const updatedSeriesTest = await TestSeriesTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      update,
+      { new: true }
+    )
+    if (updatedSeriesTest) return
+
+    await PreviousYearPaperTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      update,
+      { new: true }
+    )
   }
 
   async listAll({ page, limit, test, status, language, search, sortOrder } = {}) {
@@ -130,12 +155,20 @@ class AdminQuestionService extends BaseService {
 
   async createQuestionDual({ hi, en }, createdBy) {
     const testId = hi?.test || hi?.testId || en?.test || en?.testId
-    // Same logical question in both languages → shared order + shared groupId.
-    const order = await this.nextOrder(testId)
+    const hiTestId = hi?.test || hi?.testId
+    const enTestId = en?.test || en?.testId
+    if (!hiTestId || !enTestId || String(hiTestId) !== String(enTestId)) {
+      throw new AppError('Both language payloads must reference the same test', 400, 'VALIDATION_ERROR')
+    }
+
+    // Same logical question across Hindi and English → shared order + shared groupId.
+    const requestedOrder = hi?.order || en?.order
+    const order = requestedOrder ? Number(requestedOrder) : await this.nextOrder(testId)
+    const perQuestionTime = hi?.perQuestionTime ?? en?.perQuestionTime
     const groupId = new mongoose.Types.ObjectId()
 
-    const hiPayload = await this.applyPerQuestionTime(this.buildPayload({ ...hi, language: 'hi', order, groupId, createdBy }))
-    const enPayload = await this.applyPerQuestionTime(this.buildPayload({ ...en, language: 'en', order, groupId, createdBy }))
+    const hiPayload = await this.applyPerQuestionTime(this.buildPayload({ ...hi, language: 'hi', order, perQuestionTime, groupId, createdBy }))
+    const enPayload = await this.applyPerQuestionTime(this.buildPayload({ ...en, language: 'en', order, perQuestionTime, groupId, createdBy }))
 
     const [hiResult, enResult] = await Promise.all([
       questionRepository.createSingle(hiPayload),
@@ -168,8 +201,8 @@ class AdminQuestionService extends BaseService {
   }
 
   async softDeleteByTest(testId) {
-    const courseTest = await courseTestRepository.findOne({ _id: testId, isDeleted: false })
-    if (!courseTest) throw new AppError('Course test not found', 404, 'NOT_FOUND')
+    const parentTest = await this.resolveParentTest(testId)
+    if (!parentTest) throw new AppError('Parent test not found', 404, 'NOT_FOUND')
 
     const result = await questionRepository.updateMany(
       { test: testId, isDeleted: false },
@@ -187,6 +220,37 @@ const adminQuestionService = new AdminQuestionService()
 adminQuestionService.attachUploadedFiles = async (req, _res, next) => {
   try {
     const folder = `questions/${req.params.id ?? `new-${Date.now()}`}`
+
+    const parseJsonField = (fieldName) => {
+      if (req.body[fieldName] && typeof req.body[fieldName] === 'string') {
+        req.body[fieldName] = JSON.parse(req.body[fieldName])
+      }
+    }
+
+    const uploadSingleImage = async (fieldName, fileNamePrefix, target, targetKey) => {
+      const file = req.files?.[fieldName]?.[0]
+      if (!file) return
+
+      const ext = path.extname(file.originalname) || '.jpg'
+      target[targetKey] = target[targetKey] || {}
+      target[targetKey].image = await uploadFile(file.buffer, `${fileNamePrefix}${ext}`, folder, file.mimetype)
+    }
+
+    const uploadOptionImages = async (language, target) => {
+      target.options = Array.isArray(target.options) ? target.options : []
+      for (let index = 0; index < 4; index += 1) {
+        const file = req.files?.[`${language}Option${index}Image`]?.[0]
+        if (!file || !target.options[index]) continue
+
+        const ext = path.extname(file.originalname) || '.jpg'
+        target.options[index].image = await uploadFile(
+          file.buffer,
+          `${language}-option-${index + 1}${ext}`,
+          folder,
+          file.mimetype
+        )
+      }
+    }
 
     if (req.files?.questionImage?.[0]) {
       const file = req.files.questionImage[0]
@@ -237,27 +301,21 @@ adminQuestionService.attachUploadedFiles = async (req, _res, next) => {
       req.body.options = options
     }
 
-    if (req.body.hi && typeof req.body.hi === 'string') {
-      req.body.hi = JSON.parse(req.body.hi)
-    }
-    if (req.body.en && typeof req.body.en === 'string') {
-      req.body.en = JSON.parse(req.body.en)
-    }
-
-    if (req.body.question && typeof req.body.question === 'string') {
-      req.body.question = JSON.parse(req.body.question)
-    }
-
-    if (req.body.explanation && typeof req.body.explanation === 'string') {
-      req.body.explanation = JSON.parse(req.body.explanation)
-    }
-
-    if (req.body.options && typeof req.body.options === 'string') {
-      req.body.options = JSON.parse(req.body.options)
-    }
+    parseJsonField('hi')
+    parseJsonField('en')
+    parseJsonField('question')
+    parseJsonField('explanation')
+    parseJsonField('options')
 
     // Map uploaded file paths into hi and en payloads if dual creation
     if (req.body.hi && req.body.en) {
+      await uploadSingleImage('hiQuestionImage', 'hi-question', req.body.hi, 'question')
+      await uploadSingleImage('hiExplanationImage', 'hi-explanation', req.body.hi, 'explanation')
+      await uploadOptionImages('hi', req.body.hi)
+      await uploadSingleImage('enQuestionImage', 'en-question', req.body.en, 'question')
+      await uploadSingleImage('enExplanationImage', 'en-explanation', req.body.en, 'explanation')
+      await uploadOptionImages('en', req.body.en)
+
       if (req.body.question?.image) {
         req.body.hi.question = req.body.hi.question || {}
         req.body.hi.question.image = req.body.question.image
