@@ -31,7 +31,7 @@ class TestSeriesRepository extends BaseRepository {
     async listSeriesTests(filter, options = {}) {
         return paginate(TestSeriesTest, filter, {
             ...options,
-            select: 'testSeries subjectId topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status language createdAt',
+            select: 'testSeries subjectId topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status languages createdAt',
             populate: [{ path: 'subjectId', select: 'name' }, { path: 'topicIds', select: 'topicName' }],
         })
     }
