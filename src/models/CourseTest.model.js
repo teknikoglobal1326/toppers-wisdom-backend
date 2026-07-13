@@ -1,5 +1,13 @@
 const mongoose = require('mongoose')
 
+// Per-language metadata (title/description/instructions). English mirrors the
+// top-level fields; Hindi is optional and only populated when provided.
+const localizedBlock = {
+  title: { type: String, trim: true, default: null },
+  description: { type: String, default: null },
+  instructions: { type: String, default: null },
+}
+
 const courseTestSchema = new mongoose.Schema({
   course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
   topic: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic', required: true, index: true },
@@ -8,8 +16,13 @@ const courseTestSchema = new mongoose.Schema({
   slug: { type: String, required: true },
   description: { type: String, default: '' },
   instruction: { type: String, default: '' },
+  localizedContent: {
+    en: { type: localizedBlock, default: {} },
+    hi: { type: localizedBlock, default: null },
+  },
   image: { type: String, default: '' },
   duration: { type: Number, required: true }, // in minutes
+  isPerQuestionTime: { type: Boolean, default: true }, // when true, each question carries its own perQuestionTime (in seconds)
   sortOrder: { type: Number, default: 0, index: true },
   totalQuestions: { type: Number, default: 0 },
   totalMappedQuestions: { type: Number, default: 0 },

@@ -21,7 +21,7 @@ const todayQuizSchema = new mongoose.Schema({
     endDateTime: { type: Date, required: true },
     isPaid: { type: Boolean, default: false, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
-    language: { type: String, enum: ['en', 'hi'], default: 'en' },
+    language: { type: String, enum: ['en', 'hi', 'both'], default: 'en' },
     localizedContent: {
         en: { type: localizedBlock, default: {} },
         hi: { type: localizedBlock, default: null },
