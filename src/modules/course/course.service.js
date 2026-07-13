@@ -120,7 +120,7 @@ class CourseService extends BaseService {
         .select('title slug description image duration totalQuestion totalMarks difficulty')
         .lean(),
       CourseTest.find({ course: courseId, isDeleted: false, status: { $in: ['active', 'published'] } })
-        .select('title slug description image duration totalQuestion totalMarks difficulty topic chapter')
+        .select('title slug description image duration isPerQuestionTime totalQuestion totalMarks difficulty topic chapter')
         .lean(),
       Topic.find({ course: courseId, isDeleted: false, status: 'active' }).lean()
     ])

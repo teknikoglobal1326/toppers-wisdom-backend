@@ -9,6 +9,7 @@ const sanitizeQuestion = (question) => ({
   options: (question.options || []).map((option) => ({ text: option.text, image: option.image })),
   order: question.order,
   sortOrder: question.sortOrder,
+  perQuestionTime: question.perQuestionTime ?? null,
 })
 
 // Build the always-present i18n payload: { <order>: { en: {...}, hi: {...} } }.
