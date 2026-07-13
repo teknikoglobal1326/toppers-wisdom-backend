@@ -11,8 +11,16 @@ const getOne = catchAsync(async (req, res) => {
   sendSuccess(res, await editorialService.getOne(req.params.id, req.user?._id))
 })
 
+const setRead = catchAsync(async (req, res) => {
+  sendSuccess(res, await editorialService.setRead(req.params.id, req.user?._id, req.body.isRead), 'Editorial read state updated')
+})
+
+const setBookmark = catchAsync(async (req, res) => {
+  sendSuccess(res, await editorialService.setBookmark(req.params.id, req.user?._id, req.body.isBookmarked), 'Editorial bookmark updated')
+})
+
 const setLike = catchAsync(async (req, res) => {
   sendSuccess(res, await editorialService.setLike(req.params.id, req.user?._id, req.body.isLiked), 'Editorial like updated')
 })
 
-module.exports = { list, getOne, setLike }
+module.exports = { list, getOne, setRead, setBookmark, setLike }

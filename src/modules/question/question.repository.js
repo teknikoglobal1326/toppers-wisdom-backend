@@ -23,8 +23,17 @@ class QuestionRepository extends BaseRepository {
   async createSingle(data) {
     return this.create({
       ...data,
-      language: data.language || 'both',
+      language: data.language || 'en',
     })
+  }
+
+  // Highest `order` currently used for a test (0 when none) — used to auto-assign the next order.
+  async getMaxOrder(testId) {
+    const last = await Question.findOne({ test: testId, isDeleted: false })
+      .sort({ order: -1 })
+      .select('order')
+      .lean()
+    return last?.order || 0
   }
 }
 

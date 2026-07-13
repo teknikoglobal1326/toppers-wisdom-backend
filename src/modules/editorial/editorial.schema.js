@@ -6,6 +6,7 @@ const STATUS_VALUES = ['draft', 'published', 'inactive']
 const listEditorialQuerySchema = Joi.object({
   type: Joi.string().valid(...TYPE_VALUES),
   status: Joi.string().valid(...STATUS_VALUES),
+  listType: Joi.string().valid('all', 'read', 'bookmarked', 'unread').default('all'),
   editorialTest: Joi.string().hex().length(24),
   isFree: Joi.boolean(),
   search: Joi.string().trim().allow(''),
@@ -22,4 +23,12 @@ const setEditorialLikeSchema = Joi.object({
   isLiked: Joi.boolean().default(true),
 })
 
-module.exports = { listEditorialQuerySchema, setEditorialLikeSchema }
+const setEditorialReadSchema = Joi.object({
+  isRead: Joi.boolean().default(true),
+})
+
+const setEditorialBookmarkSchema = Joi.object({
+  isBookmarked: Joi.boolean().default(true),
+})
+
+module.exports = { listEditorialQuerySchema, setEditorialLikeSchema, setEditorialReadSchema, setEditorialBookmarkSchema }

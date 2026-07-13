@@ -2,6 +2,7 @@ const BaseService = require('../../core/BaseService')
 const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
+const { groupQuestionsByLanguage, scoreAnswers } = require('../../lib/testQuestions')
 const previousYearPaperRepository = require('./previous-year-paper.repository')
 
 class PreviousYearPaperService extends BaseService {
@@ -55,15 +56,14 @@ class PreviousYearPaperService extends BaseService {
         })
 
         const previousYearPaperIds = result.data.map((item) => item._id)
-        const [testCounts, attemptCounts, purchasedIds] = await Promise.all([
+        const [testCounts, attemptCounts] = await Promise.all([
             this.repository.getTestCountsByPreviousYearPaper(previousYearPaperIds),
             this.repository.getAttemptCountsByPreviousYearPaper(userId, previousYearPaperIds),
-            this.repository.getPurchasedTestItemIds(userId),
         ])
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
-            const hasAccess = !item.isPaid || purchasedIds.has(id)
+            const hasAccess = !item.isPaid
             return {
                 ...item,
                 totalTests: testCounts[id] || 0,
@@ -82,8 +82,7 @@ class PreviousYearPaperService extends BaseService {
             throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
         }
 
-        const purchasedIds = await this.repository.getPurchasedTestItemIds(userId)
-        const hasAccess = !previousYearPaper.isPaid || purchasedIds.has(previousYearPaperId)
+        const hasAccess = !previousYearPaper.isPaid
         const testCounts = await this.repository.getTestCountsByPreviousYearPaper([previousYearPaper._id])
 
         return {
@@ -128,17 +127,14 @@ class PreviousYearPaperService extends BaseService {
         })
 
         const testIds = result.data.map((item) => item._id)
-        const [questionCounts, latestAttempts, purchasedIds] = await Promise.all([
+        const [questionCounts, latestAttempts] = await Promise.all([
             this.repository.getQuestionCountsByTestIds(testIds),
             this.repository.getLatestAttemptsByTestIds(userId, testIds),
-            this.repository.getPurchasedTestItemIds(userId),
         ])
-
-        const hasPreviousYearPaperAccess = !previousYearPaper.isPaid || purchasedIds.has(previousYearPaper._id.toString())
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
-            const hasAccess = hasPreviousYearPaperAccess || !item.isPaid || purchasedIds.has(id)
+            const hasAccess = !item.isPaid
             const attemptStats = latestAttempts[id]
 
             return {
@@ -165,23 +161,15 @@ class PreviousYearPaperService extends BaseService {
             throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
         }
 
-        const purchasedIds = await this.repository.getPurchasedTestItemIds(userId)
-        const hasAccess = !previousYearPaper.isPaid || !test.isPaid || purchasedIds.has(previousYearPaper._id.toString()) || purchasedIds.has(test._id.toString())
+        const hasAccess = !test.isPaid
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
-        const questions = await this.repository.findQuestionsForTest(testId, language)
+        const questions = await this.repository.findQuestionsForTest(testId)
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
 
-        const sanitizedQuestions = questions.map((question) => ({
-            _id: question._id,
-            language: question.language,
-            question: question.question,
-            options: (question.options || []).map((option) => ({ text: option.text, image: option.image })),
-            order: question.order,
-            sortOrder: question.sortOrder,
-        }))
+        const groupedQuestions = groupQuestionsByLanguage(questions)
 
-        this.logger.info({ userId, testId, count: sanitizedQuestions.length }, 'Starting previous-year-paper test')
+        this.logger.info({ userId, testId, count: questions.length }, 'Starting previous-year-paper test')
 
         return {
             previousYearPaper: {
@@ -199,7 +187,7 @@ class PreviousYearPaperService extends BaseService {
                 negativeMarks: test.negativeMarks,
             },
             hasAccess,
-            questions: sanitizedQuestions,
+            questions: groupedQuestions,
         }
     }
 
@@ -214,41 +202,14 @@ class PreviousYearPaperService extends BaseService {
             throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
         }
 
-        const purchasedIds = await this.repository.getPurchasedTestItemIds(userId)
-        const hasAccess = !previousYearPaper.isPaid || !test.isPaid || purchasedIds.has(previousYearPaper._id.toString()) || purchasedIds.has(test._id.toString())
+        const hasAccess = !test.isPaid
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
-        const questions = await this.repository.findQuestionsForTest(testId, language)
+        const questions = await this.repository.findQuestionsForTest(testId)
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
 
-        const answerMap = new Map((payload.answers || []).map((item) => [item.questionId.toString(), item.selectedOption]))
+        const { score, correct, wrong, unattempted, totalQuestions } = scoreAnswers(questions, payload.answers, test)
 
-        let score = 0
-        let correct = 0
-        let wrong = 0
-        let unattempted = 0
-
-        for (const question of questions) {
-            const selectedOption = answerMap.has(question._id.toString())
-                ? answerMap.get(question._id.toString())
-                : null
-
-            if (selectedOption === null || selectedOption === undefined) {
-                unattempted += 1
-                continue
-            }
-
-            const correctOptionIndex = (question.options || []).findIndex((option) => option.isCorrect)
-            if (selectedOption === correctOptionIndex) {
-                correct += 1
-                score += Number(test.marksPerQuestion || 1)
-            } else {
-                wrong += 1
-                score -= Number(test.negativeMarks || 0)
-            }
-        }
-
-        const totalQuestions = questions.length
         const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
         const accuracy = totalQuestions > 0
             ? parseFloat(((correct / totalQuestions) * 100).toFixed(2))
