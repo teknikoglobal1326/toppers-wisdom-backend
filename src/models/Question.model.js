@@ -82,6 +82,14 @@ const questionSchema = new mongoose.Schema(
       index: true,
     },
 
+    // Time allotted for this question in seconds. Required when the parent test's
+    // isPerQuestionTime is true, otherwise stored as null.
+    perQuestionTime: {
+      type: Number,
+      min: 1,
+      default: null,
+    },
+
     marks: {
       type: Number,
       default: 1,
