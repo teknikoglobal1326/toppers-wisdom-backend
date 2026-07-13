@@ -4,6 +4,10 @@ const PreviousYearPaper = require('../../models/PreviousYearPaper.model')
 const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
 const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
 const Question = require('../../models/Question.model')
+<<<<<<< HEAD
+=======
+const CourseOrder = require('../../models/CourseOrder.model')
+>>>>>>> 626c0b4 (confliact changes)
 
 class PreviousYearPaperRepository extends BaseRepository {
     constructor() {
@@ -112,7 +116,29 @@ class PreviousYearPaperRepository extends BaseRepository {
         }, {})
     }
 
+<<<<<<< HEAD
     async findQuestionsForTest(testId) {
+=======
+    async getPurchasedTestItemIds(userId) {
+        const orders = await CourseOrder.find({
+            user: userId,
+            status: 'paid',
+            'items.itemType': 'test',
+        }).select('items.itemId').lean()
+
+        const ids = new Set()
+        for (const order of orders) {
+            for (const item of order.items || []) {
+                if (item?.itemId) ids.add(item.itemId.toString())
+            }
+        }
+
+        return ids
+    }
+
+    async findQuestionsForTest(testId, language) {
+        const allowedLanguages = language === 'en' ? ['en', 'both'] : ['hi', 'both']
+>>>>>>> 626c0b4 (confliact changes)
         return Question.find({
             test: testId,
             isDeleted: false,
