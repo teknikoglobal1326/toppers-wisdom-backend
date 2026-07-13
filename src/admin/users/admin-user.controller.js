@@ -3,7 +3,7 @@ const { sendSuccess, sendPaginated } = require('../../core/response')
 const BaseService    = require('../../core/BaseService')
 const userRepository = require('../../modules/user/user.repository')
 const { paginate }   = require('../../core/paginate')
-const Order          = require('../../models/Order.model')
+const CourseOrder          = require('../../models/CourseOrder.model')
 const TestAttempt    = require('../../models/TestAttempt.model')
 
 class AdminUserService extends BaseService {
@@ -30,7 +30,7 @@ const getOne      = catchAsync(async (req, res) => { sendSuccess(res, await svc.
 const updateUser  = catchAsync(async (req, res) => { sendSuccess(res, await svc.update(req.params.id, req.body)) })
 
 const getUserOrders = catchAsync(async (req, res) => {
-  const r = await paginate(Order, { user: req.params.id }, { page: req.query.page, limit: req.query.limit })
+  const r = await paginate(CourseOrder, { user: req.params.id }, { page: req.query.page, limit: req.query.limit })
   sendPaginated(res, r.data, r.pagination)
 })
 

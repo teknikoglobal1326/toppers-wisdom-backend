@@ -1,9 +1,9 @@
-const BaseService       = require('../../core/BaseService')
+const BaseService = require('../../core/BaseService')
 const paymentRepository = require('./payment.repository')
-const crypto  = require('crypto')
+const crypto = require('crypto')
 const Razorpay = require('razorpay')
 const AppError = require('../../core/AppError')
-const config   = require('../../config/env')
+const config = require('../../config/env')
 const { createLogger } = require('../../config/logger')
 
 const razorpay = new Razorpay({ key_id: config.RAZORPAY_KEY_ID, key_secret: config.RAZORPAY_KEY_SECRET })
@@ -14,18 +14,32 @@ class PaymentService extends BaseService {
     this.logger = createLogger('payment:service')
   }
 
-  async createOrder(userId, items) {
+  async createOrder(userId, items, metadata = {}) {
     this.logger.info({ userId, itemCount: items.length }, 'Creating order')
-    const totalAmount = items.reduce((sum, i) => sum + i.price, 0)
+
+    const totalAmount = metadata.totalAmount ?? items.reduce((sum, i) => sum + i.price, 0)
+    const grandTotal = metadata.grandTotal ?? totalAmount
 
     const rzpOrder = await razorpay.orders.create({
-      amount: Math.round(totalAmount * 100), currency: 'INR', receipt: `receipt_${Date.now()}`,
+      amount: Math.round(grandTotal * 100), currency: 'INR', receipt: `receipt_${Date.now()}`,
     })
 
-    // inherited: this.create() → BaseRepository.create()
-    const order = await this.create({ user: userId, items, totalAmount, currency: 'INR', razorpayOrderId: rzpOrder.id, status: 'pending' })
-    this.logger.info({ userId, orderId: order._id, totalAmount }, 'Order created')
-    return { orderId: order._id, razorpayOrderId: rzpOrder.id, amount: totalAmount, currency: 'INR', keyId: config.RAZORPAY_KEY_ID }
+    const orderData = {
+      user: userId,
+      items,
+      totalAmount,
+      discount: metadata.discount || 0,
+      gstRate: metadata.gstRate || 0,
+      gstAmount: metadata.gstAmount || 0,
+      grandTotal,
+      currency: 'INR',
+      razorpayOrderId: rzpOrder.id,
+      status: 'pending'
+    }
+
+    const order = await this.create(orderData)
+    this.logger.info({ userId, orderId: order._id, grandTotal }, 'Order created')
+    return { orderId: order._id, razorpayOrderId: rzpOrder.id, amount: grandTotal, currency: 'INR', keyId: config.RAZORPAY_KEY_ID }
   }
 
   async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {
@@ -42,7 +56,7 @@ class PaymentService extends BaseService {
     }
 
     const order = await paymentRepository.findByRazorpayOrderId(razorpayOrderId)
-    if (!order)               throw new AppError('Order not found', 404)
+    if (!order) throw new AppError('Order not found', 404)
     if (order.status === 'paid') throw new AppError('Payment already processed', 409)
 
     // inherited: this.update() → BaseRepository.updateById()

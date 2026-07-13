@@ -10,6 +10,7 @@ const Content = require('../../models/Content.model')
 const Test = require('../../models/Test.model')
 const CourseTest = require('../../models/CourseTest.model')
 const Topic = require('../../models/Topic.model')
+const paymentService = require('../payment/payment.service')
 
 const getPdfChapterTitle = (chapter) => {
   if (!chapter) return ''
@@ -146,7 +147,7 @@ class CourseService extends BaseService {
         const matchChapter = (item) => item.chapter === chapterTitle || item.chapter?.toString() === chapterId;
 
         const chapterContents = contents.filter(c => c.topic?.toString() === topicId && matchChapter(c));
-        const chapterPdfs = pdfs.filter(p => p.topic?.toString() === topicId && matchChapter(p));
+        let chapterPdfs = pdfs.filter(p => p.topic?.toString() === topicId && matchChapter(p));
         const chapterTests = courseTests.filter(t => t.topic?.toString() === topicId && matchChapter(t));
 
         const combinedData = [
@@ -175,7 +176,7 @@ class CourseService extends BaseService {
       });
 
       const unassignedContents = contents.filter(c => c.topic?.toString() === topicId && (!c.chapter || !chapterIdentifiers.includes(c.chapter?.toString())));
-      const unassignedPdfs = pdfs.filter((p) => {
+      let unassignedPdfs = pdfs.filter((p) => {
         const chapterTitle = getPdfChapterTitle(p.chapter)
         return p.topic?.toString() === topicId && (!chapterTitle || !chapterTitles.includes(chapterTitle))
       });
@@ -242,13 +243,20 @@ class CourseService extends BaseService {
   }
 
   async enrollFree(courseId, userId) {
-    const course = await this.getById(courseId)
+    const course = await this.getById(courseId, { select: 'isFree isLifetime validityInMonths' })
     if (!course.isFree) throw new AppError('This is a paid course. Please purchase it first.', 403)
 
     const existing = await courseRepository.findEnrollment(userId, courseId)
     if (existing) throw new AppError('Already enrolled', 409, 'DUPLICATE_ERROR')
 
-    const enrollment = await courseRepository.createEnrollment(userId, courseId)
+    let expiresAt = null
+    if (!course.isLifetime && course.validityInMonths) {
+      const d = new Date()
+      d.setMonth(d.getMonth() + course.validityInMonths)
+      expiresAt = d
+    }
+
+    const enrollment = await courseRepository.createEnrollment(userId, courseId, expiresAt)
     await courseRepository.incrementEnrollments(courseId)
     this.logger.info({ courseId, userId }, 'User enrolled in free course')
     return enrollment
@@ -316,6 +324,47 @@ class CourseService extends BaseService {
       grandTotal,
       isFree: false
     }
+  }
+
+  async createRazorpayOrder(courseId, userId, amountDetails) {
+    const { amount, discount, gstRate, gstAmount, grandTotal } = amountDetails;
+    this.logger.info({ courseId, userId, amount, grandTotal }, 'Creating razorpay order for course')
+
+    if (!amount || !grandTotal) {
+      throw new AppError('Amount and grandTotal are required', 400)
+    }
+
+    const existing = await courseRepository.findEnrollment(userId, courseId)
+    if (existing) throw new AppError('Already enrolled', 409, 'DUPLICATE_ERROR')
+
+    const course = await this.getById(courseId, { select: 'title isFree validityInMonths isLifetime' })
+
+    if (course.isFree) {
+      throw new AppError('Course is free, use enroll endpoint instead', 400)
+    }
+
+    const items = [{
+      itemType: 'course',
+      itemId: courseId,
+      title: course.title,
+      price: Number(amount),
+      validityInMonths: course.validityInMonths,
+      isLifetime: course.isLifetime
+    }]
+
+    // const paymentService = require('../payment/payment.service')
+    return await paymentService.createOrder(userId, items, {
+      totalAmount: Number(amount),
+      discount: Number(discount || 0),
+      gstRate: Number(gstRate || 0),
+      gstAmount: Number(gstAmount || 0),
+      grandTotal: Number(grandTotal)
+    })
+  }
+
+  async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {
+    // const paymentService = require('../payment/payment.service')
+    return await paymentService.verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature)
   }
 }
 

@@ -20,7 +20,7 @@ const baseSchema = {
 
 const createTestSeriesTestSchema = Joi.object({
     testSeriesId: objectId.required(),
-    subjectId: objectId.required(),
+    subjectId: objectId.optional().allow(null),
     topicIds: Joi.array().items(objectId).default([]),
     chapterTitles: Joi.array().items(Joi.string().trim()).default([]),
     ...baseSchema,
