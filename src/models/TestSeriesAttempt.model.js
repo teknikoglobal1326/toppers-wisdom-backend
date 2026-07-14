@@ -8,6 +8,7 @@ const testSeriesAttemptSchema = new mongoose.Schema({
     answers: [{ 
       questionId: mongoose.Schema.Types.ObjectId, 
       selectedOption: Number,
+      status: { type: String, enum: ['answered', 'skipped', 'visited', 'unattempted'], default: 'unattempted' },
       timeTaken: { type: Number, default: 0 }
     }],
     score: { type: Number, default: 0 },
@@ -17,6 +18,7 @@ const testSeriesAttemptSchema = new mongoose.Schema({
     totalTime: { type: Number, default: 0 },
     correct: { type: Number, default: 0 },
     wrong: { type: Number, default: 0 },
+    skipped: { type: Number, default: 0 },
     unattempted: { type: Number, default: 0 },
     status: { type: String, enum: ['started', 'ongoing', 'completed', 'abandoned'], default: 'started' },
     attemptedAt: { type: Date, default: Date.now, index: true },

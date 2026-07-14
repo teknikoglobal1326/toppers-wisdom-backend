@@ -113,7 +113,7 @@ class TestSeriesService extends BaseService {
             ]
         }
 
-        if (query.subjectId) filter.subjectId = query.subjectId
+        if (query.subjectId) filter.subjectIds = query.subjectId
         if (query.topicId) filter.topicIds = query.topicId
         if (query.chapterTitle) filter.chapterTitles = query.chapterTitle
 
@@ -210,7 +210,7 @@ class TestSeriesService extends BaseService {
         const questions = await this.repository.findQuestionsForTest(testId)
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
 
-        const { score, correct, wrong, unattempted, totalQuestions } = scoreAnswers(questions, payload.answers, test)
+        const { score, correct, wrong, skipped, unattempted, totalQuestions } = scoreAnswers(questions, payload.answers, test)
 
         const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
         const accuracy = totalQuestions > 0
@@ -228,6 +228,7 @@ class TestSeriesService extends BaseService {
             timeTaken: payload.timeTaken,
             correct,
             wrong,
+            skipped,
             unattempted,
             status: 'completed',
         })
@@ -243,6 +244,7 @@ class TestSeriesService extends BaseService {
             accuracy,
             correct,
             wrong,
+            skipped,
             unattempted,
         }
     }
@@ -320,8 +322,28 @@ class TestSeriesService extends BaseService {
             throw new AppError('Session already closed', 400, 'VALIDATION_ERROR')
         }
 
+        let updatedAnswers = attempt.answers || []
+
+        if (payload.answer && payload.answer.questionId) {
+            const index = updatedAnswers.findIndex(a => a.questionId.toString() === payload.answer.questionId.toString())
+            if (index !== -1) {
+                updatedAnswers[index] = payload.answer
+            } else {
+                updatedAnswers.push(payload.answer)
+            }
+        } else if (payload.answers && Array.isArray(payload.answers)) {
+            payload.answers.forEach(newAns => {
+                const index = updatedAnswers.findIndex(a => a.questionId.toString() === newAns.questionId.toString())
+                if (index !== -1) {
+                    updatedAnswers[index] = newAns
+                } else {
+                    updatedAnswers.push(newAns)
+                }
+            })
+        }
+
         const questions = await this.repository.findQuestionsForTest(testId)
-        const { score, correct, wrong, unattempted, totalQuestions } = scoreAnswers(questions, payload.answers || [], test)
+        const { score, correct, wrong, skipped, unattempted, totalQuestions } = scoreAnswers(questions, updatedAnswers, test)
         
         const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
         const accuracy = totalQuestions > 0
@@ -329,18 +351,19 @@ class TestSeriesService extends BaseService {
             : 0
 
         // Calculate total time taken from answers array
-        const timeTaken = (payload.answers || []).reduce((acc, ans) => acc + (ans.timeTaken || 0), 0)
+        const timeTaken = updatedAnswers.reduce((acc, ans) => acc + (ans.timeTaken || 0), 0)
 
         const status = payload.status || 'ongoing'
 
         const updatedAttempt = await this.repository.updateAttemptBySession(sessionId, userId, {
-            answers: payload.answers,
+            answers: updatedAnswers,
             score,
             totalMarks,
             accuracy,
             timeTaken,
             correct,
             wrong,
+            skipped,
             unattempted,
             status,
         })
@@ -357,7 +380,46 @@ class TestSeriesService extends BaseService {
             timeTaken,
             correct,
             wrong,
+            skipped,
             unattempted,
+        }
+    }
+
+    async getSessionAnalytics(testId, sessionId, userId) {
+        const test = await this.repository.getSeriesTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        if (!attempt) {
+            throw new AppError('Session not found', 404, 'NOT_FOUND')
+        }
+
+        const { rank, totalParticipants } = await this.repository.getAttemptRank(testId, attempt.score || 0, attempt.timeTaken || 0)
+
+        return {
+            sessionId: attempt.sessionId,
+            status: attempt.status,
+            score: attempt.score,
+            totalMarks: attempt.totalMarks,
+            accuracy: attempt.accuracy,
+            timeTaken: attempt.timeTaken,
+            totalTime: attempt.totalTime,
+            correct: attempt.correct,
+            wrong: attempt.wrong,
+            skipped: attempt.skipped,
+            unattempted: attempt.unattempted,
+            rank,
+            totalParticipants,
+            passingMarks: Number(test.passingMarks || 0),
+            isPassed: attempt.score >= Number(test.passingMarks || 0),
+            test: {
+                _id: test._id,
+                title: test.title,
+                duration: test.duration,
+                totalQuestions: test.totalQuestions,
+            }
         }
     }
 
@@ -414,6 +476,7 @@ class TestSeriesService extends BaseService {
             totalTime: attempt.totalTime,
             correct: attempt.correct,
             wrong: attempt.wrong,
+            skipped: attempt.skipped,
             unattempted: attempt.unattempted,
             userAnswers: attempt.answers,
             test: {
@@ -438,6 +501,49 @@ class TestSeriesService extends BaseService {
             page: query.page,
             limit: query.limit,
         })
+    }
+    
+    async getUserDashboardStats(userId) {
+        const stats = await this.repository.getUserOverallStats(userId)
+        const totalAccessibleTests = await this.repository.getAccessibleTotalTests(userId)
+        
+        let overallRank = 0
+        let totalAspirants = 0
+        let topPercentile = 0
+
+        if (stats.totalAttemptedTests > 0) {
+            overallRank = await this.repository.getOverallPlatformRank(stats.totalScore, stats.timeSpent)
+            totalAspirants = await this.repository.getTotalPlatformParticipants()
+            
+            if (totalAspirants > 0) {
+                // If you are rank 1 out of 100, you are top 1%
+                topPercentile = (overallRank / totalAspirants) * 100
+                topPercentile = Math.round(topPercentile * 10) / 10 // Round to 1 decimal place
+            }
+        }
+
+        const totalAttemptedQs = stats.totalCorrect + stats.totalWrong
+        let accuracy = 0
+        if (totalAttemptedQs > 0) {
+            accuracy = (stats.totalCorrect / totalAttemptedQs) * 100
+            accuracy = Math.round(accuracy * 10) / 10
+        }
+        
+        const ongoingSessions = await this.repository.getOngoingSessions(userId)
+        const completedSessions = await this.repository.getCompletedSessions(userId)
+
+        return {
+            totalAccessibleTests,
+            totalAttemptedTests: stats.totalAttemptedTests,
+            questionsSolved: totalAttemptedQs,
+            timeSpent: stats.timeSpent,
+            accuracy,
+            overallRank,
+            totalAspirants,
+            topPercentile,
+            ongoingSessions,
+            completedSessions
+        }
     }
 }
 

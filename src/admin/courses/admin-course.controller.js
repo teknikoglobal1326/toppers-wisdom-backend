@@ -13,5 +13,6 @@ const removeLesson = catchAsync(async (req, res) => { await adminCourseService.r
 const uploadUrl         = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getLessonUploadUrl(req.params.id, req.params.lessonId, req.body.contentType)) })
 const thumbnailUploadUrl = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getThumbnailUploadUrl(req.params.id, req.body.contentType)) })
 const bannerUploadUrl    = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getBannerUploadUrl(req.params.id, req.body.contentType)) })
+const updateTimetable    = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.updateTimetable(req.params.id, req.body), 'Timetable updated successfully') })
 
-module.exports = { listAll, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl }
+module.exports = { listAll, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable }

@@ -4,10 +4,6 @@ const PreviousYearPaper = require('../../models/PreviousYearPaper.model')
 const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
 const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
 const Question = require('../../models/Question.model')
-<<<<<<< HEAD
-=======
-const CourseOrder = require('../../models/CourseOrder.model')
->>>>>>> 626c0b4 (confliact changes)
 
 class PreviousYearPaperRepository extends BaseRepository {
     constructor() {

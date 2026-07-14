@@ -25,6 +25,11 @@ const listCourses = catchAsync(async (req, res) => {
   sendPaginated(res, result.data, result.pagination)
 })
 
+const myCourses = catchAsync(async (req, res) => {
+  const result = await courseService.myCourses(req.user._id, req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
 const getCourse = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.getCourse(req.params.id, req.user._id))
 })
@@ -60,4 +65,8 @@ const verifyPayment = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.verifyPayment(req.user._id, razorpayOrderId, razorpayPaymentId, razorpaySignature), 'Payment verified successfully')
 })
 
-module.exports = { listCourseSubjects, listCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment }
+const joinLive = catchAsync(async (req, res) => {
+  sendSuccess(res, await courseService.joinLive(req.params.id, req.params.contentId, req.user._id))
+})
+
+module.exports = { listCourseSubjects, listCourses, myCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment, joinLive }

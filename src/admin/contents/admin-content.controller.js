@@ -7,6 +7,11 @@ const list = catchAsync(async (req, res) => {
   sendPaginated(res, result.data, result.pagination)
 })
 
+const listLiveClasses = catchAsync(async (req, res) => {
+  const result = await adminContentService.listLiveClasses(req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
 const getOne = catchAsync(async (req, res) => {
   sendSuccess(res, await adminContentService.getOne(req.params.id))
 })
@@ -36,4 +41,12 @@ const createLiveClass = catchAsync(async (req, res) => {
   sendCreated(res, await adminContentService.createContent(payload))
 })
 
-module.exports = { list, getOne, create, update, remove, createLiveClass }
+const goLive = catchAsync(async (req, res) => {
+  sendSuccess(res, await adminContentService.goLive(req.params.id))
+})
+
+const endLive = catchAsync(async (req, res) => {
+  sendSuccess(res, await adminContentService.endLive(req.params.id))
+})
+
+module.exports = { list, listLiveClasses, getOne, create, update, remove, createLiveClass, goLive, endLive }

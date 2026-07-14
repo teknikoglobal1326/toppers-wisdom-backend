@@ -47,6 +47,14 @@ const updateSession = catchAsync(async (req, res) => {
     )
 })
 
+const getSessionAnalytics = catchAsync(async (req, res) => {
+    sendSuccess(
+        res,
+        await testSeriesService.getSessionAnalytics(req.params.testId, req.params.sessionId, req.user._id),
+        'Session analytics retrieved successfully'
+    )
+})
+
 const getSessionSolution = catchAsync(async (req, res) => {
     sendSuccess(
         res,
@@ -60,6 +68,14 @@ const listMyAttempts = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
+const getUserDashboardStats = catchAsync(async (req, res) => {
+    sendSuccess(
+        res,
+        await testSeriesService.getUserDashboardStats(req.user._id),
+        'Dashboard stats retrieved successfully'
+    )
+})
+
 module.exports = {
     listSeries,
     getSeries,
@@ -68,6 +84,8 @@ module.exports = {
     submitTest,
     startSession,
     updateSession,
+    getSessionAnalytics,
     getSessionSolution,
     listMyAttempts,
+    getUserDashboardStats,
 }
