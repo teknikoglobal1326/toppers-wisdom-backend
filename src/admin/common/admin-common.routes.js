@@ -6,6 +6,7 @@ const courseRepository = require('../../modules/course/course.repository')
 const topicRepository = require('../../modules/topic/topic.repository')
 const examRepository = require('../../modules/exam/exam.repository')
 const subexamRepository = require('../../modules/subexam/subexam.repository')
+const Role = require('../../models/Role.model')
 
 
 // GET /api/v1/admin/common/qualifications
@@ -63,6 +64,16 @@ router.get('/subexams/:examId', catchAsync(async (req, res) => {
     { sort: { name: 1 }, select: 'name _id' }
   )
   sendSuccess(res, subexams)
+}))
+
+// GET /api/v1/admin/common/roles
+router.get('/roles', catchAsync(async (_req, res) => {
+  const roles = await Role.find({ isDeleted: false, isActive: true })
+    .select('_id name permissions sortOrder')
+    .sort({ sortOrder: 1, createdAt: -1 })
+    .lean()
+
+  sendSuccess(res, roles)
 }))
 
 

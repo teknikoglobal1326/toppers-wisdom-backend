@@ -7,7 +7,12 @@ const Subject = require('../../models/Subject.model')
 const Course = require('../../models/Course.model')
 const Topic = require('../../models/Topic.model')
 
-const normalizePayload = (data = {}) => {
+// Turn a nested { en: {...}, hi: {...} } dual-language body into the stored shape:
+// `localizedContent.en/hi` (only for the selected languages) plus top-level
+// title/description/instructions mirrored from the primary language (English when
+// present, otherwise Hindi) for list/search and legacy reads.
+// `existing` is the current doc on update, so unsent languages are preserved.
+const normalizePayload = (data = {}, existing = null) => {
     const payload = { ...data }
 
     if (Object.prototype.hasOwnProperty.call(payload, 'testSeriesId')) {
@@ -38,31 +43,62 @@ const normalizePayload = (data = {}) => {
         }
     }
 
-    const title = payload.title || ''
-    const description = payload.description || null
-    const instructions = payload.instructions || null
+    // Resolve languages leniently: explicit `languages`, else legacy scalar
+    // `language`, else the existing doc's, else default English. Never blocks.
+    let languages = Array.isArray(payload.languages) && payload.languages.length
+        ? payload.languages
+        : (payload.language ? [payload.language] : null)
+    if (!languages) {
+        languages = (existing && Array.isArray(existing.languages) && existing.languages.length)
+            ? existing.languages
+            : ['en']
+    }
+    payload.languages = languages
 
-    if (!payload.localizedContent) payload.localizedContent = {}
-    if (!payload.localizedContent.en) payload.localizedContent.en = {}
+    const buildBlock = (block) => ({
+        title: block?.title || null,
+        description: block?.description || null,
+        instructions: block?.instructions || null,
+    })
 
-    payload.localizedContent.en.title = title
-    payload.localizedContent.en.description = description
-    payload.localizedContent.en.instructions = instructions
+    // Flat title/description/instructions = the primary language's content (what the
+    // current UI sends). Primary is English when selected, else the first language.
+    const flatBlock = {
+        title: payload.title || null,
+        description: payload.description || null,
+        instructions: payload.instructions || null,
+    }
+    const primaryLang = languages.includes('en') ? 'en' : languages[0]
 
-    // Hindi localized content is optional; only populate when any field is provided.
-    const hasHi = [payload.titleHi, payload.descriptionHi, payload.instructionsHi]
-        .some((value) => value !== undefined && value !== null && value !== '')
-    payload.localizedContent.hi = hasHi
-        ? {
-            title: payload.titleHi || null,
-            description: payload.descriptionHi || null,
-            instructions: payload.instructionsHi || null,
+    // Start from existing content (update) so unsent languages survive.
+    const localizedContent = {
+        en: (existing && existing.localizedContent && existing.localizedContent.en) || null,
+        hi: (existing && existing.localizedContent && existing.localizedContent.hi) || null,
+    }
+
+    for (const lang of ['en', 'hi']) {
+        if (payload[lang]) {
+            localizedContent[lang] = buildBlock(payload[lang])
+        } else if (lang === primaryLang && (flatBlock.title || flatBlock.description || flatBlock.instructions)) {
+            localizedContent[lang] = buildBlock(flatBlock)
         }
-        : null
+        // Drop content for a language not selected.
+        if (!languages.includes(lang)) localizedContent[lang] = null
+    }
 
-    delete payload.titleHi
-    delete payload.descriptionHi
-    delete payload.instructionsHi
+    payload.localizedContent = localizedContent
+
+    // Mirror the primary language onto the flat fields for list/search/legacy reads.
+    const primary = localizedContent[primaryLang] || localizedContent.en || localizedContent.hi
+    if (primary) {
+        payload.title = primary.title || ''
+        payload.description = primary.description || null
+        payload.instructions = primary.instructions || null
+    }
+
+    delete payload.en
+    delete payload.hi
+    delete payload.language
     delete payload.testSeriesId
     return payload
 }
@@ -119,7 +155,8 @@ const update = catchAsync(async (req, res) => {
     const doc = await TestSeriesTest.findOne({ _id: req.params.id, isDeleted: false })
     if (!doc) throw new AppError('Test not found', 404, 'NOT_FOUND')
 
-    Object.assign(doc, normalizePayload(req.body))
+    Object.assign(doc, normalizePayload(req.body, doc))
+    doc.markModified('localizedContent')
     await doc.save()
 
     sendSuccess(res, doc)

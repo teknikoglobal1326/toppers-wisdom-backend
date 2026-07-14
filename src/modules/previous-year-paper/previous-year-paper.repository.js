@@ -31,7 +31,7 @@ class PreviousYearPaperRepository extends BaseRepository {
     async listPreviousYearPaperTests(filter, options = {}) {
         return paginate(PreviousYearPaperTest, filter, {
             ...options,
-            select: 'previousYearPaper subjectId topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status language createdAt',
+            select: 'previousYearPaper subjectId topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status languages createdAt',
             populate: [{ path: 'subjectId', select: 'name' }, { path: 'topicIds', select: 'topicName' }],
         })
     }
