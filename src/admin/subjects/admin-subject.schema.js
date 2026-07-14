@@ -9,12 +9,7 @@ const createSubjectSchema = Joi.object({
 
 const updateSubjectSchema = Joi.object({
   name:     Joi.string().trim(),
-<<<<<<< HEAD
-  hiName:   Joi.string().trim().allow('', null).optional(),
-  enName:   Joi.string().trim().allow('', null).optional(),
-=======
   sortOrder: Joi.number().integer().min(0),
->>>>>>> ec730d2e0b3b73d0bc209bafd3359ae53915769c
   language: Joi.string().valid('hi', 'en', 'both'),
   status:   Joi.string().valid('active', 'inactive'),
 }).min(1)
