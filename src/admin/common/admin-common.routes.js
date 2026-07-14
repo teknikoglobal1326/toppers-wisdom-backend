@@ -10,6 +10,8 @@ const vocabularyRepository = require('../../modules/vocabulary/vocabulary.reposi
 const editorialRepository = require('../../modules/editorial/editorial.repository')
 const testSeriesRepository = require('../../modules/test-series/test-series.repository')
 const previousYearPaperRepository = require('../../modules/previous-year-paper/previous-year-paper.repository')
+const Role = require('../../models/Role.model')
+
 
 // GET /api/v1/admin/common/qualifications
 router.get('/qualifications', catchAsync(async (_req, res) => {
@@ -103,5 +105,15 @@ router.get('/previous-year-papers', catchAsync(async (req, res) => {
     )
     sendSuccess(res, papers)
 }))
+// GET /api/v1/admin/common/roles
+router.get('/roles', catchAsync(async (_req, res) => {
+  const roles = await Role.find({ isDeleted: false, isActive: true })
+    .select('_id name permissions sortOrder')
+    .sort({ sortOrder: 1, createdAt: -1 })
+    .lean()
+
+  sendSuccess(res, roles)
+}))
+
 
 module.exports = router
