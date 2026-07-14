@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const controller = require('./admin-course.controller')
 const { validate, validateQuery } = require('../../core/validate')
-const { uploadCourseImages, parseFormData } = require('./admin-course.upload')
+const { uploadCourseImages, parseFormData, uploadTimetableFile, parseTimetableForm } = require('./admin-course.upload')
 const {
     createCourseSchema,
     updateCourseSchema,
@@ -22,5 +22,6 @@ router.delete('/:id/lessons/:lessonId', controller.removeLesson)
 router.post('/:id/lessons/:lessonId/upload-url', validate(uploadUrlSchema), controller.uploadUrl)
 router.post('/:id/thumbnail-upload-url', validate(imageUploadSchema), controller.thumbnailUploadUrl)
 router.post('/:id/banner-upload-url', validate(imageUploadSchema), controller.bannerUploadUrl)
+router.put('/:id/timetable', uploadTimetableFile, parseTimetableForm, controller.updateTimetable)
 
 module.exports = router

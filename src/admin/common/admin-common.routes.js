@@ -6,7 +6,10 @@ const courseRepository = require('../../modules/course/course.repository')
 const topicRepository = require('../../modules/topic/topic.repository')
 const examRepository = require('../../modules/exam/exam.repository')
 const subexamRepository = require('../../modules/subexam/subexam.repository')
-
+const vocabularyRepository = require('../../modules/vocabulary/vocabulary.repository')
+const editorialRepository = require('../../modules/editorial/editorial.repository')
+const testSeriesRepository = require('../../modules/test-series/test-series.repository')
+const previousYearPaperRepository = require('../../modules/previous-year-paper/previous-year-paper.repository')
 
 // GET /api/v1/admin/common/qualifications
 router.get('/qualifications', catchAsync(async (_req, res) => {
@@ -65,5 +68,40 @@ router.get('/subexams/:examId', catchAsync(async (req, res) => {
   sendSuccess(res, subexams)
 }))
 
+// GET /api/v1/admin/common/vocabularies
+router.get('/vocabularies', catchAsync(async (req, res) => {
+    const vocabularies = await vocabularyRepository.findAll(
+      { status: 'active', isDeleted: false },
+      { sort: { title: 1 }, select: 'title _id' }
+    )
+    sendSuccess(res, vocabularies)
+}))
+
+// GET /api/v1/admin/common/editorials
+router.get('/editorials', catchAsync(async (req, res) => {
+    const editorials = await editorialRepository.findAll(
+      { status: 'published', isDeleted: false },
+      { sort: { title: 1 }, select: 'title _id' }
+    )
+    sendSuccess(res, editorials)
+}))
+
+// GET /api/v1/admin/common/test-series
+router.get('/test-series', catchAsync(async (req, res) => {
+    const testSeries = await testSeriesRepository.findAll(
+      { status: 'active', isDeleted: false },
+      { sort: { title: 1 }, select: 'title _id' }
+    )
+    sendSuccess(res, testSeries)
+}))
+
+// GET /api/v1/admin/common/previous-year-papers
+router.get('/previous-year-papers', catchAsync(async (req, res) => {
+    const papers = await previousYearPaperRepository.findAll(
+      { status: 'active', isDeleted: false },
+      { sort: { title: 1 }, select: 'title _id' }
+    )
+    sendSuccess(res, papers)
+}))
 
 module.exports = router
