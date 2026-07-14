@@ -4,8 +4,6 @@ const AppError = require('../../core/AppError')
 const TestSeriesTest = require('../../models/TestSeriesTest.model')
 const TestSeries = require('../../models/TestSeries.model')
 const Subject = require('../../models/Subject.model')
-const Course = require('../../models/Course.model')
-const Topic = require('../../models/Topic.model')
 
 // Turn a nested { en: {...}, hi: {...} } dual-language body into the stored shape:
 // `localizedContent.en/hi` (only for the selected languages) plus top-level
@@ -19,8 +17,14 @@ const normalizePayload = (data = {}, existing = null) => {
         payload.testSeries = payload.testSeriesId || null
     }
 
-    if (Object.prototype.hasOwnProperty.call(payload, 'subjectId')) {
-        payload.subjectId = payload.subjectId || null
+    if (Object.prototype.hasOwnProperty.call(payload, 'subjectIds')) {
+        if (Array.isArray(payload.subjectIds)) {
+            payload.subjectIds = payload.subjectIds.filter(Boolean)
+        } else if (typeof payload.subjectIds === 'string' && payload.subjectIds) {
+            payload.subjectIds = [payload.subjectIds]
+        } else {
+            payload.subjectIds = []
+        }
     }
 
     if (Object.prototype.hasOwnProperty.call(payload, 'topicIds')) {
@@ -103,6 +107,24 @@ const normalizePayload = (data = {}, existing = null) => {
     return payload
 }
 
+// topicIds are embedded ids from Subject.topics[]; there is no Topic collection to
+// populate against. Resolve their names from the (populated) mapped subjects so the
+// admin UI can display topic names instead of raw ids.
+const withResolvedTopics = (doc) => {
+    const obj = typeof doc.toObject === 'function' ? doc.toObject() : doc
+    const topicNameById = new Map()
+    for (const subject of Array.isArray(obj.subjectIds) ? obj.subjectIds : []) {
+        for (const topic of (subject && Array.isArray(subject.topics)) ? subject.topics : []) {
+            if (topic && topic._id) topicNameById.set(String(topic._id), topic.name)
+        }
+    }
+    obj.topicIds = (Array.isArray(obj.topicIds) ? obj.topicIds : []).map((id) => ({
+        _id: id,
+        topicName: topicNameById.get(String(id)) || null,
+    }))
+    return obj
+}
+
 const list = catchAsync(async (req, res) => {
     const { status, page = 1, limit = 10, q, testSeriesId } = req.query
     const filter = { isDeleted: false }
@@ -119,30 +141,28 @@ const list = catchAsync(async (req, res) => {
     const skip = (page - 1) * limit
     const docs = await TestSeriesTest.find(filter)
         .populate('testSeries')
-        .populate('subjectId')
-        .populate('topicIds')
+        .populate('subjectIds')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
 
     const total = await TestSeriesTest.countDocuments(filter)
 
-    sendPaginated(res, docs, { page: Number(page), limit: Number(limit), total })
+    sendPaginated(res, docs.map(withResolvedTopics), { page: Number(page), limit: Number(limit), total })
 })
 
 const getOne = catchAsync(async (req, res) => {
     const doc = await TestSeriesTest.findOne({ _id: req.params.id, isDeleted: false })
         .populate('testSeries')
-        .populate('subjectId')
-        .populate('topicIds')
+        .populate('subjectIds')
 
     if (!doc) throw new AppError('Test not found', 404, 'NOT_FOUND')
-    sendSuccess(res, doc)
+    sendSuccess(res, withResolvedTopics(doc))
 })
 
 const create = catchAsync(async (req, res) => {
     const payload = normalizePayload({
-        subjectId: null,
+        subjectIds: [],
         topicIds: [],
         chapterTitles: [],
         ...req.body,
@@ -172,12 +192,26 @@ const remove = catchAsync(async (req, res) => {
     sendSuccess(res, null, 'Test deleted')
 })
 
+// Options for the test create/update form. Flow: series -> mapped subjects ->
+// each subject's embedded topics -> each topic's embedded chapters. Topics and
+// chapters come from Subject.topics[].chapters[], NOT the standalone Topic collection.
 const metadata = catchAsync(async (req, res) => {
-    const { testSeriesId, subjectId } = req.query
+    const { testSeriesId } = req.query
     if (!testSeriesId) throw new AppError('testSeriesId is required', 400, 'VALIDATION_ERROR')
 
     const series = await TestSeries.findOne({ _id: testSeriesId, isDeleted: false }).lean()
     if (!series) throw new AppError('Test series not found', 404, 'NOT_FOUND')
+
+    // Selected subjects to expand topics for. Accept repeated `subjectIds`, a CSV
+    // string, or the legacy single `subjectId`.
+    const rawSubjectIds = req.query.subjectIds ?? req.query.subjectId
+    const selectedSubjectIds = (Array.isArray(rawSubjectIds)
+        ? rawSubjectIds
+        : typeof rawSubjectIds === 'string'
+            ? rawSubjectIds.split(',')
+            : [])
+        .map((id) => String(id).trim())
+        .filter(Boolean)
 
     const allowedSubjectIds = Array.isArray(series.subjectIds) ? series.subjectIds : []
 
@@ -189,33 +223,24 @@ const metadata = catchAsync(async (req, res) => {
         .sort({ sortOrder: 1, createdAt: -1 })
         .lean()
 
-    let topics = []
-    if (subjectId) {
-        const courses = await Course.find({
-            isDeleted: false,
-            'subjects.subject': subjectId,
-        })
-            .select('_id')
-            .lean()
-
-        const courseIds = courses.map((course) => course._id)
-
-        if (courseIds.length) {
-            topics = await Topic.find({
-                isDeleted: false,
-                status: 'active',
-                course: { $in: courseIds },
+    // Flatten embedded topics of the selected subjects (that are also mapped to the
+    // series) into topic options carrying their chapter names and parent subject.
+    const selectedSet = new Set(selectedSubjectIds)
+    const topicOptions = []
+    for (const subject of subjects) {
+        if (selectedSet.size && !selectedSet.has(String(subject._id))) continue
+        const embeddedTopics = Array.isArray(subject.topics) ? subject.topics : []
+        for (const topic of embeddedTopics) {
+            topicOptions.push({
+                _id: topic._id,
+                topicName: topic.name,
+                subjectId: subject._id,
+                chapters: Array.isArray(topic.chapters)
+                    ? topic.chapters.map((chapter) => chapter.name).filter(Boolean)
+                    : [],
             })
-                .sort({ sortOrder: 1, createdAt: -1 })
-                .lean()
         }
     }
-
-    const topicOptions = topics.map((topic) => ({
-        _id: topic._id,
-        topicName: topic.topicName,
-        chapters: Array.isArray(topic.chapters) ? topic.chapters.map((chapter) => chapter.title).filter(Boolean) : [],
-    }))
 
     sendSuccess(res, {
         subjects,
