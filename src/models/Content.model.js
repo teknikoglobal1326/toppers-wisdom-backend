@@ -13,6 +13,7 @@ const contantSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   isLive: { type: Boolean, default: false },
+  liveStatus: { type: String, enum: ['pending', 'ongoing', 'completed'], default: 'pending' },
   agoraChannel: { type: String },
   scheduledStartTime: { type: Date },
   scheduledEndTime: { type: Date }

@@ -4,6 +4,7 @@ const TestSeries = require('../../models/TestSeries.model')
 const TestSeriesTest = require('../../models/TestSeriesTest.model')
 const TestSeriesAttempt = require('../../models/TestSeriesAttempt.model')
 const Question = require('../../models/Question.model')
+const mongoose = require('mongoose')
 
 class TestSeriesRepository extends BaseRepository {
     constructor() {
@@ -12,6 +13,110 @@ class TestSeriesRepository extends BaseRepository {
 
     async listSeries(filter, options = {}) {
         return this.findMany(filter, options)
+    }
+
+    async getUserOverallStats(userId) {
+        const userObjectId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
+        const stats = await TestSeriesAttempt.aggregate([
+            { $match: { user: userObjectId, status: 'completed' } },
+            { 
+                $group: {
+                    _id: null,
+                    totalScore: { $sum: '$score' },
+                    timeSpent: { $sum: '$timeTaken' },
+                    totalCorrect: { $sum: '$correct' },
+                    totalWrong: { $sum: '$wrong' },
+                    attemptedTestIds: { $addToSet: '$test' }
+                }
+            }
+        ])
+        
+        if (!stats.length) {
+            return { totalScore: 0, timeSpent: 0, totalCorrect: 0, totalWrong: 0, totalAttemptedTests: 0 }
+        }
+        
+        return {
+            totalScore: stats[0].totalScore,
+            timeSpent: stats[0].timeSpent,
+            totalCorrect: stats[0].totalCorrect,
+            totalWrong: stats[0].totalWrong,
+            totalAttemptedTests: stats[0].attemptedTestIds.length
+        }
+    }
+
+    async getOverallPlatformRank(userTotalScore, userTotalTime) {
+        // Find users with a strictly higher sum of scores, or same score but lower time
+        const higherRankCount = await TestSeriesAttempt.aggregate([
+            { $match: { status: 'completed' } },
+            { 
+                $group: {
+                    _id: '$user',
+                    totalScore: { $sum: '$score' },
+                    totalTime: { $sum: '$timeTaken' }
+                }
+            },
+            {
+                $match: {
+                    $or: [
+                        { totalScore: { $gt: userTotalScore } },
+                        { totalScore: userTotalScore, totalTime: { $lt: userTotalTime } }
+                    ]
+                }
+            },
+            { $count: "count" }
+        ])
+        
+        return (higherRankCount[0]?.count || 0) + 1
+    }
+
+    async getTotalPlatformParticipants() {
+        const participants = await TestSeriesAttempt.aggregate([
+            { $match: { status: 'completed' } },
+            { $group: { _id: '$user' } },
+            { $count: "count" }
+        ])
+        return participants[0]?.count || 0
+    }
+
+    async getAccessibleTotalTests(userId) {
+        const CourseOrder = require('../../models/CourseOrder.model')
+        const orders = await CourseOrder.find({ user: userId, status: 'paid', 'items.itemType': 'test-series' }).select('items')
+        
+        const testSeriesIds = new Set()
+        for (const order of orders) {
+            for (const item of order.items) {
+                if (item.itemType === 'test-series') testSeriesIds.add(item.itemId.toString())
+            }
+        }
+        
+        const testCount = await TestSeriesTest.countDocuments({
+            isDeleted: false,
+            status: 'active',
+            $or: [
+                { testSeries: { $in: Array.from(testSeriesIds) } },
+                { isPaid: false }
+            ]
+        })
+        
+        return testCount
+    }
+
+    async getOngoingSessions(userId) {
+        return TestSeriesAttempt.find({ user: userId, status: { $in: ['started', 'ongoing'] } })
+            .select('sessionId testSeries test status score totalMarks timeTaken createdAt')
+            .populate('testSeries', 'title thumbnail')
+            .populate('test', 'title totalQuestions duration')
+            .sort({ createdAt: -1 })
+            .lean()
+    }
+
+    async getCompletedSessions(userId) {
+        return TestSeriesAttempt.find({ user: userId, status: 'completed' })
+            .select('sessionId testSeries test status score totalMarks timeTaken accuracy correct wrong skipped unattempted attemptedAt')
+            .populate('testSeries', 'title thumbnail')
+            .populate('test', 'title totalQuestions duration passingMarks')
+            .sort({ attemptedAt: -1 })
+            .lean()
     }
 
     async getSeriesById(id) {
@@ -58,9 +163,10 @@ class TestSeriesRepository extends BaseRepository {
 
     async getAttemptCountsBySeries(userId, seriesIds = []) {
         if (!seriesIds.length) return {}
+        const userObjectId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
 
         const rows = await TestSeriesAttempt.aggregate([
-            { $match: { user: userId, testSeries: { $in: seriesIds } } },
+            { $match: { user: userObjectId, testSeries: { $in: seriesIds } } },
             { $group: { _id: '$testSeries', count: { $sum: 1 } } },
         ])
 
@@ -86,9 +192,10 @@ class TestSeriesRepository extends BaseRepository {
 
     async getLatestAttemptsByTestIds(userId, testIds = []) {
         if (!testIds.length) return {}
+        const userObjectId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
 
         const rows = await TestSeriesAttempt.aggregate([
-            { $match: { user: userId, test: { $in: testIds } } },
+            { $match: { user: userObjectId, test: { $in: testIds } } },
             { $sort: { attemptedAt: -1 } },
             {
                 $group: {
@@ -152,6 +259,24 @@ class TestSeriesRepository extends BaseRepository {
                 ],
             }
         )
+    }
+    async getAttemptRank(testId, score, timeTaken) {
+        const higherRankCount = await TestSeriesAttempt.countDocuments({
+            test: testId,
+            status: { $in: ['completed', 'abandoned'] },
+            $or: [
+                { score: { $gt: score } },
+                { score: score, timeTaken: { $lt: timeTaken } }
+            ]
+        })
+        const totalParticipants = await TestSeriesAttempt.countDocuments({
+            test: testId,
+            status: { $in: ['completed', 'abandoned'] }
+        })
+        return {
+            rank: higherRankCount + 1,
+            totalParticipants
+        }
     }
 }
 

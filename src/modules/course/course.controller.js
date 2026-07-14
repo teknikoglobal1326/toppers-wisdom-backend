@@ -65,4 +65,8 @@ const verifyPayment = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.verifyPayment(req.user._id, razorpayOrderId, razorpayPaymentId, razorpaySignature), 'Payment verified successfully')
 })
 
-module.exports = { listCourseSubjects, listCourses, myCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment }
+const joinLive = catchAsync(async (req, res) => {
+  sendSuccess(res, await courseService.joinLive(req.params.id, req.params.contentId, req.user._id))
+})
+
+module.exports = { listCourseSubjects, listCourses, myCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment, joinLive }
