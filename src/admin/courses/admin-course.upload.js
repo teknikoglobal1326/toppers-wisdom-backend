@@ -57,4 +57,29 @@ const parseFormData = async (req, _res, next) => {
   }
 }
 
-module.exports = { uploadCourseImages, parseFormData }
+const uploadTimetableFile = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB for PDF
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype !== 'application/pdf') {
+      return cb(new AppError('Only PDF files are allowed', 400, 'INVALID_FILE_TYPE'))
+    }
+    cb(null, true)
+  },
+}).single('timetableFile')
+
+const parseTimetableForm = async (req, _res, next) => {
+  try {
+    const folder = `courses/${req.params.id}`
+    if (req.file) {
+      const f = req.file
+      const ext = f.originalname.split('.').pop().toLowerCase()
+      req.body.content = await uploadFile(f.buffer, `timetable.${ext}`, folder, f.mimetype)
+    }
+    next()
+  } catch (err) {
+    next(err)
+  }
+}
+
+module.exports = { uploadCourseImages, parseFormData, uploadTimetableFile, parseTimetableForm }
