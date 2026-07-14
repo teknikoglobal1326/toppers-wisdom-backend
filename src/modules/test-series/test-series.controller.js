@@ -68,6 +68,14 @@ const listMyAttempts = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
+const getUserDashboardStats = catchAsync(async (req, res) => {
+    sendSuccess(
+        res,
+        await testSeriesService.getUserDashboardStats(req.user._id),
+        'Dashboard stats retrieved successfully'
+    )
+})
+
 module.exports = {
     listSeries,
     getSeries,
@@ -79,4 +87,5 @@ module.exports = {
     getSessionAnalytics,
     getSessionSolution,
     listMyAttempts,
+    getUserDashboardStats,
 }
