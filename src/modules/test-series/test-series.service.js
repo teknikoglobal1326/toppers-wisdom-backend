@@ -113,7 +113,7 @@ class TestSeriesService extends BaseService {
             ]
         }
 
-        if (query.subjectId) filter.subjectId = query.subjectId
+        if (query.subjectId) filter.subjectIds = query.subjectId
         if (query.topicId) filter.topicIds = query.topicId
         if (query.chapterTitle) filter.chapterTitles = query.chapterTitle
 
