@@ -17,12 +17,7 @@ const createExamSchema = Joi.object({
 const updateExamSchema = Joi.object({
   qualification:    objectId.label('qualification'),
   name:             Joi.string().trim(),
-<<<<<<< HEAD
-  hiName:           Joi.string().trim().allow('', null).optional(),
-  enName:           Joi.string().trim().allow('', null).optional(),
-=======
   sortOrder:        Joi.number().integer().min(0),
->>>>>>> ec730d2e0b3b73d0bc209bafd3359ae53915769c
   subexamCount:     Joi.number().integer().min(0),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
   language:         Joi.string().valid('hi', 'en', 'both'),
