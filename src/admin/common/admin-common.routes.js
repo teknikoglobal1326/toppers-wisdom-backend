@@ -108,7 +108,7 @@ router.get('/previous-year-papers', catchAsync(async (req, res) => {
 // GET /api/v1/admin/common/roles
 router.get('/roles', catchAsync(async (_req, res) => {
   const roles = await Role.find({ isDeleted: false, isActive: true })
-    .select('_id name permissions sortOrder')
+    .select('_id name')
     .sort({ sortOrder: 1, createdAt: -1 })
     .lean()
 
