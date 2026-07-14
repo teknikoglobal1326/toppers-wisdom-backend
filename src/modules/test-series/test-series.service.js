@@ -361,6 +361,74 @@ class TestSeriesService extends BaseService {
         }
     }
 
+    async getSessionSolution(testId, sessionId, userId) {
+        const test = await this.repository.getSeriesTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        if (!attempt) {
+            throw new AppError('Session not found', 404, 'NOT_FOUND')
+        }
+
+        // Fetch questions with explanations
+        const questions = await require('../../models/Question.model').find({
+            test: testId,
+            isDeleted: false,
+            status: 'active',
+        })
+            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime')
+            .sort({ sortOrder: 1, order: 1, createdAt: 1 })
+            .lean()
+
+        // We use the same grouping but now they include isCorrect and explanation natively.
+        // We need to customize groupQuestionsByLanguage slightly or just return them grouped
+        const groupedQuestions = {}
+        for (const q of questions) {
+            const orderKey = String(q.order)
+            if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
+            const langs = q.language === 'both' ? ['en', 'hi'] : [q.language]
+            
+            for (const lang of langs) {
+                if (lang !== 'en' && lang !== 'hi') continue
+                groupedQuestions[orderKey][lang] = {
+                    _id: q._id,
+                    question: q.question,
+                    options: q.options, // Includes isCorrect here!
+                    explanation: q.explanation,
+                    order: q.order,
+                    sortOrder: q.sortOrder,
+                    perQuestionTime: q.perQuestionTime
+                }
+            }
+        }
+
+        return {
+            sessionId: attempt.sessionId,
+            status: attempt.status,
+            score: attempt.score,
+            totalMarks: attempt.totalMarks,
+            accuracy: attempt.accuracy,
+            timeTaken: attempt.timeTaken,
+            totalTime: attempt.totalTime,
+            correct: attempt.correct,
+            wrong: attempt.wrong,
+            unattempted: attempt.unattempted,
+            userAnswers: attempt.answers,
+            test: {
+                _id: test._id,
+                title: test.title,
+                duration: test.duration,
+                totalQuestions: test.totalQuestions,
+                passingMarks: test.passingMarks,
+                negativeMarks: test.negativeMarks,
+                marksPerQuestion: test.marksPerQuestion
+            },
+            questions: groupedQuestions
+        }
+    }
+
     async listMyAttempts(userId, query = {}) {
         const filter = {}
         if (query.seriesId) filter.testSeries = query.seriesId

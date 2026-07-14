@@ -26,15 +26,7 @@ const adminAuthMiddleware = catchAsync(async (req, _res, next) => {
   if (payload.accountType === 'member') {
     const member = await Member.findById(payload._id)
       .select('+password')
-      .populate({
-        path: 'role',
-        match: { isDeleted: false, isActive: true },
-        populate: {
-          path: 'permissions',
-          match: { isDeleted: false, isActive: true },
-          select: 'module action key',
-        },
-      })
+      .populate({ path: 'role', match: { isDeleted: false, isActive: true } })
 
     if (!member || !member.isActive || member.isDeleted) {
       throw new AppError('Member account not found or deactivated', 401, 'UNAUTHORIZED')

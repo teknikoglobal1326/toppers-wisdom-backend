@@ -37,10 +37,21 @@ const startSession = catchAsync(async (req, res) => {
 })
 
 const updateSession = catchAsync(async (req, res) => {
+    const data = await testSeriesService.updateSession(req.params.testId, req.params.sessionId, req.user._id, req.body)
+    const isFinalized = req.body.status === 'completed' || req.body.status === 'abandoned'
+    
     sendSuccess(
         res,
-        await testSeriesService.updateSession(req.params.testId, req.params.sessionId, req.user._id, req.body),
-        'Session updated successfully'
+        data,
+        isFinalized ? 'Session finalized successfully' : 'Session updated successfully'
+    )
+})
+
+const getSessionSolution = catchAsync(async (req, res) => {
+    sendSuccess(
+        res,
+        await testSeriesService.getSessionSolution(req.params.testId, req.params.sessionId, req.user._id),
+        'Session solution retrieved successfully'
     )
 })
 
@@ -57,5 +68,6 @@ module.exports = {
     submitTest,
     startSession,
     updateSession,
+    getSessionSolution,
     listMyAttempts,
 }
