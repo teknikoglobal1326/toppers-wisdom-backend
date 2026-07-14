@@ -361,6 +361,39 @@ class TestSeriesService extends BaseService {
         }
     }
 
+    async getSessionAnalytics(testId, sessionId, userId) {
+        const test = await this.repository.getSeriesTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        if (!attempt) {
+            throw new AppError('Session not found', 404, 'NOT_FOUND')
+        }
+
+        return {
+            sessionId: attempt.sessionId,
+            status: attempt.status,
+            score: attempt.score,
+            totalMarks: attempt.totalMarks,
+            accuracy: attempt.accuracy,
+            timeTaken: attempt.timeTaken,
+            totalTime: attempt.totalTime,
+            correct: attempt.correct,
+            wrong: attempt.wrong,
+            unattempted: attempt.unattempted,
+            passingMarks: Number(test.passingMarks || 0),
+            isPassed: attempt.score >= Number(test.passingMarks || 0),
+            test: {
+                _id: test._id,
+                title: test.title,
+                duration: test.duration,
+                totalQuestions: test.totalQuestions,
+            }
+        }
+    }
+
     async getSessionSolution(testId, sessionId, userId) {
         const test = await this.repository.getSeriesTestById(testId)
         if (!test || test.isDeleted || test.status !== 'active') {
