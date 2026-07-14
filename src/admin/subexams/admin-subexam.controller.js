@@ -2,7 +2,7 @@ const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response')
 const adminSubExamService = require('./admin-subexam.service')
 
-const list   = catchAsync(async (req, res) => { const r = await adminSubExamService.listAll(req.query); sendPaginated(res, r.data, r.pagination) })
+const list = catchAsync(async (req, res) => { const r = await adminSubExamService.listAll(req.query); sendPaginated(res, r.data, r.pagination) })
 const getOne = catchAsync(async (req, res) => { sendSuccess(res, await adminSubExamService.getOne(req.params.id)) })
 const create = catchAsync(async (req, res) => {
   if (req.body.hi && req.body.en) {

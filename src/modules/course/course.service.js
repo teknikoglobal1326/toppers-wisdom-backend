@@ -11,6 +11,7 @@ const Test = require('../../models/Test.model')
 const CourseTest = require('../../models/CourseTest.model')
 const Topic = require('../../models/Topic.model')
 const paymentService = require('../payment/payment.service')
+const { generateSubscriberToken } = require('../../lib/agora')
 
 const getPdfChapterTitle = (chapter) => {
   if (!chapter) return ''
@@ -402,6 +403,22 @@ class CourseService extends BaseService {
   async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {
     // const paymentService = require('../payment/payment.service')
     return await paymentService.verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature)
+  }
+
+  async joinLive(courseId, contentId, userId) {
+    const course = await this.getById(courseId, { select: 'isFree' })
+    if (!course) throw new AppError('Course not found', 404, 'NOT_FOUND')
+
+    const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId)
+    if (!hasAccess) throw new AppError('You must purchase this course to join the live class', 403, 'FORBIDDEN')
+
+    const content = await Content.findOne({ _id: contentId, course: courseId, isDeleted: false })
+    if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
+    if (!content.isLive) throw new AppError('This content is not a live class', 400)
+    if (content.liveStatus !== 'ongoing') throw new AppError('Live class is not currently ongoing', 400)
+
+    const token = generateSubscriberToken(content.agoraChannel, userId.toString())
+    return { token, channel: content.agoraChannel }
   }
 }
 
