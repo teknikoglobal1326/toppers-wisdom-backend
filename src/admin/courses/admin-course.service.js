@@ -135,6 +135,22 @@ class AdminCourseService extends BaseService {
     const key = `courses/${courseId}/banner`;
     return getPresignedUploadUrl(key, contentType);
   }
+
+  async updateTimetable(courseId, data) {
+    this.logger.info({ courseId, type: data.type }, "Updating timetable");
+    
+    if (!['pdf', 'text'].includes(data.type)) {
+      const AppError = require('../../core/AppError')
+      throw new AppError('Invalid timetable type. Must be pdf or text.', 400);
+    }
+    
+    const timetable = {
+      type: data.type,
+      content: data.content || ''
+    };
+
+    return this.update(courseId, { timetable });
+  }
 }
 
 module.exports = new AdminCourseService();

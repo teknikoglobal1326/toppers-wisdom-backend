@@ -80,14 +80,51 @@ class CourseService extends BaseService {
     const result = await this.getAll(filter, {
       page: filters.page, limit: filters.limit,
       sort,
-      select: 'title slug thumbnail type mrp price isFree sortOrder avgRating totalEnrollments instructor.name language description longDescription subjects',
+      select: 'title slug thumbnail type mrp price isFree sortOrder avgRating totalEnrollments instructor.name language description longDescription subjects timetable',
       populate: [{ path: 'subjects.subject', select: 'name' }]
     })
 
-    result.data = await Promise.all(result.data.map(async (course) => ({
+    result.data = await Promise.all(result.data.map(async (course) => {
+      const isPurchased = !!(await courseRepository.findEnrollment(userId, course._id))
+      return {
+        ...course,
+        hasAccess: course.isFree || isPurchased || await checkAccess(userId, 'course', course._id),
+        isPurchased
+      }
+    }))
+
+    return result
+  }
+
+  async myCourses(userId, filters) {
+    this.logger.info({ userId }, 'Listing my courses')
+
+    const enrollments = await courseRepository.findEnrollmentsByUser(userId)
+    const courseIds = enrollments.map(e => e.course)
+
+    const filter = { _id: { $in: courseIds }, status: 'published', isDeleted: false }
+    if (filters.type) filter.type = filters.type
+
+    const sortBy = filters.sortBy || 'createdAt'
+    const order = filters.order === 'asc' ? 1 : -1
+    const sort = sortBy === 'price'
+      ? { price: order, createdAt: -1 }
+      : sortBy === 'sortOrder'
+        ? { sortOrder: order, createdAt: -1 }
+        : { createdAt: order, sortOrder: 1 }
+
+    const result = await this.getAll(filter, {
+      page: filters.page, limit: filters.limit,
+      sort,
+      select: 'title slug thumbnail type mrp price isFree sortOrder avgRating totalEnrollments instructor.name language description longDescription subjects timetable',
+      populate: [{ path: 'subjects.subject', select: 'name' }]
+    })
+
+    result.data = result.data.map(course => ({
       ...course,
-      hasAccess: course.isFree || await checkAccess(userId, 'course', course._id),
-    })))
+      hasAccess: true,
+      isPurchased: true
+    }))
 
     return result
   }
@@ -96,7 +133,7 @@ class CourseService extends BaseService {
     this.logger.info({ courseId, userId }, 'Fetching course detail')
     // inherited: this.getById() throws 404 automatically if not found
     const course = await this.getById(courseId, {
-      select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects'
+      select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects timetable'
     })
     if (course.isDeleted) throw new AppError('Course not found', 404, 'NOT_FOUND')
     const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId)
