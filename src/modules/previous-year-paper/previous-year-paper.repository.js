@@ -127,6 +127,37 @@ class PreviousYearPaperRepository extends BaseRepository {
         return PreviousYearPaperAttempt.create(payload)
     }
 
+    async getAttemptBySession(sessionId, userId) {
+        return PreviousYearPaperAttempt.findOne({ sessionId, user: userId })
+    }
+
+    async updateAttemptBySession(sessionId, userId, updateData) {
+        return PreviousYearPaperAttempt.findOneAndUpdate(
+            { sessionId, user: userId },
+            { $set: updateData },
+            { new: true }
+        )
+    }
+
+    async getAttemptRank(testId, score, timeTaken) {
+        const higherRankCount = await PreviousYearPaperAttempt.countDocuments({
+            test: testId,
+            status: { $in: ['completed', 'abandoned'] },
+            $or: [
+                { score: { $gt: score } },
+                { score: score, timeTaken: { $lt: timeTaken } }
+            ]
+        })
+        const totalParticipants = await PreviousYearPaperAttempt.countDocuments({
+            test: testId,
+            status: { $in: ['completed', 'abandoned'] }
+        })
+        return {
+            rank: higherRankCount + 1,
+            totalParticipants
+        }
+    }
+
     async listAttemptsByUser(userId, filter = {}, options = {}) {
         return paginate(
             PreviousYearPaperAttempt,

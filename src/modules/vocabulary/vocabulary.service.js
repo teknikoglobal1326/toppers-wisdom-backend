@@ -100,9 +100,9 @@ class VocabularyService extends BaseService {
 
     async buildListFilter(query = {}, userId) {
         const filter = this.buildFilter(query)
-        const listType = query.listType || 'unread'
+        const listType = query.listType || 'all'
 
-        if (!userId || listType === 'all') {
+        if (!userId || listType === 'all' || query.type) {
             return filter
         }
 
