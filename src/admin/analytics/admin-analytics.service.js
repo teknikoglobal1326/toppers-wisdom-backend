@@ -302,7 +302,7 @@ const testSeriesAttempts = async (testSeriesId, filters = {}) => {
                 title: testSeries.title,
                 thumbnail: testSeries.thumbnail,
                 status: testSeries.status,
-                isPaid: testSeries.isPaid,
+                // isPaid: testSeries.isPaid,
               },
               test: {
                 _id: '$test._id',
