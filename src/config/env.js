@@ -21,6 +21,7 @@ const schema = Joi.object({
   FCM_SERVICE_ACCOUNT_JSON: Joi.string().optional().allow(''),
   ADMIN_PHONE: Joi.string().required(),
   ALLOWED_ORIGINS: Joi.string().default('http://localhost:3001'),
+  FRONTEND_URL: Joi.string().optional().allow(''),
 }).unknown()
 
 const { error, value } = schema.validate(process.env)
