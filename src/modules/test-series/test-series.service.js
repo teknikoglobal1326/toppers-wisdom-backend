@@ -444,52 +444,59 @@ class TestSeriesService extends BaseService {
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
 
+        // Pre-calculate user answers mapped by question order
+        const answersByOrder = {}
+        for (const ans of (attempt.answers || [])) {
+            const q = questions.find(question => question._id.toString() === ans.questionId.toString())
+            if (q) {
+                const correctIndex = q.options.findIndex(opt => opt.isCorrect)
+                const isCorrect = ans.selectedOption === correctIndex
+                answersByOrder[q.order] = {
+                    ...ans,
+                    isCorrect
+                }
+            }
+        }
+
         // We use the same grouping but now they include isCorrect and explanation natively.
-        // We need to customize groupQuestionsByLanguage slightly or just return them grouped
         const groupedQuestions = {}
         for (const q of questions) {
             const orderKey = String(q.order)
             if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
             const langs = q.language === 'both' ? ['en', 'hi'] : [q.language]
             
+            const uAns = answersByOrder[q.order] || null
+            let status = 'unattempted'
+            if (uAns) {
+                status = uAns.status === 'skipped' ? 'skipped' : 'answered'
+            }
+            const timeTaken = uAns ? (uAns.timeTaken || 0) : 0
+            const isCorrect = uAns ? uAns.isCorrect : false
+            
+            const mappedOptions = q.options.map((opt, idx) => ({
+                ...opt,
+                isSelected: uAns ? uAns.selectedOption === idx : false
+            }))
+            
             for (const lang of langs) {
                 if (lang !== 'en' && lang !== 'hi') continue
                 groupedQuestions[orderKey][lang] = {
                     _id: q._id,
                     question: q.question,
-                    options: q.options, // Includes isCorrect here!
+                    options: mappedOptions,
                     explanation: q.explanation,
                     order: q.order,
                     sortOrder: q.sortOrder,
-                    perQuestionTime: q.perQuestionTime
+                    perQuestionTime: q.perQuestionTime,
+                    status,
+                    timeTaken,
+                    isCorrect
                 }
             }
         }
 
-        return {
-            sessionId: attempt.sessionId,
-            status: attempt.status,
-            score: attempt.score,
-            totalMarks: attempt.totalMarks,
-            accuracy: attempt.accuracy,
-            timeTaken: attempt.timeTaken,
-            totalTime: attempt.totalTime,
-            correct: attempt.correct,
-            wrong: attempt.wrong,
-            skipped: attempt.skipped,
-            unattempted: attempt.unattempted,
-            userAnswers: attempt.answers,
-            test: {
-                _id: test._id,
-                title: test.title,
-                duration: test.duration,
-                totalQuestions: test.totalQuestions,
-                passingMarks: test.passingMarks,
-                negativeMarks: test.negativeMarks,
-                marksPerQuestion: test.marksPerQuestion
-            },
-            questions: groupedQuestions
-        }
+        // Return just the list of questions to simplify the response
+        return Object.values(groupedQuestions)
     }
 
     async listMyAttempts(userId, query = {}) {
