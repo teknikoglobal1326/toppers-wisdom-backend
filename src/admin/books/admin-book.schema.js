@@ -16,6 +16,8 @@ const createBookSchema = Joi.object({
   tags: Joi.array().items(Joi.string()).optional().default([]),
   language: Joi.string().valid('hi', 'en', 'both').default('both'),
   status:      Joi.string().valid('active', 'inactive').default('active'),
+  examId: Joi.string().optional().allow(null, ''),
+  subExamIds: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).optional().allow(null, ''),
 })
 
 const updateBookSchema = Joi.object({
@@ -34,6 +36,8 @@ const updateBookSchema = Joi.object({
   tags:        Joi.array().items(Joi.string()).optional(),
   language:    Joi.string().valid('hi', 'en', 'both'),
   status:      Joi.string().valid('active', 'inactive'),
+  examId: Joi.string().optional().allow(null, ''),
+  subExamIds: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).optional().allow(null, ''),
 }).min(1)
 
 const setBuyUrlSchema = Joi.object({
