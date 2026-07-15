@@ -50,6 +50,7 @@ app.use('/api/v1/boosters', authMiddleware, require('./modules/booster/booster.r
 app.use('/api/v1/test-series', authMiddleware, require('./modules/test-series/test-series.routes'))
 app.use('/api/v1/previous-year-papers', authMiddleware, require('./modules/previous-year-paper/previous-year-paper.routes'))
 app.use('/api/v1/progress', authMiddleware, require('./modules/progress/progress.routes'))
+app.use('/api/v1/student/analytics', authMiddleware, require('./modules/student-analytics/student-analytics.routes'))
 app.use('/api/v1/payments', require('./modules/payment/payment.routes'))
 app.use('/api/v1/blog', authMiddleware, require('./modules/blog/blog.routes'))
 app.use('/api/v1/books', require('./modules/book/book.routes'))
