@@ -49,4 +49,9 @@ const endLive = catchAsync(async (req, res) => {
   sendSuccess(res, await adminContentService.endLive(req.params.id))
 })
 
-module.exports = { list, listLiveClasses, getOne, create, update, remove, createLiveClass, goLive, endLive }
+const updateLiveClass = catchAsync(async (req, res) => {
+  const payload = { ...req.body, createdBy: req.admin?._id }
+  sendSuccess(res, await adminContentService.updateContent(req.params.id, payload))
+})
+
+module.exports = { list, listLiveClasses, getOne, create, update, remove, createLiveClass, goLive, endLive, updateLiveClass }

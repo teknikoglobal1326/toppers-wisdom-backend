@@ -152,7 +152,7 @@ class CourseService extends BaseService {
         .select('title description pdfFile image topic chapter')
         .lean(),
       Content.find({ course: courseId, isDeleted: false, status: 'active' })
-        .select('title description video image topic chapter')
+        .select('title description video image topic chapter isLive liveStatus scheduledStartTime scheduledEndTime agoraChannel')
         .lean(),
       Test.find({ course: courseId, status: 'published' })
         .select('title slug description image duration totalQuestion totalMarks difficulty')

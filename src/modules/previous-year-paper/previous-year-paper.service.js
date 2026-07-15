@@ -4,6 +4,7 @@ const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
 const { groupQuestionsByLanguage, scoreAnswers } = require('../../lib/testQuestions')
 const crypto = require('crypto')
+const { htmlToPlainText } = require('../../lib/htmlText')
 const previousYearPaperRepository = require('./previous-year-paper.repository')
 
 class PreviousYearPaperService extends BaseService {
@@ -71,6 +72,7 @@ class PreviousYearPaperService extends BaseService {
             const hasAccess = !item.isPaid
             return {
                 ...item,
+                description: htmlToPlainText(item.description),
                 totalTests: testCounts[id] || 0,
                 totalAttempts: attemptCounts[id] || 0,
                 hasAccess,
@@ -93,6 +95,7 @@ class PreviousYearPaperService extends BaseService {
 
         return {
             ...previousYearPaper,
+            description: htmlToPlainText(previousYearPaper.description),
             totalTests: testCounts[previousYearPaper._id.toString()] || 0,
             hasAccess,
             isLocked: !hasAccess,
@@ -145,6 +148,7 @@ class PreviousYearPaperService extends BaseService {
 
             return {
                 ...item,
+                description: htmlToPlainText(item.description),
                 mappedQuestions: questionCounts[id] || 0,
                 hasAccess,
                 isLocked: !hasAccess,
