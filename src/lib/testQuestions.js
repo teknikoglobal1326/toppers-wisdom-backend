@@ -50,8 +50,14 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
   let score = 0
   let correct = 0
   let wrong = 0
+  let skipped = 0
 
   for (const answer of answers) {
+    if (answer.status === 'skipped') {
+      skipped += 1
+      continue
+    }
+
     if (answer?.selectedOption === null || answer?.selectedOption === undefined) continue
     const entry = byId.get(String(answer.questionId))
     if (!entry) continue
@@ -66,9 +72,9 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
   }
 
   const totalQuestions = orders.size
-  const unattempted = Math.max(0, totalQuestions - (correct + wrong))
+  const unattempted = Math.max(0, totalQuestions - (correct + wrong + skipped))
 
-  return { score, correct, wrong, unattempted, totalQuestions }
+  return { score, correct, wrong, skipped, unattempted, totalQuestions }
 }
 
 module.exports = { sanitizeQuestion, groupQuestionsByLanguage, scoreAnswers }

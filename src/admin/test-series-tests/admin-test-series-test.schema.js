@@ -45,17 +45,17 @@ const requireSomeTitle = (value, helpers) => {
 
 const createTestSeriesTestSchema = Joi.object({
     testSeriesId: objectId.required(),
-    subjectId: objectId.optional().allow(null),
-    topicIds: Joi.array().items(objectId).default([]),
-    chapterTitles: Joi.array().items(Joi.string().trim()).default([]),
+    subjectIds: Joi.array().items(objectId).single().default([]),
+    topicIds: Joi.array().items(objectId).single().default([]),
+    chapterTitles: Joi.array().items(Joi.string().trim()).single().default([]),
     ...baseSchema,
 }).custom(requireSomeTitle)
 
 const updateTestSeriesTestSchema = Joi.object({
     testSeriesId: objectId.optional(),
-    subjectId: objectId.optional().allow(null),
-    topicIds: Joi.array().items(objectId).optional(),
-    chapterTitles: Joi.array().items(Joi.string().trim()).optional(),
+    subjectIds: Joi.array().items(objectId).single().optional(),
+    topicIds: Joi.array().items(objectId).single().optional(),
+    chapterTitles: Joi.array().items(Joi.string().trim()).single().optional(),
     title: Joi.string().trim().optional().allow(null, ''),
     description: Joi.string().optional().allow(null, ''),
     instructions: Joi.string().optional().allow(null, ''),
