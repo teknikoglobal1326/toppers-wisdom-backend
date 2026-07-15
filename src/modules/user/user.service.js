@@ -23,6 +23,8 @@ const UserGrammarChapterLike = require('../../models/GrammarChapterLike.model')
 const AppError = require('../../core/AppError')
 const { paginate } = require('../../core/paginate')
 const { createLogger } = require('../../config/logger')
+// const McqReport = require('../../models/UserMcqReport.model')
+const McqReport = require("../../models/UserMcqReport")
 
 class UserService extends BaseService {
     constructor() {
@@ -264,6 +266,33 @@ class UserService extends BaseService {
     async updateFcmToken(userId, fcmToken) {
         return userRepository.updateById(userId, { fcmToken })
     }
+
+    async createMcqReport(userId, data) {
+    const report = await McqReport.create({
+        user: userId,
+        type: data.type,
+        typeId: data.typeId,
+        reason: data.reason,
+        description: data.description,
+    })
+
+    return report.toObject()
+}
+
+async getMyMcqReportByItemId(userId, itemId) {
+    const report = await McqReport.findOne({
+        user: userId,
+        typeId: itemId,
+    })
+    .sort({ createdAt: -1 })
+    .lean()
+
+    if (!report) {
+        throw new AppError('Report not found', 404, 'NOT_FOUND')
+    }
+
+    return report
+}
 
     async createReport(userId, data) {
         const itemModel = data.itemType === 'vocabulary' ? Vocabulary : Editorial
