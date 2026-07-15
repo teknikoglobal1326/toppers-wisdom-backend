@@ -14,7 +14,7 @@ class AdminSubExamService extends BaseService {
     if (examId) filter.examId = examId
     if (status) filter.status = status
     const direction = sortOrder === 'desc' ? -1 : 1
-    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
+    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: { path: "examId", select: "name" } })
   }
 
   async getOne(id) {

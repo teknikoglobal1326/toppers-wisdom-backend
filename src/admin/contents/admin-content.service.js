@@ -3,6 +3,7 @@ const BaseService = require('../../core/BaseService')
 const contentRepository = require('../../modules/content/content.repository')
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
+const { generatePublisherToken } = require('../../lib/agora')
 
 class AdminContentService extends BaseService {
   constructor() {
@@ -11,6 +12,32 @@ class AdminContentService extends BaseService {
 
   async listAll({ page, limit, status, course, topic, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
+    if (status) filter.status = status
+    if (course) filter.course = course
+    if (topic) filter.topic = topic
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ]
+    }
+
+    const direction = sortOrder === 'desc' ? -1 : 1
+
+    return this.getAll(filter, {
+      page,
+      limit,
+      sort: { sortOrder: direction, createdAt: -1 },
+      populate: [
+        { path: 'course', select: 'title slug' },
+        { path: 'topic', select: 'topicName' },
+      ],
+    })
+  }
+
+  async listLiveClasses({ page, limit, status, course, topic, search, sortOrder } = {}) {
+    const filter = { isDeleted: false, isLive: true }
     if (status) filter.status = status
     if (course) filter.course = course
     if (topic) filter.topic = topic
@@ -79,6 +106,30 @@ class AdminContentService extends BaseService {
     if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
     await contentRepository.updateById(id, { isDeleted: true })
     this.logger.info({ contentId: id }, 'Content soft deleted')
+  }
+
+  async goLive(id) {
+    const content = await contentRepository.findOne({ _id: id, isDeleted: false })
+    if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
+    if (!content.isLive) throw new AppError('Content is not a live class', 400)
+    
+    if (!content.agoraChannel) {
+      content.agoraChannel = `channel_${Date.now()}_${Math.floor(Math.random() * 10000)}`
+    }
+    
+    await contentRepository.updateById(id, { liveStatus: 'ongoing', agoraChannel: content.agoraChannel })
+    
+    const token = generatePublisherToken(content.agoraChannel)
+    return { token, channel: content.agoraChannel }
+  }
+
+  async endLive(id) {
+    const content = await contentRepository.findOne({ _id: id, isDeleted: false })
+    if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
+    if (!content.isLive) throw new AppError('Content is not a live class', 400)
+    
+    await contentRepository.updateById(id, { liveStatus: 'completed' })
+    return { message: 'Live class ended successfully' }
   }
 }
 

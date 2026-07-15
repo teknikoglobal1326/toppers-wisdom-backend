@@ -33,6 +33,10 @@ const courseSchema = new mongoose.Schema({
   instructor: { name: String, avatar: String, bio: String },
   status: { type: String, enum: ['draft', 'published', 'archived'], default: 'draft', index: true },
   subjects: [{ subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true }, sortOrder: { type: Number, default: 0 } }],
+  timetable: new mongoose.Schema({
+    type: { type: String, enum: ['pdf', 'text'] },
+    content: { type: String }
+  }, { _id: false }),
   lessons: [lessonSchema],
   tests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Test' }],
   avgRating: { type: Number, default: 0 },

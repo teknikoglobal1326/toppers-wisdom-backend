@@ -8,8 +8,11 @@ const localizedBlock = {
 
 const previousYearPaperTestSchema = new mongoose.Schema({
     previousYearPaper: { type: mongoose.Schema.Types.ObjectId, ref: 'PreviousYearPaper', required: true, index: true },
-    subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null, index: true },
-    topicIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Topic' }],
+    // Multiple subjects mapped to a test. Topics/chapters below are drawn from these
+    // subjects' embedded topics (Subject.topics[].chapters[]), not the Topic collection.
+    subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
+    // Embedded topic ids (Subject.topics[]._id) chosen across the mapped subjects.
+    topicIds: [{ type: mongoose.Schema.Types.ObjectId }],
     chapterTitles: [{ type: String, trim: true }],
     title: { type: String, required: true, trim: true },
     description: { type: String, default: null },
