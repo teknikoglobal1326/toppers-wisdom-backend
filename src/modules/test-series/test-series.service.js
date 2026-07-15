@@ -4,6 +4,7 @@ const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
 const crypto = require('crypto')
 const { groupQuestionsByLanguage, scoreAnswers } = require('../../lib/testQuestions')
+const { htmlToPlainText } = require('../../lib/htmlText')
 const testSeriesRepository = require('./test-series.repository')
 
 class TestSeriesService extends BaseService {
@@ -67,6 +68,7 @@ class TestSeriesService extends BaseService {
             const hasAccess = !item.isPaid
             return {
                 ...item,
+                description: htmlToPlainText(item.description),
                 totalTests: testCounts[id] || 0,
                 totalAttempts: attemptCounts[id] || 0,
                 hasAccess,
@@ -88,6 +90,7 @@ class TestSeriesService extends BaseService {
 
         return {
             ...series,
+            description: htmlToPlainText(series.description),
             totalTests: testCounts[series._id.toString()] || 0,
             hasAccess,
             isLocked: !hasAccess,
@@ -140,6 +143,7 @@ class TestSeriesService extends BaseService {
 
             return {
                 ...item,
+                description: htmlToPlainText(item.description),
                 mappedQuestions: questionCounts[id] || 0,
                 hasAccess,
                 isLocked: !hasAccess,
@@ -451,14 +455,19 @@ class TestSeriesService extends BaseService {
             const orderKey = String(q.order)
             if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
             const langs = q.language === 'both' ? ['en', 'hi'] : [q.language]
-            
+
             for (const lang of langs) {
                 if (lang !== 'en' && lang !== 'hi') continue
                 groupedQuestions[orderKey][lang] = {
                     _id: q._id,
-                    question: q.question,
-                    options: q.options, // Includes isCorrect here!
-                    explanation: q.explanation,
+                    question: { text: htmlToPlainText(q.question?.text), image: q.question?.image },
+                    // Includes isCorrect here! Editor HTML converted to plain text.
+                    options: (q.options || []).map((opt) => ({
+                        text: htmlToPlainText(opt.text),
+                        image: opt.image,
+                        isCorrect: opt.isCorrect,
+                    })),
+                    explanation: { text: htmlToPlainText(q.explanation?.text), image: q.explanation?.image },
                     order: q.order,
                     sortOrder: q.sortOrder,
                     perQuestionTime: q.perQuestionTime
