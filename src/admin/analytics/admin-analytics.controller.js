@@ -19,4 +19,12 @@ const users = catchAsync(async (req, res) => {
   sendSuccess(res, await analyticsService.users(from, to))
 })
 
-module.exports = { overview, revenue, users }
+const courseEnrollments = catchAsync(async (req, res) => {
+  sendSuccess(res, await analyticsService.courseEnrollments(req.params.courseId, req.query), 'Course enrollment analytics fetched')
+})
+
+const testSeriesAttempts = catchAsync(async (req, res) => {
+  sendSuccess(res, await analyticsService.testSeriesAttempts(req.params.testSeriesId, req.query), 'Test series attempt analytics fetched')
+})
+
+module.exports = { overview, revenue, users, courseEnrollments, testSeriesAttempts }
