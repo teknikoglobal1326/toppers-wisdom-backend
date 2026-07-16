@@ -277,7 +277,8 @@ class PreviousYearPaperService extends BaseService {
 
         const sessionId = crypto.randomUUID()
 
-        const totalQuestions = new Set(questions.map(q => q.order)).size
+        // Ensure totalMarks is calculated
+        const totalQuestions = new Set(questions.map(q => q.groupId ? String(q.groupId) : String(q._id))).size
         const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
 
         const attempt = await this.repository.createAttempt({

@@ -19,7 +19,8 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads
 app.use(helmet())
 app.use(cors({ origin: config.ALLOWED_ORIGINS.split(','), credentials: true }))
 app.use(compression())
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({ limit: '500mb' }))
+app.use(express.urlencoded({ limit: '500mb', extended: true }))
 app.use(pinoHttp({
   logger: rootLogger,
   customLogLevel: (_req, res) => res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',
@@ -52,6 +53,7 @@ app.use('/api/v1/previous-year-papers', authMiddleware, require('./modules/previ
 app.use('/api/v1/progress', authMiddleware, require('./modules/progress/progress.routes'))
 app.use('/api/v1/student/analytics', authMiddleware, require('./modules/student-analytics/student-analytics.routes'))
 app.use('/api/v1/payments', require('./modules/payment/payment.routes'))
+app.use('/api/v1/subscriptions', require('./modules/subscription/subscription.routes'))
 app.use('/api/v1/blog', authMiddleware, require('./modules/blog/blog.routes'))
 app.use('/api/v1/books', require('./modules/book/book.routes'))
 app.use('/api/v1/shorts', authMiddleware, require('./modules/short/short.routes'))
