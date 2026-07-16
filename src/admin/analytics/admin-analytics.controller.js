@@ -27,4 +27,8 @@ const testSeriesAttempts = catchAsync(async (req, res) => {
   sendSuccess(res, await analyticsService.testSeriesAttempts(req.params.testSeriesId, req.query), 'Test series attempt analytics fetched')
 })
 
-module.exports = { overview, revenue, users, courseEnrollments, testSeriesAttempts }
+const testLeaderboard = catchAsync(async (req,res)=>{
+  sendSuccess( res, await analyticsService.testLeaderboard( req.params.testId, req.query ), 'Test leaderboard fetched')
+})
+
+module.exports = { overview, revenue, users, courseEnrollments, testSeriesAttempts, testLeaderboard }
