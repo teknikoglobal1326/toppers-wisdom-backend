@@ -2,11 +2,18 @@
 // Questions are stored one document per language ('en' | 'hi'); the en/hi versions
 // of the same logical question share the same `order` (and `groupId`).
 
+const { htmlToPlainText } = require('./htmlText')
+
 // Strip correct answers and return the client-safe question shape.
+// Question/option text is authored in the admin rich-text editor and stored as
+// HTML — convert to plain text for user responses.
 const sanitizeQuestion = (question) => ({
   _id: question._id,
-  question: question.question,
-  options: (question.options || []).map((option) => ({ text: option.text, image: option.image })),
+  question: {
+    text: htmlToPlainText(question.question?.text),
+    image: question.question?.image,
+  },
+  options: (question.options || []).map((option) => ({ text: htmlToPlainText(option.text), image: option.image })),
   order: question.order,
   sortOrder: question.sortOrder,
   perQuestionTime: question.perQuestionTime ?? null,
