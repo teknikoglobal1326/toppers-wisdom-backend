@@ -38,15 +38,16 @@ const groupQuestionsByLanguage = (questions = []) => {
   return grouped
 }
 
+
 // Language-agnostic scoring: the user answers in one language, so answers reference
 // either the en or hi question _id. The en/hi versions of one logical question share
 // the same `order`, so distinct orders give the true (logical) question count.
 const scoreAnswers = (questions = [], answers = [], test = {}) => {
   const byId = new Map()
-  const orders = new Set()
+  const logicalKeys = new Set()
 
   for (const question of questions) {
-    orders.add(question.order)
+    logicalKeys.add(question.groupId ? String(question.groupId) : String(question._id))
     const correctIndex = (question.options || []).findIndex((option) => option.isCorrect)
     byId.set(question._id.toString(), { correctIndex })
   }
@@ -78,7 +79,7 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
     }
   }
 
-  const totalQuestions = orders.size
+  const totalQuestions = logicalKeys.size
   const unattempted = Math.max(0, totalQuestions - (correct + wrong + skipped))
 
   return { score, correct, wrong, skipped, unattempted, totalQuestions }

@@ -45,6 +45,26 @@ class CourseRepository extends BaseRepository {
   async updateRating(courseId, avgRating, totalReviews) {
     return this.updateById(courseId, { avgRating, totalReviews })  // BaseRepository.updateById
   }
+
+  async listPurchases(query = {}) {
+    const { paginate } = require('../../core/paginate')
+    const CourseOrder = require('../../models/CourseOrder.model')
+    const mongoose = require('mongoose')
+    
+    const filter = { status: 'paid', 'items.itemType': 'course' }
+    if (query.courseId) {
+      filter['items.itemId'] = new mongoose.Types.ObjectId(query.courseId)
+    }
+    
+    return paginate(CourseOrder, filter, {
+      page: query.page,
+      limit: query.limit,
+      sort: { createdAt: -1 },
+      populate: [
+        { path: 'user', select: 'name email phone qualification' }
+      ]
+    })
+  }
 }
 
 module.exports = new CourseRepository()

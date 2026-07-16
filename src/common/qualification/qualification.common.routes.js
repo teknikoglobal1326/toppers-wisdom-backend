@@ -1,6 +1,6 @@
-const router               = require('express').Router()
-const catchAsync           = require('../../core/catchAsync')
-const { sendSuccess }      = require('../../core/response')
+const router = require('express').Router()
+const catchAsync = require('../../core/catchAsync')
+const { sendSuccess } = require('../../core/response')
 const qualificationService = require('../../modules/qualification/qualification.service')
 
 // GET /api/v1/common/qualifications
