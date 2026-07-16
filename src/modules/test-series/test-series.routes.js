@@ -11,6 +11,7 @@ const {
 router.get('/', validateQuery(listSeriesQuerySchema), controller.listSeries)
 router.get('/dashboard-stats', require('../../middlewares/auth.middleware').authMiddleware, controller.getUserDashboardStats)
 router.get('/attempts', validateQuery(listAttemptsQuerySchema), controller.listMyAttempts)
+router.get('/tests/:testId/instructions', controller.getTestInstructions)
 router.get('/tests/:testId/start', controller.startTest)
 router.post('/tests/:testId/submit', validate(submitSeriesTestSchema), controller.submitTest)
 

@@ -3,9 +3,9 @@ const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response
 const Book = require('../../models/Book.model')
 const AppError = require('../../core/AppError')
 const {
-  getExactLanguageFilter,
-  isDualLanguagePayload,
-  makeLanguageRecords,
+    getExactLanguageFilter,
+    isDualLanguagePayload,
+    makeLanguageRecords,
 } = require('../../core/languageUtils')
 
 const list = catchAsync(async (req, res) => {
@@ -58,6 +58,7 @@ const create = catchAsync(async (req, res) => {
 
     if (isDualLanguagePayload(req.body)) {
         const records = makeLanguageRecords(req.body, { createdBy }).map(normalizeBookPayload)
+        console.log("records===================>", records);
         sendCreated(res, await Book.insertMany(records))
         return
     }
@@ -69,6 +70,7 @@ const update = catchAsync(async (req, res) => {
     const book = await Book.findOne({ _id: req.params.id, isDeleted: false })
     if (!book) throw new AppError('Book not found', 404, 'NOT_FOUND')
     const updates = normalizeBookPayload(req.body)
+    console.log("updates book payload=====================>", updates);
     Object.assign(book, updates)
     await book.save()
     sendSuccess(res, book)

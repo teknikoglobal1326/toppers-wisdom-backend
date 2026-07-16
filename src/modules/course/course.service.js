@@ -417,7 +417,7 @@ class CourseService extends BaseService {
     if (!content.isLive) throw new AppError('This content is not a live class', 400)
     if (content.liveStatus !== 'ongoing') throw new AppError('Live class is not currently ongoing', 400)
 
-    const token = generateSubscriberToken(content.agoraChannel, userId.toString())
+    const token = generateSubscriberToken(content.agoraChannel, 0)
     return { token, channel: content.agoraChannel }
   }
 }
