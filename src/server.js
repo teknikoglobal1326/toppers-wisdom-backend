@@ -16,6 +16,10 @@ const start = async () => {
     rootLogger.info({ port: config.PORT, env: config.NODE_ENV }, 'Server started')
   })
 
+  // Initialize socket.io
+  const { initSocket } = require('./config/socket')
+  initSocket(server)
+
   const shutdown = async (signal) => {
     rootLogger.info({ signal }, 'Shutting down')
     server.close(async () => {

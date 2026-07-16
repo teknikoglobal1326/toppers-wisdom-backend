@@ -51,4 +51,19 @@ const listContentQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 })
 
-module.exports = { createContentSchema, createLiveClassSchema, updateContentSchema, listContentQuerySchema }
+const updateLiveClassSchema = Joi.object({
+  course: Joi.string().hex().length(24).optional(),
+  courseId: Joi.string().hex().length(24).optional(),
+  topic: Joi.string().hex().length(24).optional(),
+  topicId: Joi.string().hex().length(24).optional(),
+  chapter: Joi.string().trim().optional().allow('', null),
+  title: Joi.string().trim(),
+  sortOrder: Joi.number().integer().min(0),
+  description: Joi.string().trim().optional().allow('', null),
+  image: Joi.string().trim().optional().allow('', null),
+  scheduledStartTime: Joi.date().iso().optional(),
+  scheduledEndTime: Joi.date().iso().min(Joi.ref('scheduledStartTime')).optional(),
+  status: Joi.string().valid('active', 'inactive'),
+}).min(1)
+
+module.exports = { createContentSchema, createLiveClassSchema, updateContentSchema, listContentQuerySchema, updateLiveClassSchema }
