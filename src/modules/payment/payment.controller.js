@@ -16,4 +16,10 @@ const webhook = catchAsync(async (req, res) => {
   res.json({ received: true })
 })
 
-module.exports = { createOrder, verifyPayment, webhook }
+const listMyTransactions = catchAsync(async (req, res) => {
+  const { sendPaginated } = require('../../core/response')
+  const result = await paymentService.listUserOrders(req.user._id, req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
+module.exports = { createOrder, verifyPayment, webhook, listMyTransactions }
