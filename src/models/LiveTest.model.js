@@ -7,6 +7,13 @@ const localizedBlock = {
 }
 
 const liveTestSchema = new mongoose.Schema({
+    // Syllabus mapping: exam -> subjects -> embedded chapters -> embedded topics
+    // (chapter/topic ids point into Subject.chapters[].topics[]).
+    examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null, index: true },
+    subExamIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubExam' }],
+    subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
+    chapterIds: [{ type: mongoose.Schema.Types.ObjectId }],
+    topicIds: [{ type: mongoose.Schema.Types.ObjectId }],
     title: { type: String, required: true, trim: true },
     description: { type: String, default: null },
     thumbnail: { type: String, default: null },

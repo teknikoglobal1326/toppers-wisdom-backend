@@ -17,6 +17,7 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
+  
   const payload = { ...req.body, createdBy: req.admin?._id }
   sendCreated(res, await adminContentService.createContent(payload))
 })

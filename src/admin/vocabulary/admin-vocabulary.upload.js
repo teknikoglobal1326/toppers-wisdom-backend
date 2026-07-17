@@ -34,17 +34,18 @@ const parseFormData = async (req, _res, next) => {
             req.body.longDescription = req.body.longDescription.join('')
         }
 
-        const arrayFields = ['usages', 'synonyms', 'antonyms']
+        const arrayFields = ['usages', 'synonyms', 'antonyms'];
         arrayFields.forEach((field) => {
-            if (typeof req.body[field] === 'string') {
-                try {
-                    const parsed = JSON.parse(req.body[field])
-                    req.body[field] = Array.isArray(parsed) ? parsed : req.body[field]
-                } catch (_) {
-                    // Keep as-is so Joi can report validation error if malformed.
-                }
+          if (typeof req.body[field] === 'string') {
+            try {
+              const parsed = JSON.parse(req.body[field]);
+              req.body[field] = Array.isArray(parsed) ? parsed : [req.body[field]];
+            } catch (_) {
+              // Not a JSON string, wrap the single value into an array
+              req.body[field] = [req.body[field]];
             }
-        })
+          }
+        });
 
         const folder = `vocabulary/${req.params.id ?? `new-${Date.now()}`}`
 

@@ -27,6 +27,16 @@ const normalizePayload = (data = {}, existing = null) => {
         }
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, 'chapterIds')) {
+        if (Array.isArray(payload.chapterIds)) {
+            payload.chapterIds = payload.chapterIds.filter(Boolean)
+        } else if (typeof payload.chapterIds === 'string' && payload.chapterIds) {
+            payload.chapterIds = [payload.chapterIds]
+        } else {
+            payload.chapterIds = []
+        }
+    }
+
     if (Object.prototype.hasOwnProperty.call(payload, 'topicIds')) {
         if (Array.isArray(payload.topicIds)) {
             payload.topicIds = payload.topicIds.filter(Boolean)
@@ -34,16 +44,6 @@ const normalizePayload = (data = {}, existing = null) => {
             payload.topicIds = [payload.topicIds]
         } else {
             payload.topicIds = []
-        }
-    }
-
-    if (Object.prototype.hasOwnProperty.call(payload, 'chapterTitles')) {
-        if (Array.isArray(payload.chapterTitles)) {
-            payload.chapterTitles = payload.chapterTitles.filter(Boolean)
-        } else if (typeof payload.chapterTitles === 'string' && payload.chapterTitles) {
-            payload.chapterTitles = [payload.chapterTitles]
-        } else {
-            payload.chapterTitles = []
         }
     }
 
@@ -107,17 +107,25 @@ const normalizePayload = (data = {}, existing = null) => {
     return payload
 }
 
-// topicIds are embedded ids from Subject.topics[]; there is no Topic collection to
-// populate against. Resolve their names from the (populated) mapped subjects so the
-// admin UI can display topic names instead of raw ids.
-const withResolvedTopics = (doc) => {
+// chapterIds/topicIds are embedded ids from Subject.chapters[].topics[]; there is no
+// collection to populate against. Resolve their names from the (populated) mapped
+// subjects so the admin UI can display names instead of raw ids.
+const withResolvedSyllabus = (doc) => {
     const obj = typeof doc.toObject === 'function' ? doc.toObject() : doc
+    const chapterNameById = new Map()
     const topicNameById = new Map()
     for (const subject of Array.isArray(obj.subjectIds) ? obj.subjectIds : []) {
-        for (const topic of (subject && Array.isArray(subject.topics)) ? subject.topics : []) {
-            if (topic && topic._id) topicNameById.set(String(topic._id), topic.name)
+        for (const chapter of (subject && Array.isArray(subject.chapters)) ? subject.chapters : []) {
+            if (chapter && chapter._id) chapterNameById.set(String(chapter._id), chapter.name)
+            for (const topic of (chapter && Array.isArray(chapter.topics)) ? chapter.topics : []) {
+                if (topic && topic._id) topicNameById.set(String(topic._id), topic.name)
+            }
         }
     }
+    obj.chapterIds = (Array.isArray(obj.chapterIds) ? obj.chapterIds : []).map((id) => ({
+        _id: id,
+        chapterName: chapterNameById.get(String(id)) || null,
+    }))
     obj.topicIds = (Array.isArray(obj.topicIds) ? obj.topicIds : []).map((id) => ({
         _id: id,
         topicName: topicNameById.get(String(id)) || null,
@@ -148,7 +156,7 @@ const list = catchAsync(async (req, res) => {
 
     const total = await PreviousYearPaperTest.countDocuments(filter)
 
-    sendPaginated(res, docs.map(withResolvedTopics), { page: Number(page), limit: Number(limit), total })
+    sendPaginated(res, docs.map(withResolvedSyllabus), { page: Number(page), limit: Number(limit), total })
 })
 
 const getOne = catchAsync(async (req, res) => {
@@ -157,14 +165,14 @@ const getOne = catchAsync(async (req, res) => {
         .populate('subjectIds')
 
     if (!doc) throw new AppError('Test not found', 404, 'NOT_FOUND')
-    sendSuccess(res, withResolvedTopics(doc))
+    sendSuccess(res, withResolvedSyllabus(doc))
 })
 
 const create = catchAsync(async (req, res) => {
     const payload = normalizePayload({
         subjectIds: [],
+        chapterIds: [],
         topicIds: [],
-        chapterTitles: [],
         ...req.body,
         createdBy: req.admin?._id || null,
     })
@@ -193,8 +201,8 @@ const remove = catchAsync(async (req, res) => {
 })
 
 // Options for the test create/update form. Flow: paper -> mapped subjects ->
-// each subject's embedded topics -> each topic's embedded chapters. Topics and
-// chapters come from Subject.topics[].chapters[], NOT the standalone Topic collection.
+// each subject's embedded chapters -> each chapter's embedded topics. Chapters and
+// topics come from Subject.chapters[].topics[], NOT the standalone Topic collection.
 const metadata = catchAsync(async (req, res) => {
     const { previousYearPaperId } = req.query
     if (!previousYearPaperId) throw new AppError('previousYearPaperId is required', 400, 'VALIDATION_ERROR')
@@ -202,7 +210,7 @@ const metadata = catchAsync(async (req, res) => {
     const paper = await PreviousYearPaper.findOne({ _id: previousYearPaperId, isDeleted: false }).lean()
     if (!paper) throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
 
-    // Selected subjects to expand topics for. Accept repeated `subjectIds`, a CSV
+    // Selected subjects to expand chapters for. Accept repeated `subjectIds`, a CSV
     // string, or the legacy single `subjectId`.
     const rawSubjectIds = req.query.subjectIds ?? req.query.subjectId
     const selectedSubjectIds = (Array.isArray(rawSubjectIds)
@@ -223,20 +231,20 @@ const metadata = catchAsync(async (req, res) => {
         .sort({ sortOrder: 1, createdAt: -1 })
         .lean()
 
-    // Flatten embedded topics of the selected subjects (that are also mapped to the
-    // paper) into topic options carrying their chapter names and parent subject.
+    // Flatten embedded chapters of the selected subjects (that are also mapped to the
+    // paper) into chapter options carrying their topics and parent subject.
     const selectedSet = new Set(selectedSubjectIds)
-    const topicOptions = []
+    const chapterOptions = []
     for (const subject of subjects) {
         if (selectedSet.size && !selectedSet.has(String(subject._id))) continue
-        const embeddedTopics = Array.isArray(subject.topics) ? subject.topics : []
-        for (const topic of embeddedTopics) {
-            topicOptions.push({
-                _id: topic._id,
-                topicName: topic.name,
+        const embeddedChapters = Array.isArray(subject.chapters) ? subject.chapters : []
+        for (const chapter of embeddedChapters) {
+            chapterOptions.push({
+                _id: chapter._id,
+                chapterName: chapter.name,
                 subjectId: subject._id,
-                chapters: Array.isArray(topic.chapters)
-                    ? topic.chapters.map((chapter) => chapter.name).filter(Boolean)
+                topics: Array.isArray(chapter.topics)
+                    ? chapter.topics.map((topic) => ({ _id: topic._id, name: topic.name }))
                     : [],
             })
         }
@@ -244,7 +252,7 @@ const metadata = catchAsync(async (req, res) => {
 
     sendSuccess(res, {
         subjects,
-        topics: topicOptions,
+        chapters: chapterOptions,
     })
 })
 

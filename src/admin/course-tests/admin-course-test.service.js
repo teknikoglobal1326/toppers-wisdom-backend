@@ -38,11 +38,13 @@ class AdminCourseTestService extends BaseService {
 
 
   
-  async listAll({ page, limit, status, course, topic, search, sortOrder } = {}) {
+  async listAll({ page, limit, status, course, subject, topic, chapter, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
-    if (topic) filter.topic = topic
+    if (subject) filter.subjects = subject
+    if (topic) filter.topics = topic
+    if (chapter) filter.chapters = chapter
 
     if (search) {
       filter.$or = [
@@ -59,7 +61,7 @@ class AdminCourseTestService extends BaseService {
       sort: { sortOrder: direction, createdAt: -1 },
       populate: [
         { path: 'course', select: 'title slug' },
-        { path: 'topic', select: 'topicName' },
+        { path: 'subjects' },
       ],
     })
 
@@ -72,7 +74,7 @@ class AdminCourseTestService extends BaseService {
       {
         populate: [
           { path: 'course', select: 'title slug' },
-          { path: 'topic', select: 'topicName chapters' },
+          { path: 'subjects' },
         ],
       }
     )
@@ -83,9 +85,7 @@ class AdminCourseTestService extends BaseService {
   buildPayload(data = {}) {
     const payload = { ...data }
     if (payload.courseId && !payload.course) payload.course = payload.courseId
-    if (payload.topicId && !payload.topic) payload.topic = payload.topicId
     delete payload.courseId
-    delete payload.topicId
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)
       if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder

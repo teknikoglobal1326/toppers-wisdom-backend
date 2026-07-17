@@ -5,23 +5,23 @@ const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/).messages({
 })
 
 const createExamSchema = Joi.object({
-  qualification:    objectId.required().label('qualification'),
-  name:             Joi.string().trim().required(),
-  sortOrder:        Joi.number().integer().min(0).default(0),
-  subexamCount:     Joi.number().integer().min(0).default(0),
+  qualification: objectId.optional().allow(null, '').label('qualification'),
+  name: Joi.string().trim().required(),
+  sortOrder: Joi.number().integer().min(0).default(0),
+  subexamCount: Joi.number().integer().min(0).default(0),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
-  language:         Joi.string().valid('hi', 'en', 'both').default('both'),
-  status:           Joi.string().valid('active', 'inactive').default('active'),
+  language: Joi.string().valid('hi', 'en', 'both').default('both'),
+  status: Joi.string().valid('active', 'inactive').default('active'),
 })
 
 const updateExamSchema = Joi.object({
-  qualification:    objectId.label('qualification'),
-  name:             Joi.string().trim(),
-  sortOrder:        Joi.number().integer().min(0),
-  subexamCount:     Joi.number().integer().min(0),
+  qualification: objectId.optional().allow(null, '').label('qualification'),
+  name: Joi.string().trim(),
+  sortOrder: Joi.number().integer().min(0),
+  subexamCount: Joi.number().integer().min(0),
   shortDescription: Joi.string().trim().optional().allow(null, ''),
-  language:         Joi.string().valid('hi', 'en', 'both'),
-  status:           Joi.string().valid('active', 'inactive'),
+  language: Joi.string().valid('hi', 'en', 'both'),
+  status: Joi.string().valid('active', 'inactive'),
 }).min(1)
 
 const createExamDualSchema = Joi.object({

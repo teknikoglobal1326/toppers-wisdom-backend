@@ -7,17 +7,18 @@ class AdminTopicService extends BaseService {
     super(topicRepository, 'admin:topic')
   }
 
-  async listAll({ page, limit, search, status, course, chapter, sortOrder } = {}) {
+  async listAll({ page, limit, search, status, course, subject, chapter, topic, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
-    if (chapter) filter['chapters.title'] = { $regex: chapter, $options: 'i' }
+    if (subject) filter.subjects = subject
+    if (chapter) filter.chapters = chapter
+    if (topic) filter.topics = topic
 
     if (search) {
-      filter.$or = [
-        { topicName: { $regex: search, $options: 'i' } },
-        { 'chapters.title': { $regex: search, $options: 'i' } },
-      ]
+      // search fallback if needed, but since chapters and topics are now ObjectIds,
+      // we can only easily regex search other string fields if they existed on this schema.
+      // Currently, no string fields are left to perform meaningful regex search, so we skip.
     }
 
     const direction = sortOrder === 'desc' ? -1 : 1
@@ -26,14 +27,20 @@ class AdminTopicService extends BaseService {
       page,
       limit,
       sort: { sortOrder: direction, createdAt: -1 },
-      populate: { path: 'course', select: 'title slug' },
+      populate: [
+        { path: 'course', select: 'title slug' },
+        { path: 'subjects', select: 'name' }
+      ],
     })
   }
 
   async getOne(id) {
     const topic = await topicRepository.findOne(
       { _id: id, isDeleted: false },
-      { populate: { path: 'course', select: 'title slug' } }
+      { populate: [
+        { path: 'course', select: 'title slug' },
+        { path: 'subjects', select: 'name' }
+      ] }
     )
     if (!topic) throw new AppError('Topic not found', 404, 'NOT_FOUND')
     return topic
@@ -46,24 +53,21 @@ class AdminTopicService extends BaseService {
     }
     delete payload.courseId
 
+    if (payload.chapters && !Array.isArray(payload.chapters)) {
+      payload.chapters = [payload.chapters]
+    }
+
+    if (payload.topics && !Array.isArray(payload.topics)) {
+      payload.topics = [payload.topics]
+    }
+
+    if (payload.subjects && !Array.isArray(payload.subjects)) {
+      payload.subjects = [payload.subjects]
+    }
+
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       payload.sortOrder = Number(payload.sortOrder)
       if (Number.isNaN(payload.sortOrder)) delete payload.sortOrder
-    }
-
-    if (Array.isArray(payload.chapters)) {
-      payload.chapters = payload.chapters.map((chapter) => {
-        if (typeof chapter === 'string') {
-          return { title: chapter, sortOrder: 0 }
-        }
-
-        const chapterPayload = { ...chapter }
-        if (chapterPayload.sortOrder !== undefined && chapterPayload.sortOrder !== null && chapterPayload.sortOrder !== '') {
-          chapterPayload.sortOrder = Number(chapterPayload.sortOrder)
-          if (Number.isNaN(chapterPayload.sortOrder)) delete chapterPayload.sortOrder
-        }
-        return chapterPayload
-      })
     }
 
     return payload

@@ -1,6 +1,13 @@
 const Joi = require('joi')
 
+const objectId = Joi.string().hex().length(24)
+
 const createLiveTestSchema = Joi.object({
+    examId: objectId.optional().allow(null, ''),
+    subExamIds: Joi.array().items(objectId).single().default([]),
+    subjectIds: Joi.array().items(objectId).single().default([]),
+    chapterIds: Joi.array().items(objectId).single().default([]),
+    topicIds: Joi.array().items(objectId).single().default([]),
     title: Joi.string().trim().required(),
     description: Joi.string().optional().allow(null, ''),
     thumbnail: Joi.string().optional().allow(null, ''),
@@ -19,6 +26,11 @@ const createLiveTestSchema = Joi.object({
 })
 
 const updateLiveTestSchema = Joi.object({
+    examId: objectId.optional().allow(null, ''),
+    subExamIds: Joi.array().items(objectId).single().optional(),
+    subjectIds: Joi.array().items(objectId).single().optional(),
+    chapterIds: Joi.array().items(objectId).single().optional(),
+    topicIds: Joi.array().items(objectId).single().optional(),
     title: Joi.string().trim(),
     description: Joi.string().optional().allow(null, ''),
     thumbnail: Joi.string().optional().allow(null, ''),
