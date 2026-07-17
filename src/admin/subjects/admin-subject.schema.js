@@ -14,7 +14,7 @@ const topicSchema = Joi.object({
 })
 
 const createSubjectSchema = Joi.object({
-  subExamId: Joi.string().hex().length(24).required(),
+  examIds:   Joi.array().items(Joi.string().hex().length(24)).default([]),
   name:      Joi.string().trim().required(),
   sortOrder: Joi.number().integer().min(0).default(0),
   language:  Joi.string().valid('hi', 'en').default('en'),
@@ -23,7 +23,7 @@ const createSubjectSchema = Joi.object({
 })
 
 const updateSubjectSchema = Joi.object({
-  subExamId: Joi.string().hex().length(24),
+  examIds:   Joi.array().items(Joi.string().hex().length(24)),
   name:      Joi.string().trim(),
   sortOrder: Joi.number().integer().min(0),
   language:  Joi.string().valid('hi', 'en'),
@@ -39,7 +39,7 @@ const updateSubjectSchema = Joi.object({
 
 const listSubjectQuerySchema = Joi.object({
   status: Joi.string().valid('active', 'inactive'),
-  subExamId: Joi.string().hex().length(24),
+  examId: Joi.string().hex().length(24),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(1000).default(20),
