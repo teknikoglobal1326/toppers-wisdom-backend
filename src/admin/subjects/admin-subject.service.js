@@ -18,39 +18,41 @@ class AdminSubjectService extends BaseService {
     return obj
   }
 
-  buildTopicsPayload(topics) {
-    if (!Array.isArray(topics)) return undefined
-    return topics.map((topic) => {
-      const topicPayload = this.normalizeSortOrder({ ...topic })
-      if (Array.isArray(topicPayload.chapters)) {
-        topicPayload.chapters = topicPayload.chapters.map((chapter) => {
-          if (typeof chapter === 'string') return { name: chapter, sortOrder: 0 }
-          return this.normalizeSortOrder({ ...chapter })
+  buildChaptersPayload(chapters) {
+    if (!Array.isArray(chapters)) return undefined
+    return chapters.map((chapter) => {
+      const chapterPayload = this.normalizeSortOrder({ ...chapter })
+      if (Array.isArray(chapterPayload.topics)) {
+        chapterPayload.topics = chapterPayload.topics.map((topic) => {
+          if (typeof topic === 'string') return { name: topic, sortOrder: 0 }
+          return this.normalizeSortOrder({ ...topic })
         })
       }
-      return topicPayload
+      return chapterPayload
     })
   }
 
   buildPayload(data = {}) {
     const payload = this.normalizeSortOrder({ ...data })
-    if (payload.examIds !== undefined) {
-      if (typeof payload.examIds === 'string') {
-        try {
-          payload.examIds = JSON.parse(payload.examIds)
-        } catch (e) {
-          payload.examIds = payload.examIds.split(',').map(id => id.trim()).filter(Boolean)
+    for (const key of ['examIds', 'subExamIds']) {
+      if (payload[key] !== undefined) {
+        if (typeof payload[key] === 'string') {
+          try {
+            payload[key] = JSON.parse(payload[key])
+          } catch (e) {
+            payload[key] = payload[key].split(',').map(id => id.trim()).filter(Boolean)
+          }
         }
-      }
-      if (Array.isArray(payload.examIds)) {
-        payload.examIds = payload.examIds.filter(id => id && id !== 'null' && id !== 'undefined')
+        if (Array.isArray(payload[key])) {
+          payload[key] = payload[key].filter(id => id && id !== 'null' && id !== 'undefined')
+        }
       }
     }
     // language na diya ho to default 'en'
     if (!payload.language) payload.language = 'en'
-    if (payload.topics !== undefined) {
-      const topics = this.buildTopicsPayload(payload.topics)
-      if (topics !== undefined) payload.topics = topics
+    if (payload.chapters !== undefined) {
+      const chapters = this.buildChaptersPayload(payload.chapters)
+      if (chapters !== undefined) payload.chapters = chapters
     }
     return payload
   }

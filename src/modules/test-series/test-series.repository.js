@@ -4,7 +4,11 @@ const TestSeries = require('../../models/TestSeries.model')
 const TestSeriesTest = require('../../models/TestSeriesTest.model')
 const TestSeriesAttempt = require('../../models/TestSeriesAttempt.model')
 const Question = require('../../models/Question.model')
+
+const CourseOrder = require('../../models/CourseOrder.model')
+
 const mongoose = require('mongoose')
+
 
 class TestSeriesRepository extends BaseRepository {
     constructor() {
@@ -19,7 +23,7 @@ class TestSeriesRepository extends BaseRepository {
         const userObjectId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
         const stats = await TestSeriesAttempt.aggregate([
             { $match: { user: userObjectId, status: 'completed' } },
-            { 
+            {
                 $group: {
                     _id: null,
                     totalScore: { $sum: '$score' },
@@ -30,11 +34,11 @@ class TestSeriesRepository extends BaseRepository {
                 }
             }
         ])
-        
+
         if (!stats.length) {
             return { totalScore: 0, timeSpent: 0, totalCorrect: 0, totalWrong: 0, totalAttemptedTests: 0 }
         }
-        
+
         return {
             totalScore: stats[0].totalScore,
             timeSpent: stats[0].timeSpent,
@@ -48,7 +52,7 @@ class TestSeriesRepository extends BaseRepository {
         // Find users with a strictly higher sum of scores, or same score but lower time
         const higherRankCount = await TestSeriesAttempt.aggregate([
             { $match: { status: 'completed' } },
-            { 
+            {
                 $group: {
                     _id: '$user',
                     totalScore: { $sum: '$score' },
@@ -65,7 +69,7 @@ class TestSeriesRepository extends BaseRepository {
             },
             { $count: "count" }
         ])
-        
+
         return (higherRankCount[0]?.count || 0) + 1
     }
 
@@ -81,14 +85,14 @@ class TestSeriesRepository extends BaseRepository {
     async getAccessibleTotalTests(userId) {
         const CourseOrder = require('../../models/CourseOrder.model')
         const orders = await CourseOrder.find({ user: userId, status: 'paid', 'items.itemType': 'test-series' }).select('items')
-        
+
         const testSeriesIds = new Set()
         for (const order of orders) {
             for (const item of order.items) {
                 if (item.itemType === 'test-series') testSeriesIds.add(item.itemId.toString())
             }
         }
-        
+
         const testCount = await TestSeriesTest.countDocuments({
             isDeleted: false,
             status: 'active',
@@ -97,7 +101,7 @@ class TestSeriesRepository extends BaseRepository {
                 { isPaid: false }
             ]
         })
-        
+
         return testCount
     }
 
@@ -136,8 +140,8 @@ class TestSeriesRepository extends BaseRepository {
     async listSeriesTests(filter, options = {}) {
         return paginate(TestSeriesTest, filter, {
             ...options,
-            select: 'testSeries subjectIds topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status languages createdAt',
-            populate: [{ path: 'subjectIds', select: 'name topics' }],
+            select: 'testSeries subjectIds chapterIds topicIds title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status languages createdAt',
+            populate: [{ path: 'subjectIds', select: 'name chapters' }],
         })
     }
 
@@ -219,7 +223,25 @@ class TestSeriesRepository extends BaseRepository {
         }, {})
     }
 
-    async findQuestionsForTest(testId) {
+    async getPurchasedTestItemIds(userId) {
+        const orders = await CourseOrder.find({
+            user: userId,
+            status: 'paid',
+            'items.itemType': 'test',
+        }).select('items.itemId').lean()
+
+        const ids = new Set()
+        for (const order of orders) {
+            for (const item of order.items || []) {
+                if (item?.itemId) ids.add(item.itemId.toString())
+            }
+        }
+
+        return ids
+    }
+
+    async findQuestionsForTest(testId, language) {
+        const allowedLanguages = language === 'en' ? ['en', 'both'] : ['hi', 'both']
         return Question.find({
             test: testId,
             isDeleted: false,

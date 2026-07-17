@@ -9,11 +9,13 @@ class AdminPdfService extends BaseService {
     super(pdfRepository, 'admin:pdf')
   }
 
-  async listAll({ page, limit, status, course, topic, search, sortOrder } = {}) {
+  async listAll({ page, limit, status, course, subject, topic, chapter, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
-    if (topic) filter.topic = topic
+    if (subject) filter.subjects = subject
+    if (topic) filter.topics = topic
+    if (chapter) filter.chapters = chapter
 
     if (search) {
       filter.$or = [
@@ -30,7 +32,7 @@ class AdminPdfService extends BaseService {
       sort: { sortOrder: direction, createdAt: -1 },
       populate: [
         { path: 'course', select: 'title slug' },
-        { path: 'topic', select: 'topicName' },
+        { path: 'subjects' },
       ],
     })
   }
@@ -41,7 +43,7 @@ class AdminPdfService extends BaseService {
       {
         populate: [
           { path: 'course', select: 'title slug' },
-          { path: 'topic', select: 'topicName chapters' },
+          { path: 'subjects' },
         ],
       }
     )
@@ -52,14 +54,9 @@ class AdminPdfService extends BaseService {
   buildPayload(data = {}) {
     const payload = { ...data }
     if (payload.courseId && !payload.course) payload.course = payload.courseId
-    if (payload.topicId && !payload.topic) payload.topic = payload.topicId
     delete payload.courseId
-    delete payload.topicId
     if (payload.pdfFile === '') delete payload.pdfFile
     if (payload.image === '') delete payload.image
-    if (payload.chapter && typeof payload.chapter === 'object' && typeof payload.chapter.title === 'string') {
-      payload.chapter = { ...payload.chapter, title: payload.chapter.title.trim() }
-    }
     return payload
   }
 

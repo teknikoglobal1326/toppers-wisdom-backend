@@ -6,8 +6,8 @@ const createShortSchema = Joi.object({
   enTitle:   Joi.string().trim().allow('', null).optional(),
   videoUrl:  Joi.string().max(500).optional().allow(null, ''),
   sortOrder: Joi.number().integer().min(0).default(0),
-  categoryId:Joi.string().hex().length(24).optional().allow(null, ''),
-  status:    Joi.string().valid('active', 'inactive').default('active'),
+  categoryId: Joi.string().hex().length(24).optional().allow(null, ''),
+  status: Joi.string().valid('active', 'inactive').default('active'),
   thumbnail: Joi.string().max(500).optional().allow(null, ''),
 })
 
@@ -17,8 +17,8 @@ const updateShortSchema = Joi.object({
   enTitle:   Joi.string().trim().allow('', null).optional(),
   videoUrl:  Joi.string().max(500).optional().allow(null, ''),
   sortOrder: Joi.number().integer().min(0),
-  categoryId:Joi.string().hex().length(24).optional().allow(null, ''),
-  status:    Joi.string().valid('active', 'inactive'),
+  categoryId: Joi.string().hex().length(24).optional().allow(null, ''),
+  status: Joi.string().valid('active', 'inactive'),
   thumbnail: Joi.string().max(500).optional().allow(null, ''),
 }).min(1)
 

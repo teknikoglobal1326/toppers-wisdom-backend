@@ -11,6 +11,8 @@ const editorialRepository = require('../../modules/editorial/editorial.repositor
 const testSeriesRepository = require('../../modules/test-series/test-series.repository')
 const shortCategoryRepository = require('../../modules/short-category/short-category.repository')
 const previousYearPaperRepository = require('../../modules/previous-year-paper/previous-year-paper.repository')
+const subjectRepository = require('../../modules/subject/subject.repository')
+const Subject = require('../../models/Subject.model')
 const Role = require('../../models/Role.model')
 
 // GET /api/v1/admin/common/short-categories
@@ -37,28 +39,106 @@ router.get('/courses', catchAsync(async (req, res) => {
 })
 );
 
-// GET /api/v1/admin/common/topics/:courseId
-router.get('/topics/:courseId', catchAsync(async (req, res) => {
+// GET /api/v1/admin/common/subjects
+// router.get('/subjects', catchAsync(async (req, res) => {
+//   const subjects = await subjectRepository.findAll(
+//     { isDeleted: false, status: 'active' },
+//     { sort: { sortOrder: 1, createdAt: -1 }, select: '_id name sortOrder' }
+//   );
+//   sendSuccess(res, subjects);
+// }));
+// GET /api/v1/admin/common/subjects/:courseId
+router.get('/subjects/:courseId', catchAsync(async (req, res) => {
   const { courseId } = req.params
-  const topics = await topicRepository.findAll({ course: courseId }, { sort: { createdAt: -1 }, select: '_id topicName' })
-  sendSuccess(res, topics)
+
+  const course = await courseRepository.findById(courseId, {
+    select: 'subjects'
+  })
+
+  if (!course) {
+    return sendError(res, 'Course not found', 404)
+  }
+
+  const subjectIds = course.subjects.map(item => item.subject)
+
+  const subjects = await subjectRepository.findAll(
+    {
+      _id: { $in: subjectIds },
+      isDeleted: false,
+      status: 'active'
+    },
+    {
+      sort: { sortOrder: 1, createdAt: -1 },
+      select: '_id name sortOrder'
+    }
+  )
+
+  sendSuccess(res, subjects)
 }))
 
-// GET /api/v1/admin/common/chapters/:topicId
-router.get('/chapters/:topicId', catchAsync(async (req, res) => {
-  const { topicId } = req.params;
-  const topic = await topicRepository.findOne(
-    { _id: topicId, isDeleted: false, },
-    { select: 'chapters', });
-  if (!topic) {
-    return res.status(404).json({
-      success: false,
-      message: 'Topic not found',
-    });
+// GET /api/v1/admin/common/chapters/:courseId
+router.get('/chapters/:courseId', catchAsync(async (req, res) => {
+  const { courseId } = req.params;
+  const { subjectId } = req.query;
+
+  if (subjectId) {
+    const subject = await subjectRepository.findOne({ _id: subjectId, isDeleted: false });
+    if (!subject) {
+      return sendSuccess(res, []);
+    }
+    const chapters = (subject.chapters || []).map(ch => ({
+      _id: ch._id,
+      title: ch.name
+    }));
+    return sendSuccess(res, chapters);
   }
-  sendSuccess(res, topic.chapters);
+
+  const query = { course: courseId, isDeleted: false, status: 'active' };
+  const mappings = await topicRepository.findAll(query, { sort: { createdAt: -1 }, select: '_id chapters' });
+  sendSuccess(res, mappings);
+}))
+
+// GET /api/v1/admin/common/topics/:chapterId
+router.get('/topics/:chapterId', catchAsync(async (req, res) => {
+  const { chapterId } = req.params;
+
+  // Find the chapter inside a subject's nested chapters array
+  const subject = await subjectRepository.findOne({ "chapters._id": chapterId, isDeleted: false });
+  if (subject) {
+    const nestedChapter = subject.chapters.find(ch => ch._id.toString() === chapterId);
+    if (nestedChapter) {
+      const formattedTopics = (nestedChapter.topics || []).map(t => ({
+        _id: t._id,
+        topicName: t.name
+      }));
+      return sendSuccess(res, formattedTopics);
+    }
+  }
+
+  return res.status(404).json({
+    success: false,
+    message: 'Chapter not found',
+  });
 })
 );
+
+// GET /api/v1/admin/common/all-exams
+router.get('/all-exams', catchAsync(async (req, res) => {
+  const exams = await examRepository.findAll(
+    { status: 'active', is_deleted: false },
+    { sort: { name: 1 }, select: 'name _id' }
+  )
+  sendSuccess(res, exams)
+}))
+
+// GET /api/v1/admin/common/all-subexams
+router.get('/all-subexams', catchAsync(async (req, res) => {
+  const subexams = await subexamRepository.findAll(
+    { status: 'active', is_deleted: false },
+    { sort: { name: 1 }, select: 'name _id examId' }
+  )
+  sendSuccess(res, subexams)
+}))
 
 // GET /api/v1/admin/common/exams/:qualificationId
 router.get('/exams/:qualificationId', catchAsync(async (req, res) => {
@@ -115,6 +195,21 @@ router.get('/previous-year-papers', catchAsync(async (req, res) => {
   )
   sendSuccess(res, papers)
 }))
+// GET /api/v1/admin/common/exam-subjects-chapters?examId=xxx
+// Returns subjects for the given exam, with each subject's embedded chapters and topics.
+router.get('/exam-subjects-chapters', catchAsync(async (req, res) => {
+  const { examId } = req.query
+  const filter = { isDeleted: false, status: 'active' }
+  if (examId) filter.examIds = examId
+
+  const subjects = await Subject.find(filter)
+    .select('_id name chapters')
+    .sort({ sortOrder: 1, name: 1 })
+    .lean()
+
+  sendSuccess(res, subjects)
+}))
+
 // GET /api/v1/admin/common/roles
 router.get('/roles', catchAsync(async (_req, res) => {
   const roles = await Role.find({ isDeleted: false, isActive: true })

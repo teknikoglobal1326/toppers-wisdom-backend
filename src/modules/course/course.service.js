@@ -10,6 +10,7 @@ const Content = require('../../models/Content.model')
 const Test = require('../../models/Test.model')
 const CourseTest = require('../../models/CourseTest.model')
 const Topic = require('../../models/Topic.model')
+const Subject = require('../../models/Subject.model')
 const paymentService = require('../payment/payment.service')
 const { generateSubscriberToken } = require('../../lib/agora')
 
@@ -147,7 +148,7 @@ class CourseService extends BaseService {
 
     const enrollment = await courseRepository.findEnrollment(userId, courseId)
 
-    const [pdfs, contents, tests, courseTests, topics] = await Promise.all([
+    const [pdfs, contents, tests, courseTests, topicMappings] = await Promise.all([
       Pdf.find({ course: courseId, isDeleted: false, status: 'active' })
         .select('title description pdfFile image topic chapter')
         .lean(),
@@ -163,87 +164,100 @@ class CourseService extends BaseService {
       Topic.find({ course: courseId, isDeleted: false, status: 'active' }).lean()
     ])
 
+    // Mapping docs hold bare embedded-subdoc ids (Subject.chapters[].topics[]);
+    // resolve names from the referenced subjects.
+    const mappedSubjectIds = [...new Set(topicMappings.flatMap(m => (m.subjects || []).map(s => s.toString())))]
+    const mappedSubjects = mappedSubjectIds.length
+      ? await Subject.find({ _id: { $in: mappedSubjectIds }, isDeleted: false }).select('chapters').lean()
+      : []
+
+    const chapterById = new Map()
+    for (const subject of mappedSubjects) {
+      for (const chapter of subject.chapters || []) {
+        chapterById.set(chapter._id.toString(), chapter)
+      }
+    }
+
     const syllabus = {
       content: [],
       pdf: [],
       test: []
     };
 
-    topics.forEach(topic => {
-      const topicId = topic._id.toString();
-      const chapterIdentifiers = (topic.chapters || []).flatMap(c => [c.title, c._id?.toString()]).filter(Boolean);
-      const chapterTitles = (topic.chapters || []).map((c) => c.title).filter(Boolean);
+    // Grouping: chapter (top level) -> topics (sub level), per the flipped hierarchy.
+    const selectedChapterIds = [...new Set(topicMappings.flatMap(m => (m.chapters || []).map(c => c.toString())))]
 
-      const contentChapters = [];
-      const pdfChapters = [];
-      const testChapters = [];
+    selectedChapterIds.forEach(chapterId => {
+      const chapterDoc = chapterById.get(chapterId)
+      const chapterName = chapterDoc ? chapterDoc.name : null
+      const embeddedTopics = chapterDoc ? (chapterDoc.topics || []) : []
+      const topicIdentifiers = embeddedTopics.flatMap(t => [t.name, t._id?.toString()]).filter(Boolean)
 
-      (topic.chapters || []).forEach(chapter => {
-        const chapterTitle = chapter.title;
-        const chapterId = chapter._id?.toString();
+      const contentTopics = [];
+      const pdfTopics = [];
+      const testTopics = [];
 
-        const matchChapter = (item) => item.chapter === chapterTitle || item.chapter?.toString() === chapterId;
+      embeddedTopics.forEach(topic => {
+        const topicName = topic.name;
+        const topicId = topic._id?.toString();
 
-        const chapterContents = contents.filter(c => c.topic?.toString() === topicId && matchChapter(c));
-        let chapterPdfs = pdfs.filter(p => p.topic?.toString() === topicId && matchChapter(p));
-        const chapterTests = courseTests.filter(t => t.topic?.toString() === topicId && matchChapter(t));
+        const matchTopic = (item) => item.topic === topicName || item.topic?.toString() === topicId;
+
+        const topicContents = contents.filter(c => c.chapter?.toString() === chapterId && matchTopic(c));
+        const topicPdfs = pdfs.filter(p => p.chapter?.toString() === chapterId && matchTopic(p));
+        const topicTests = courseTests.filter(t => t.chapter?.toString() === chapterId && matchTopic(t));
 
         const combinedData = [
-          ...chapterContents.map(c => ({ ...c, materialType: 'content' })),
-          ...chapterPdfs.map(p => ({ ...p, materialType: 'pdf' }))
+          ...topicContents.map(c => ({ ...c, materialType: 'content' })),
+          ...topicPdfs.map(p => ({ ...p, materialType: 'pdf' }))
         ];
 
         if (combinedData.length > 0) {
-          contentChapters.push({ title: chapterTitle, data: combinedData });
+          contentTopics.push({ _id: topic._id, title: topicName, data: combinedData });
         }
 
-        if (chapterPdfs.length > 0) {
-          pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
+        if (topicPdfs.length > 0) {
+          pdfTopics.push({ _id: topic._id, title: topicName, data: topicPdfs });
         }
 
-        // const chapterPdfs = pdfs.filter((p) => p.topic?.toString() === topicId && getPdfChapterTitle(p.chapter) === chapterTitle);
-        // if (chapterPdfs.length > 0) {
-        //   pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
-        // }
-
-        if (chapterTests.length > 0) {
-          testChapters.push({ title: chapterTitle, data: chapterTests });
+        if (topicTests.length > 0) {
+          testTopics.push({ _id: topic._id, title: topicName, data: topicTests });
         }
       });
 
-      const unassignedContents = contents.filter(c => c.topic?.toString() === topicId && (!c.chapter || !chapterIdentifiers.includes(c.chapter?.toString())));
-      let unassignedPdfs = pdfs.filter(p => p.topic?.toString() === topicId && (!p.chapter || !chapterIdentifiers.includes(p.chapter?.toString())));
-      const unassignedTests = courseTests.filter(t => t.topic?.toString() === topicId && (!t.chapter || !chapterIdentifiers.includes(t.chapter?.toString())));
+      const unassignedContents = contents.filter(c => c.chapter?.toString() === chapterId && (!c.topic || !topicIdentifiers.includes(c.topic?.toString())));
+      let unassignedPdfs = pdfs.filter(p => p.chapter?.toString() === chapterId && (!p.topic || !topicIdentifiers.includes(p.topic?.toString())));
+      const unassignedTests = courseTests.filter(t => t.chapter?.toString() === chapterId && (!t.topic || !topicIdentifiers.includes(t.topic?.toString())));
 
       const combinedUnassigned = [
         ...unassignedContents.map(c => ({ ...c, materialType: 'content' })),
         ...unassignedPdfs.map(p => ({ ...p, materialType: 'pdf' }))
       ];
 
-      if (contentChapters.length > 0 || combinedUnassigned.length > 0) {
+      if (contentTopics.length > 0 || combinedUnassigned.length > 0) {
         syllabus.content.push({
-          _id: topic._id,
-          topicName: topic.topicName,
-          chapters: contentChapters,
+          _id: chapterId,
+          chapterName,
+          topics: contentTopics,
           ...(combinedUnassigned.length > 0 && { unassignedData: combinedUnassigned })
         });
       }
 
-      unassignedPdfs = pdfs.filter(p => p.topic?.toString() === topicId && (!p.chapter || !chapterIdentifiers.includes(p.chapter?.toString())));
-      if (pdfChapters.length > 0 || unassignedPdfs.length > 0) {
+      unassignedPdfs = pdfs.filter(p => p.chapter?.toString() === chapterId && (!p.topic || !topicIdentifiers.includes(p.topic?.toString())));
+      if (pdfTopics.length > 0 || unassignedPdfs.length > 0) {
         syllabus.pdf.push({
-          _id: topic._id,
-          topicName: topic.topicName,
-          chapters: pdfChapters,
+          _id: chapterId,
+          chapterName,
+          topics: pdfTopics,
           ...(unassignedPdfs.length > 0 && { unassignedData: unassignedPdfs })
         });
       }
 
-      if (testChapters.length > 0 || unassignedTests.length > 0) {
+      if (testTopics.length > 0 || unassignedTests.length > 0) {
         syllabus.test.push({
-          _id: topic._id,
-          topicName: topic.topicName,
-          chapters: testChapters,
+          _id: chapterId,
+          chapterName,
+          topics: testTopics,
           ...(unassignedTests.length > 0 && { unassignedData: unassignedTests })
         });
       }

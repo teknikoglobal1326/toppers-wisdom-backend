@@ -46,16 +46,16 @@ const requireSomeTitle = (value, helpers) => {
 const createPreviousYearPaperTestSchema = Joi.object({
     previousYearPaperId: objectId.required(),
     subjectIds: Joi.array().items(objectId).single().default([]),
+    chapterIds: Joi.array().items(objectId).single().default([]),
     topicIds: Joi.array().items(objectId).single().default([]),
-    chapterTitles: Joi.array().items(Joi.string().trim()).single().default([]),
     ...baseSchema,
 }).custom(requireSomeTitle)
 
 const updatePreviousYearPaperTestSchema = Joi.object({
     previousYearPaperId: objectId.optional(),
     subjectIds: Joi.array().items(objectId).single().optional(),
+    chapterIds: Joi.array().items(objectId).single().optional(),
     topicIds: Joi.array().items(objectId).single().optional(),
-    chapterTitles: Joi.array().items(Joi.string().trim()).single().optional(),
     title: Joi.string().trim().optional().allow(null, ''),
     description: Joi.string().optional().allow(null, ''),
     instructions: Joi.string().optional().allow(null, ''),
