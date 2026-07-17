@@ -74,7 +74,11 @@ const initSocket = (httpServer) => {
 
         socket.emit('live-state', { chatMode, activePoll, recentChats });
 
-        if (callback) callback({ success: true, room: roomName, chatMode, activePoll, recentChats });
+        // Broadcast updated viewer count
+        const currentSize = io.sockets.adapter.rooms.get(roomName)?.size || 1;
+        io.to(roomName).emit('viewer-count-updated', { count: currentSize });
+
+        if (callback) callback({ success: true, room: roomName, chatMode, activePoll, recentChats, viewerCount: currentSize });
       } catch (error) {
         rootLogger.error(error, 'Error in join-live');
         if (callback) callback({ error: 'Internal server error' });
@@ -278,6 +282,16 @@ const initSocket = (httpServer) => {
       } catch (error) {
         rootLogger.error(error, 'Error in end-poll');
         if (callback) callback({ error: 'Internal server error' });
+      }
+    });
+
+    socket.on('disconnecting', () => {
+      for (const room of socket.rooms) {
+        if (room.startsWith('live_')) {
+          // The size still includes the disconnecting socket, so we subtract 1
+          const currentSize = io.sockets.adapter.rooms.get(room)?.size || 1;
+          io.to(room).emit('viewer-count-updated', { count: currentSize - 1 });
+        }
       }
     });
 

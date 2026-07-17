@@ -85,6 +85,45 @@ class PaymentService extends BaseService {
       this.logger.warn({ razorpayOrderId: order_id }, 'Payment failed')
     }
   }
+
+  async listUserOrders(userId, query) {
+    const paginated = await paymentRepository.listUserOrders(userId, query)
+
+    const Course = require('../../models/Course.model')
+    const TestSeries = require('../../models/TestSeries.model')
+    const Booster = require('../../models/Booster.model')
+
+    const courseIds = []
+    const testIds = []
+    const boosterIds = []
+
+    paginated.data.forEach(order => {
+      order.items.forEach(item => {
+        if (item.itemType === 'course') courseIds.push(item.itemId)
+        else if (item.itemType === 'test') testIds.push(item.itemId)
+        else if (item.itemType === 'booster') boosterIds.push(item.itemId)
+      })
+    })
+
+    const courses = await Course.find({ _id: { $in: courseIds } }).select('thumbnail').lean()
+    const testSeries = await TestSeries.find({ _id: { $in: testIds } }).select('thumbnail').lean()
+    const boosters = await Booster.find({ _id: { $in: boosterIds } }).select('thumbnailImage').lean()
+
+    const imageMap = {}
+    courses.forEach(c => { imageMap[c._id.toString()] = c.thumbnail })
+    testSeries.forEach(t => { imageMap[t._id.toString()] = t.thumbnail })
+    boosters.forEach(b => { imageMap[b._id.toString()] = b.thumbnailImage })
+
+    paginated.data = paginated.data.map(order => {
+      order.items = order.items.map(item => ({
+        ...item,
+        image: imageMap[item.itemId.toString()] || null
+      }))
+      return order
+    })
+
+    return paginated
+  }
 }
 
 module.exports = new PaymentService()

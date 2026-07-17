@@ -65,6 +65,7 @@ class AdminPdfService extends BaseService {
 
   async createPdf(data) {
     const payload = this.buildPayload(data)
+    // console.log('Creating PDF with payload:', payload) // Debugging line
     const created = await pdfRepository.create(payload)
     return created
   }
