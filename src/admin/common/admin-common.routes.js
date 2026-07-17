@@ -60,6 +60,24 @@ router.get('/chapters/:topicId', catchAsync(async (req, res) => {
 })
 );
 
+// GET /api/v1/admin/common/all-exams
+router.get('/all-exams', catchAsync(async (req, res) => {
+  const exams = await examRepository.findAll(
+    { status: 'active', is_deleted: false },
+    { sort: { name: 1 }, select: 'name _id' }
+  )
+  sendSuccess(res, exams)
+}))
+
+// GET /api/v1/admin/common/all-subexams
+router.get('/all-subexams', catchAsync(async (req, res) => {
+  const subexams = await subexamRepository.findAll(
+    { status: 'active', is_deleted: false },
+    { sort: { name: 1 }, select: 'name _id examId' }
+  )
+  sendSuccess(res, subexams)
+}))
+
 // GET /api/v1/admin/common/exams/:qualificationId
 router.get('/exams/:qualificationId', catchAsync(async (req, res) => {
   const { qualificationId } = req.params
