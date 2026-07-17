@@ -190,15 +190,13 @@ class CourseService extends BaseService {
 
         const combinedData = [
           ...chapterContents.map(c => ({ ...c, materialType: 'content' })),
-          ...chapterPdfs.map(p => ({ ...p, materialType: 'pdf' })),
-          ...chapterTests.map(t => ({ ...t, materialType: 'test' }))
+          ...chapterPdfs.map(p => ({ ...p, materialType: 'pdf' }))
         ];
 
         if (combinedData.length > 0) {
           contentChapters.push({ title: chapterTitle, data: combinedData });
         }
 
-        chapterPdfs = pdfs.filter((p) => p.topic?.toString() === topicId && getPdfChapterTitle(p.chapter) === chapterTitle);
         if (chapterPdfs.length > 0) {
           pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
         }
@@ -208,22 +206,18 @@ class CourseService extends BaseService {
         //   pdfChapters.push({ title: chapterTitle, data: chapterPdfs });
         // }
 
-        // if (chapterTests.length > 0) {
-        //   testChapters.push({ title: chapterTitle, data: chapterTests });
-        // }
+        if (chapterTests.length > 0) {
+          testChapters.push({ title: chapterTitle, data: chapterTests });
+        }
       });
 
       const unassignedContents = contents.filter(c => c.topic?.toString() === topicId && (!c.chapter || !chapterIdentifiers.includes(c.chapter?.toString())));
-      let unassignedPdfs = pdfs.filter((p) => {
-        const chapterTitle = getPdfChapterTitle(p.chapter)
-        return p.topic?.toString() === topicId && (!chapterTitle || !chapterTitles.includes(chapterTitle))
-      });
+      let unassignedPdfs = pdfs.filter(p => p.topic?.toString() === topicId && (!p.chapter || !chapterIdentifiers.includes(p.chapter?.toString())));
       const unassignedTests = courseTests.filter(t => t.topic?.toString() === topicId && (!t.chapter || !chapterIdentifiers.includes(t.chapter?.toString())));
 
       const combinedUnassigned = [
         ...unassignedContents.map(c => ({ ...c, materialType: 'content' })),
-        ...unassignedPdfs.map(p => ({ ...p, materialType: 'pdf' })),
-        ...unassignedTests.map(t => ({ ...t, materialType: 'test' }))
+        ...unassignedPdfs.map(p => ({ ...p, materialType: 'pdf' }))
       ];
 
       if (contentChapters.length > 0 || combinedUnassigned.length > 0) {
@@ -235,10 +229,7 @@ class CourseService extends BaseService {
         });
       }
 
-      unassignedPdfs = pdfs.filter((p) => {
-        const chapterTitle = getPdfChapterTitle(p.chapter)
-        return p.topic?.toString() === topicId && (!chapterTitle || !chapterTitles.includes(chapterTitle))
-      });
+      unassignedPdfs = pdfs.filter(p => p.topic?.toString() === topicId && (!p.chapter || !chapterIdentifiers.includes(p.chapter?.toString())));
       if (pdfChapters.length > 0 || unassignedPdfs.length > 0) {
         syllabus.pdf.push({
           _id: topic._id,

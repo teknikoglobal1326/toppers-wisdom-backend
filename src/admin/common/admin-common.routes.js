@@ -9,9 +9,18 @@ const subexamRepository = require('../../modules/subexam/subexam.repository')
 const vocabularyRepository = require('../../modules/vocabulary/vocabulary.repository')
 const editorialRepository = require('../../modules/editorial/editorial.repository')
 const testSeriesRepository = require('../../modules/test-series/test-series.repository')
-
+const shortCategoryRepository = require('../../modules/short-category/short-category.repository')
 const previousYearPaperRepository = require('../../modules/previous-year-paper/previous-year-paper.repository')
 const Role = require('../../models/Role.model')
+
+// GET /api/v1/admin/common/short-categories
+router.get('/short-categories', catchAsync(async (req, res) => {
+  const categories = await shortCategoryRepository.findAll(
+    { isDeleted: false, status: 'active' },
+    { sort: { createdAt: -1 }, select: '_id name' }
+  )
+  sendSuccess(res, categories)
+}))
 
 
 // GET /api/v1/admin/common/qualifications
@@ -73,38 +82,38 @@ router.get('/subexams/:examId', catchAsync(async (req, res) => {
 
 // GET /api/v1/admin/common/vocabularies
 router.get('/vocabularies', catchAsync(async (req, res) => {
-    const vocabularies = await vocabularyRepository.findAll(
-      { status: 'active', isDeleted: false },
-      { sort: { title: 1 }, select: 'title _id' }
-    )
-    sendSuccess(res, vocabularies)
+  const vocabularies = await vocabularyRepository.findAll(
+    { status: 'active', isDeleted: false },
+    { sort: { title: 1 }, select: 'title _id' }
+  )
+  sendSuccess(res, vocabularies)
 }))
 
 // GET /api/v1/admin/common/editorials
 router.get('/editorials', catchAsync(async (req, res) => {
-    const editorials = await editorialRepository.findAll(
-      { status: 'published', isDeleted: false },
-      { sort: { title: 1 }, select: 'title _id' }
-    )
-    sendSuccess(res, editorials)
+  const editorials = await editorialRepository.findAll(
+    { status: 'published', isDeleted: false },
+    { sort: { title: 1 }, select: 'title _id' }
+  )
+  sendSuccess(res, editorials)
 }))
 
 // GET /api/v1/admin/common/test-series
 router.get('/test-series', catchAsync(async (req, res) => {
-    const testSeries = await testSeriesRepository.findAll(
-      { status: 'active', isDeleted: false },
-      { sort: { title: 1 }, select: 'title _id' }
-    )
-    sendSuccess(res, testSeries)
+  const testSeries = await testSeriesRepository.findAll(
+    { status: 'active', isDeleted: false },
+    { sort: { title: 1 }, select: 'title _id' }
+  )
+  sendSuccess(res, testSeries)
 }))
 
 // GET /api/v1/admin/common/previous-year-papers
 router.get('/previous-year-papers', catchAsync(async (req, res) => {
-    const papers = await previousYearPaperRepository.findAll(
-      { status: 'active', isDeleted: false },
-      { sort: { title: 1 }, select: 'title _id' }
-    )
-    sendSuccess(res, papers)
+  const papers = await previousYearPaperRepository.findAll(
+    { status: 'active', isDeleted: false },
+    { sort: { title: 1 }, select: 'title _id' }
+  )
+  sendSuccess(res, papers)
 }))
 // GET /api/v1/admin/common/roles
 router.get('/roles', catchAsync(async (_req, res) => {

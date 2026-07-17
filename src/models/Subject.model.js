@@ -12,7 +12,7 @@ const topicSchema = new mongoose.Schema({
 }, { timestamps: true })
 
 const subjectSchema = new mongoose.Schema({
-  subExamId:  { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', required: true, index: true },
+  examIds:    [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam', index: true }],
   name:       { type: String, required: true, trim: true },
   sortOrder:  { type: Number, default: 0, index: true },
   language:   { type: String, enum: ['hi', 'en'], default: 'en', index: true },
