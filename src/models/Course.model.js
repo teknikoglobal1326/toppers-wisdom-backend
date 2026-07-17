@@ -13,8 +13,8 @@ const lessonSchema = new mongoose.Schema({
 })
 
 const courseSchema = new mongoose.Schema({
-  exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true, index: true },
-  subExam: { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', required: true, index: true },
+  exam: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true, index: true }],
+  subExam: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', required: true, index: true }],
   title: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
   description: String,
