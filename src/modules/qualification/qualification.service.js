@@ -1,6 +1,6 @@
-const BaseService             = require('../../core/BaseService')
+const BaseService = require('../../core/BaseService')
 const qualificationRepository = require('./qualification.repository')
-const { createLogger }        = require('../../config/logger')
+const { createLogger } = require('../../config/logger')
 
 class QualificationService extends BaseService {
   constructor() {
@@ -16,7 +16,7 @@ class QualificationService extends BaseService {
   async listPublic() {
     this.logger.info('Listing public qualifications')
     return this.repository.findAll(
-      { isActive: true, isDelted: false },
+      { isActive: true },
       { sort: { sortOrder: 1 }, select: '_id name' },
     )
   }

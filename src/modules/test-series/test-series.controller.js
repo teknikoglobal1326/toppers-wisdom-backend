@@ -20,6 +20,10 @@ const startTest = catchAsync(async (req, res) => {
     sendSuccess(res, await testSeriesService.startTest(req.params.testId, req.user._id, req.user.language || 'hi'))
 })
 
+const getTestInstructions = catchAsync(async (req, res) => {
+    sendSuccess(res, await testSeriesService.getTestInstructions(req.params.testId, req.user._id))
+})
+
 const submitTest = catchAsync(async (req, res) => {
     sendSuccess(
         res,
@@ -30,7 +34,7 @@ const submitTest = catchAsync(async (req, res) => {
 
 const startSession = catchAsync(async (req, res) => {
     sendSuccess(
-        res, 
+        res,
         await testSeriesService.startSession(req.params.testId, req.user._id, req.user.language || 'hi'),
         'Session started successfully'
     )
@@ -39,7 +43,7 @@ const startSession = catchAsync(async (req, res) => {
 const updateSession = catchAsync(async (req, res) => {
     const data = await testSeriesService.updateSession(req.params.testId, req.params.sessionId, req.user._id, req.body)
     const isFinalized = req.body.status === 'completed' || req.body.status === 'abandoned'
-    
+
     sendSuccess(
         res,
         data,
@@ -80,6 +84,7 @@ module.exports = {
     listSeries,
     getSeries,
     listSeriesTests,
+    getTestInstructions,
     startTest,
     submitTest,
     startSession,

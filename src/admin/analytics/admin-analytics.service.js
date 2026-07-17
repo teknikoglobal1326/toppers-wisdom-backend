@@ -5,6 +5,7 @@ const Course = require('../../models/Course.model')
 const TestSeries = require('../../models/TestSeries.model')
 const CourseOrder      = require('../../models/CourseOrder.model')
 const Test       = require('../../models/Test.model')
+const TestSeriesTest = require('../../models/TestSeriesTest.model')
 const { createLogger } = require('../../config/logger')
 const AppError = require('../../core/AppError')
 
@@ -360,4 +361,274 @@ const testSeriesAttempts = async (testSeriesId, filters = {}) => {
   })
 }
 
-module.exports = { overview, revenue, users, courseEnrollments, testSeriesAttempts }
+const testLeaderboard = async (testId, filters = {}) => {
+
+  const test = await TestSeriesTest.findOne({
+    _id: testId
+  })
+  .select('_id title totalMarks duration status')
+  .lean()
+
+
+  if (!test) {
+    throw new AppError(
+      'Test not found',
+      404
+    )
+  }
+
+
+  const { page, limit, skip } = buildPagination(
+    filters.page,
+    filters.limit
+  )
+
+
+  const fromRank = filters.fromRank
+    ? Number(filters.fromRank)
+    : null
+
+
+  const toRank = filters.toRank
+    ? Number(filters.toRank)
+    : null
+
+
+
+  const pipeline = [
+
+    // only selected test
+    {
+      $match: {
+        test: test._id,
+        status: 'completed'
+      }
+    },
+
+
+    // user details
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+
+
+    {
+      $unwind: '$user'
+    },
+
+
+    {
+      $match: {
+        'user.role': 'user',
+        'user.isDeleted': {
+          $ne: true
+        }
+      }
+    },
+
+
+    // highest score first
+    {
+      $sort: {
+        score: -1,
+        accuracy: -1,
+        timeTaken: 1
+      }
+    },
+
+
+    // one record per user
+    {
+      $group: {
+
+        _id: '$user._id',
+
+        score: {
+          $first: '$score'
+        },
+
+        totalMarks: {
+          $first: '$totalMarks'
+        },
+
+        accuracy: {
+          $first: '$accuracy'
+        },
+
+        timeTaken: {
+          $first: '$timeTaken'
+        },
+
+        user: {
+          $first: '$user'
+        }
+
+      }
+    },
+
+
+    // create rank
+    {
+      $setWindowFields: {
+
+        sortBy: {
+          score: -1
+        },
+
+        output: {
+
+          rank: {
+            $rank: {}
+          }
+
+        }
+
+      }
+    }
+
+  ]
+
+
+  // rank range filter
+  if (fromRank && toRank) {
+
+    pipeline.push({
+
+      $match: {
+
+        rank: {
+          $gte: fromRank,
+          $lte: toRank
+        }
+
+      }
+
+    })
+
+  }
+
+
+
+  pipeline.push({
+
+    $facet: {
+
+
+      data: [
+
+        {
+          $sort: {
+            rank: 1
+          }
+        },
+
+
+        {
+          $skip: skip
+        },
+
+
+        {
+          $limit: limit
+        },
+
+
+        {
+          $project: {
+
+            _id: 0,
+
+            rank: 1,
+
+            score: 1,
+
+            totalMarks: 1,
+
+            accuracy: 1,
+
+            timeTaken: 1,
+
+
+            user: {
+
+              _id: '$user._id',
+
+              name: '$user.name',
+
+              email: '$user.email',
+
+              phone: '$user.phone',
+
+              avatar: '$user.avatar'
+
+            }
+
+          }
+
+        }
+
+      ],
+
+
+
+      summary: [
+
+        {
+          $count: 'totalUsers'
+        }
+
+      ]
+
+    }
+
+  })
+
+
+
+  const [result] = await TestSeriesAttempt.aggregate(
+    pipeline
+  )
+
+
+
+  const totalUsers =
+    result?.summary?.[0]?.totalUsers || 0
+
+
+
+  return buildPaginatedResult(
+
+    result?.data || [],
+
+    totalUsers,
+
+    page,
+
+    limit,
+
+    {
+
+      test,
+
+      totalUsers,
+
+      rankRange: {
+
+        fromRank,
+
+        toRank
+
+      }
+
+    }
+
+  )
+
+}
+
+module.exports = { overview, revenue, users, courseEnrollments, testSeriesAttempts, testLeaderboard }

@@ -24,6 +24,15 @@ class PaymentRepository extends BaseRepository {
     })
     return Enrollment.insertMany(docs, { ordered: false }).catch(() => [])
   }
+
+  async listUserOrders(userId, query = {}) {
+    const { paginate } = require('../../core/paginate')
+    return paginate(CourseOrder, { user: userId }, {
+      page: query.page,
+      limit: query.limit,
+      sort: { createdAt: -1 }
+    })
+  }
 }
 
 module.exports = new PaymentRepository()
