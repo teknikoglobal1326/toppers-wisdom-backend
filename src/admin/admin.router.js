@@ -34,6 +34,7 @@ router.use('/course-tests', requirePermission('tests'), require('./course-tests/
 router.use('/questions', requirePermission('tests'), require('./questions/admin-question.routes'))
 router.use('/books', requirePermission('books'), require('./books/admin-book.routes'))
 router.use('/shorts', requirePermission('shorts'), require('./shorts/admin-short.routes'))
+router.use('/short-categories', requirePermission('shorts'), require('./short-categories/admin-short-category.routes'))
 router.use('/qualifications', requirePermission('qualifications'), require('./qualifications/admin-qualification.routes'))
 router.use('/vocabulary', requirePermission('vocabulary'), require('./vocabulary/admin-vocabulary.routes'))
 router.use('/editorials', requirePermission('editorial'), require('./editorials/admin-editorial.routes'))
