@@ -1,19 +1,12 @@
 const BaseService        = require('../../core/BaseService')
 const subjectRepository  = require('../../modules/subject/subject.repository')
-const subExamRepository  = require('../../modules/subexam/subexam.repository')
 const AppError           = require('../../core/AppError')
 
-const SUB_EXAM_POPULATE = { path: 'subExamId', select: 'name shortDescription language status examId' }
+const EXAM_POPULATE = { path: 'examIds', select: 'name status qualification' }
 
 class AdminSubjectService extends BaseService {
   constructor() {
     super(subjectRepository, 'admin:subject')
-  }
-
-  async assertSubExamExists(subExamId) {
-    if (!subExamId) return
-    const subExam = await subExamRepository.findOne({ _id: subExamId, is_deleted: false })
-    if (!subExam) throw new AppError('SubExam not found', 404, 'NOT_FOUND')
   }
 
   normalizeSortOrder(obj) {
@@ -41,6 +34,18 @@ class AdminSubjectService extends BaseService {
 
   buildPayload(data = {}) {
     const payload = this.normalizeSortOrder({ ...data })
+    if (payload.examIds !== undefined) {
+      if (typeof payload.examIds === 'string') {
+        try {
+          payload.examIds = JSON.parse(payload.examIds)
+        } catch (e) {
+          payload.examIds = payload.examIds.split(',').map(id => id.trim()).filter(Boolean)
+        }
+      }
+      if (Array.isArray(payload.examIds)) {
+        payload.examIds = payload.examIds.filter(id => id && id !== 'null' && id !== 'undefined')
+      }
+    }
     // language na diya ho to default 'en'
     if (!payload.language) payload.language = 'en'
     if (payload.topics !== undefined) {
@@ -50,50 +55,35 @@ class AdminSubjectService extends BaseService {
     return payload
   }
 
-  async listAll({ status, subExamId, sortOrder, page, limit } = {}) {
+  async listAll({ status, examId, sortOrder, page, limit } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
-    if (subExamId) filter.subExamId = subExamId
+    if (examId) filter.examIds = examId
     const direction = sortOrder === 'desc' ? -1 : 1
     return this.getAll(filter, {
       page,
       limit,
       sort: { sortOrder: direction, createdAt: -1 },
-      populate: SUB_EXAM_POPULATE,
+      populate: EXAM_POPULATE,
     })
   }
 
   async getOne(id) {
     const subject = await subjectRepository.findOne(
       { _id: id, isDeleted: false },
-      { populate: SUB_EXAM_POPULATE }
+      { populate: EXAM_POPULATE }
     )
     if (!subject) throw new AppError('Subject not found', 404, 'NOT_FOUND')
     return subject
   }
 
   async createSubject(data) {
-    await this.assertSubExamExists(data.subExamId)
     return this.create(this.buildPayload(data))
   }
-
-  // ---- Dual (hi + en together) creation is disabled for now ----
-  // async createSubjectDual({ hi, en }) {
-  //   await Promise.all([
-  //     this.assertSubExamExists(hi.subExamId),
-  //     this.assertSubExamExists(en.subExamId),
-  //   ])
-  //   const [hiResult, enResult] = await Promise.all([
-  //     this.create({ ...this.buildPayload(hi), language: 'hi' }),
-  //     this.create({ ...this.buildPayload(en), language: 'en' }),
-  //   ])
-  //   return [hiResult, enResult]
-  // }
 
   async updateSubject(id, data) {
     const subject = await subjectRepository.findOne({ _id: id, isDeleted: false })
     if (!subject) throw new AppError('Subject not found', 404, 'NOT_FOUND')
-    if (data.subExamId) await this.assertSubExamExists(data.subExamId)
     await subjectRepository.updateById(id, this.buildPayload(data))
     return this.getOne(id)
   }
