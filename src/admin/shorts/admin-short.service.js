@@ -10,10 +10,9 @@ class AdminShortService extends BaseService {
     super(shortRepository, 'admin:short')
   }
 
-  async listAll({ examId, subexamId, status, sortOrder, page, limit } = {}) {
+  async listAll({ categoryId, status, sortOrder, page, limit } = {}) {
     const filter = { isDeleted: false }
-    if (examId) filter.examId = examId
-    if (subexamId) filter.subexamId = subexamId
+    if (categoryId) filter.categoryId = categoryId
     if (status) filter.status = status
     const direction = sortOrder === 'desc' ? -1 : 1
     return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
@@ -31,9 +30,9 @@ class AdminShortService extends BaseService {
       const parsedSortOrder = Number(payload.sortOrder)
       if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
     }
-    if (!payload.videoUrl && files.video?.[0]) {
+    if (!payload.video && files.video?.[0]) {
       const v = files.video[0]
-      payload.videoUrl = await uploadFile(v.buffer, `${Date.now()}${path.extname(v.originalname) || '.mp4'}`, 'shorts', v.mimetype)
+      payload.video = await uploadFile(v.buffer, `${Date.now()}${path.extname(v.originalname) || '.mp4'}`, 'shorts', v.mimetype)
     }
     if (!payload.thumbnail && files.thumbnail?.[0]) {
       const t = files.thumbnail[0]
