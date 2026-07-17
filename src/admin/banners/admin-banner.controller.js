@@ -7,5 +7,6 @@ const getOne = catchAsync(async (req, res) => { sendSuccess(res, await adminBann
 const create = catchAsync(async (req, res) => { sendCreated(res, await adminBannerService.createBanner(req.body, req.files)) })
 const update = catchAsync(async (req, res) => { sendSuccess(res, await adminBannerService.updateBanner(req.params.id, req.body, req.file)) })
 const remove = catchAsync(async (req, res) => { await adminBannerService.softDelete(req.params.id); sendSuccess(res, null, 'Banner deleted') })
+const hardRemove = catchAsync(async (req, res) => { await adminBannerService.hardDelete(req.params.id); sendSuccess(res, null, 'Banner permanently deleted') })
 
-module.exports = { list, getOne, create, update, remove }
+module.exports = { list, getOne, create, update, remove, hardRemove }

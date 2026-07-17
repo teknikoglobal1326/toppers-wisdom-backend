@@ -21,5 +21,6 @@ router.post('/', uploadBannerCreateFiles, parseDualLanguageFields, validateCreat
 router.get('/:id', controller.getOne)
 router.put('/:id', upload.single('image'), validate(updateBannerSchema), controller.update)
 router.delete('/:id', controller.remove)
+// router.delete('/:id/hard', controller.hardRemove)
 
 module.exports = router
