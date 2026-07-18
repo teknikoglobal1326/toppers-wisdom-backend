@@ -11,6 +11,7 @@ const editorialRepository = require('../../modules/editorial/editorial.repositor
 const testSeriesRepository = require('../../modules/test-series/test-series.repository')
 const shortCategoryRepository = require('../../modules/short-category/short-category.repository')
 const previousYearPaperRepository = require('../../modules/previous-year-paper/previous-year-paper.repository')
+const subjectRepository = require('../../modules/subject/subject.repository')
 const Role = require('../../models/Role.model')
 
 // GET /api/v1/admin/common/short-categories
@@ -36,6 +37,15 @@ router.get('/courses', catchAsync(async (req, res) => {
   sendSuccess(res, courses);
 })
 );
+
+// GET /api/v1/admin/common/subjects
+router.get('/subjects', catchAsync(async (req, res) => {
+  const subjects = await subjectRepository.findAll(
+    { isDeleted: false, status: 'active' },
+    { sort: { sortOrder: 1, createdAt: -1 }, select: '_id name sortOrder' }
+  );
+  sendSuccess(res, subjects);
+}));
 
 // GET /api/v1/admin/common/topics/:courseId
 router.get('/topics/:courseId', catchAsync(async (req, res) => {
