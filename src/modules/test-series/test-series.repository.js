@@ -223,9 +223,6 @@ class TestSeriesRepository extends BaseRepository {
         }, {})
     }
 
-<<<<<<< HEAD
-    async findQuestionsForTest(testId) {
-=======
     async getPurchasedTestItemIds(userId) {
         const orders = await CourseOrder.find({
             user: userId,
@@ -245,7 +242,6 @@ class TestSeriesRepository extends BaseRepository {
 
     async findQuestionsForTest(testId, language) {
         const allowedLanguages = language === 'en' ? ['en', 'both'] : ['hi', 'both']
->>>>>>> 626c0b4 (confliact changes)
         return Question.find({
             test: testId,
             isDeleted: false,
