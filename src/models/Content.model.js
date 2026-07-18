@@ -2,8 +2,9 @@ const mongoose = require('mongoose')
 
 const contantSchema = new mongoose.Schema({
   course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
-  topic: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic', required: true, index: true },
-  chapter: { type: String, default: '' },
+  subject: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
+  topic: [{ type: mongoose.Schema.Types.ObjectId }],
+  chapter: [{ type: mongoose.Schema.Types.ObjectId }],
   title: { type: String, required: true, trim: true },
   description: { type: String, default: '' },
   sortOrder: { type: Number, default: 0, index: true },
