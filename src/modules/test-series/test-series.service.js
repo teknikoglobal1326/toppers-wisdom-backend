@@ -4,6 +4,7 @@ const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
 const crypto = require('crypto')
 const { groupQuestionsByLanguage, scoreAnswers } = require('../../lib/testQuestions')
+const { htmlToPlainText } = require('../../lib/htmlText')
 const testSeriesRepository = require('./test-series.repository')
 
 class TestSeriesService extends BaseService {
@@ -67,6 +68,7 @@ class TestSeriesService extends BaseService {
             const hasAccess = !item.isPaid
             return {
                 ...item,
+                description: htmlToPlainText(item.description),
                 totalTests: testCounts[id] || 0,
                 totalAttempts: attemptCounts[id] || 0,
                 hasAccess,
@@ -88,6 +90,7 @@ class TestSeriesService extends BaseService {
 
         return {
             ...series,
+            description: htmlToPlainText(series.description),
             totalTests: testCounts[series._id.toString()] || 0,
             hasAccess,
             isLocked: !hasAccess,
@@ -140,6 +143,7 @@ class TestSeriesService extends BaseService {
 
             return {
                 ...item,
+                description: htmlToPlainText(item.description),
                 mappedQuestions: questionCounts[id] || 0,
                 hasAccess,
                 isLocked: !hasAccess,
@@ -149,6 +153,42 @@ class TestSeriesService extends BaseService {
         })
 
         return result
+    }
+
+    async getTestInstructions(testId, userId) {
+        const test = await require('../../models/TestSeriesTest.model').findOne({ _id: testId, isDeleted: false })
+            .select('testSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks instructions localizedContent')
+            .lean()
+
+        if (!test) {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const series = await this.repository.getSeriesById(test.testSeries)
+        if (!series || series.isDeleted || series.status !== 'active') {
+            throw new AppError('Test series not found', 404, 'NOT_FOUND')
+        }
+
+        return {
+            test: {
+                _id: test._id,
+                title: test.title,
+                duration: test.duration,
+                totalQuestions: test.totalQuestions,
+                totalMarks: test.totalMarks,
+                marksPerQuestion: test.marksPerQuestion,
+                negativeMarks: test.negativeMarks,
+                passingMarks: test.passingMarks,
+                isPerQuestionTime: test.isPerQuestionTime,
+                instructions: test.instructions,
+                localizedContent: test.localizedContent
+            },
+            series: {
+                _id: series._id,
+                title: series.title,
+                thumbnail: series.thumbnail,
+            }
+        }
     }
 
     async startTest(testId, userId, language = 'hi') {
@@ -267,7 +307,7 @@ class TestSeriesService extends BaseService {
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
 
         const sessionId = crypto.randomUUID()
-        
+
         // Ensure totalMarks is calculated
         const totalQuestions = new Set(questions.map(q => q.order)).size
         const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
@@ -307,6 +347,7 @@ class TestSeriesService extends BaseService {
         }
     }
 
+
     async updateSession(testId, sessionId, userId, payload = {}) {
         const test = await this.repository.getSeriesTestById(testId)
         if (!test || test.isDeleted || test.status !== 'active') {
@@ -344,7 +385,7 @@ class TestSeriesService extends BaseService {
 
         const questions = await this.repository.findQuestionsForTest(testId)
         const { score, correct, wrong, skipped, unattempted, totalQuestions } = scoreAnswers(questions, updatedAnswers, test)
-        
+
         const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
         const accuracy = totalQuestions > 0
             ? parseFloat(((correct / totalQuestions) * 100).toFixed(2))
@@ -444,52 +485,51 @@ class TestSeriesService extends BaseService {
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
 
+        // Pre-calculate user answers mapped by question order
+        const answersByOrder = {}
+        for (const ans of (attempt.answers || [])) {
+            const q = questions.find(question => question._id.toString() === ans.questionId.toString())
+            if (q) {
+                const correctIndex = q.options.findIndex(opt => opt.isCorrect)
+                const isCorrect = ans.selectedOption === correctIndex
+                answersByOrder[q.order] = {
+                    ...ans,
+                    isCorrect
+                }
+            }
+        }
+
         // We use the same grouping but now they include isCorrect and explanation natively.
-        // We need to customize groupQuestionsByLanguage slightly or just return them grouped
         const groupedQuestions = {}
         for (const q of questions) {
             const orderKey = String(q.order)
             if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
             const langs = q.language === 'both' ? ['en', 'hi'] : [q.language]
-            
+
             for (const lang of langs) {
                 if (lang !== 'en' && lang !== 'hi') continue
                 groupedQuestions[orderKey][lang] = {
                     _id: q._id,
-                    question: q.question,
-                    options: q.options, // Includes isCorrect here!
-                    explanation: q.explanation,
+                    question: { text: htmlToPlainText(q.question?.text), image: q.question?.image },
+                    // Includes isCorrect here! Editor HTML converted to plain text.
+                    options: (q.options || []).map((opt) => ({
+                        text: htmlToPlainText(opt.text),
+                        image: opt.image,
+                        isCorrect: opt.isCorrect,
+                    })),
+                    explanation: { text: htmlToPlainText(q.explanation?.text), image: q.explanation?.image },
                     order: q.order,
                     sortOrder: q.sortOrder,
-                    perQuestionTime: q.perQuestionTime
+                    perQuestionTime: q.perQuestionTime,
+                    status,
+                    timeTaken,
+                    isCorrect
                 }
             }
         }
 
-        return {
-            sessionId: attempt.sessionId,
-            status: attempt.status,
-            score: attempt.score,
-            totalMarks: attempt.totalMarks,
-            accuracy: attempt.accuracy,
-            timeTaken: attempt.timeTaken,
-            totalTime: attempt.totalTime,
-            correct: attempt.correct,
-            wrong: attempt.wrong,
-            skipped: attempt.skipped,
-            unattempted: attempt.unattempted,
-            userAnswers: attempt.answers,
-            test: {
-                _id: test._id,
-                title: test.title,
-                duration: test.duration,
-                totalQuestions: test.totalQuestions,
-                passingMarks: test.passingMarks,
-                negativeMarks: test.negativeMarks,
-                marksPerQuestion: test.marksPerQuestion
-            },
-            questions: groupedQuestions
-        }
+        // Return just the list of questions to simplify the response
+        return Object.values(groupedQuestions)
     }
 
     async listMyAttempts(userId, query = {}) {
@@ -502,11 +542,11 @@ class TestSeriesService extends BaseService {
             limit: query.limit,
         })
     }
-    
+
     async getUserDashboardStats(userId) {
         const stats = await this.repository.getUserOverallStats(userId)
         const totalAccessibleTests = await this.repository.getAccessibleTotalTests(userId)
-        
+
         let overallRank = 0
         let totalAspirants = 0
         let topPercentile = 0
@@ -514,7 +554,7 @@ class TestSeriesService extends BaseService {
         if (stats.totalAttemptedTests > 0) {
             overallRank = await this.repository.getOverallPlatformRank(stats.totalScore, stats.timeSpent)
             totalAspirants = await this.repository.getTotalPlatformParticipants()
-            
+
             if (totalAspirants > 0) {
                 // If you are rank 1 out of 100, you are top 1%
                 topPercentile = (overallRank / totalAspirants) * 100
@@ -528,7 +568,7 @@ class TestSeriesService extends BaseService {
             accuracy = (stats.totalCorrect / totalAttemptedQs) * 100
             accuracy = Math.round(accuracy * 10) / 10
         }
-        
+
         const ongoingSessions = await this.repository.getOngoingSessions(userId)
         const completedSessions = await this.repository.getCompletedSessions(userId)
 

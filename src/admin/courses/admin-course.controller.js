@@ -3,6 +3,7 @@ const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response
 const adminCourseService = require('./admin-course.service')
 
 const listAll      = catchAsync(async (req, res) => { const r = await adminCourseService.listAll(req.query); sendPaginated(res, r.data, r.pagination) })
+const listPurchases = catchAsync(async (req, res) => { const r = await adminCourseService.listPurchases(req.query); sendPaginated(res, r.data, r.pagination) })
 const getOne       = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getById(req.params.id)) })
 const createCourse = catchAsync(async (req, res) => { sendCreated(res, await adminCourseService.create({ ...req.body, createdBy: req.admin._id })) })
 const updateCourse = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.update(req.params.id, req.body)) })
@@ -15,4 +16,4 @@ const thumbnailUploadUrl = catchAsync(async (req, res) => { sendSuccess(res, awa
 const bannerUploadUrl    = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getBannerUploadUrl(req.params.id, req.body.contentType)) })
 const updateTimetable    = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.updateTimetable(req.params.id, req.body), 'Timetable updated successfully') })
 
-module.exports = { listAll, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable }
+module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable }

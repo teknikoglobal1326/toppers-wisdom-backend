@@ -83,7 +83,7 @@ class VocabularyService extends BaseService {
     }
 
     async getStateVocabularyIds(userId, listType) {
-        if (!userId || listType === 'all') return []
+        if (!userId || listType === 'all') return null
 
         const filter = { user: userId }
 
@@ -92,6 +92,8 @@ class VocabularyService extends BaseService {
         } else if (listType === 'bookmarked') {
             filter.isBookmarked = true
         } else if (listType === 'unread') {
+            // Fetch IDs that have been interacted with (read OR bookmarked)
+            // so we can exclude them from "unread"
             filter.$or = [{ isRead: true }, { isBookmarked: true }]
         }
 
@@ -100,20 +102,24 @@ class VocabularyService extends BaseService {
 
     async buildListFilter(query = {}, userId) {
         const filter = this.buildFilter(query)
-        const listType = query.listType || 'unread'
+        const listType = query.listType || 'all'
 
+        // No userId or no listType filter needed → return base filter as-is
         if (!userId || listType === 'all') {
             return filter
         }
 
+        // Apply listType filter — works together with type, word, search, etc.
         const stateVocabularyIds = await this.getStateVocabularyIds(userId, listType)
 
         if (listType === 'read' || listType === 'bookmarked') {
-            filter._id = { $in: stateVocabularyIds }
+            // Only return items that the user has read / bookmarked
+            filter._id = { $in: stateVocabularyIds || [] }
             return filter
         }
 
-        if (stateVocabularyIds.length) {
+        // listType === 'unread': exclude items already interacted with
+        if (stateVocabularyIds && stateVocabularyIds.length) {
             filter._id = { $nin: stateVocabularyIds }
         }
 

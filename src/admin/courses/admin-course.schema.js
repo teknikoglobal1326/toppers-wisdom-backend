@@ -10,8 +10,8 @@ const subjectItemSchema = Joi.object({
 })
 
 const createCourseSchema = Joi.object({
-  examId: objectId.required().label('examId'),
-  subExam: objectId.required().label('subExam'),
+  examId: Joi.array().items(objectId).min(1).required().label('examId'),
+  subExam: Joi.array().items(objectId).min(1).required().label('subExam'),
   title: Joi.string().min(3).max(200).required(),
   description: Joi.string().max(5000).allow('', null),
   longDescription: Joi.string().max(20000).allow('', null),
@@ -23,6 +23,7 @@ const createCourseSchema = Joi.object({
   sortOrder: Joi.number().integer().min(0).default(0),
   thumbnail: Joi.string().max(500).allow('', null),
   validityInMonths: Joi.number().integer().min(0).allow(null),
+  status: Joi.string().valid('draft', 'published', 'archived'),
   isLifetime: Joi.boolean().default(false),
   bannerImage: Joi.array().items(Joi.string().max(500)).max(3).default([]),
   // instructor:  instructorSchema,
@@ -30,9 +31,10 @@ const createCourseSchema = Joi.object({
 })
 
 const updateCourseSchema = Joi.object({
-  examId: objectId.label('examId'),
-  subExam: objectId.label('subExam'),
+  examId: Joi.array().items(objectId).min(1).label('examId'),
+  subExam: Joi.array().items(objectId).min(1).label('subExam'),
   title: Joi.string().min(3).max(200),
+  status: Joi.string().valid('draft', 'published', 'archived'),
   description: Joi.string().max(5000).allow('', null),
   longDescription: Joi.string().max(20000).allow('', null),
   language: Joi.string().valid('hi', 'en', 'both'),

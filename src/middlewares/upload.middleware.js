@@ -1,4 +1,4 @@
-const multer  = require('multer')
+const multer = require('multer')
 const AppError = require('../core/AppError')
 
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -7,7 +7,7 @@ const ALLOWED_PDF_MIME = ['application/pdf']
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits:  { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (ALLOWED_IMAGE_MIME.includes(file.mimetype)) return cb(null, true)
     cb(new AppError('Only JPEG, PNG, WEBP and GIF images are allowed', 400, 'INVALID_FILE_TYPE'))
@@ -16,7 +16,7 @@ const upload = multer({
 
 const uploadVideo = multer({
   storage: multer.memoryStorage(),
-  limits:  { fileSize: 200 * 1024 * 1024 },
+  limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (ALLOWED_VIDEO_MIME.includes(file.mimetype)) return cb(null, true)
     cb(new AppError('Only MP4, MOV, AVI and WEBM videos are allowed', 400, 'INVALID_FILE_TYPE'))
@@ -25,28 +25,51 @@ const uploadVideo = multer({
 
 const uploadPdf = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = [...ALLOWED_IMAGE_MIME, ...ALLOWED_PDF_MIME]
-    if (allowed.includes(file.mimetype)) return cb(null, true)
-    cb(new AppError('Only PDF and image files are allowed', 400, 'INVALID_FILE_TYPE'))
+    // console.log("=== uploadPdf ===");
+    // console.log(file.originalname);
+    // console.log(file.mimetype);
+
+    const allowed = [...ALLOWED_IMAGE_MIME, ...ALLOWED_PDF_MIME];
+
+    if (allowed.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+
+    cb(new AppError("Only PDF and image files are allowed", 400, "INVALID_FILE_TYPE"));
   },
-})
+});
+
 
 const uploadVideoImage = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 200 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = [...ALLOWED_IMAGE_MIME, ...ALLOWED_VIDEO_MIME]
-    if (allowed.includes(file.mimetype)) return cb(null, true)
-    cb(new AppError('Only video and image files are allowed', 400, 'INVALID_FILE_TYPE'))
+    const allowed = [
+      ...ALLOWED_IMAGE_MIME,
+      ...ALLOWED_VIDEO_MIME,
+      ...ALLOWED_PDF_MIME,
+    ];
+
+    if (allowed.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+
+    cb(
+      new AppError(
+        'Only video, image and PDF files are allowed',
+        400,
+        'INVALID_FILE_TYPE'
+      )
+    );
   },
-})
+});
+
 
 // Accepts both image and video fields in a single multipart request (used by shorts)
 const uploadShort = multer({
   storage: multer.memoryStorage(),
-  limits:  { fileSize: 200 * 1024 * 1024 },
+  limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = [...ALLOWED_IMAGE_MIME, ...ALLOWED_VIDEO_MIME]
     if (allowed.includes(file.mimetype)) return cb(null, true)
