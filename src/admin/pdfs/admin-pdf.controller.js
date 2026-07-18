@@ -12,6 +12,7 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
+  console.log(req.body, "req.body")
   const payload = { ...req.body, createdBy: req.admin?._id }
   sendCreated(res, await adminPdfService.createPdf(payload))
 })
