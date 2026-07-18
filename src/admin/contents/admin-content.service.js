@@ -79,9 +79,21 @@ class AdminContentService extends BaseService {
   buildPayload(data = {}) {
     const payload = { ...data }
     if (payload.courseId && !payload.course) payload.course = payload.courseId
+    if (payload.subjectId && !payload.subject) payload.subject = payload.subjectId
     if (payload.topicId && !payload.topic) payload.topic = payload.topicId
+    if (payload.chapterId && !payload.chapter) payload.chapter = payload.chapterId
+    
+    if (payload.subject && !Array.isArray(payload.subject)) payload.subject = [payload.subject]
+    if (payload.topic && !Array.isArray(payload.topic)) payload.topic = [payload.topic]
+    if (payload.chapter !== undefined) {
+      if (payload.chapter === '' || payload.chapter === null) payload.chapter = []
+      else if (!Array.isArray(payload.chapter)) payload.chapter = [payload.chapter]
+    }
+
     delete payload.courseId
+    delete payload.subjectId
     delete payload.topicId
+    delete payload.chapterId
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)
       if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
@@ -137,6 +149,11 @@ const adminContentService = new AdminContentService()
 
 adminContentService.attachUploadedFiles = async (req, _res, next) => {
   try {
+    ['subject', 'topic', 'chapter', 'subjectId', 'topicId', 'chapterId'].forEach(field => {
+      if (typeof req.body[field] === 'string' && req.body[field].startsWith('[')) {
+        try { req.body[field] = JSON.parse(req.body[field]) } catch (e) {}
+      }
+    })
     const folder = `contents/${req.params.id ?? `new-${Date.now()}`}`
 
     if (req.files?.video?.[0]) {
