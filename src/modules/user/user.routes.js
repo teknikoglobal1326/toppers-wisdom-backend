@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const controller = require('./user.controller')
 const { validate } = require('../../core/validate')
-const { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema } = require('./user.schema')
+const { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema, createMcqReportSchema } = require('./user.schema')
 
 router.get('/me', controller.getMe)
 router.patch('/me', validate(updateProfileSchema), controller.updateProfile)
@@ -17,5 +17,6 @@ router.patch('/me/fcm-token', validate(updateFcmSchema), controller.updateFcmTok
 router.post('/me/reports', validate(createReportSchema), controller.createReport)
 router.get('/me/reports', controller.getMyReports)
 router.get('/me/reports/:itemId', controller.getMyReportByItemId)
-
+router.post('/mcq-reports', validate(createMcqReportSchema), controller.createMcqReport)
+router.get('/mcq-reports/:itemId', controller.getMyMcqReportByItemId)
 module.exports = router

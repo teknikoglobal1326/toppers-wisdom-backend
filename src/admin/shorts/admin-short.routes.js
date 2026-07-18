@@ -1,7 +1,7 @@
-const router     = require('express').Router()
+const router = require('express').Router()
 const controller = require('./admin-short.controller')
-const { validate, validateQuery }                             = require('../../core/validate')
-const { uploadShortFiles, parseFormData }      = require('./admin-short.upload')
+const { validate, validateQuery } = require('../../core/validate')
+const { uploadShortFiles, parseFormData } = require('./admin-short.upload')
 const { createShortSchema, createShortDualSchema, updateShortSchema, listShortQuerySchema } = require('./admin-short.schema')
 
 const validateCreate = (req, res, next) => {
@@ -9,10 +9,10 @@ const validateCreate = (req, res, next) => {
   return validate(schema)(req, res, next)
 }
 
-router.get('/',       validateQuery(listShortQuerySchema), controller.list)
-router.post('/',      uploadShortFiles, parseFormData, validateCreate, controller.create)
-router.get('/:id',    controller.getOne)
-router.put('/:id',    uploadShortFiles, parseFormData, validate(updateShortSchema), controller.update)
+router.get('/', validateQuery(listShortQuerySchema), controller.list)
+router.post('/', uploadShortFiles, parseFormData, validateCreate, controller.create)
+router.get('/:id', controller.getOne)
+router.put('/:id', uploadShortFiles, parseFormData, validate(updateShortSchema), controller.update)
 router.delete('/:id', controller.remove)
 
 module.exports = router

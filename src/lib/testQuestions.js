@@ -2,11 +2,18 @@
 // Questions are stored one document per language ('en' | 'hi'); the en/hi versions
 // of the same logical question share the same `order` (and `groupId`).
 
+const { htmlToPlainText } = require('./htmlText')
+
 // Strip correct answers and return the client-safe question shape.
+// Question/option text is authored in the admin rich-text editor and stored as
+// HTML — convert to plain text for user responses.
 const sanitizeQuestion = (question) => ({
   _id: question._id,
-  question: question.question,
-  options: (question.options || []).map((option) => ({ text: option.text, image: option.image })),
+  question: {
+    text: htmlToPlainText(question.question?.text),
+    image: question.question?.image,
+  },
+  options: (question.options || []).map((option) => ({ text: htmlToPlainText(option.text), image: option.image })),
   order: question.order,
   sortOrder: question.sortOrder,
   perQuestionTime: question.perQuestionTime ?? null,
@@ -31,15 +38,16 @@ const groupQuestionsByLanguage = (questions = []) => {
   return grouped
 }
 
+
 // Language-agnostic scoring: the user answers in one language, so answers reference
 // either the en or hi question _id. The en/hi versions of one logical question share
 // the same `order`, so distinct orders give the true (logical) question count.
 const scoreAnswers = (questions = [], answers = [], test = {}) => {
   const byId = new Map()
-  const orders = new Set()
+  const logicalKeys = new Set()
 
   for (const question of questions) {
-    orders.add(question.order)
+    logicalKeys.add(question.groupId ? String(question.groupId) : String(question._id))
     const correctIndex = (question.options || []).findIndex((option) => option.isCorrect)
     byId.set(question._id.toString(), { correctIndex })
   }
@@ -71,7 +79,7 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
     }
   }
 
-  const totalQuestions = orders.size
+  const totalQuestions = logicalKeys.size
   const unattempted = Math.max(0, totalQuestions - (correct + wrong + skipped))
 
   return { score, correct, wrong, skipped, unattempted, totalQuestions }

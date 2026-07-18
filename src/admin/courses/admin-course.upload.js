@@ -23,10 +23,16 @@ const uploadCourseImages = upload.fields([
 // Runs after multer: parses JSON-stringified fields and uploads any received images
 const parseFormData = async (req, _res, next) => {
   try {
-    // subjects arrives as a JSON string from form-data e.g. '[{"subject":"...","sortOrder":1}]'
-    if (req.body.subjects && typeof req.body.subjects === 'string') {
-      try { req.body.subjects = JSON.parse(req.body.subjects) } catch (_) { /* leave as-is, Joi will reject */ }
-    }
+    // Arrays from frontend might arrive as JSON strings (e.g., '["id1", "id2"]')
+    ['examId', 'subExam', 'subjects'].forEach((key) => {
+      if (req.body[key] && typeof req.body[key] === 'string') {
+        try {
+          req.body[key] = JSON.parse(req.body[key])
+        } catch (_) {
+          /* leave as-is, Joi will reject if it's invalid */
+        }
+      }
+    })
 
     if (req.body.sortOrder !== undefined && req.body.sortOrder !== null && req.body.sortOrder !== '') {
       const parsedSortOrder = Number(req.body.sortOrder)

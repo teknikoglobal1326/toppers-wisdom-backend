@@ -3,6 +3,8 @@ const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
 const { groupQuestionsByLanguage, scoreAnswers } = require('../../lib/testQuestions')
+const crypto = require('crypto')
+const { htmlToPlainText } = require('../../lib/htmlText')
 const previousYearPaperRepository = require('./previous-year-paper.repository')
 
 class PreviousYearPaperService extends BaseService {
@@ -29,15 +31,15 @@ class PreviousYearPaperService extends BaseService {
             })
         }
 
-        if (!query.subExamId && subExamIds.length) {
-            clauses.push({
-                $or: [
-                    { subExams: { $exists: false } },
-                    { subExams: { $size: 0 } },
-                    { subExams: { $in: subExamIds } },
-                ],
-            })
-        }
+        // if (!query.subExamId && subExamIds.length) {
+        //     clauses.push({
+        //         $or: [
+        //             { subExams: { $exists: false } },
+        //             { subExams: { $size: 0 } },
+        //             { subExams: { $in: subExamIds } },
+        //         ],
+        //     })
+        // }
 
         if (clauses.length === 1) Object.assign(filter, clauses[0])
         if (clauses.length > 1) filter.$and = clauses
@@ -47,6 +49,8 @@ class PreviousYearPaperService extends BaseService {
             ? { title: direction, createdAt: -1 }
             : { createdAt: direction }
 
+        // console.log("Listing Previous Year Papers with filter:", JSON.stringify(filter, null, 2))
+
         const result = await this.repository.listPreviousYearPapers(filter, {
             page: query.page,
             limit: query.limit,
@@ -54,6 +58,8 @@ class PreviousYearPaperService extends BaseService {
             select: 'title description thumbnail exam subExams subjectIds isPaid status createdAt',
             populate: [{ path: 'exam' }, { path: 'subExams' }, { path: 'subjectIds', select: 'name' }],
         })
+
+        // console.log(`Found ${result.data.length} previous year papers`)
 
         const previousYearPaperIds = result.data.map((item) => item._id)
         const [testCounts, attemptCounts] = await Promise.all([
@@ -66,6 +72,7 @@ class PreviousYearPaperService extends BaseService {
             const hasAccess = !item.isPaid
             return {
                 ...item,
+                description: htmlToPlainText(item.description),
                 totalTests: testCounts[id] || 0,
                 totalAttempts: attemptCounts[id] || 0,
                 hasAccess,
@@ -78,6 +85,7 @@ class PreviousYearPaperService extends BaseService {
 
     async getPreviousYearPaper(previousYearPaperId, userId) {
         const previousYearPaper = await this.repository.getPreviousYearPaperById(previousYearPaperId)
+        console.log("previous", previousYearPaper);
         if (!previousYearPaper || previousYearPaper.isDeleted || previousYearPaper.status !== 'active') {
             throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
         }
@@ -87,6 +95,7 @@ class PreviousYearPaperService extends BaseService {
 
         return {
             ...previousYearPaper,
+            description: htmlToPlainText(previousYearPaper.description),
             totalTests: testCounts[previousYearPaper._id.toString()] || 0,
             hasAccess,
             isLocked: !hasAccess,
@@ -139,6 +148,7 @@ class PreviousYearPaperService extends BaseService {
 
             return {
                 ...item,
+                description: htmlToPlainText(item.description),
                 mappedQuestions: questionCounts[id] || 0,
                 hasAccess,
                 isLocked: !hasAccess,
@@ -209,7 +219,7 @@ class PreviousYearPaperService extends BaseService {
         const questions = await this.repository.findQuestionsForTest(testId)
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
 
-        const { score, correct, wrong, unattempted, totalQuestions } = scoreAnswers(questions, payload.answers, test)
+        const { score, correct, wrong, skipped, unattempted, totalQuestions } = scoreAnswers(questions, payload.answers, test)
 
         const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
         const accuracy = totalQuestions > 0
@@ -227,6 +237,7 @@ class PreviousYearPaperService extends BaseService {
             timeTaken: payload.timeTaken,
             correct,
             wrong,
+            skipped,
             unattempted,
             status: 'completed',
         })
@@ -242,7 +253,247 @@ class PreviousYearPaperService extends BaseService {
             accuracy,
             correct,
             wrong,
+            skipped,
             unattempted,
+        }
+    }
+
+    async startSession(testId, userId, language = 'hi') {
+        const test = await this.repository.getPreviousYearPaperTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const previousYearPaper = await this.repository.getPreviousYearPaperById(test.previousYearPaper)
+        if (!previousYearPaper || previousYearPaper.isDeleted || previousYearPaper.status !== 'active') {
+            throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
+        }
+
+        const hasAccess = !test.isPaid
+        if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
+
+        const questions = await this.repository.findQuestionsForTest(testId)
+        if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
+
+        const sessionId = crypto.randomUUID()
+
+        // Ensure totalMarks is calculated
+        const totalQuestions = new Set(questions.map(q => q.groupId ? String(q.groupId) : String(q._id))).size
+        const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
+
+        const attempt = await this.repository.createAttempt({
+            user: userId,
+            previousYearPaper: previousYearPaper._id,
+            test: test._id,
+            sessionId,
+            totalTime: test.duration * 60,
+            totalMarks,
+            status: 'started',
+            answers: []
+        })
+
+        const groupedQuestions = groupQuestionsByLanguage(questions)
+
+        return {
+            sessionId,
+            previousYearPaper: {
+                _id: previousYearPaper._id,
+                title: previousYearPaper.title,
+                thumbnail: previousYearPaper.thumbnail,
+            },
+            test: {
+                _id: test._id,
+                title: test.title,
+                duration: test.duration,
+                isPerQuestionTime: test.isPerQuestionTime !== false,
+                totalQuestions: test.totalQuestions,
+                totalMarks,
+                passingMarks: test.passingMarks,
+                negativeMarks: test.negativeMarks,
+            },
+            hasAccess,
+            questions: groupedQuestions,
+        }
+    }
+
+    async updateSession(testId, sessionId, userId, payload = {}) {
+        const test = await this.repository.getPreviousYearPaperTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        if (!attempt) {
+            throw new AppError('Session not found', 404, 'NOT_FOUND')
+        }
+
+        if (attempt.status === 'completed' || attempt.status === 'abandoned') {
+            throw new AppError('Session already closed', 400, 'VALIDATION_ERROR')
+        }
+
+        let updatedAnswers = attempt.answers || []
+
+        if (payload.answer && payload.answer.questionId) {
+            const index = updatedAnswers.findIndex(a => a.questionId.toString() === payload.answer.questionId.toString())
+            if (index !== -1) {
+                updatedAnswers[index] = payload.answer
+            } else {
+                updatedAnswers.push(payload.answer)
+            }
+        } else if (payload.answers && Array.isArray(payload.answers)) {
+            payload.answers.forEach(newAns => {
+                const index = updatedAnswers.findIndex(a => a.questionId.toString() === newAns.questionId.toString())
+                if (index !== -1) {
+                    updatedAnswers[index] = newAns
+                } else {
+                    updatedAnswers.push(newAns)
+                }
+            })
+        }
+
+        const questions = await this.repository.findQuestionsForTest(testId)
+        const { score, correct, wrong, skipped, unattempted, totalQuestions } = scoreAnswers(questions, updatedAnswers, test)
+
+        const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
+        const accuracy = totalQuestions > 0
+            ? parseFloat(((correct / totalQuestions) * 100).toFixed(2))
+            : 0
+
+        const timeTaken = updatedAnswers.reduce((acc, ans) => acc + (ans.timeTaken || 0), 0)
+
+        const status = payload.status || 'ongoing'
+
+        const updatedAttempt = await this.repository.updateAttemptBySession(sessionId, userId, {
+            answers: updatedAnswers,
+            score,
+            totalMarks,
+            accuracy,
+            timeTaken,
+            correct,
+            wrong,
+            skipped,
+            unattempted,
+            status,
+        })
+
+        return {
+            attemptId: updatedAttempt._id,
+            sessionId,
+            status,
+            score,
+            totalMarks,
+            passingMarks: Number(test.passingMarks || 0),
+            isPassed: score >= Number(test.passingMarks || 0),
+            accuracy,
+            timeTaken,
+            correct,
+            wrong,
+            skipped,
+            unattempted,
+        }
+    }
+
+    async getSessionAnalytics(testId, sessionId, userId) {
+        const test = await this.repository.getPreviousYearPaperTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        if (!attempt) {
+            throw new AppError('Session not found', 404, 'NOT_FOUND')
+        }
+
+        const { rank, totalParticipants } = await this.repository.getAttemptRank(testId, attempt.score || 0, attempt.timeTaken || 0)
+
+        return {
+            sessionId: attempt.sessionId,
+            status: attempt.status,
+            score: attempt.score,
+            totalMarks: attempt.totalMarks,
+            accuracy: attempt.accuracy,
+            timeTaken: attempt.timeTaken,
+            totalTime: attempt.totalTime,
+            correct: attempt.correct,
+            wrong: attempt.wrong,
+            skipped: attempt.skipped,
+            unattempted: attempt.unattempted,
+            rank,
+            totalParticipants,
+            passingMarks: Number(test.passingMarks || 0),
+            isPassed: attempt.score >= Number(test.passingMarks || 0),
+            test: {
+                _id: test._id,
+                title: test.title,
+                duration: test.duration,
+                totalQuestions: test.totalQuestions,
+            }
+        }
+    }
+
+    async getSessionSolution(testId, sessionId, userId) {
+        const test = await this.repository.getPreviousYearPaperTestById(testId)
+        if (!test || test.isDeleted || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        if (!attempt) {
+            throw new AppError('Session not found', 404, 'NOT_FOUND')
+        }
+
+        const questions = await require('../../models/Question.model').find({
+            test: testId,
+            isDeleted: false,
+            status: 'active',
+        })
+            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime')
+            .sort({ sortOrder: 1, order: 1, createdAt: 1 })
+            .lean()
+
+        const groupedQuestions = {}
+        for (const q of questions) {
+            const orderKey = String(q.order)
+            if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
+            const langs = q.language === 'both' ? ['en', 'hi'] : [q.language]
+
+            for (const lang of langs) {
+                if (lang !== 'en' && lang !== 'hi') continue
+                groupedQuestions[orderKey][lang] = {
+                    _id: q._id,
+                    question: q.question,
+                    options: q.options,
+                    explanation: q.explanation,
+                    order: q.order,
+                    sortOrder: q.sortOrder,
+                    perQuestionTime: q.perQuestionTime
+                }
+            }
+        }
+
+        return {
+            sessionId: attempt.sessionId,
+            status: attempt.status,
+            score: attempt.score,
+            totalMarks: attempt.totalMarks,
+            accuracy: attempt.accuracy,
+            timeTaken: attempt.timeTaken,
+            totalTime: attempt.totalTime,
+            correct: attempt.correct,
+            wrong: attempt.wrong,
+            skipped: attempt.skipped,
+            unattempted: attempt.unattempted,
+            userAnswers: attempt.answers,
+            test: {
+                _id: test._id,
+                title: test.title,
+                duration: test.duration,
+                totalQuestions: test.totalQuestions,
+                passingMarks: test.passingMarks,
+                negativeMarks: test.negativeMarks,
+                marksPerQuestion: test.marksPerQuestion
+            },
+            questions: groupedQuestions
         }
     }
 
