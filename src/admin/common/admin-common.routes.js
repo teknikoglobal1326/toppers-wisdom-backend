@@ -39,13 +39,41 @@ router.get('/courses', catchAsync(async (req, res) => {
 );
 
 // GET /api/v1/admin/common/subjects
-router.get('/subjects', catchAsync(async (req, res) => {
+// router.get('/subjects', catchAsync(async (req, res) => {
+//   const subjects = await subjectRepository.findAll(
+//     { isDeleted: false, status: 'active' },
+//     { sort: { sortOrder: 1, createdAt: -1 }, select: '_id name sortOrder' }
+//   );
+//   sendSuccess(res, subjects);
+// }));
+// GET /api/v1/admin/common/subjects/:courseId
+router.get('/subjects/:courseId', catchAsync(async (req, res) => {
+  const { courseId } = req.params
+
+  const course = await courseRepository.findById(courseId, {
+    select: 'subjects'
+  })
+
+  if (!course) {
+    return sendError(res, 'Course not found', 404)
+  }
+
+  const subjectIds = course.subjects.map(item => item.subject)
+
   const subjects = await subjectRepository.findAll(
-    { isDeleted: false, status: 'active' },
-    { sort: { sortOrder: 1, createdAt: -1 }, select: '_id name sortOrder' }
-  );
-  sendSuccess(res, subjects);
-}));
+    {
+      _id: { $in: subjectIds },
+      isDeleted: false,
+      status: 'active'
+    },
+    {
+      sort: { sortOrder: 1, createdAt: -1 },
+      select: '_id name sortOrder'
+    }
+  )
+
+  sendSuccess(res, subjects)
+}))
 
 // GET /api/v1/admin/common/topics/:courseId
 router.get('/topics/:courseId', catchAsync(async (req, res) => {
