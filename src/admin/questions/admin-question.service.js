@@ -88,6 +88,11 @@ class AdminQuestionService extends BaseService {
     if (payload.question?.image === '') payload.question.image = ''
     if (payload.explanation?.text === '') payload.explanation.text = ''
     if (payload.explanation?.image === '') payload.explanation.image = ''
+
+    if (payload.subjectId === '') payload.subjectId = null
+    if (payload.chapterId === '') payload.chapterId = null
+    if (payload.topicId === '') payload.topicId = null
+
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)
       if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
