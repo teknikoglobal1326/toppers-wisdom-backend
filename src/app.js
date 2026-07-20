@@ -58,6 +58,7 @@ app.use('/api/v1/subscriptions', require('./modules/subscription/subscription.ro
 app.use('/api/v1/blog', authMiddleware, require('./modules/blog/blog.routes'))
 app.use('/api/v1/books', require('./modules/book/book.routes'))
 app.use('/api/v1/shorts', authMiddleware, require('./modules/short/short.routes'))
+app.use('/api/v1/short-categories', authMiddleware, require('./modules/short-category/short-category.routes'))
 app.use('/api/v1/vocabulary', authMiddleware, require('./modules/vocabulary/vocabulary.routes'))
 app.use('/api/v1/editorials', authMiddleware, require('./modules/editorial/editorial.routes'))
 app.use('/api/v1/grammars', authMiddleware, require('./modules/grammar/grammar.routes'))
