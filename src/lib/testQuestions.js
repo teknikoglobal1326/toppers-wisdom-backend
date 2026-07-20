@@ -38,6 +38,36 @@ const groupQuestionsByLanguage = (questions = []) => {
   return grouped
 }
 
+const groupQuestionsBySubject = (questions = []) => {
+  const subjectMap = new Map()
+
+  for (const question of questions) {
+    const subjectId = question.subjectId?._id ? String(question.subjectId._id) : (question.subjectId ? String(question.subjectId) : 'uncategorized')
+    const subjectName = question.subjectId?.name || 'Uncategorized'
+    
+    if (!subjectMap.has(subjectId)) {
+        subjectMap.set(subjectId, {
+            subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
+            questions: {}
+        })
+    }
+
+    const group = subjectMap.get(subjectId)
+    const orderKey = String(question.order)
+    
+    if (!group.questions[orderKey]) {
+        group.questions[orderKey] = { en: {}, hi: {} }
+    }
+
+    const lang = question.language
+    if (lang === 'en' || lang === 'hi') {
+        group.questions[orderKey][lang] = sanitizeQuestion(question)
+    }
+  }
+
+  return Array.from(subjectMap.values())
+}
+
 
 // Language-agnostic scoring: the user answers in one language, so answers reference
 // either the en or hi question _id. The en/hi versions of one logical question share
@@ -85,4 +115,4 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
   return { score, correct, wrong, skipped, unattempted, totalQuestions }
 }
 
-module.exports = { sanitizeQuestion, groupQuestionsByLanguage, scoreAnswers }
+module.exports = { sanitizeQuestion, groupQuestionsByLanguage, groupQuestionsBySubject, scoreAnswers }

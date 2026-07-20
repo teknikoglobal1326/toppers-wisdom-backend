@@ -28,6 +28,22 @@ const questionSchema = new mongoose.Schema(
       index: true,
     },
 
+    subjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
+      index: true,
+    },
+    chapterId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Chapter",
+      index: true,
+    },
+    topicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Topic",
+      index: true,
+    },
+
     language: {
       type: String,
       enum: ["en", "hi"],

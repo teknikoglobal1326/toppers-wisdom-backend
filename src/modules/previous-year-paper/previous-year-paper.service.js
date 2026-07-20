@@ -2,7 +2,7 @@ const BaseService = require('../../core/BaseService')
 const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
-const { groupQuestionsByLanguage, scoreAnswers } = require('../../lib/testQuestions')
+const { groupQuestionsByLanguage, groupQuestionsBySubject, scoreAnswers } = require('../../lib/testQuestions')
 const crypto = require('crypto')
 const { htmlToPlainText } = require('../../lib/htmlText')
 const previousYearPaperRepository = require('./previous-year-paper.repository')
@@ -177,7 +177,7 @@ class PreviousYearPaperService extends BaseService {
         const questions = await this.repository.findQuestionsForTest(testId)
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
 
-        const groupedQuestions = groupQuestionsByLanguage(questions)
+        const groupedQuestions = groupQuestionsBySubject(questions)
 
         this.logger.info({ userId, testId, count: questions.length }, 'Starting previous-year-paper test')
 
@@ -198,7 +198,7 @@ class PreviousYearPaperService extends BaseService {
                 negativeMarks: test.negativeMarks,
             },
             hasAccess,
-            questions: groupedQuestions,
+            questionsBySubject: groupedQuestions,
         }
     }
 
@@ -292,7 +292,7 @@ class PreviousYearPaperService extends BaseService {
             answers: []
         })
 
-        const groupedQuestions = groupQuestionsByLanguage(questions)
+        const groupedQuestions = groupQuestionsBySubject(questions)
 
         return {
             sessionId,
@@ -312,7 +312,7 @@ class PreviousYearPaperService extends BaseService {
                 negativeMarks: test.negativeMarks,
             },
             hasAccess,
-            questions: groupedQuestions,
+            questionsBySubject: groupedQuestions,
         }
     }
 
@@ -406,28 +406,140 @@ class PreviousYearPaperService extends BaseService {
 
         const { rank, totalParticipants } = await this.repository.getAttemptRank(testId, attempt.score || 0, attempt.timeTaken || 0)
 
+        const questions = await this.repository.findQuestionsForTest(testId)
+        const userAnswers = attempt.answers || []
+
+        const sectionWise = new Map()
+
+        // Initialize question mapping
+        const marksPerQuestion = Number(test.marksPerQuestion || 1)
+        const negativeMarks = Number(test.negativeMarks || 0)
+
+        // Only process unique logical questions (by order)
+        const processedOrders = new Set()
+
+        for (const q of questions) {
+            if (processedOrders.has(q.order)) continue
+            processedOrders.add(q.order)
+
+            const subjectId = q.subjectId?._id ? String(q.subjectId._id) : (q.subjectId ? String(q.subjectId) : 'uncategorized')
+            const subjectName = q.subjectId?.name || 'Uncategorized'
+            const chapterId = q.chapterId?._id ? String(q.chapterId._id) : (q.chapterId ? String(q.chapterId) : 'uncategorized')
+            const chapterName = q.chapterId?.name || 'Uncategorized'
+            const topicId = q.topicId?._id ? String(q.topicId._id) : (q.topicId ? String(q.topicId) : 'uncategorized')
+            const topicName = q.topicId?.name || 'Uncategorized'
+
+            if (!sectionWise.has(subjectId)) {
+                sectionWise.set(subjectId, {
+                    subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
+                    score: 0,
+                    totalMarks: 0,
+                    attempted: 0,
+                    totalQuestions: 0,
+                    correct: 0,
+                    chapters: new Map()
+                })
+            }
+            const sec = sectionWise.get(subjectId)
+            sec.totalQuestions++
+            sec.totalMarks += marksPerQuestion
+
+            if (!sec.chapters.has(chapterId)) {
+                sec.chapters.set(chapterId, {
+                    chapter: { _id: chapterId === 'uncategorized' ? null : chapterId, name: chapterName },
+                    score: 0,
+                    totalMarks: 0,
+                    topics: new Map()
+                })
+            }
+            const chap = sec.chapters.get(chapterId)
+            chap.totalMarks += marksPerQuestion
+
+            if (!chap.topics.has(topicId)) {
+                chap.topics.set(topicId, {
+                    topic: { _id: topicId === 'uncategorized' ? null : topicId, name: topicName },
+                    score: 0,
+                    totalMarks: 0,
+                })
+            }
+            const top = chap.topics.get(topicId)
+            top.totalMarks += marksPerQuestion
+
+            // Find user's answer for this logical question
+            // The user answer could be against the 'en' or 'hi' question ID. We must find the answer 
+            // that matches any question ID of this order.
+            const siblingQuestionIds = questions.filter(sq => sq.order === q.order).map(sq => String(sq._id))
+            const ans = userAnswers.find(a => siblingQuestionIds.includes(String(a.questionId)))
+            
+            if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
+                sec.attempted++
+                
+                // Which specific question ID was answered?
+                const answeredQ = questions.find(sq => String(sq._id) === String(ans.questionId))
+                const correctIndex = answeredQ ? (answeredQ.options || []).findIndex(opt => opt.isCorrect) : -1
+                
+                let marksObtained = 0
+                if (correctIndex !== -1 && ans.selectedOption === correctIndex) {
+                    sec.correct++
+                    marksObtained = marksPerQuestion
+                } else {
+                    marksObtained = -negativeMarks
+                }
+
+                sec.score += marksObtained
+                chap.score += marksObtained
+                top.score += marksObtained
+            }
+        }
+
+        const sectionWisePerformance = Array.from(sectionWise.values()).map(sec => ({
+            subject: sec.subject,
+            score: sec.score,
+            totalMarks: sec.totalMarks,
+            attempted: sec.attempted,
+            totalQuestions: sec.totalQuestions,
+            accuracy: sec.attempted > 0 ? parseFloat(((sec.correct / sec.attempted) * 100).toFixed(2)) : 0,
+            chapters: Array.from(sec.chapters.values()).map(chap => ({
+                chapter: chap.chapter,
+                percentage: chap.totalMarks > 0 ? parseFloat(((Math.max(0, chap.score) / chap.totalMarks) * 100).toFixed(2)) : 0,
+                topics: Array.from(chap.topics.values()).map(top => ({
+                    topic: top.topic,
+                    percentage: top.totalMarks > 0 ? parseFloat(((Math.max(0, top.score) / top.totalMarks) * 100).toFixed(2)) : 0,
+                    score: top.score
+                }))
+            }))
+        }))
+
+        const percentile = totalParticipants > 1 
+            ? parseFloat((((totalParticipants - rank) / (totalParticipants - 1)) * 100).toFixed(2)) 
+            : 100.0;
+
+        let expertComment = "Keep practicing!";
+        if (percentile >= 90) expertComment = "Excellent Work! You have high chances of getting selected.";
+        else if (percentile >= 75) expertComment = "Well Done! Good performance.";
+
         return {
+            expertComment,
+            overallPerformance: {
+                score: attempt.score,
+                totalMarks: attempt.totalMarks,
+                rank,
+                accuracy: attempt.accuracy,
+                percentile,
+                attempted: attempt.correct + attempt.wrong,
+                totalQuestions: test.totalQuestions,
+                timeSpent: attempt.timeTaken ? parseFloat((attempt.timeTaken / 60).toFixed(2)) : 0
+            },
+            sectionWisePerformance,
+            // Keeping backwards compatibility
             sessionId: attempt.sessionId,
             status: attempt.status,
-            score: attempt.score,
-            totalMarks: attempt.totalMarks,
-            accuracy: attempt.accuracy,
-            timeTaken: attempt.timeTaken,
-            totalTime: attempt.totalTime,
             correct: attempt.correct,
             wrong: attempt.wrong,
             skipped: attempt.skipped,
             unattempted: attempt.unattempted,
-            rank,
-            totalParticipants,
             passingMarks: Number(test.passingMarks || 0),
             isPassed: attempt.score >= Number(test.passingMarks || 0),
-            test: {
-                _id: test._id,
-                title: test.title,
-                duration: test.duration,
-                totalQuestions: test.totalQuestions,
-            }
         }
     }
 
