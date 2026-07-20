@@ -10,8 +10,9 @@ const localizedBlock = {
 
 const courseTestSchema = new mongoose.Schema({
   course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
-  topic: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic', required: true, index: true },
-  chapter: { type: String, default: '' },
+  subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject', index: true }],
+  topics: [{ type: mongoose.Schema.Types.ObjectId, index: true }],
+  chapters: [{ type: mongoose.Schema.Types.ObjectId, index: true }],
   title: { type: String, required: true, trim: true },
   slug: { type: String, required: true },
   description: { type: String, default: '' },
