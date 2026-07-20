@@ -4,6 +4,8 @@ const shortCategoryRepository = require('../../modules/short-category/short-cate
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 
+const EXAM_POPULATE = { path: 'examIds', select: 'name' }
+
 class AdminShortCategoryService extends BaseService {
   constructor() {
     super(shortCategoryRepository, 'admin:short-category')
@@ -13,11 +15,19 @@ class AdminShortCategoryService extends BaseService {
     const filter = { isDeleted: false }
     if (examId) filter.examIds = examId
     if (status) filter.status = status
-    return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
+    return this.getAll(filter, {
+      page,
+      limit,
+      sort: { createdAt: -1 },
+      populate: EXAM_POPULATE
+    })
   }
 
   async getOne(id) {
-    const category = await shortCategoryRepository.findOne({ _id: id, isDeleted: false })
+    const category = await shortCategoryRepository.findOne(
+      { _id: id, isDeleted: false },
+      { populate: EXAM_POPULATE }
+    )
     if (!category) throw new AppError('Short category not found', 404, 'NOT_FOUND')
     return category
   }

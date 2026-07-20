@@ -6,16 +6,13 @@ const { uploadFile } = require('../../lib/fileUpload')
 const uploadGrammarFiles = uploadPdf.any()
 
 const parseChapterFieldName = (fieldName = '') => {
-  let match = fieldName.match(/^chapterPdf_(\d+)$/)
-  if (match) return { index: Number(match[1]), type: 'pdf' }
-
-  match = fieldName.match(/^chapterImage_(\d+)$/)
+  let match = fieldName.match(/^chapterImage_(\d+)$/)
   if (match) return { index: Number(match[1]), type: 'image' }
 
-  match = fieldName.match(/^chapters\[(\d+)\]\[(pdf|image)\]$/)
+  match = fieldName.match(/^chapters\[(\d+)\]\[(image)\]$/)
   if (match) return { index: Number(match[1]), type: match[2] }
 
-  match = fieldName.match(/^chapters\.(\d+)\.(pdf|image)$/)
+  match = fieldName.match(/^chapters\.(\d+)\.(image)$/)
   if (match) return { index: Number(match[1]), type: match[2] }
 
   return null
@@ -51,7 +48,7 @@ const parseFormData = async (req, _res, next) => {
       const chapter = req.body.chapters[mapped.index]
       if (!chapter || typeof chapter !== 'object') continue
 
-      const defaultExt = mapped.type === 'pdf' ? '.pdf' : '.jpg'
+      const defaultExt = '.jpg'
       const ext = path.extname(file.originalname) || defaultExt
       const filename = `chapter-${mapped.index + 1}-${mapped.type}${ext}`
 
