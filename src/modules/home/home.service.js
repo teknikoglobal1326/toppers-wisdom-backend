@@ -1,5 +1,6 @@
 const Banner = require('../../models/Banner.model')
 const Short = require('../../models/Short.model')
+const ShortCategory = require('../../models/ShortCategory.model')
 const Course = require('../../models/Course.model')
 const { createLogger } = require('../../config/logger')
 
@@ -16,16 +17,16 @@ const TESTIMONIALS = [
 const getHome = async (examId) => {
   logger.info({ examId }, 'Fetching home data')
 
-  const [banners, shorts, courses] = await Promise.all([
+  const [banners, shortCategories, courses] = await Promise.all([
     Banner.find({ examId, status: 'active', isDeleted: false })
       .sort({ createdAt: -1 })
       .limit(4)
       .select('name image examId subexamId')
       .lean(),
-    Short.find({ examId, status: 'active', isDeleted: false })
+    ShortCategory.find({ examIds: examId, status: 'active', isDeleted: false })
       .sort({ createdAt: -1 })
-      .limit(6)
-      .select('title videoUrl thumbnail examId subexamId')
+      .limit(4)
+      .select('name bannerImage logo tags examIds')
       .lean(),
     Course.find({ exam: examId, status: 'published', isDeleted: false })
       .sort({ sortOrder: 1, createdAt: -1 })
@@ -34,9 +35,22 @@ const getHome = async (examId) => {
       .lean(),
   ])
 
+  const shortsData = await Promise.all(
+    shortCategories.map(async (cat) => {
+      const short = await Short.findOne({ categoryId: cat._id, status: 'active', isDeleted: false })
+        .sort({ sortOrder: 1, createdAt: -1 })
+        .select('videoUrl')
+        .lean()
+      return {
+        ...cat,
+        short: short || null
+      }
+    })
+  )
+
   return {
     banners,
-    shorts,
+    shorts: shortsData,
     courses,
     testimonials: TESTIMONIALS,
   }
