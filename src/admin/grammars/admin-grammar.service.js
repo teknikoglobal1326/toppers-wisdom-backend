@@ -43,7 +43,7 @@ class AdminGrammarService extends BaseService {
     if (Array.isArray(payload.chapters)) {
       payload.chapters = payload.chapters.map((chapter) => {
         if (typeof chapter === 'string') {
-          return { chapterName: chapter, pdf: null, image: null, sortOrder: 0 }
+          return { chapterName: chapter, content: '', image: null, sortOrder: 0 }
         }
 
         const chapterPayload = { ...chapter }
@@ -52,7 +52,7 @@ class AdminGrammarService extends BaseService {
           delete chapterPayload.title
         }
 
-        if (chapterPayload.pdf === '') chapterPayload.pdf = null
+        if (chapterPayload.content === null || chapterPayload.content === undefined) chapterPayload.content = ''
         if (chapterPayload.image === '') chapterPayload.image = null
 
         if (chapterPayload.sortOrder !== undefined && chapterPayload.sortOrder !== null && chapterPayload.sortOrder !== '') {
