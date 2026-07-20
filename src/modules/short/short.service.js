@@ -7,20 +7,14 @@ class ShortService extends BaseService {
     super(shortRepository, 'short')
   }
 
-  async listShorts(userId, filters) {
-    const user = await User.findById(userId).select('exam subExams').lean()
-
-    const filter = { isDeleted: false, status: 'active' }
-
-    if (user?.subExams?.length) {
-      filter.subexamId = { $in: user.subExams.map((s) => s._id) }
-    }
+  async listShorts(userId, categoryId, filters) {
+    const filter = { isDeleted: false, status: 'active', categoryId }
 
     return this.getAll(filter, {
-      page:   filters.page,
-      limit:  filters.limit,
-      sort:   { createdAt: -1 },
-      select: 'title videoUrl thumbnail examId subexamId language createdAt',
+      page: filters.page,
+      limit: filters.limit,
+      sort: { sortOrder: 1, createdAt: -1 },
+      select: 'title videoUrl thumbnail categoryId sortOrder',
     })
   }
 }
