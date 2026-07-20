@@ -5,6 +5,7 @@ const { createLiveTestSchema, updateLiveTestSchema } = require('./admin-live-tes
 const { uploadThumbnail, parseThumbnail } = require('../test-management-thumbnail.upload')
 
 router.get('/', controller.list)
+router.get('/metadata/options', controller.metadata)
 router.post('/', uploadThumbnail, parseThumbnail('live-tests/thumbnails'), validate(createLiveTestSchema), controller.create)
 router.get('/:id', controller.getOne)
 router.put('/:id', uploadThumbnail, parseThumbnail('live-tests/thumbnails'), validate(updateLiveTestSchema), controller.update)

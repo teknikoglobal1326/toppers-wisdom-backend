@@ -8,12 +8,13 @@ const localizedBlock = {
 
 const testSeriesTestSchema = new mongoose.Schema({
     testSeries: { type: mongoose.Schema.Types.ObjectId, ref: 'TestSeries', required: true, index: true },
-    // Multiple subjects mapped to a test. Topics/chapters below are drawn from these
-    // subjects' embedded topics (Subject.topics[].chapters[]), not the Topic collection.
+    // Multiple subjects mapped to a test. Chapters/topics below are drawn from these
+    // subjects' embedded chapters (Subject.chapters[].topics[]), not the Topic collection.
     subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
-    // Embedded topic ids (Subject.topics[]._id) chosen across the mapped subjects.
+    // Embedded chapter ids (Subject.chapters[]._id) chosen across the mapped subjects.
+    chapterIds: [{ type: mongoose.Schema.Types.ObjectId }],
+    // Embedded topic ids (Subject.chapters[].topics[]._id) chosen across the mapped chapters.
     topicIds: [{ type: mongoose.Schema.Types.ObjectId }],
-    chapterTitles: [{ type: String, trim: true }],
     title: { type: String, required: true, trim: true },
     description: { type: String, default: null },
     thumbnail: { type: String, default: null },

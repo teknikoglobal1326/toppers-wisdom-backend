@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const examSchema = new mongoose.Schema({
-  qualification:    { type: mongoose.Schema.Types.ObjectId, ref: 'Qualification', required: true, index: true },
+  qualification:    { type: mongoose.Schema.Types.ObjectId, ref: 'Qualification', default: null, index: true },
   name:             { type: String, required: true, trim: true },
   image:            { type: String, default: null },
   sortOrder:        { type: Number, default: 0, index: true },

@@ -33,8 +33,6 @@ class AdminPdfService extends BaseService {
       populate: [
         { path: 'course', select: 'title slug' },
         { path: 'subjects' },
-        { path: 'topics' },
-        { path: 'chapters' },
       ],
     })
   }
@@ -46,8 +44,6 @@ class AdminPdfService extends BaseService {
         populate: [
           { path: 'course', select: 'title slug' },
           { path: 'subjects' },
-          { path: 'topics' },
-          { path: 'chapters' },
         ],
       }
     )

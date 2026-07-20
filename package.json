@@ -31,7 +31,8 @@
     "pino": "^9.2.0",
     "pino-http": "^10.2.0",
     "razorpay": "^2.9.2",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
