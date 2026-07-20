@@ -30,6 +30,26 @@ const normalizePayload = (data = {}) => {
         }
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, 'chapterIds')) {
+        if (Array.isArray(payload.chapterIds)) {
+            payload.chapterIds = payload.chapterIds.filter(Boolean)
+        } else if (typeof payload.chapterIds === 'string' && payload.chapterIds) {
+            payload.chapterIds = [payload.chapterIds]
+        } else {
+            payload.chapterIds = []
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'topicIds')) {
+        if (Array.isArray(payload.topicIds)) {
+            payload.topicIds = payload.topicIds.filter(Boolean)
+        } else if (typeof payload.topicIds === 'string' && payload.topicIds) {
+            payload.topicIds = [payload.topicIds]
+        } else {
+            payload.topicIds = []
+        }
+    }
+
     delete payload.examId
     delete payload.subExamIds
     return payload

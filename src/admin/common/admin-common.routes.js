@@ -12,6 +12,7 @@ const testSeriesRepository = require('../../modules/test-series/test-series.repo
 const shortCategoryRepository = require('../../modules/short-category/short-category.repository')
 const previousYearPaperRepository = require('../../modules/previous-year-paper/previous-year-paper.repository')
 const subjectRepository = require('../../modules/subject/subject.repository')
+const Subject = require('../../models/Subject.model')
 const Role = require('../../models/Role.model')
 
 // GET /api/v1/admin/common/short-categories
@@ -75,57 +76,48 @@ router.get('/subjects/:courseId', catchAsync(async (req, res) => {
   sendSuccess(res, subjects)
 }))
 
-// GET /api/v1/admin/common/topics/:courseId
-router.get('/topics/:courseId', catchAsync(async (req, res) => {
+// GET /api/v1/admin/common/chapters/:courseId
+router.get('/chapters/:courseId', catchAsync(async (req, res) => {
   const { courseId } = req.params;
   const { subjectId } = req.query;
-  
+
   if (subjectId) {
     const subject = await subjectRepository.findOne({ _id: subjectId, isDeleted: false });
     if (!subject) {
       return sendSuccess(res, []);
     }
-    const topics = (subject.topics || []).map(t => ({
-      _id: t._id,
-      topicName: t.name
+    const chapters = (subject.chapters || []).map(ch => ({
+      _id: ch._id,
+      title: ch.name
     }));
-    return sendSuccess(res, topics);
+    return sendSuccess(res, chapters);
   }
 
   const query = { course: courseId, isDeleted: false, status: 'active' };
-  const topics = await topicRepository.findAll(query, { sort: { createdAt: -1 }, select: '_id topicName' });
-  sendSuccess(res, topics);
+  const mappings = await topicRepository.findAll(query, { sort: { createdAt: -1 }, select: '_id chapters' });
+  sendSuccess(res, mappings);
 }))
 
-// GET /api/v1/admin/common/chapters/:topicId
-router.get('/chapters/:topicId', catchAsync(async (req, res) => {
-  const { topicId } = req.params;
-  
-  // 1. Try finding topic in the standalone collection
-  const topic = await topicRepository.findOne(
-    { _id: topicId, isDeleted: false, },
-    { select: 'chapters' }
-  );
-  if (topic) {
-    return sendSuccess(res, topic.chapters);
-  }
+// GET /api/v1/admin/common/topics/:chapterId
+router.get('/topics/:chapterId', catchAsync(async (req, res) => {
+  const { chapterId } = req.params;
 
-  // 2. Try finding topic inside a subject's nested topics array
-  const subject = await subjectRepository.findOne({ "topics._id": topicId, isDeleted: false });
+  // Find the chapter inside a subject's nested chapters array
+  const subject = await subjectRepository.findOne({ "chapters._id": chapterId, isDeleted: false });
   if (subject) {
-    const nestedTopic = subject.topics.find(t => t._id.toString() === topicId);
-    if (nestedTopic) {
-      const formattedChapters = (nestedTopic.chapters || []).map(ch => ({
-        _id: ch._id,
-        title: ch.name
+    const nestedChapter = subject.chapters.find(ch => ch._id.toString() === chapterId);
+    if (nestedChapter) {
+      const formattedTopics = (nestedChapter.topics || []).map(t => ({
+        _id: t._id,
+        topicName: t.name
       }));
-      return sendSuccess(res, formattedChapters);
+      return sendSuccess(res, formattedTopics);
     }
   }
 
   return res.status(404).json({
     success: false,
-    message: 'Topic not found',
+    message: 'Chapter not found',
   });
 })
 );
@@ -203,6 +195,21 @@ router.get('/previous-year-papers', catchAsync(async (req, res) => {
   )
   sendSuccess(res, papers)
 }))
+// GET /api/v1/admin/common/exam-subjects-chapters?examId=xxx
+// Returns subjects for the given exam, with each subject's embedded chapters and topics.
+router.get('/exam-subjects-chapters', catchAsync(async (req, res) => {
+  const { examId } = req.query
+  const filter = { isDeleted: false, status: 'active' }
+  if (examId) filter.examIds = examId
+
+  const subjects = await Subject.find(filter)
+    .select('_id name chapters')
+    .sort({ sortOrder: 1, name: 1 })
+    .lean()
+
+  sendSuccess(res, subjects)
+}))
+
 // GET /api/v1/admin/common/roles
 router.get('/roles', catchAsync(async (_req, res) => {
   const roles = await Role.find({ isDeleted: false, isActive: true })
