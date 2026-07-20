@@ -122,8 +122,8 @@ class PreviousYearPaperService extends BaseService {
         }
 
         if (query.subjectId) filter.subjectIds = query.subjectId
+        if (query.chapterId) filter.chapterIds = query.chapterId
         if (query.topicId) filter.topicIds = query.topicId
-        if (query.chapterTitle) filter.chapterTitles = query.chapterTitle
 
         const direction = query.order === 'asc' ? 1 : -1
         const sortField = query.sortBy || 'createdAt'

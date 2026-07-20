@@ -1,34 +1,36 @@
 const Joi = require('joi')
 
-const chapterSchema = Joi.object({
-  _id:       Joi.string().hex().length(24).optional(),
-  name:      Joi.string().trim().required(),
-  sortOrder: Joi.number().integer().min(0).default(0),
-})
-
 const topicSchema = Joi.object({
   _id:       Joi.string().hex().length(24).optional(),
   name:      Joi.string().trim().required(),
   sortOrder: Joi.number().integer().min(0).default(0),
-  chapters:  Joi.array().items(chapterSchema).default([]),
 })
 
-const createSubjectSchema = Joi.object({
-  examIds:   Joi.array().items(Joi.string().hex().length(24)).default([]),
+const chapterSchema = Joi.object({
+  _id:       Joi.string().hex().length(24).optional(),
   name:      Joi.string().trim().required(),
   sortOrder: Joi.number().integer().min(0).default(0),
-  language:  Joi.string().valid('hi', 'en').default('en'),
-  status:    Joi.string().valid('active', 'inactive').default('active'),
   topics:    Joi.array().items(topicSchema).default([]),
 })
 
+const createSubjectSchema = Joi.object({
+  examIds:    Joi.array().items(Joi.string().hex().length(24)).default([]),
+  subExamIds: Joi.array().items(Joi.string().hex().length(24)).default([]),
+  name:       Joi.string().trim().required(),
+  sortOrder:  Joi.number().integer().min(0).default(0),
+  language:   Joi.string().valid('hi', 'en').default('en'),
+  status:     Joi.string().valid('active', 'inactive').default('active'),
+  chapters:   Joi.array().items(chapterSchema).default([]),
+})
+
 const updateSubjectSchema = Joi.object({
-  examIds:   Joi.array().items(Joi.string().hex().length(24)),
-  name:      Joi.string().trim(),
-  sortOrder: Joi.number().integer().min(0),
-  language:  Joi.string().valid('hi', 'en'),
-  status:    Joi.string().valid('active', 'inactive'),
-  topics:    Joi.array().items(topicSchema),
+  examIds:    Joi.array().items(Joi.string().hex().length(24)),
+  subExamIds: Joi.array().items(Joi.string().hex().length(24)),
+  name:       Joi.string().trim(),
+  sortOrder:  Joi.number().integer().min(0),
+  language:   Joi.string().valid('hi', 'en'),
+  status:     Joi.string().valid('active', 'inactive'),
+  chapters:   Joi.array().items(chapterSchema),
 }).min(1)
 
 // ---- Dual creation schema disabled for now ----

@@ -5,7 +5,7 @@ const objectId = Joi.string().pattern(/^[0-9a-fA-F]{24}$/).messages({
 })
 
 const createExamSchema = Joi.object({
-  // qualification:    objectId.required().label('qualification'),
+  qualification: objectId.optional().allow(null, '').label('qualification'),
   name: Joi.string().trim().required(),
   sortOrder: Joi.number().integer().min(0).default(0),
   subexamCount: Joi.number().integer().min(0).default(0),
@@ -15,7 +15,7 @@ const createExamSchema = Joi.object({
 })
 
 const updateExamSchema = Joi.object({
-  // qualification:    objectId.label('qualification'),
+  qualification: objectId.optional().allow(null, '').label('qualification'),
   name: Joi.string().trim(),
   sortOrder: Joi.number().integer().min(0),
   subexamCount: Joi.number().integer().min(0),

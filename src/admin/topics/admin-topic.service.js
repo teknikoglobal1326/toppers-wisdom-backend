@@ -7,15 +7,16 @@ class AdminTopicService extends BaseService {
     super(topicRepository, 'admin:topic')
   }
 
-  async listAll({ page, limit, search, status, course, subject, chapter, sortOrder } = {}) {
+  async listAll({ page, limit, search, status, course, subject, chapter, topic, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
     if (subject) filter.subjects = subject
     if (chapter) filter.chapters = chapter
+    if (topic) filter.topics = topic
 
     if (search) {
-      // search fallback if needed, but since topicName and chapters are now ObjectIds, 
+      // search fallback if needed, but since chapters and topics are now ObjectIds,
       // we can only easily regex search other string fields if they existed on this schema.
       // Currently, no string fields are left to perform meaningful regex search, so we skip.
     }
@@ -52,8 +53,12 @@ class AdminTopicService extends BaseService {
     }
     delete payload.courseId
 
-    if (payload.topicName && !Array.isArray(payload.topicName)) {
-      payload.topicName = [payload.topicName]
+    if (payload.chapters && !Array.isArray(payload.chapters)) {
+      payload.chapters = [payload.chapters]
+    }
+
+    if (payload.topics && !Array.isArray(payload.topics)) {
+      payload.topics = [payload.topics]
     }
 
     if (payload.subjects && !Array.isArray(payload.subjects)) {
@@ -63,10 +68,6 @@ class AdminTopicService extends BaseService {
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       payload.sortOrder = Number(payload.sortOrder)
       if (Number.isNaN(payload.sortOrder)) delete payload.sortOrder
-    }
-
-    if (payload.chapters && !Array.isArray(payload.chapters)) {
-      payload.chapters = [payload.chapters]
     }
 
     return payload
