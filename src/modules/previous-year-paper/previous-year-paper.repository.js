@@ -31,8 +31,8 @@ class PreviousYearPaperRepository extends BaseRepository {
     async listPreviousYearPaperTests(filter, options = {}) {
         return paginate(PreviousYearPaperTest, filter, {
             ...options,
-            select: 'previousYearPaper subjectIds topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status languages createdAt',
-            populate: [{ path: 'subjectIds', select: 'name topics' }],
+            select: 'previousYearPaper subjectId topicIds chapterTitles title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status languages createdAt',
+            populate: [{ path: 'subjectId', select: 'name' }, { path: 'topicIds', select: 'topicName' }],
         })
     }
 
@@ -112,7 +112,25 @@ class PreviousYearPaperRepository extends BaseRepository {
         }, {})
     }
 
-    async findQuestionsForTest(testId) {
+    async getPurchasedTestItemIds(userId) {
+        const orders = await CourseOrder.find({
+            user: userId,
+            status: 'paid',
+            'items.itemType': 'test',
+        }).select('items.itemId').lean()
+
+        const ids = new Set()
+        for (const order of orders) {
+            for (const item of order.items || []) {
+                if (item?.itemId) ids.add(item.itemId.toString())
+            }
+        }
+
+        return ids
+    }
+
+    async findQuestionsForTest(testId, language) {
+        const allowedLanguages = language === 'en' ? ['en', 'both'] : ['hi', 'both']
         return Question.find({
             test: testId,
             isDeleted: false,
