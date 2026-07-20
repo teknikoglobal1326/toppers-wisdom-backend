@@ -1,20 +1,20 @@
 const Joi = require('joi')
 
 const createShortSchema = Joi.object({
-  title:     Joi.string().trim().required(),
-  videoUrl:  Joi.string().max(500).optional().allow(null, ''),
+  title: Joi.string().trim().required(),
+  video: Joi.string().max(500).optional().allow(null, ''),
   sortOrder: Joi.number().integer().min(0).default(0),
-  categoryId:Joi.string().hex().length(24).optional().allow(null, ''),
-  status:    Joi.string().valid('active', 'inactive').default('active'),
+  categoryId: Joi.string().hex().length(24).optional().allow(null, ''),
+  status: Joi.string().valid('active', 'inactive').default('active'),
   thumbnail: Joi.string().max(500).optional().allow(null, ''),
 })
 
 const updateShortSchema = Joi.object({
-  title:     Joi.string().trim(),
-  videoUrl:  Joi.string().max(500).optional().allow(null, ''),
+  title: Joi.string().trim(),
+  video: Joi.string().max(500).optional().allow(null, ''),
   sortOrder: Joi.number().integer().min(0),
-  categoryId:Joi.string().hex().length(24).optional().allow(null, ''),
-  status:    Joi.string().valid('active', 'inactive'),
+  categoryId: Joi.string().hex().length(24).optional().allow(null, ''),
+  status: Joi.string().valid('active', 'inactive'),
   thumbnail: Joi.string().max(500).optional().allow(null, ''),
 }).min(1)
 
