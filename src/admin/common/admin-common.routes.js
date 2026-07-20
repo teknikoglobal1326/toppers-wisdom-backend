@@ -77,24 +77,56 @@ router.get('/subjects/:courseId', catchAsync(async (req, res) => {
 
 // GET /api/v1/admin/common/topics/:courseId
 router.get('/topics/:courseId', catchAsync(async (req, res) => {
-  const { courseId } = req.params
-  const topics = await topicRepository.findAll({ course: courseId }, { sort: { createdAt: -1 }, select: '_id topicName' })
-  sendSuccess(res, topics)
+  const { courseId } = req.params;
+  const { subjectId } = req.query;
+  
+  if (subjectId) {
+    const subject = await subjectRepository.findOne({ _id: subjectId, isDeleted: false });
+    if (!subject) {
+      return sendSuccess(res, []);
+    }
+    const topics = (subject.topics || []).map(t => ({
+      _id: t._id,
+      topicName: t.name
+    }));
+    return sendSuccess(res, topics);
+  }
+
+  const query = { course: courseId, isDeleted: false, status: 'active' };
+  const topics = await topicRepository.findAll(query, { sort: { createdAt: -1 }, select: '_id topicName' });
+  sendSuccess(res, topics);
 }))
 
 // GET /api/v1/admin/common/chapters/:topicId
 router.get('/chapters/:topicId', catchAsync(async (req, res) => {
   const { topicId } = req.params;
+  
+  // 1. Try finding topic in the standalone collection
   const topic = await topicRepository.findOne(
     { _id: topicId, isDeleted: false, },
-    { select: 'chapters', });
-  if (!topic) {
-    return res.status(404).json({
-      success: false,
-      message: 'Topic not found',
-    });
+    { select: 'chapters' }
+  );
+  if (topic) {
+    return sendSuccess(res, topic.chapters);
   }
-  sendSuccess(res, topic.chapters);
+
+  // 2. Try finding topic inside a subject's nested topics array
+  const subject = await subjectRepository.findOne({ "topics._id": topicId, isDeleted: false });
+  if (subject) {
+    const nestedTopic = subject.topics.find(t => t._id.toString() === topicId);
+    if (nestedTopic) {
+      const formattedChapters = (nestedTopic.chapters || []).map(ch => ({
+        _id: ch._id,
+        title: ch.name
+      }));
+      return sendSuccess(res, formattedChapters);
+    }
+  }
+
+  return res.status(404).json({
+    success: false,
+    message: 'Topic not found',
+  });
 })
 );
 
