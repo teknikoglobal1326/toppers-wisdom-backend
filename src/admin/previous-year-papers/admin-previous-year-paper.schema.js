@@ -13,6 +13,8 @@ const createPreviousYearPaperSchema = Joi.object({
     examId: objectId.optional().allow(null, ''),
     subExamIds: objectIdOrArray.optional().allow(null),
     subjectIds: objectIdOrArray.optional().allow(null),
+    chapterIds: objectIdOrArray.optional().allow(null),
+    topicIds: objectIdOrArray.optional().allow(null),
     isPaid: Joi.boolean().optional().default(false),
     status: Joi.string().valid('active', 'inactive').optional().default('active'),
 })
@@ -24,6 +26,8 @@ const updatePreviousYearPaperSchema = Joi.object({
     examId: objectId.optional().allow(null, ''),
     subExamIds: objectIdOrArray.optional().allow(null),
     subjectIds: objectIdOrArray.optional().allow(null),
+    chapterIds: objectIdOrArray.optional().allow(null),
+    topicIds: objectIdOrArray.optional().allow(null),
     isPaid: Joi.boolean().optional(),
     status: Joi.string().valid('active', 'inactive').optional(),
 }).min(1)

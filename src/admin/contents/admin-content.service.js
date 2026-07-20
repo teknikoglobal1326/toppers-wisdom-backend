@@ -10,10 +10,11 @@ class AdminContentService extends BaseService {
     super(contentRepository, 'admin:content')
   }
 
-  async listAll({ page, limit, status, course, topic, search, sortOrder } = {}) {
+  async listAll({ page, limit, status, course, chapter, topic, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
+    if (chapter) filter.chapter = chapter
     if (topic) filter.topic = topic
 
     if (search) {
@@ -31,15 +32,15 @@ class AdminContentService extends BaseService {
       sort: { sortOrder: direction, createdAt: -1 },
       populate: [
         { path: 'course', select: 'title slug' },
-        { path: 'topic', select: 'topicName' },
       ],
     })
   }
 
-  async listLiveClasses({ page, limit, status, course, topic, search, sortOrder } = {}) {
+  async listLiveClasses({ page, limit, status, course, chapter, topic, search, sortOrder } = {}) {
     const filter = { isDeleted: false, isLive: true }
     if (status) filter.status = status
     if (course) filter.course = course
+    if (chapter) filter.chapter = chapter
     if (topic) filter.topic = topic
 
     if (search) {
@@ -57,7 +58,6 @@ class AdminContentService extends BaseService {
       sort: { sortOrder: direction, createdAt: -1 },
       populate: [
         { path: 'course', select: 'title slug' },
-        { path: 'topic', select: 'topicName' },
       ],
     })
   }
@@ -68,7 +68,6 @@ class AdminContentService extends BaseService {
       {
         populate: [
           { path: 'course', select: 'title slug' },
-          { path: 'topic', select: 'topicName chapters' },
         ],
       }
     )
