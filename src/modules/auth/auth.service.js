@@ -6,6 +6,8 @@ const AppError = require('../../core/AppError')
 const redis = require('../../config/redis')
 const bcrypt = require('bcryptjs')
 const { createLogger } = require('../../config/logger')
+const rewardsService = require('../rewards/rewards.service')
+const crypto = require('crypto')
 
 const logger = createLogger('auth:service')
 
@@ -50,7 +52,7 @@ const sendOtp = async (phone) => {
   }
 }
 
-const verifyOtpAndLogin = async (phone, otp) => {
+const verifyOtpAndLogin = async (phone, otp, providedReferralCode) => {
   logger.info({ phone }, 'Login attempt')
   await verifyOtp(phone, otp)
 
@@ -58,10 +60,33 @@ const verifyOtpAndLogin = async (phone, otp) => {
   const isNewUser = !user || user.profileCompletionState === 'otpsended'
 
   if (isNewUser) {
+    let referralCode = user?.referralCode;
+    let shouldAwardBonus = false;
+
+    if (!referralCode) {
+      referralCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+      shouldAwardBonus = true;
+    }
+
     if (!user) {
-      user = await authRepository.create({ phone, role: 'user', profileCompletionState: 'verifyOtp' })
+      user = await authRepository.create({ phone, role: 'user', profileCompletionState: 'verifyOtp', referralCode })
     } else {
-      user = await authRepository.updateById(user._id, { profileCompletionState: 'verifyOtp' })
+      user = await authRepository.updateById(user._id, { profileCompletionState: 'verifyOtp', referralCode })
+    }
+
+    if (shouldAwardBonus) {
+      try {
+        await rewardsService.addCoins(user._id, 10, 'signup', 'Sign Up Bonus');
+
+        if (providedReferralCode) {
+          const referrer = await require('../../models/User.model').findOne({ referralCode: providedReferralCode });
+          if (referrer) {
+            await rewardsService.addCoins(referrer._id, 25, 'referral', `Referral Bonus for inviting ${user.phone}`);
+          }
+        }
+      } catch (e) {
+        logger.error({ err: e }, 'Failed to add signup bonus');
+      }
     }
     logger.info({ phone, userId: user._id }, 'New user registered')
   } else {
