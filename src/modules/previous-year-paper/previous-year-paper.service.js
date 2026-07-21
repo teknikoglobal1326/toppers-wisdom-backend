@@ -6,6 +6,8 @@ const { groupQuestionsByLanguage, groupQuestionsBySubject, scoreAnswers } = requ
 const crypto = require('crypto')
 const { htmlToPlainText } = require('../../lib/htmlText')
 const previousYearPaperRepository = require('./previous-year-paper.repository')
+const rewardsService = require('../rewards/rewards.service')
+
 
 class PreviousYearPaperService extends BaseService {
     constructor() {
@@ -244,6 +246,12 @@ class PreviousYearPaperService extends BaseService {
 
         this.logger.info({ userId, testId, score, accuracy }, 'Submitted previous-year-paper test')
 
+        try {
+            await rewardsService.logActivity(userId, 'pyp_paper');
+        } catch (err) {
+            this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity in submitTest');
+        }
+
         return {
             attemptId: attempt._id,
             score,
@@ -375,6 +383,14 @@ class PreviousYearPaperService extends BaseService {
             unattempted,
             status,
         })
+
+        if (status === 'completed') {
+            try {
+                await rewardsService.logActivity(userId, 'pyp_paper');
+            } catch (err) {
+                this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity in updateSession');
+            }
+        }
 
         return {
             attemptId: updatedAttempt._id,
