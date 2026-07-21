@@ -2,7 +2,7 @@ const WalletHistory = require('../../models/WalletHistory.model');
 const Streak = require('../../models/Streak.model');
 const DailyActivity = require('../../models/DailyActivity.model');
 const User = require('../../models/User.model');
-const moment = require('moment'); // Assuming moment is installed, else can use native Date
+const VocabularyUserState = require('../../models/VocabularyUserState.model');
 
 class RewardsService {
   async addCoins(userId, amount, source, description, session = null) {
@@ -105,44 +105,45 @@ class RewardsService {
     // Mark mission as completed
     activity.missions[activityType] = true;
 
-    // If streak wasn't maintained yet today, maintain it and award coins
+    // Increment currentStreak for every unique completed mission
     let coinsAwarded = 0;
+    let streak = await Streak.findOne({ user: userId });
+    if (!streak) {
+      streak = new Streak({ user: userId });
+    }
+
+    const yesterday = this.getMidnight(new Date(Date.now() - 86400000));
+    const lastActiveDate = streak.lastActivityDate ? this.getMidnight(streak.lastActivityDate) : null;
+
+    if (lastActiveDate && (lastActiveDate.getTime() === yesterday.getTime() || lastActiveDate.getTime() === today.getTime())) {
+      streak.currentStreak += 1;
+    } else if (!lastActiveDate || lastActiveDate.getTime() < yesterday.getTime()) {
+      streak.currentStreak = 1; // Reset streak
+    }
+    
+    if (streak.currentStreak > streak.longestStreak) {
+      streak.longestStreak = streak.currentStreak;
+    }
+
+    streak.lastActivityDate = new Date();
+    
+    // Determine tier (e.g. Month 1 -> tier 1, Month 2 -> tier 2)
+    streak.tier = Math.ceil(streak.currentStreak / 30) || 1;
+
+    await streak.save();
+
+    // Hitting a milestone (30 days, 60 days, etc.) gives a lump sum bonus.
+    // Month 1 (30 days) -> 25 coins. Month 2 (60 days) -> 50 coins. Month N -> 25 * N coins.
+    if (streak.currentStreak > 0 && streak.currentStreak % 30 === 0) {
+      const milestoneTier = streak.currentStreak / 30;
+      coinsAwarded = milestoneTier * 25;
+      await this.addCoins(userId, coinsAwarded, 'daily_streak', `Daily Streak Milestone (Month ${milestoneTier})`);
+    }
+
+    // Set streak maintenance status if not already set today
     if (!activity.streakMaintained) {
       activity.streakMaintained = true;
       activity.streakSource = activityType;
-
-      let streak = await Streak.findOne({ user: userId });
-      if (!streak) {
-        streak = new Streak({ user: userId });
-      }
-
-      const yesterday = this.getMidnight(new Date(Date.now() - 86400000));
-      const lastActiveDate = streak.lastActivityDate ? this.getMidnight(streak.lastActivityDate) : null;
-
-      if (lastActiveDate && lastActiveDate.getTime() === yesterday.getTime()) {
-        streak.currentStreak += 1;
-      } else if (!lastActiveDate || lastActiveDate.getTime() < yesterday.getTime()) {
-        streak.currentStreak = 1; // Reset streak
-      }
-      
-      if (streak.currentStreak > streak.longestStreak) {
-        streak.longestStreak = streak.currentStreak;
-      }
-
-      streak.lastActivityDate = new Date();
-      
-      // Determine tier (e.g. Month 1 -> tier 1, Month 2 -> tier 2)
-      streak.tier = Math.ceil(streak.currentStreak / 30) || 1;
-
-      await streak.save();
-
-      // Hitting a milestone (30 days, 60 days, etc.) gives a lump sum bonus.
-      // Month 1 (30 days) -> 25 coins. Month 2 (60 days) -> 50 coins. Month N -> 25 * N coins.
-      if (streak.currentStreak > 0 && streak.currentStreak % 30 === 0) {
-        const milestoneTier = streak.currentStreak / 30;
-        coinsAwarded = milestoneTier * 25;
-        await this.addCoins(userId, coinsAwarded, 'daily_streak', `Daily Streak Milestone (Month ${milestoneTier})`);
-      }
     }
 
     await activity.save();
@@ -150,27 +151,76 @@ class RewardsService {
     return { streakMaintained: true, coinsAwarded };
   }
 
+  async getTodayActivity(userId, today) {
+    let activity = await DailyActivity.findOne({ user: userId, date: today });
+    if (!activity) {
+      activity = new DailyActivity({
+        user: userId,
+        date: today,
+        missions: {
+          mock_test: false,
+          pyp_paper: false,
+          pyp_dictionary: false,
+          ai_test: false
+        }
+      });
+      await activity.save();
+    }
+    return activity;
+  }
+
   async getTodayStreak(userId) {
     const today = this.getMidnight();
-    const activity = await DailyActivity.findOne({ user: userId, date: today });
+    const activity = await this.getTodayActivity(userId, today);
     const streak = await Streak.findOne({ user: userId });
 
     const missions = {
-      mock_test: false,
-      pyp_paper: false,
-      pyp_dictionary: false,
-      ai_test: false,
-      ...(activity ? activity.missions : {})
+      mock_test: activity.missions.mock_test,
+      pyp_paper: activity.missions.pyp_paper,
+      pyp_dictionary: activity.missions.pyp_dictionary,
+      ai_test: activity.missions.ai_test
     };
 
     return {
       currentStreak: streak ? streak.currentStreak : 0,
       tier: streak ? streak.tier : 1,
       todayMissions: missions,
-      streakMaintainedToday: activity ? activity.streakMaintained : false,
-      streakSource: activity ? activity.streakSource : 'none'
+      streakMaintainedToday: activity.streakMaintained,
+      streakSource: activity.streakSource
     };
   }
+
+  async completeMission(userId, activityType) {
+    if (activityType !== 'pyp_dictionary') {
+      throw new Error('Only the vocabulary mission requires manual completion. Tests are updated automatically.');
+    }
+
+    const today = this.getMidnight();
+    const activity = await this.getTodayActivity(userId, today);
+
+    // If already completed, just return
+    if (activity.missions.pyp_dictionary) {
+      return { success: true, streakMaintained: activity.streakMaintained, alreadyCompleted: true };
+    }
+
+    const startOfToday = today;
+    const endOfToday = new Date(startOfToday);
+    endOfToday.setHours(23, 59, 59, 999);
+
+    // Check vocabulary read count today
+    const count = await VocabularyUserState.countDocuments({
+      user: userId,
+      isRead: true,
+      readAt: { $gte: startOfToday, $lte: endOfToday }
+    });
+    if (count < 30) {
+      throw new Error(`You must read at least 30 vocabulary words to complete this mission. Today you have read: ${count}`);
+    }
+
+    const result = await this.logActivity(userId, 'pyp_dictionary');
+    return { success: true, ...result };
+  }
+
 
   async getStreakCalendar(userId, month, year) {
     // Return daily activity for a specific month

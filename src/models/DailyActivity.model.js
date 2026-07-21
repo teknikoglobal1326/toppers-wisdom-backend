@@ -9,6 +9,24 @@ const dailyActivitySchema = new mongoose.Schema({
     pyp_dictionary: { type: Boolean, default: false },
     ai_test: { type: Boolean, default: false }
   },
+  assignedTasks: {
+    mock_test: {
+      id: { type: mongoose.Schema.Types.ObjectId },
+      title: { type: String }
+    },
+    pyp_paper: {
+      id: { type: mongoose.Schema.Types.ObjectId },
+      title: { type: String }
+    },
+    pyp_dictionary: { 
+      id: { type: mongoose.Schema.Types.ObjectId }, 
+      title: { type: String } 
+    },
+    ai_test: {
+      id: { type: mongoose.Schema.Types.ObjectId },
+      title: { type: String }
+    }
+  },
   streakMaintained: { type: Boolean, default: false },
   streakSource: { type: String, enum: ['mock_test', 'pyp_paper', 'pyp_dictionary', 'ai_test', 'none'], default: 'none' }
 }, { timestamps: true });
