@@ -40,13 +40,25 @@ router.get('/courses', catchAsync(async (req, res) => {
 );
 
 // GET /api/v1/admin/common/subjects
-// router.get('/subjects', catchAsync(async (req, res) => {
-//   const subjects = await subjectRepository.findAll(
-//     { isDeleted: false, status: 'active' },
-//     { sort: { sortOrder: 1, createdAt: -1 }, select: '_id name sortOrder' }
-//   );
-//   sendSuccess(res, subjects);
-// }));
+router.get('/subjects', catchAsync(async (req, res) => {
+  const { examId } = req.query;
+  const filter = { isDeleted: false, status: 'active' };
+
+  if (examId) {
+    if (examId.includes(',')) {
+      filter.examIds = { $in: examId.split(',') };
+    } else {
+      filter.examIds = examId;
+    }
+  }
+
+  const subjects = await Subject.find(filter)
+    .select('_id name sortOrder examIds chapters')
+    .sort({ sortOrder: 1, createdAt: -1 })
+    .lean();
+
+  sendSuccess(res, subjects);
+}));
 // GET /api/v1/admin/common/subjects/:courseId
 router.get('/subjects/:courseId', catchAsync(async (req, res) => {
   const { courseId } = req.params

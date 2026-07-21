@@ -27,4 +27,9 @@ const remove = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Pdf deleted')
 })
 
-module.exports = { list, getOne, create, update, remove }
+const bulkCreate = catchAsync(async (req, res) => {
+  const payloadArray = req.body.map(item => ({ ...item, createdBy: req.admin?._id }))
+  sendCreated(res, await adminPdfService.bulkCreatePdf(payloadArray))
+})
+
+module.exports = { list, getOne, create, update, remove, bulkCreate }
