@@ -14,7 +14,7 @@ const sendOtp = catchAsync(async (req, res) => {
 })
 
 const verifyOtp = catchAsync(async (req, res) => {
-  const data = await authService.verifyOtpAndLogin(req.body.phone, req.body.otp)
+  const data = await authService.verifyOtpAndLogin(req.body.phone, req.body.otp, req.body.referralCode)
   sendSuccess(res, data, 'Login successful')
 })
 
