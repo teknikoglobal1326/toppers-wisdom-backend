@@ -247,7 +247,10 @@ class TestSeriesRepository extends BaseRepository {
             isDeleted: false,
             status: 'active',
         })
-            .select('language question options.text options.image options.isCorrect order sortOrder perQuestionTime')
+            .select('language question options.text options.image options.isCorrect order sortOrder perQuestionTime subjectId chapterId topicId')
+            .populate('subjectId', 'name')
+            .populate('chapterId', 'name')
+            .populate('topicId', 'name')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
     }
