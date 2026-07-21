@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const controller = require('./admin-pdf.controller')
 const { validate, validateQuery } = require('../../core/validate')
-const { createPdfSchema, updatePdfSchema, listPdfQuerySchema } = require('./admin-pdf.schema')
+const { createPdfSchema, updatePdfSchema, listPdfQuerySchema, bulkCreatePdfSchema } = require('./admin-pdf.schema')
 const { uploadPdf } = require('../../middlewares/upload.middleware')
 const { attachUploadedFiles } = require('./admin-pdf.service')
 
@@ -28,6 +28,7 @@ const uploadPdfFields = uploadPdf.fields([
 ])
 
 router.get('/', validateQuery(listPdfQuerySchema), controller.list)
+router.post('/bulk', validate(bulkCreatePdfSchema), controller.bulkCreate)
 router.post('/', uploadPdfFields, parseArrays, attachUploadedFiles, validate(createPdfSchema), controller.create)
 router.get('/:id', controller.getOne)
 router.patch('/:id', uploadPdfFields, parseArrays, attachUploadedFiles, validate(updatePdfSchema), controller.update)
