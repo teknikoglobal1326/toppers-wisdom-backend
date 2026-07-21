@@ -44,6 +44,19 @@ exports.getTodayStreak = async (req, res, next) => {
   }
 };
 
+exports.completeMission = async (req, res, next) => {
+  try {
+    const { activityType } = req.body;
+    if (!activityType) {
+      return res.status(400).json({ success: false, error: 'activityType is required' });
+    }
+    const data = await rewardsService.completeMission(req.user._id, activityType);
+    res.status(200).json({ success: true, ...data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getStreakCalendar = async (req, res, next) => {
   try {
     const month = parseInt(req.query.month) || new Date().getMonth() + 1;
@@ -54,3 +67,4 @@ exports.getStreakCalendar = async (req, res, next) => {
     next(error);
   }
 };
+
