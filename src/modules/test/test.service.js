@@ -3,6 +3,7 @@ const testRepository = require('./test.repository')
 const { checkAccess } = require('../../lib/access')
 const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
+const rewardsService = require('../rewards/rewards.service')
 
 class TestService extends BaseService {
   constructor() {
@@ -68,7 +69,21 @@ class TestService extends BaseService {
     await rankQueue.add('calculate-rank', { attemptId: attempt._id, testId, subTestId })
 
     this.logger.info({ userId, testId, score, accuracy }, 'Attempt scored')
+
+    try {
+      if (test.type === 'mock') {
+        await rewardsService.logActivity(userId, 'mock_test');
+      } else if (test.type === 'ai_generated') {
+        await rewardsService.logActivity(userId, 'ai_test');
+      } else if (test.type === 'pyp') {
+        await rewardsService.logActivity(userId, 'pyp_paper');
+      }
+    } catch (err) {
+      this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity');
+    }
+
     return { score, totalMarks: subTest.totalMarks, accuracy, correct, wrong, unattempted }
+
   }
 
   async getLeaderboard(testId) { return testRepository.getLeaderboard(testId) }

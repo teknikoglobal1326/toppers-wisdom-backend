@@ -42,5 +42,6 @@ router.use('/editorial-tests', requirePermission('editorial'), require('./editor
 router.use('/editorial-questions', requirePermission('editorial'), require('./editorial-questions/admin-editorial-question.routes'))
 
 router.use('/subscriptions', requirePermission('subscriptions'), require('./subscriptions/subscriptions.routes'))
+router.use('/offers', requirePermission('offers'), require('./offers/admin-offer.routes'))
 
 module.exports = router
