@@ -63,6 +63,7 @@ app.use('/api/v1/vocabulary', authMiddleware, require('./modules/vocabulary/voca
 app.use('/api/v1/editorials', authMiddleware, require('./modules/editorial/editorial.routes'))
 app.use('/api/v1/grammars', authMiddleware, require('./modules/grammar/grammar.routes'))
 app.use('/api/v1/faqs', authMiddleware, require('./modules/faq/faq.routes'))
+app.use('/api/v1/rewards', authMiddleware, require('./modules/rewards/rewards.routes'))
 
 // ── Admin API ─────────────────────────────────
 app.use('/api/v1/admin', adminLimiter, adminAuthMiddleware, require('./admin/admin.router'))
