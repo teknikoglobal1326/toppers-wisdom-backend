@@ -34,6 +34,10 @@ const getCourse = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.getCourse(req.params.id, req.user._id))
 })
 
+const getSubjectMaterials = catchAsync(async (req, res) => {
+  sendSuccess(res, await courseService.getSubjectMaterials(req.params.id, req.params.subjectId, req.user._id))
+})
+
 const getVideoUrl = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.getVideoUrl(req.params.id, req.params.lessonId, req.user._id))
 })
@@ -69,4 +73,4 @@ const joinLive = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.joinLive(req.params.id, req.params.contentId, req.user._id))
 })
 
-module.exports = { listCourseSubjects, listCourses, myCourses, getCourse, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment, joinLive }
+module.exports = { listCourseSubjects, listCourses, myCourses, getCourse, getSubjectMaterials, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment, joinLive }

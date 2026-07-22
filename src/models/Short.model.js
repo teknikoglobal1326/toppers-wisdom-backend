@@ -2,6 +2,8 @@ const mongoose = require('mongoose')
 
 const shortSchema = new mongoose.Schema({
   title:     { type: String, required: true, trim: true },
+  hiTitle:   { type: String, trim: true },
+  enTitle:   { type: String, trim: true },
   videoUrl:  { type: String, default: null },
   thumbnail: { type: String, default: null },
   sortOrder: { type: Number, default: 0, index: true },

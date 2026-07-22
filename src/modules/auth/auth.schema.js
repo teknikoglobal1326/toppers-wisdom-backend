@@ -8,6 +8,7 @@ const sendOtpSchema = Joi.object({
 const verifyOtpSchema = Joi.object({
   phone: Joi.string().pattern(/^[6-9]\d{9}$/).required(),
   otp: Joi.string().length(4).pattern(/^\d+$/).required(),
+  referralCode: Joi.string().optional()
 })
 
 const refreshTokenSchema = Joi.object({

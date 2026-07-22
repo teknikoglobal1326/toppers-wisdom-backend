@@ -3,6 +3,8 @@ const mongoose = require('mongoose')
 const examSchema = new mongoose.Schema({
   qualification:    { type: mongoose.Schema.Types.ObjectId, ref: 'Qualification', default: null, index: true },
   name:             { type: String, required: true, trim: true },
+  hiName:           { type: String, trim: true },
+  enName:           { type: String, trim: true },
   image:            { type: String, default: null },
   sortOrder:        { type: Number, default: 0, index: true },
   subexamCount:     { type: Number, default: 0, min: 0 },

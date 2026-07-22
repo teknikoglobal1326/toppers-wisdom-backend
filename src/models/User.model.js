@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema({
   watchDuration: { type: Number, default: 0 },
   isDeleted:     { type: Boolean, default: false, index: true },
   deletedAt:     { type: Date },
+  walletBalance: { type: Number, default: 0 },
+  totalCoinsEarned: { type: Number, default: 0 },
+  referralCode:  { type: String, unique: true, sparse: true, index: true },
 }, { timestamps: true })
 
 module.exports = mongoose.model('User', userSchema)
