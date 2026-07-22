@@ -43,8 +43,6 @@ const groupQuestionsBySubject = (questions = []) => {
 
   for (const question of questions) {
     const subjectsToProcess = (question.subjects && question.subjects.length > 0) ? question.subjects : [null];
-    const chaptersToProcess = (question.chapters && question.chapters.length > 0) ? question.chapters : ['uncategorized'];
-    const topicsToProcess = (question.topics && question.topics.length > 0) ? question.topics : ['uncategorized'];
 
     for (const subj of subjectsToProcess) {
       const subjectId = subj?._id ? String(subj._id) : (subj ? String(subj) : 'uncategorized');
@@ -53,69 +51,26 @@ const groupQuestionsBySubject = (questions = []) => {
       if (!subjectMap.has(subjectId)) {
           subjectMap.set(subjectId, {
               subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
-              chapterMap: new Map()
+              questions: {}
           });
       }
       const subjectGroup = subjectMap.get(subjectId);
 
-      for (const chap of chaptersToProcess) {
-        const chapterId = String(chap);
-        let chapterName = 'Uncategorized';
-        if (subj && subj.chapters && chapterId !== 'uncategorized') {
-           const foundChapter = subj.chapters.find((c) => String(c._id) === chapterId);
-           if (foundChapter) chapterName = foundChapter.name;
-        }
+      const orderKey = String(question.order);
+      if (!subjectGroup.questions[orderKey]) {
+          subjectGroup.questions[orderKey] = { en: {}, hi: {} };
+      }
 
-        if (!subjectGroup.chapterMap.has(chapterId)) {
-            subjectGroup.chapterMap.set(chapterId, {
-                chapter: { _id: chapterId === 'uncategorized' ? null : chapterId, name: chapterName },
-                topicMap: new Map()
-            });
-        }
-        const chapterGroup = subjectGroup.chapterMap.get(chapterId);
-
-        for (const top of topicsToProcess) {
-          const topicId = String(top);
-          let topicName = 'Uncategorized';
-          if (subj && subj.chapters && chapterId !== 'uncategorized' && topicId !== 'uncategorized') {
-             const foundChapter = subj.chapters.find((c) => String(c._id) === chapterId);
-             if (foundChapter && foundChapter.topics) {
-                 const foundTopic = foundChapter.topics.find((t) => String(t._id) === topicId);
-                 if (foundTopic) topicName = foundTopic.name;
-             }
-          }
-
-          if (!chapterGroup.topicMap.has(topicId)) {
-              chapterGroup.topicMap.set(topicId, {
-                  topic: { _id: topicId === 'uncategorized' ? null : topicId, name: topicName },
-                  questions: {}
-              });
-          }
-          const topicGroup = chapterGroup.topicMap.get(topicId);
-
-          const orderKey = String(question.order);
-          if (!topicGroup.questions[orderKey]) {
-              topicGroup.questions[orderKey] = { en: {}, hi: {} };
-          }
-
-          const lang = question.language;
-          if (lang === 'en' || lang === 'hi') {
-              topicGroup.questions[orderKey][lang] = sanitizeQuestion(question);
-          }
-        }
+      const lang = question.language;
+      if (lang === 'en' || lang === 'hi') {
+          subjectGroup.questions[orderKey][lang] = sanitizeQuestion(question);
       }
     }
   }
 
   return Array.from(subjectMap.values()).map((subj) => ({
       subject: subj.subject,
-      chapters: Array.from(subj.chapterMap.values()).map((chap) => ({
-          chapter: chap.chapter,
-          topics: Array.from(chap.topicMap.values()).map((top) => ({
-              topic: top.topic,
-              questions: top.questions
-          }))
-      }))
+      questions: subj.questions
   }))
 }
 
