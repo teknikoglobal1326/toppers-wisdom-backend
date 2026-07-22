@@ -471,73 +471,98 @@ class TestSeriesService extends BaseService {
             if (processedOrders.has(q.order)) continue
             processedOrders.add(q.order)
 
-            const subjectId = q.subjectId?._id ? String(q.subjectId._id) : (q.subjectId ? String(q.subjectId) : 'uncategorized')
-            const subjectName = q.subjectId?.name || 'Uncategorized'
-            const chapterId = q.chapterId?._id ? String(q.chapterId._id) : (q.chapterId ? String(q.chapterId) : 'uncategorized')
-            const chapterName = q.chapterId?.name || 'Uncategorized'
-            const topicId = q.topicId?._id ? String(q.topicId._id) : (q.topicId ? String(q.topicId) : 'uncategorized')
-            const topicName = q.topicId?.name || 'Uncategorized'
-
-            if (!sectionWise.has(subjectId)) {
-                sectionWise.set(subjectId, {
-                    subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
-                    score: 0,
-                    totalMarks: 0,
-                    attempted: 0,
-                    totalQuestions: 0,
-                    correct: 0,
-                    chapters: new Map()
-                })
-            }
-            const sec = sectionWise.get(subjectId)
-            sec.totalQuestions++
-            sec.totalMarks += marksPerQuestion
-
-            if (!sec.chapters.has(chapterId)) {
-                sec.chapters.set(chapterId, {
-                    chapter: { _id: chapterId === 'uncategorized' ? null : chapterId, name: chapterName },
-                    score: 0,
-                    totalMarks: 0,
-                    topics: new Map()
-                })
-            }
-            const chap = sec.chapters.get(chapterId)
-            chap.totalMarks += marksPerQuestion
-
-            if (!chap.topics.has(topicId)) {
-                chap.topics.set(topicId, {
-                    topic: { _id: topicId === 'uncategorized' ? null : topicId, name: topicName },
-                    score: 0,
-                    totalMarks: 0,
-                })
-            }
-            const top = chap.topics.get(topicId)
-            top.totalMarks += marksPerQuestion
-
-            // Find user's answer for this logical question
-            // The user answer could be against the 'en' or 'hi' question ID. We must find the answer 
-            // that matches any question ID of this order.
+            // Calculate Marks logic for this logical question first
             const siblingQuestionIds = questions.filter(sq => sq.order === q.order).map(sq => String(sq._id))
             const ans = userAnswers.find(a => siblingQuestionIds.includes(String(a.questionId)))
             
+            let isAttempted = false
+            let isCorrect = false
+            let marksObtained = 0
+            
             if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
-                sec.attempted++
-                
-                // Which specific question ID was answered?
+                isAttempted = true
                 const answeredQ = questions.find(sq => String(sq._id) === String(ans.questionId))
                 const correctIndex = answeredQ ? (answeredQ.options || []).findIndex(opt => opt.isCorrect) : -1
                 
-                let marksObtained = 0
                 if (correctIndex !== -1 && ans.selectedOption === correctIndex) {
-                    sec.correct++
+                    isCorrect = true
                     marksObtained = marksPerQuestion
                 } else {
                     marksObtained = -negativeMarks
                 }
+            }
 
-                sec.score += marksObtained
-                chap.score += marksObtained
-                top.score += marksObtained
+            const subjectsToProcess = (q.subjects && q.subjects.length > 0) ? q.subjects : [null];
+            const chaptersToProcess = (q.chapters && q.chapters.length > 0) ? q.chapters : ['uncategorized'];
+            const topicsToProcess = (q.topics && q.topics.length > 0) ? q.topics : ['uncategorized'];
+
+            for (const subj of subjectsToProcess) {
+                const subjectId = subj?._id ? String(subj._id) : (subj ? String(subj) : 'uncategorized');
+                const subjectName = subj?.name || 'Uncategorized';
+                
+                if (!sectionWise.has(subjectId)) {
+                    sectionWise.set(subjectId, {
+                        subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
+                        score: 0,
+                        totalMarks: 0,
+                        attempted: 0,
+                        totalQuestions: 0,
+                        correct: 0,
+                        chapters: new Map()
+                    })
+                }
+                const sec = sectionWise.get(subjectId)
+                sec.totalQuestions++
+                sec.totalMarks += marksPerQuestion
+                if (isAttempted) {
+                    sec.attempted++
+                    if (isCorrect) sec.correct++
+                    sec.score += marksObtained
+                }
+
+                for (const chap of chaptersToProcess) {
+                    const chapterId = String(chap);
+                    let chapterName = 'Uncategorized';
+                    if (subj && subj.chapters && chapterId !== 'uncategorized') {
+                       const foundChapter = subj.chapters.find((c) => String(c._id) === chapterId);
+                       if (foundChapter) chapterName = foundChapter.name;
+                    }
+
+                    if (!sec.chapters.has(chapterId)) {
+                        sec.chapters.set(chapterId, {
+                            chapter: { _id: chapterId === 'uncategorized' ? null : chapterId, name: chapterName },
+                            score: 0,
+                            totalMarks: 0,
+                            topics: new Map()
+                        })
+                    }
+                    const chapStats = sec.chapters.get(chapterId)
+                    chapStats.totalMarks += marksPerQuestion
+                    if (isAttempted) chapStats.score += marksObtained
+
+                    for (const top of topicsToProcess) {
+                        const topicId = String(top);
+                        let topicName = 'Uncategorized';
+                        if (subj && subj.chapters && chapterId !== 'uncategorized' && topicId !== 'uncategorized') {
+                           const foundChapter = subj.chapters.find((c) => String(c._id) === chapterId);
+                           if (foundChapter && foundChapter.topics) {
+                               const foundTopic = foundChapter.topics.find((t) => String(t._id) === topicId);
+                               if (foundTopic) topicName = foundTopic.name;
+                           }
+                        }
+
+                        if (!chapStats.topics.has(topicId)) {
+                            chapStats.topics.set(topicId, {
+                                topic: { _id: topicId === 'uncategorized' ? null : topicId, name: topicName },
+                                score: 0,
+                                totalMarks: 0,
+                            })
+                        }
+                        const topStats = chapStats.topics.get(topicId)
+                        topStats.totalMarks += marksPerQuestion
+                        if (isAttempted) topStats.score += marksObtained
+                    }
+                }
             }
         }
 
