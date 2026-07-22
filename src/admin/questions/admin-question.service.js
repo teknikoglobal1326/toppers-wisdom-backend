@@ -64,14 +64,22 @@ class AdminQuestionService extends BaseService {
       page,
       limit,
       sort: { sortOrder: direction, order: 1, createdAt: -1 },
-      populate: [{ path: 'test', select: 'title slug' }],
+      populate: [
+        { path: 'test', select: 'title slug' },
+        { path: 'subjects', select: 'name' },
+      ],
     })
   }
 
   async getOne(id) {
     const question = await questionRepository.findOne(
       { _id: id, isDeleted: false },
-      { populate: [{ path: 'test', select: 'title slug' }] }
+      { 
+        populate: [
+          { path: 'test', select: 'title slug' },
+          { path: 'subjects', select: 'name' },
+        ] 
+      }
     )
 
     if (!question) throw new AppError('Question not found', 404, 'NOT_FOUND')
@@ -89,9 +97,9 @@ class AdminQuestionService extends BaseService {
     if (payload.explanation?.text === '') payload.explanation.text = ''
     if (payload.explanation?.image === '') payload.explanation.image = ''
 
-    if (payload.subjectId === '') payload.subjectId = null
-    if (payload.chapterId === '') payload.chapterId = null
-    if (payload.topicId === '') payload.topicId = null
+    if (payload.subjects === '') payload.subjects = []
+    if (payload.chapters === '') payload.chapters = []
+    if (payload.topics === '') payload.topics = []
 
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)
@@ -155,7 +163,7 @@ class AdminQuestionService extends BaseService {
     if (!payload.groupId) payload.groupId = new mongoose.Types.ObjectId()
     const result = await questionRepository.createSingle(payload)
     if (payload.test) await this.syncQuestionCount(payload.test)
-    return result
+    return this.getOne(result._id)
   }
 
   async createQuestionDual({ hi, en }, createdBy) {
@@ -180,7 +188,7 @@ class AdminQuestionService extends BaseService {
       questionRepository.createSingle(enPayload),
     ])
     if (testId) await this.syncQuestionCount(testId)
-    return [hiResult, enResult]
+    return Promise.all([this.getOne(hiResult._id), this.getOne(enResult._id)])
   }
 
   async updateQuestion(id, data) {
@@ -189,11 +197,12 @@ class AdminQuestionService extends BaseService {
 
     const payload = this.buildPayload(data)
     await this.applyPerQuestionTime(payload, question)
+
     const updated = await questionRepository.updateById(id, payload)
     const testId = payload.test || question.test
     if (testId) await this.syncQuestionCount(testId)
 
-    return updated
+    return this.getOne(updated._id)
   }
 
   async softDelete(id) {
@@ -311,6 +320,9 @@ adminQuestionService.attachUploadedFiles = async (req, _res, next) => {
     parseJsonField('question')
     parseJsonField('explanation')
     parseJsonField('options')
+    parseJsonField('subjects')
+    parseJsonField('chapters')
+    parseJsonField('topics')
 
     // Map uploaded file paths into hi and en payloads if dual creation
     if (req.body.hi && req.body.en) {

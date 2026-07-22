@@ -28,21 +28,27 @@ const questionSchema = new mongoose.Schema(
       index: true,
     },
 
-    subjectId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Subject",
-      index: true,
-    },
-    chapterId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Chapter",
-      index: true,
-    },
-    topicId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Topic",
-      index: true,
-    },
+    subjects: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subject",
+        index: true,
+      }
+    ],
+    // chapters and topics are embedded inside Subject, not standalone collections.
+    // Store as plain ObjectIds (no ref) — names are resolved via Subject population.
+    chapters: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        index: true,
+      }
+    ],
+    topics: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        index: true,
+      }
+    ],
 
     language: {
       type: String,
