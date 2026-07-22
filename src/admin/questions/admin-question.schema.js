@@ -24,6 +24,18 @@ const createQuestionSchema = Joi.object({
   subjectId: Joi.string().hex().length(24).optional().allow(null, ''),
   chapterId: Joi.string().hex().length(24).optional().allow(null, ''),
   topicId: Joi.string().hex().length(24).optional().allow(null, ''),
+  subjects: Joi.alternatives().try(
+    Joi.array().items(Joi.string().hex().length(24)),
+    Joi.string()
+  ).optional().allow(null, ''),
+  chapters: Joi.alternatives().try(
+    Joi.array().items(Joi.string().hex().length(24)),
+    Joi.string()
+  ).optional().allow(null, ''),
+  topics: Joi.alternatives().try(
+    Joi.array().items(Joi.string().hex().length(24)),
+    Joi.string()
+  ).optional().allow(null, ''),
   question: questionPayloadSchema.required(),
   options: Joi.array().items(optionSchema).length(4).required(),
   explanation: explanationPayloadSchema.optional(),
@@ -57,6 +69,18 @@ const updateQuestionSchema = Joi.object({
   subjectId: Joi.string().hex().length(24).optional().allow(null, ''),
   chapterId: Joi.string().hex().length(24).optional().allow(null, ''),
   topicId: Joi.string().hex().length(24).optional().allow(null, ''),
+  subjects: Joi.alternatives().try(
+    Joi.array().items(Joi.string().hex().length(24)),
+    Joi.string()
+  ).optional().allow(null, ''),
+  chapters: Joi.alternatives().try(
+    Joi.array().items(Joi.string().hex().length(24)),
+    Joi.string()
+  ).optional().allow(null, ''),
+  topics: Joi.alternatives().try(
+    Joi.array().items(Joi.string().hex().length(24)),
+    Joi.string()
+  ).optional().allow(null, ''),
   question: questionPayloadSchema.optional(),
   options: Joi.array().items(optionSchema).length(4),
   explanation: explanationPayloadSchema.optional(),

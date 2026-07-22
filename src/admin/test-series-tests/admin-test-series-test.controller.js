@@ -200,7 +200,7 @@ const remove = catchAsync(async (req, res) => {
     sendSuccess(res, null, 'Test deleted')
 })
 
-// Options for the test create/update form. Flow: series -> mapped subjects ->
+// Options for the test create/update form. Flow: series -> exam -> all subjects for that exam ->
 // each subject's embedded chapters -> each chapter's embedded topics. Chapters and
 // topics come from Subject.chapters[].topics[], NOT the standalone Topic collection.
 const metadata = catchAsync(async (req, res) => {
@@ -221,18 +221,23 @@ const metadata = catchAsync(async (req, res) => {
         .map((id) => String(id).trim())
         .filter(Boolean)
 
-    const allowedSubjectIds = Array.isArray(series.subjectIds) ? series.subjectIds : []
+    // Build subject filter:
+    // - If the series has an exam mapped, show ALL subjects linked to that exam.
+    // - Otherwise, fall back to the subjects explicitly mapped on the series.
+    let subjectFilter = { isDeleted: false, status: 'active' }
+    if (series.exam) {
+        subjectFilter.examIds = series.exam
+    } else {
+        const allowedSubjectIds = Array.isArray(series.subjectIds) ? series.subjectIds : []
+        subjectFilter._id = { $in: allowedSubjectIds }
+    }
 
-    const subjects = await Subject.find({
-        _id: { $in: allowedSubjectIds },
-        isDeleted: false,
-        status: 'active',
-    })
+    const subjects = await Subject.find(subjectFilter)
         .sort({ sortOrder: 1, createdAt: -1 })
         .lean()
 
-    // Flatten embedded chapters of the selected subjects (that are also mapped to the
-    // series) into chapter options carrying their topics and parent subject.
+    // Flatten embedded chapters of the selected subjects into chapter options
+    // carrying their topics and parent subject.
     const selectedSet = new Set(selectedSubjectIds)
     const chapterOptions = []
     for (const subject of subjects) {
