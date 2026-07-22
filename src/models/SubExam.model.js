@@ -2,6 +2,8 @@ const mongoose = require('mongoose')
 
 const subExamSchema = new mongoose.Schema({
   name:             { type: String, required: true, trim: true },
+  hiName:           { type: String, trim: true },
+  enName:           { type: String, trim: true },
   shortDescription: { type: String, trim: true, default: null },
   sortOrder:        { type: Number, default: 0, index: true },
   examId:           { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true, index: true },

@@ -42,4 +42,6 @@ const listPdfQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 })
 
-module.exports = { createPdfSchema, updatePdfSchema, listPdfQuerySchema }
+const bulkCreatePdfSchema = Joi.array().items(createPdfSchema).min(1)
+
+module.exports = { createPdfSchema, updatePdfSchema, listPdfQuerySchema, bulkCreatePdfSchema }

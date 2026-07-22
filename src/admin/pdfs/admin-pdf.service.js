@@ -67,6 +67,12 @@ class AdminPdfService extends BaseService {
     return created
   }
 
+  async bulkCreatePdf(payloadArray) {
+    const builtPayloads = payloadArray.map(data => this.buildPayload(data))
+    const created = await pdfRepository.insertMany(builtPayloads)
+    return created
+  }
+
   async updatePdf(id, data) {
     const pdf = await pdfRepository.findOne({ _id: id, isDeleted: false })
     if (!pdf) throw new AppError('Pdf not found', 404, 'NOT_FOUND')

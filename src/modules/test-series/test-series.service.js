@@ -6,6 +6,8 @@ const crypto = require('crypto')
 const { groupQuestionsByLanguage, groupQuestionsBySubject, scoreAnswers } = require('../../lib/testQuestions')
 const { htmlToPlainText } = require('../../lib/htmlText')
 const testSeriesRepository = require('./test-series.repository')
+const rewardsService = require('../rewards/rewards.service')
+
 
 class TestSeriesService extends BaseService {
     constructor() {
@@ -275,6 +277,12 @@ class TestSeriesService extends BaseService {
 
         this.logger.info({ userId, testId, score, accuracy }, 'Submitted test-series test')
 
+        try {
+            await rewardsService.logActivity(userId, 'mock_test');
+        } catch (err) {
+            this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity in submitTest');
+        }
+
         return {
             attemptId: attempt._id,
             score,
@@ -408,6 +416,14 @@ class TestSeriesService extends BaseService {
             unattempted,
             status,
         })
+
+        if (status === 'completed') {
+            try {
+                await rewardsService.logActivity(userId, 'mock_test');
+            } catch (err) {
+                this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity in updateSession');
+            }
+        }
 
         return {
             attemptId: updatedAttempt._id,

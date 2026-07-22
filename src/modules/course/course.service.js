@@ -135,7 +135,8 @@ class CourseService extends BaseService {
     this.logger.info({ courseId, userId }, 'Fetching course detail')
     // inherited: this.getById() throws 404 automatically if not found
     const course = await this.getById(courseId, {
-      select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects timetable'
+      select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects timetable',
+      populate: [{ path: 'subjects.subject', select: 'name' }]
     })
     if (course.isDeleted) throw new AppError('Course not found', 404, 'NOT_FOUND')
     const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId)
@@ -148,35 +149,56 @@ class CourseService extends BaseService {
 
     const enrollment = await courseRepository.findEnrollment(userId, courseId)
 
-    const [pdfs, contents, tests, courseTests, topicMappings] = await Promise.all([
-      Pdf.find({ course: courseId, isDeleted: false, status: 'active' })
+    const tests = await Test.find({ course: courseId, status: 'published' })
+      .select('title slug description image duration totalQuestion totalMarks difficulty')
+      .lean();
+
+    const subjectsList = (course.subjects || []).map(s => {
+      if (s.subject && s.subject._id) {
+        return { _id: s.subject._id, name: s.subject.name }
+      }
+      return null
+    }).filter(Boolean)
+
+    const syllabus = {
+      content: subjectsList,
+      pdf: subjectsList,
+      test: subjectsList
+    };
+
+    return {
+      ...course,
+      hasAccess,
+      enrollmentProgress: enrollment?.progressPercent || 0,
+      syllabus,
+      tests // kept root level tests in case they are needed
+    }
+  }
+
+  async getSubjectMaterials(courseId, subjectId, userId) {
+    this.logger.info({ courseId, subjectId, userId }, 'Fetching subject materials for course');
+
+    const course = await this.getById(courseId, { select: 'isFree isDeleted' });
+    if (course.isDeleted) throw new AppError('Course not found', 404, 'NOT_FOUND');
+
+    const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId);
+
+    const subject = await Subject.findOne({ _id: subjectId, isDeleted: false }).select('chapters name').lean();
+    if (!subject) throw new AppError('Subject not found', 404, 'NOT_FOUND');
+
+    const chapterIds = (subject.chapters || []).map(c => c._id.toString());
+    
+    const [pdfs, contents, courseTests] = await Promise.all([
+      Pdf.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: 'active' })
         .select('title description pdfFile image topic chapter')
         .lean(),
-      Content.find({ course: courseId, isDeleted: false, status: 'active' })
+      Content.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: 'active' })
         .select('title description video image topic chapter isLive liveStatus scheduledStartTime scheduledEndTime agoraChannel')
         .lean(),
-      Test.find({ course: courseId, status: 'published' })
-        .select('title slug description image duration totalQuestion totalMarks difficulty')
-        .lean(),
-      CourseTest.find({ course: courseId, isDeleted: false, status: { $in: ['active', 'published'] } })
+      CourseTest.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
         .select('title slug description image duration isPerQuestionTime totalQuestion totalMarks difficulty topic chapter')
-        .lean(),
-      Topic.find({ course: courseId, isDeleted: false, status: 'active' }).lean()
-    ])
-
-    // Mapping docs hold bare embedded-subdoc ids (Subject.chapters[].topics[]);
-    // resolve names from the referenced subjects.
-    const mappedSubjectIds = [...new Set(topicMappings.flatMap(m => (m.subjects || []).map(s => s.toString())))]
-    const mappedSubjects = mappedSubjectIds.length
-      ? await Subject.find({ _id: { $in: mappedSubjectIds }, isDeleted: false }).select('chapters').lean()
-      : []
-
-    const chapterById = new Map()
-    for (const subject of mappedSubjects) {
-      for (const chapter of subject.chapters || []) {
-        chapterById.set(chapter._id.toString(), chapter)
-      }
-    }
+        .lean()
+    ]);
 
     const syllabus = {
       content: [],
@@ -184,14 +206,13 @@ class CourseService extends BaseService {
       test: []
     };
 
-    // Grouping: chapter (top level) -> topics (sub level), per the flipped hierarchy.
-    const selectedChapterIds = [...new Set(topicMappings.flatMap(m => (m.chapters || []).map(c => c.toString())))]
+    const chapters = subject.chapters || [];
 
-    selectedChapterIds.forEach(chapterId => {
-      const chapterDoc = chapterById.get(chapterId)
-      const chapterName = chapterDoc ? chapterDoc.name : null
-      const embeddedTopics = chapterDoc ? (chapterDoc.topics || []) : []
-      const topicIdentifiers = embeddedTopics.flatMap(t => [t.name, t._id?.toString()]).filter(Boolean)
+    chapters.forEach(chapterDoc => {
+      const chapterId = chapterDoc._id.toString();
+      const chapterName = chapterDoc.name;
+      const embeddedTopics = chapterDoc.topics || [];
+      const topicIdentifiers = embeddedTopics.flatMap(t => [t.name, t._id?.toString()]).filter(Boolean);
 
       const contentTopics = [];
       const pdfTopics = [];
@@ -263,13 +284,7 @@ class CourseService extends BaseService {
       }
     });
 
-    return {
-      ...course,
-      hasAccess,
-      enrollmentProgress: enrollment?.progressPercent || 0,
-      syllabus,
-      tests // kept root level tests in case they are needed
-    }
+    return syllabus;
   }
 
   async getVideoUrl(courseId, lessonId, userId) {
