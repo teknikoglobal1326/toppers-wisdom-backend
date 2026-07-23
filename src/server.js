@@ -1,4 +1,4 @@
-const app  = require('./app')
+const app = require('./app')
 const { connectDB } = require('./config/database')
 const redis = require('./config/redis')
 const config = require('./config/env')
@@ -8,6 +8,8 @@ const { rootLogger } = require('./config/logger')
 require('./jobs/workers/rank.worker')
 require('./jobs/workers/notification.worker')
 require('./jobs/workers/email.worker')
+
+require('dns').setServers(['8.8.8.8'])
 
 const start = async () => {
   await connectDB()
@@ -31,8 +33,8 @@ const start = async () => {
   }
 
   process.on('SIGTERM', () => shutdown('SIGTERM'))
-  process.on('SIGINT',  () => shutdown('SIGINT'))
-  process.on('uncaughtException',  (err) => { rootLogger.fatal({ err }, 'Uncaught exception');  process.exit(1) })
+  process.on('SIGINT', () => shutdown('SIGINT'))
+  process.on('uncaughtException', (err) => { rootLogger.fatal({ err }, 'Uncaught exception'); process.exit(1) })
   process.on('unhandledRejection', (err) => { rootLogger.fatal({ err }, 'Unhandled rejection'); process.exit(1) })
 }
 

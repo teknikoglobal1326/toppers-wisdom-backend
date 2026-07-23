@@ -7,7 +7,7 @@ class OfferService extends BaseService {
     super(offerRepository, 'offer')
   }
 
-  async listAll({ type, itemId, isActive, page, limit } = {}) {
+  async listAll({ type, itemId, isActive, page, limit, sort = { createdAt: -1 } } = {}) {
     const filter = { isDeleted: false }
     if (type) filter.type = type
     if (itemId) filter.itemId = itemId
@@ -16,7 +16,19 @@ class OfferService extends BaseService {
     } else {
       filter.isActive = true // Default for users: only return active offers
     }
-    return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
+    return this.getAll(filter, { page, limit, sort })
+  }
+
+  async getLatest({ type, itemId, isActive } = {}) {
+    const filter = { isDeleted: false }
+    if (type) filter.type = type
+    if (itemId) filter.itemId = itemId
+    if (isActive !== undefined) {
+      filter.isActive = isActive === 'true' || isActive === true
+    } else {
+      filter.isActive = true
+    }
+    return this.repository.findOne(filter, { sort: { createdAt: -1 } })
   }
 
   async getOne(id) {
