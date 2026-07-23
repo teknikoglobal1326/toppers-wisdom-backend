@@ -1,6 +1,148 @@
 const mongoose = require("mongoose");
 
-const optionSchema = new mongoose.Schema(
+// const optionSchema = new mongoose.Schema(
+//   {
+//     text: {
+//       type: String,
+//       trim: true,
+//       default: "",
+//     },
+//     image: {
+//       type: String,
+//       default: "",
+//     },
+//     isCorrect: {
+//       type: Boolean,
+//       required: true,
+//     },
+//   },
+//   { _id: false }
+// );
+
+// const questionSchema = new mongoose.Schema(
+//   {
+//     test: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "CourseTest",
+//       required: true,
+//       index: true,
+//     },
+
+//     subjectId: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Subject",
+//       index: true,
+//     },
+//     chapterId: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Chapter",
+//       index: true,
+//     },
+//     topicId: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Topic",
+//       index: true,
+//     },
+
+//     language: {
+//       type: String,
+//       enum: ["en", "hi"],
+//       required: true,
+//       default: "en",
+//     },
+
+//     // Links the en/hi versions of the same logical question (dual create shares one groupId).
+//     groupId: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       index: true,
+//     },
+
+//     question: {
+//       text: { type: String, required: true, trim: true },
+//       image: { type: String, default: "" },
+//     },
+
+//     options: {
+//       type: [optionSchema],
+//       required: true,
+//       validate: [
+//         {
+//           validator: (v) => Array.isArray(v) && v.length === 4,
+//           message: "Exactly 4 options are required.",
+//         },
+//         {
+//           validator: (v) => Array.isArray(v) && v.filter((o) => o.isCorrect).length === 1,
+//           message: "Exactly one correct answer is required.",
+//         },
+//         {
+//           validator: (v) => Array.isArray(v) && v.every((o) => o.text || o.image),
+//           message: "Each option must have text or image.",
+//         },
+//       ],
+//     },
+
+//     explanation: {
+//       text: { type: String, default: "" },
+//       image: { type: String, default: "" },
+//     },
+
+//     order: {
+//       type: Number,
+//       required: true,
+//       index: true,
+//     },
+
+//     sortOrder: {
+//       type: Number,
+//       default: 0,
+//       index: true,
+//     },
+
+//     // Time allotted for this question in seconds. Required when the parent test's
+//     // isPerQuestionTime is true, otherwise stored as null.
+//     perQuestionTime: {
+//       type: Number,
+//       min: 1,
+//       default: null,
+//     },
+
+//     marks: {
+//       type: Number,
+//       default: 1,
+//       min: 0,
+//     },
+
+//     negativeMarks: {
+//       type: Number,
+//       default: 0,
+//       min: 0,
+//     },
+
+//     status: {
+//       type: String,
+//       enum: ["active", "inactive"],
+//       default: "active",
+//     },
+
+//     isDeleted: {
+//       type: Boolean,
+//       default: false,
+//     },
+
+//     createdBy: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "User",
+//       required: true,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// questionSchema.index({ test: 1, order: 1 });
+
+// module.exports = mongoose.model("Question", questionSchema);
+
+const contentSchema = new mongoose.Schema(
   {
     text: {
       type: String,
@@ -11,16 +153,77 @@ const optionSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    isCorrect: {
-      type: Boolean,
+  },
+  { _id: false }
+);
+
+
+const languageQuestionSchema = new mongoose.Schema(
+  {
+    question: {
+      type: contentSchema,
       required: true,
+    },
+
+    options: {
+      type: [
+        new mongoose.Schema(
+          {
+            text: {
+              type: String,
+              trim: true,
+              default: "",
+            },
+
+            image: {
+              type: String,
+              default: "",
+            },
+
+            isCorrect: {
+              type: Boolean,
+              required: true,
+            },
+          },
+          { _id: false }
+        ),
+      ],
+
+      validate: [
+        {
+          validator: (v) => v.length === 4,
+          message: "Exactly 4 options are required.",
+        },
+        {
+          validator: (v) =>
+            v.filter((option) => option.isCorrect).length === 1,
+          message: "Exactly one correct option is required.",
+        },
+      ],
+    },
+
+    explanation: {
+      type: contentSchema,
+      default: {},
     },
   },
   { _id: false }
 );
 
+
 const questionSchema = new mongoose.Schema(
   {
+    en: {
+      type: languageQuestionSchema,
+      required: true,
+    },
+
+    hi: {
+      type: languageQuestionSchema,
+      required: true,
+    },
+
+
     test: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CourseTest",
@@ -28,69 +231,24 @@ const questionSchema = new mongoose.Schema(
       index: true,
     },
 
-    subjects: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Subject",
-        index: true,
-      }
-    ],
-    // chapters and topics are embedded inside Subject, not standalone collections.
-    // Store as plain ObjectIds (no ref) — names are resolved via Subject population.
-    chapters: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        index: true,
-      }
-    ],
-    topics: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        index: true,
-      }
-    ],
-
-    language: {
-      type: String,
-      enum: ["en", "hi"],
-      required: true,
-      default: "en",
-    },
-
-    // Links the en/hi versions of the same logical question (dual create shares one groupId).
-    groupId: {
+    subjectId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
       index: true,
     },
 
-    question: {
-      text: { type: String, required: true, trim: true },
-      image: { type: String, default: "" },
+    chapterId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Chapter",
+      index: true,
     },
 
-    options: {
-      type: [optionSchema],
-      required: true,
-      validate: [
-        {
-          validator: (v) => Array.isArray(v) && v.length === 4,
-          message: "Exactly 4 options are required.",
-        },
-        {
-          validator: (v) => Array.isArray(v) && v.filter((o) => o.isCorrect).length === 1,
-          message: "Exactly one correct answer is required.",
-        },
-        {
-          validator: (v) => Array.isArray(v) && v.every((o) => o.text || o.image),
-          message: "Each option must have text or image.",
-        },
-      ],
+    topicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Topic",
+      index: true,
     },
 
-    explanation: {
-      text: { type: String, default: "" },
-      image: { type: String, default: "" },
-    },
 
     order: {
       type: Number,
@@ -104,13 +262,12 @@ const questionSchema = new mongoose.Schema(
       index: true,
     },
 
-    // Time allotted for this question in seconds. Required when the parent test's
-    // isPerQuestionTime is true, otherwise stored as null.
+
     perQuestionTime: {
       type: Number,
-      min: 1,
       default: null,
     },
+
 
     marks: {
       type: Number,
@@ -124,16 +281,19 @@ const questionSchema = new mongoose.Schema(
       min: 0,
     },
 
+
     status: {
       type: String,
       enum: ["active", "inactive"],
       default: "active",
     },
 
+
     isDeleted: {
       type: Boolean,
       default: false,
     },
+
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -141,9 +301,16 @@ const questionSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-questionSchema.index({ test: 1, order: 1 });
+
+questionSchema.index({
+  test: 1,
+  order: 1
+});
+
 
 module.exports = mongoose.model("Question", questionSchema);

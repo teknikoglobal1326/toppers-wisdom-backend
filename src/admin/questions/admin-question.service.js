@@ -1,5 +1,4 @@
 const path = require('path')
-const mongoose = require('mongoose')
 const BaseService = require('../../core/BaseService')
 const questionRepository = require('../../modules/question/question.repository')
 const courseTestRepository = require('../../modules/course-test/course-test.repository')
@@ -15,17 +14,10 @@ class AdminQuestionService extends BaseService {
   }
 
   async syncQuestionCount(testId) {
-    const groupIds = await questionRepository.model.distinct('groupId', {
+    const count = await questionRepository.count({
       test: testId,
       isDeleted: false,
-      groupId: { $ne: null },
     })
-    const ungroupedCount = await questionRepository.count({
-      test: testId,
-      isDeleted: false,
-      $or: [{ groupId: null }, { groupId: { $exists: false } }],
-    })
-    const count = groupIds.length + ungroupedCount
     const update = { totalMappedQuestions: count }
     const updatedCourseTest = await courseTestRepository.updateById(testId, update)
     if (updatedCourseTest) return
@@ -44,17 +36,18 @@ class AdminQuestionService extends BaseService {
     )
   }
 
-  async listAll({ page, limit, test, status, language, search, sortOrder } = {}) {
+  async listAll({ page, limit, test, status, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
 
     if (test) filter.test = test
     if (status) filter.status = status
-    if (language) filter.language = language
 
     if (search) {
       filter.$or = [
-        { 'question.text': { $regex: search, $options: 'i' } },
-        { 'explanation.text': { $regex: search, $options: 'i' } },
+        { 'en.question.text': { $regex: search, $options: 'i' } },
+        { 'hi.question.text': { $regex: search, $options: 'i' } },
+        { 'en.explanation.text': { $regex: search, $options: 'i' } },
+        { 'hi.explanation.text': { $regex: search, $options: 'i' } },
       ]
     }
 
@@ -92,18 +85,22 @@ class AdminQuestionService extends BaseService {
     if (payload.testId && !payload.test) payload.test = payload.testId
     delete payload.testId
 
-    if (payload.question?.text === '') payload.question.text = ''
-    if (payload.question?.image === '') payload.question.image = ''
-    if (payload.explanation?.text === '') payload.explanation.text = ''
-    if (payload.explanation?.image === '') payload.explanation.image = ''
-
-    if (payload.subjects === '') payload.subjects = []
-    if (payload.chapters === '') payload.chapters = []
-    if (payload.topics === '') payload.topics = []
+    if (payload.subjectId === '') payload.subjectId = null
+    if (payload.chapterId === '') payload.chapterId = null
+    if (payload.topicId === '') payload.topicId = null
 
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)
       if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
+    }
+
+    for (const lang of ['en', 'hi']) {
+      if (payload[lang]) {
+        if (payload[lang].question?.text === '') payload[lang].question.text = ''
+        if (payload[lang].question?.image === '') payload[lang].question.image = ''
+        if (payload[lang].explanation?.text === '') payload[lang].explanation.text = ''
+        if (payload[lang].explanation?.image === '') payload[lang].explanation.image = ''
+      }
     }
 
     return payload
@@ -160,35 +157,9 @@ class AdminQuestionService extends BaseService {
       payload.order = await this.nextOrder(payload.test)
     }
     await this.applyPerQuestionTime(payload)
-    if (!payload.groupId) payload.groupId = new mongoose.Types.ObjectId()
     const result = await questionRepository.createSingle(payload)
     if (payload.test) await this.syncQuestionCount(payload.test)
     return this.getOne(result._id)
-  }
-
-  async createQuestionDual({ hi, en }, createdBy) {
-    const testId = hi?.test || hi?.testId || en?.test || en?.testId
-    const hiTestId = hi?.test || hi?.testId
-    const enTestId = en?.test || en?.testId
-    if (!hiTestId || !enTestId || String(hiTestId) !== String(enTestId)) {
-      throw new AppError('Both language payloads must reference the same test', 400, 'VALIDATION_ERROR')
-    }
-
-    // Same logical question across Hindi and English → shared order + shared groupId.
-    const requestedOrder = hi?.order || en?.order
-    const order = requestedOrder ? Number(requestedOrder) : await this.nextOrder(testId)
-    const perQuestionTime = hi?.perQuestionTime ?? en?.perQuestionTime
-    const groupId = new mongoose.Types.ObjectId()
-
-    const hiPayload = await this.applyPerQuestionTime(this.buildPayload({ ...hi, language: 'hi', order, perQuestionTime, groupId, createdBy }))
-    const enPayload = await this.applyPerQuestionTime(this.buildPayload({ ...en, language: 'en', order, perQuestionTime, groupId, createdBy }))
-
-    const [hiResult, enResult] = await Promise.all([
-      questionRepository.createSingle(hiPayload),
-      questionRepository.createSingle(enPayload),
-    ])
-    if (testId) await this.syncQuestionCount(testId)
-    return Promise.all([this.getOne(hiResult._id), this.getOne(enResult._id)])
   }
 
   async updateQuestion(id, data) {

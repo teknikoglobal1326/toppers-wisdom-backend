@@ -7,10 +7,7 @@ class QuestionRepository extends BaseRepository {
   }
 
   async createSingle(data) {
-    return this.create({
-      ...data,
-      language: data.language || 'en',
-    })
+    return this.create(data)
   }
 
   // Highest `order` currently used for a test (0 when none) — used to auto-assign the next order.

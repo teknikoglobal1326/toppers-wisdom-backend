@@ -12,11 +12,7 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
-  if (req.body.hi && req.body.en) {
-    sendCreated(res, await adminQuestionService.createQuestionDual(req.body, req.admin?._id))
-  } else {
-    sendCreated(res, await adminQuestionService.createQuestion({ ...req.body, createdBy: req.admin?._id }))
-  }
+  sendCreated(res, await adminQuestionService.createQuestion({ ...req.body, createdBy: req.admin?._id }))
 })
 
 const update = catchAsync(async (req, res) => {
