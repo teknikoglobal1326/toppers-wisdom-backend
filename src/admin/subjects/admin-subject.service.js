@@ -57,10 +57,11 @@ class AdminSubjectService extends BaseService {
     return payload
   }
 
-  async listAll({ status, examId, sortOrder, page, limit } = {}) {
+  async listAll({ status, examId, sortOrder, page, limit, search } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (examId) filter.examIds = examId
+    if (search) filter.name = new RegExp(search, 'i')
     const direction = sortOrder === 'desc' ? -1 : 1
     return this.getAll(filter, {
       page,

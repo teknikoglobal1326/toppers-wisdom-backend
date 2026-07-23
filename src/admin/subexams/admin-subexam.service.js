@@ -9,10 +9,11 @@ class AdminSubExamService extends BaseService {
     super(subExamRepository, 'admin:subexam')
   }
 
-  async listAll({ examId, status, sortOrder, page, limit } = {}) {
+  async listAll({ examId, status, sortOrder, page, limit, search } = {}) {
     const filter = { is_deleted: false }
     if (examId) filter.examId = examId
     if (status) filter.status = status
+    if (search) filter.name = new RegExp(search, 'i')
     const direction = sortOrder === 'desc' ? -1 : 1
     return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: { path: "examId", select: "name" } })
   }
