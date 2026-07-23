@@ -519,14 +519,14 @@ class TestSeriesService extends BaseService {
             // that matches any question ID of this order.
             const siblingQuestionIds = questions.filter(sq => sq.order === q.order).map(sq => String(sq._id))
             const ans = userAnswers.find(a => siblingQuestionIds.includes(String(a.questionId)))
-            
+
             if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
                 sec.attempted++
-                
+
                 // Which specific question ID was answered?
                 const answeredQ = questions.find(sq => String(sq._id) === String(ans.questionId))
                 const correctIndex = answeredQ ? (answeredQ.options || []).findIndex(opt => opt.isCorrect) : -1
-                
+
                 let marksObtained = 0
                 if (correctIndex !== -1 && ans.selectedOption === correctIndex) {
                     sec.correct++
@@ -559,8 +559,8 @@ class TestSeriesService extends BaseService {
             }))
         }))
 
-        const percentile = totalParticipants > 1 
-            ? parseFloat((((totalParticipants - rank) / (totalParticipants - 1)) * 100).toFixed(2)) 
+        const percentile = totalParticipants > 1
+            ? parseFloat((((totalParticipants - rank) / (totalParticipants - 1)) * 100).toFixed(2))
             : 100.0;
 
         let expertComment = "Keep practicing!";

@@ -1,28 +1,31 @@
 // Shared helpers for user-facing test flows (test-series + previous-year-paper).
-// Questions are stored one document per language ('en' | 'hi'); the en/hi versions
-// of the same logical question share the same `order` (and `groupId`).
 
 const { htmlToPlainText } = require('./htmlText')
 
 // Strip correct answers and return the client-safe question shape.
 // Question/option text is authored in the admin rich-text editor and stored as
 // HTML — convert to plain text for user responses.
-const sanitizeQuestion = (question) => ({
-  _id: question._id,
-  question: {
-    text: htmlToPlainText(question.question?.text),
-    image: question.question?.image,
-  },
-  options: (question.options || []).map((option) => ({ text: htmlToPlainText(option.text), image: option.image })),
-  order: question.order,
-  sortOrder: question.sortOrder,
-  perQuestionTime: question.perQuestionTime ?? null,
-})
+const sanitizeQuestion = (question, lang = 'hi') => {
+  const langBlock = question[lang] || question.en || question.hi
+  return {
+    _id: question._id,
+    question: {
+      text: htmlToPlainText(langBlock?.question?.text),
+      image: langBlock?.question?.image || '',
+    },
+    options: (langBlock?.options || []).map((option) => ({
+      text: htmlToPlainText(option.text),
+      image: option.image || '',
+    })),
+    order: question.order,
+    sortOrder: question.sortOrder,
+    perQuestionTime: question.perQuestionTime ?? null,
+  }
+}
 
 // Build the always-present i18n payload: { <order>: { en: {...}, hi: {...} } }.
 // Every order key always carries both `en` and `hi`; whichever language has no
 // question for that order gets `{}` (present, empty) instead of being omitted.
-// Each question document is stored in exactly one language ('en' | 'hi').
 const groupQuestionsByLanguage = (questions = []) => {
   const grouped = {}
 
@@ -30,9 +33,8 @@ const groupQuestionsByLanguage = (questions = []) => {
     const orderKey = String(question.order)
     if (!grouped[orderKey]) grouped[orderKey] = { en: {}, hi: {} }
 
-    const lang = question.language
-    if (lang !== 'en' && lang !== 'hi') continue
-    grouped[orderKey][lang] = sanitizeQuestion(question)
+    grouped[orderKey].en = sanitizeQuestion(question, 'en')
+    grouped[orderKey].hi = sanitizeQuestion(question, 'hi')
   }
 
   return grouped
@@ -59,10 +61,8 @@ const groupQuestionsBySubject = (questions = []) => {
         group.questions[orderKey] = { en: {}, hi: {} }
     }
 
-    const lang = question.language
-    if (lang === 'en' || lang === 'hi') {
-        group.questions[orderKey][lang] = sanitizeQuestion(question)
-    }
+    group.questions[orderKey].en = sanitizeQuestion(question, 'en')
+    group.questions[orderKey].hi = sanitizeQuestion(question, 'hi')
   }
 
   return Array.from(subjectMap.values())
@@ -74,12 +74,11 @@ const groupQuestionsBySubject = (questions = []) => {
 // the same `order`, so distinct orders give the true (logical) question count.
 const scoreAnswers = (questions = [], answers = [], test = {}) => {
   const byId = new Map()
-  const logicalKeys = new Set()
 
   for (const question of questions) {
-    logicalKeys.add(question.groupId ? String(question.groupId) : String(question._id))
-    const correctIndex = (question.options || []).findIndex((option) => option.isCorrect)
-    byId.set(question._id.toString(), { correctIndex })
+    const correctIndexEn = (question.en?.options || []).findIndex((option) => option.isCorrect)
+    const correctIndexHi = (question.hi?.options || []).findIndex((option) => option.isCorrect)
+    byId.set(question._id.toString(), { correctIndexEn, correctIndexHi })
   }
 
   const marksPerQuestion = Number(test.marksPerQuestion || 1)
@@ -100,7 +99,9 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
     const entry = byId.get(String(answer.questionId))
     if (!entry) continue
 
-    if (answer.selectedOption === entry.correctIndex) {
+    const correctIndex = entry.correctIndexEn !== -1 ? entry.correctIndexEn : entry.correctIndexHi
+
+    if (answer.selectedOption === correctIndex) {
       correct += 1
       score += marksPerQuestion
     } else {
@@ -109,7 +110,7 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
     }
   }
 
-  const totalQuestions = logicalKeys.size
+  const totalQuestions = questions.length
   const unattempted = Math.max(0, totalQuestions - (correct + wrong + skipped))
 
   return { score, correct, wrong, skipped, unattempted, totalQuestions }
