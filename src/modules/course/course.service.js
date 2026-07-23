@@ -66,7 +66,7 @@ class CourseService extends BaseService {
     const subExamIds = (user?.subExams || []).map((s) => s._id)
     this.logger.info({ userId, subExamIds }, 'Listing courses')
 
-    const filter = { subExam: { $in: subExamIds }, status: 'published', isDeleted: false }
+    const filter = { status: 'published', isDeleted: false }
     if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
     // if (lang && lang !== 'both') filter.language = { $in: [lang, 'both'] }
@@ -187,16 +187,18 @@ class CourseService extends BaseService {
     if (!subject) throw new AppError('Subject not found', 404, 'NOT_FOUND');
 
     const chapterIds = (subject.chapters || []).map(c => c._id.toString());
-    
+
+    console.log("chapterIds==================>", chapterIds);
+    console.log("courseId=====================>", courseId);
     const [pdfs, contents, courseTests] = await Promise.all([
-      Pdf.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: 'active' })
-        .select('title description pdfFile image topic chapter')
+      Pdf.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
+        .select('title description pdfFile image topics chapters')
         .lean(),
       Content.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: 'active' })
         .select('title description video image topic chapter isLive liveStatus scheduledStartTime scheduledEndTime agoraChannel')
         .lean(),
-      CourseTest.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
-        .select('title slug description image duration isPerQuestionTime totalQuestion totalMarks difficulty topic chapter')
+      CourseTest.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
+        .select('title slug description image duration isPerQuestionTime totalQuestion totalMarks difficulty topics chapters')
         .lean()
     ]);
 
@@ -218,15 +220,32 @@ class CourseService extends BaseService {
       const pdfTopics = [];
       const testTopics = [];
 
+      const isUnassigned = (item, type) => {
+        const val = (type === 'content') ? item.topic : item.topics;
+        if (!val) return true;
+        if (Array.isArray(val)) {
+          if (val.length === 0) return true;
+          return !val.some(t => topicIdentifiers.includes(t.toString()));
+        }
+        return !topicIdentifiers.includes(val.toString());
+      };
+
       embeddedTopics.forEach(topic => {
         const topicName = topic.name;
         const topicId = topic._id?.toString();
 
-        const matchTopic = (item) => item.topic === topicName || item.topic?.toString() === topicId;
+        const matchTopic = (item, type) => {
+          const val = (type === 'content') ? item.topic : item.topics;
+          if (!val) return false;
+          if (Array.isArray(val)) {
+            return val.some(t => t.toString() === topicId || t.toString() === topicName);
+          }
+          return val.toString() === topicId || val === topicName;
+        };
 
-        const topicContents = contents.filter(c => c.chapter?.toString() === chapterId && matchTopic(c));
-        const topicPdfs = pdfs.filter(p => p.chapter?.toString() === chapterId && matchTopic(p));
-        const topicTests = courseTests.filter(t => t.chapter?.toString() === chapterId && matchTopic(t));
+        const topicContents = contents.filter(c => (c.chapter || []).some(ch => ch.toString() === chapterId) && matchTopic(c, 'content'));
+        const topicPdfs = pdfs.filter(p => (p.chapters || []).some(ch => ch.toString() === chapterId) && matchTopic(p, 'pdf'));
+        const topicTests = courseTests.filter(t => (t.chapters || []).some(ch => ch.toString() === chapterId) && matchTopic(t, 'test'));
 
         const combinedData = [
           ...topicContents.map(c => ({ ...c, materialType: 'content' })),
@@ -246,9 +265,9 @@ class CourseService extends BaseService {
         }
       });
 
-      const unassignedContents = contents.filter(c => c.chapter?.toString() === chapterId && (!c.topic || !topicIdentifiers.includes(c.topic?.toString())));
-      let unassignedPdfs = pdfs.filter(p => p.chapter?.toString() === chapterId && (!p.topic || !topicIdentifiers.includes(p.topic?.toString())));
-      const unassignedTests = courseTests.filter(t => t.chapter?.toString() === chapterId && (!t.topic || !topicIdentifiers.includes(t.topic?.toString())));
+      const unassignedContents = contents.filter(c => (c.chapter || []).some(ch => ch.toString() === chapterId) && isUnassigned(c, 'content'));
+      let unassignedPdfs = pdfs.filter(p => (p.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(p, 'pdf'));
+      const unassignedTests = courseTests.filter(t => (t.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(t, 'test'));
 
       const combinedUnassigned = [
         ...unassignedContents.map(c => ({ ...c, materialType: 'content' })),
@@ -264,7 +283,7 @@ class CourseService extends BaseService {
         });
       }
 
-      unassignedPdfs = pdfs.filter(p => p.chapter?.toString() === chapterId && (!p.topic || !topicIdentifiers.includes(p.topic?.toString())));
+      unassignedPdfs = pdfs.filter(p => (p.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(p, 'pdf'));
       if (pdfTopics.length > 0 || unassignedPdfs.length > 0) {
         syllabus.pdf.push({
           _id: chapterId,

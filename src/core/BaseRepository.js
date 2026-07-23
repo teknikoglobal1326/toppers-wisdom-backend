@@ -53,6 +53,7 @@ class BaseRepository {
   async findOne(filter, options = {}) {
     this.logger.debug({ filter }, 'findOne')
     let query = this.model.findOne(filter)
+    if (options.sort)     query = query.sort(options.sort)
     if (options.select)   query = query.select(options.select)
     if (options.populate) query = query.populate(options.populate)
     if (options.lean !== false) query = query.lean()
