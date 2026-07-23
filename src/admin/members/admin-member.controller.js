@@ -1,10 +1,11 @@
 const path = require('path')
 const catchAsync = require('../../core/catchAsync')
-const { sendSuccess, sendCreated } = require('../../core/response')
+const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response')
 const AppError = require('../../core/AppError')
 const Member = require('../../models/Member.model')
 const Role = require('../../models/Role.model')
 const { uploadFile } = require('../../lib/fileUpload')
+const { paginate } = require('../../core/paginate')
 
 const ensureRoleExists = async (roleId) => {
   const role = await Role.findOne({ _id: roleId, isDeleted: false, isActive: true }).lean()
@@ -34,13 +35,19 @@ const list = catchAsync(async (req, res) => {
     filter.$or = [{ name: rx }, { email: rx }]
   }
 
-  const members = await Member.find(filter)
-    .select('-password')
-    .populate({ path: 'role', select: 'name permissions', match: { isDeleted: false } })
-    .sort({ sortOrder: 1, createdAt: -1 })
-    .lean()
+  const sortBy = req.query.sortBy || 'sortOrder'
+  const sortDirection = req.query.order === 'desc' ? -1 : 1
+  console.log('Query:', req.query, 'SortBy:', sortBy, 'SortDirection:', sortDirection)
 
-  sendSuccess(res, { members })
+  const { data: members, pagination } = await paginate(Member, filter, {
+    page: req.query.page,
+    limit: req.query.limit,
+    sort: { [sortBy]: sortDirection },
+    select: '-password',
+    populate: { path: 'role', select: 'name permissions', match: { isDeleted: false } },
+  })
+
+  sendPaginated(res, members, pagination)
 })
 
 const getOne = catchAsync(async (req, res) => {
