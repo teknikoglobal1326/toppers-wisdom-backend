@@ -22,8 +22,7 @@ class CourseTestRepository extends BaseRepository {
             isDeleted: false,
             status: 'active',
         })
-            .select('language question options.text options.image options.isCorrect order sortOrder perQuestionTime subjects chapters topics')
-            .populate('subjects', 'name chapters')
+            .select('en hi order sortOrder perQuestionTime')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
     }

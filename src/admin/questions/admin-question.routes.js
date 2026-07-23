@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const controller = require('./admin-question.controller')
 const { validate, validateQuery } = require('../../core/validate')
-const { createQuestionSchema, createQuestionDualSchema, updateQuestionSchema, listQuestionQuerySchema } = require('./admin-question.schema')
+const { createQuestionSchema, updateQuestionSchema, listQuestionQuerySchema } = require('./admin-question.schema')
 const { upload } = require('../../middlewares/upload.middleware')
 const { attachUploadedFiles } = require('./admin-question.service')
 
@@ -27,13 +27,8 @@ const uploadQuestionFiles = upload.fields([
   { name: 'enOption3Image', maxCount: 1 },
 ])
 
-const validateCreate = (req, res, next) => {
-  const schema = (req.body.hi && req.body.en) ? createQuestionDualSchema : createQuestionSchema
-  return validate(schema)(req, res, next)
-}
-
 router.get('/', validateQuery(listQuestionQuerySchema), controller.list)
-router.post('/', uploadQuestionFiles, attachUploadedFiles, validateCreate, controller.create)
+router.post('/', uploadQuestionFiles, attachUploadedFiles, validate(createQuestionSchema), controller.create)
 router.delete('/test/:testId', controller.removeByTest)
 router.get('/:id', controller.getOne)
 router.patch('/:id', uploadQuestionFiles, attachUploadedFiles, validate(updateQuestionSchema), controller.update)
