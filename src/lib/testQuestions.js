@@ -65,7 +65,10 @@ const groupQuestionsBySubject = (questions = []) => {
     group.questions[orderKey].hi = sanitizeQuestion(question, 'hi')
   }
 
-  return Array.from(subjectMap.values())
+  return Array.from(subjectMap.values()).map((subj) => ({
+      subject: subj.subject,
+      questions: subj.questions
+  }))
 }
 
 
