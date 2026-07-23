@@ -52,7 +52,8 @@ const listContentQuerySchema = Joi.object({
   course: Joi.string().hex().length(24),
   topic: Joi.string().hex().length(24),
   search: Joi.string().trim().max(200),
-  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  sortBy: Joi.string().valid('createdAt', 'sortOrder').default('sortOrder'),
+  order: Joi.string().valid('asc', 'desc').default('asc'),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 })
