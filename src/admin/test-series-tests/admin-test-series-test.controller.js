@@ -221,10 +221,11 @@ const metadata = catchAsync(async (req, res) => {
         .map((id) => String(id).trim())
         .filter(Boolean)
 
-    const allowedSubjectIds = Array.isArray(series.subjectIds) ? series.subjectIds : []
+    const examId = series.exam
+    if (!examId) throw new AppError('No exam associated with this test series', 400, 'VALIDATION_ERROR')
 
     const subjects = await Subject.find({
-        _id: { $in: allowedSubjectIds },
+        examIds: examId,
         isDeleted: false,
         status: 'active',
     })

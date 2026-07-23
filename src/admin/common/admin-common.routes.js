@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const catchAsync = require('../../core/catchAsync')
-const { sendSuccess } = require('../../core/response')
+const { sendSuccess, sendError } = require('../../core/response')
 const qualificationService = require('../../modules/qualification/qualification.service')
 const courseRepository = require('../../modules/course/course.repository')
 const topicRepository = require('../../modules/topic/topic.repository')
@@ -240,6 +240,83 @@ router.get('/exam-subjects-chapters', catchAsync(async (req, res) => {
   sendSuccess(res, subjects)
 }))
 
+// GET /api/v1/admin/common/test-exam-subjects-chapters?testId=xxx
+// Returns subjects (with embedded chapters/topics) for the exam associated with the given test ID.
+router.get('/test-exam-subjects-chapters', catchAsync(async (req, res) => {
+  const { testId } = req.query
+  if (!testId) {
+    return res.status(400).json({ success: false, message: 'testId is required' })
+  }
+
+  const TestSeriesTest = require('../../models/TestSeriesTest.model')
+  const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+  const LiveTest = require('../../models/LiveTest.model')
+  const CourseTest = require('../../models/CourseTest.model')
+  const TestSeries = require('../../models/TestSeries.model')
+  const PreviousYearPaper = require('../../models/PreviousYearPaper.model')
+  const Course = require('../../models/Course.model')
+
+  let examId = null
+
+  const getExamIds = (val) => {
+    if (!val) return null
+    if (Array.isArray(val)) {
+      const clean = val.filter(Boolean)
+      return clean.length > 0 ? clean : null
+    }
+    return val
+  }
+
+  // 1. Try TestSeriesTest
+  const seriesTest = await TestSeriesTest.findOne({ _id: testId, isDeleted: false }).lean()
+  if (seriesTest) {
+    const series = await TestSeries.findOne({ _id: seriesTest.testSeries, isDeleted: false }).lean()
+    if (series) examId = getExamIds(series.exam || series.examIds)
+  }
+
+  // 2. Try PreviousYearPaperTest
+  if (!examId) {
+    const pypTest = await PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).lean()
+    if (pypTest) {
+      const paper = await PreviousYearPaper.findOne({ _id: pypTest.previousYearPaper, isDeleted: false }).lean()
+      if (paper) examId = getExamIds(paper.exam || paper.examIds)
+    }
+  }
+
+  // 3. Try LiveTest
+  if (!examId) {
+    const liveTest = await LiveTest.findOne({ _id: testId, isDeleted: false }).lean()
+    if (liveTest) examId = getExamIds(liveTest.examId || liveTest.examIds || liveTest.exam)
+  }
+
+  // 4. Try CourseTest
+  if (!examId) {
+    const courseTest = await CourseTest.findOne({ _id: testId, isDeleted: false }).lean()
+    if (courseTest) {
+      const course = await Course.findOne({ _id: courseTest.course, isDeleted: false }).lean()
+      if (course) examId = getExamIds(course.exam || course.exams || course.examIds)
+    }
+  }
+
+  if (!examId) {
+    return res.status(404).json({ success: false, message: 'Exam ID not found for this test' })
+  }
+
+  const filter = { isDeleted: false, status: 'active' }
+  filter.examIds = { $in: examId }
+  // if (Array.isArray(examId)) {
+  // } else {
+  //   filter.examIds = examId
+  // }
+
+  const subjects = await Subject.find(filter)
+    .select('_id name chapters')
+    .sort({ sortOrder: 1, name: 1 })
+    .lean()
+
+  sendSuccess(res, subjects)
+}))
+
 // GET /api/v1/admin/common/roles
 router.get('/roles', catchAsync(async (_req, res) => {
   const roles = await Role.find({ isDeleted: false, isActive: true })
@@ -248,6 +325,84 @@ router.get('/roles', catchAsync(async (_req, res) => {
     .lean()
 
   sendSuccess(res, roles)
+}))
+
+// GET /api/v1/admin/common/test-subjects-chapters?testId=xxx
+// Returns subjects, chapters, and topics mapped to a specific test (supports TestSeriesTest, PreviousYearPaperTest, LiveTest, CourseTest).
+router.get('/test-subjects-chapters', catchAsync(async (req, res) => {
+  const { testId } = req.query
+  if (!testId) {
+    return res.status(400).json({ success: false, message: 'testId is required' })
+  }
+
+  const TestSeriesTest = require('../../models/TestSeriesTest.model')
+  const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+  const LiveTest = require('../../models/LiveTest.model')
+  const CourseTest = require('../../models/CourseTest.model')
+
+  let test = await TestSeriesTest.findOne({ _id: testId, isDeleted: false }).populate('subjectIds').lean()
+  let isCourseTest = false
+
+  if (!test) {
+    test = await PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).populate('subjectIds').lean()
+  }
+  if (!test) {
+    test = await LiveTest.findOne({ _id: testId, isDeleted: false }).populate('subjectIds').lean()
+  }
+  if (!test) {
+    test = await CourseTest.findOne({ _id: testId, isDeleted: false }).populate('subjects').lean()
+    if (test) {
+      isCourseTest = true
+    }
+  }
+
+  if (!test) {
+    return res.status(404).json({ success: false, message: 'Test not found' })
+  }
+
+  const subjects = (isCourseTest ? (test.subjects || []) : (test.subjectIds || [])).filter(Boolean)
+  const testChapterIds = new Set((isCourseTest ? (test.chapters || []) : (test.chapterIds || [])).map(id => id.toString()))
+  const testTopicIds = new Set((isCourseTest ? (test.topics || []) : (test.topicIds || [])).map(id => id.toString()))
+
+  const filteredSubjects = []
+
+  for (const subject of subjects) {
+    const matchedChapters = []
+    const embeddedChapters = Array.isArray(subject.chapters) ? subject.chapters : []
+
+    for (const chapter of embeddedChapters) {
+      if (chapter && chapter._id && testChapterIds.has(chapter._id.toString())) {
+        const matchedTopics = []
+        const embeddedTopics = Array.isArray(chapter.topics) ? chapter.topics : []
+
+        for (const topic of embeddedTopics) {
+          if (topic && topic._id && testTopicIds.has(topic._id.toString())) {
+            matchedTopics.push({
+              _id: topic._id,
+              name: topic.name,
+              sortOrder: topic.sortOrder,
+            })
+          }
+        }
+
+        matchedChapters.push({
+          _id: chapter._id,
+          name: chapter.name,
+          sortOrder: chapter.sortOrder,
+          topics: matchedTopics,
+        })
+      }
+    }
+
+    filteredSubjects.push({
+      _id: subject._id,
+      name: subject.name,
+      sortOrder: subject.sortOrder,
+      chapters: matchedChapters,
+    })
+  }
+
+  sendSuccess(res, filteredSubjects)
 }))
 
 
