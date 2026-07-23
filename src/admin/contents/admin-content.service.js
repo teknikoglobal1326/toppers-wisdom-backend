@@ -10,7 +10,7 @@ class AdminContentService extends BaseService {
     super(contentRepository, 'admin:content')
   }
 
-  async listAll({ page, limit, status, course, chapter, topic, search, sortOrder } = {}) {
+  async listAll({ page, limit, status, course, chapter, topic, search, sortBy = 'sortOrder', order = 'asc' } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (course) filter.course = course
@@ -24,19 +24,22 @@ class AdminContentService extends BaseService {
       ]
     }
 
-    const direction = sortOrder === 'desc' ? -1 : 1
+    const direction = order === 'desc' ? -1 : 1
+    const sort = sortBy === 'createdAt' 
+      ? { createdAt: direction, sortOrder: 1 } 
+      : { sortOrder: direction, createdAt: -1 }
 
     return this.getAll(filter, {
       page,
       limit,
-      sort: { sortOrder: direction, createdAt: -1 },
+      sort,
       populate: [
         { path: 'course', select: 'title slug' },
       ],
     })
   }
 
-  async listLiveClasses({ page, limit, status, course, chapter, topic, search, sortOrder } = {}) {
+  async listLiveClasses({ page, limit, status, course, chapter, topic, search, sortBy = 'sortOrder', order = 'asc' } = {}) {
     const filter = { isDeleted: false, isLive: true }
     if (status) filter.status = status
     if (course) filter.course = course
@@ -50,12 +53,15 @@ class AdminContentService extends BaseService {
       ]
     }
 
-    const direction = sortOrder === 'desc' ? -1 : 1
+    const direction = order === 'desc' ? -1 : 1
+    const sort = sortBy === 'createdAt' 
+      ? { createdAt: direction, sortOrder: 1 } 
+      : { sortOrder: direction, createdAt: -1 }
 
     return this.getAll(filter, {
       page,
       limit,
-      sort: { sortOrder: direction, createdAt: -1 },
+      sort,
       populate: [
         { path: 'course', select: 'title slug' },
       ],

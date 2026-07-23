@@ -200,7 +200,7 @@ const remove = catchAsync(async (req, res) => {
     sendSuccess(res, null, 'Test deleted')
 })
 
-// Options for the test create/update form. Flow: series -> mapped subjects ->
+// Options for the test create/update form. Flow: series -> exam -> all subjects for that exam ->
 // each subject's embedded chapters -> each chapter's embedded topics. Chapters and
 // topics come from Subject.chapters[].topics[], NOT the standalone Topic collection.
 const metadata = catchAsync(async (req, res) => {
@@ -232,8 +232,8 @@ const metadata = catchAsync(async (req, res) => {
         .sort({ sortOrder: 1, createdAt: -1 })
         .lean()
 
-    // Flatten embedded chapters of the selected subjects (that are also mapped to the
-    // series) into chapter options carrying their topics and parent subject.
+    // Flatten embedded chapters of the selected subjects into chapter options
+    // carrying their topics and parent subject.
     const selectedSet = new Set(selectedSubjectIds)
     const chapterOptions = []
     for (const subject of subjects) {

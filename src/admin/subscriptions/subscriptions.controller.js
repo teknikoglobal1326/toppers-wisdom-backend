@@ -1,9 +1,35 @@
 const Subscription = require('../../models/Subscription.model');
+const { uploadFile } = require('../../lib/fileUpload');
 
 // Create Subscription
 exports.createSubscription = async (req, res, next) => {
   try {
-    const { name, description, price, durationDays, tests, boosters } = req.body;
+    const { name, description, price, durationDays, isActive } = req.body;
+    let { banner, tests, boosters } = req.body;
+
+    if (typeof tests === 'string') {
+      try { tests = JSON.parse(tests); } catch (e) { tests = []; }
+    }
+    if (typeof boosters === 'string') {
+      try { boosters = JSON.parse(boosters); } catch (e) { boosters = []; }
+    }
+
+    if (Array.isArray(tests)) {
+      tests = tests.map(t => ({ ...t, moduleType: t.moduleType ? t.moduleType.charAt(0).toUpperCase() + t.moduleType.slice(1) : t.moduleType }));
+    }
+    if (Array.isArray(boosters)) {
+      boosters = boosters.map(b => ({ ...b, moduleType: b.moduleType ? b.moduleType.charAt(0).toUpperCase() + b.moduleType.slice(1) : b.moduleType }));
+    }
+
+    if (req.file) {
+      const ext = req.file.originalname.split('.').pop().toLowerCase();
+      banner = await uploadFile(
+        req.file.buffer,
+        `banner-${Date.now()}.${ext}`,
+        `subscriptions/banners/new-${Date.now()}`,
+        req.file.mimetype
+      );
+    }
 
     const newSubscription = new Subscription({
       name,
@@ -12,6 +38,7 @@ exports.createSubscription = async (req, res, next) => {
       durationDays,
       tests: tests || [],
       boosters: boosters || [],
+      banner,
       createdBy: req.admin._id
     });
 
@@ -66,7 +93,22 @@ exports.getSubscriptionById = async (req, res, next) => {
 // Update Subscription
 exports.updateSubscription = async (req, res, next) => {
   try {
-    const { name, description, price, durationDays, tests, boosters, isActive } = req.body;
+    const { name, description, price, durationDays, isActive } = req.body;
+    let { banner, tests, boosters } = req.body;
+
+    if (typeof tests === 'string') {
+      try { tests = JSON.parse(tests); } catch (e) { tests = []; }
+    }
+    if (typeof boosters === 'string') {
+      try { boosters = JSON.parse(boosters); } catch (e) { boosters = []; }
+    }
+
+    if (Array.isArray(tests)) {
+      tests = tests.map(t => ({ ...t, moduleType: t.moduleType ? t.moduleType.charAt(0).toUpperCase() + t.moduleType.slice(1) : t.moduleType }));
+    }
+    if (Array.isArray(boosters)) {
+      boosters = boosters.map(b => ({ ...b, moduleType: b.moduleType ? b.moduleType.charAt(0).toUpperCase() + b.moduleType.slice(1) : b.moduleType }));
+    }
 
     const subscription = await Subscription.findOne({ _id: req.params.id, isDeleted: false });
     if (!subscription) {
@@ -78,9 +120,21 @@ exports.updateSubscription = async (req, res, next) => {
     subscription.price = price !== undefined ? price : subscription.price;
     subscription.durationDays = durationDays !== undefined ? durationDays : subscription.durationDays;
 
+
     if (tests) subscription.tests = tests;
     if (boosters) subscription.boosters = boosters;
     if (isActive !== undefined) subscription.isActive = isActive;
+
+    if (req.file) {
+      const ext = req.file.originalname.split('.').pop().toLowerCase();
+      banner = await uploadFile(
+        req.file.buffer,
+        `banner-${Date.now()}.${ext}`,
+        `subscriptions/banners/${subscription._id}`,
+        req.file.mimetype
+      );
+    }
+    if (banner) subscription.banner = banner;
 
     await subscription.save();
 
