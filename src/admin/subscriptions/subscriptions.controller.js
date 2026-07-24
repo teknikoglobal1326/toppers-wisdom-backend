@@ -1,4 +1,7 @@
 const Subscription = require('../../models/Subscription.model');
+const UserSubscription = require('../../models/UserSubscription.model');
+const SubscriptionOrder = require('../../models/SubscriptionOrder.model');
+const User = require('../../models/User.model');
 const { uploadFile } = require('../../lib/fileUpload');
 
 // Create Subscription
@@ -169,3 +172,62 @@ exports.deleteSubscription = async (req, res, next) => {
     next(error);
   }
 };
+
+// Get Purchased Subscription History with User Info
+exports.getSubscriptionHistory = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, subscriptionId, userId, search, isActive } = req.query;
+    const filter = {};
+
+    if (subscriptionId) {
+      filter.subscription = subscriptionId;
+    }
+    if (userId) {
+      filter.user = userId;
+    }
+    if (isActive !== undefined && isActive !== '') {
+      filter.isActive = isActive === 'true';
+    }
+
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    if (search) {
+      const matchingUsers = await User.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      const userIds = matchingUsers.map(u => u._id);
+      filter.user = { $in: userIds };
+    }
+
+    const total = await UserSubscription.countDocuments(filter);
+
+    const history = await UserSubscription.find(filter)
+      .populate('user', 'name phone email avatar')
+      .populate('subscription', 'name price durationDays')
+      .populate('order', 'amount currency status razorpayOrderId razorpayPaymentId paidAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: history,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

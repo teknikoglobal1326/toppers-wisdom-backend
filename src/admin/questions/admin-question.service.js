@@ -59,7 +59,7 @@ class AdminQuestionService extends BaseService {
       sort: { sortOrder: direction, order: 1, createdAt: -1 },
       populate: [
         { path: 'test', select: 'title slug' },
-        { path: 'subjects', select: 'name' },
+        { path: 'subjectId', select: 'name' },
       ],
     })
   }
@@ -70,7 +70,7 @@ class AdminQuestionService extends BaseService {
       { 
         populate: [
           { path: 'test', select: 'title slug' },
-          { path: 'subjects', select: 'name' },
+          { path: 'subjectId', select: 'name' },
         ] 
       }
     )
