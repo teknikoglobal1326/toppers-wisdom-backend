@@ -9,11 +9,14 @@ const parseChapterFieldName = (fieldName = '') => {
   let match = fieldName.match(/^chapterImage_(\d+)$/)
   if (match) return { index: Number(match[1]), type: 'image' }
 
-  match = fieldName.match(/^chapters\[(\d+)\]\[(image)\]$/)
-  if (match) return { index: Number(match[1]), type: match[2] }
+  match = fieldName.match(/^chapterPdf_(\d+)$/)
+  if (match) return { index: Number(match[1]), type: 'fileUrl' }
 
-  match = fieldName.match(/^chapters\.(\d+)\.(image)$/)
-  if (match) return { index: Number(match[1]), type: match[2] }
+  match = fieldName.match(/^chapters\[(\d+)\]\[(image|pdfFile)\]$/)
+  if (match) return { index: Number(match[1]), type: match[2] === 'pdfFile' ? 'fileUrl' : match[2] }
+
+  match = fieldName.match(/^chapters\.(\d+)\.(image|pdfFile)$/)
+  if (match) return { index: Number(match[1]), type: match[2] === 'pdfFile' ? 'fileUrl' : match[2] }
 
   return null
 }

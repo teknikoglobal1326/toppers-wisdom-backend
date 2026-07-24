@@ -1,6 +1,7 @@
 const BaseRepository = require('../../core/BaseRepository')
-const Course     = require('../../models/Course.model')
+const Course = require('../../models/Course.model')
 const Enrollment = require('../../models/Enrollment.model')
+
 
 class CourseRepository extends BaseRepository {
   constructor() {
@@ -50,12 +51,26 @@ class CourseRepository extends BaseRepository {
     const { paginate } = require('../../core/paginate')
     const CourseOrder = require('../../models/CourseOrder.model')
     const mongoose = require('mongoose')
-    
+
     const filter = { status: 'paid', 'items.itemType': 'course' }
     if (query.courseId) {
       filter['items.itemId'] = new mongoose.Types.ObjectId(query.courseId)
     }
-    
+
+    if (query.search) {
+      const User = require('../../models/User.model')
+      const rx = new RegExp(query.search, 'i')
+      const matchingUsers = await User.find({
+        $or: [{ name: rx }, { email: rx }, { phone: rx }]
+      }).select('_id').lean()
+      const userIds = matchingUsers.map(u => u._id)
+
+      filter.$or = [
+        { razorpayOrderId: new RegExp(query.search, 'i') },
+        { user: { $in: userIds } }
+      ]
+    }
+
     return paginate(CourseOrder, filter, {
       page: query.page,
       limit: query.limit,

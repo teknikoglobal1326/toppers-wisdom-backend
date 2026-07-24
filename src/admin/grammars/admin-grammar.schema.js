@@ -3,6 +3,7 @@ const Joi = require('joi')
 const chapterSchema = Joi.object({
   chapterName: Joi.string().trim().required(),
   content: Joi.string().allow('', null),
+  fileUrl: Joi.string().trim().allow('', null),
   image: Joi.string().trim().allow('', null),
   sortOrder: Joi.number().integer().min(0).default(0),
 })

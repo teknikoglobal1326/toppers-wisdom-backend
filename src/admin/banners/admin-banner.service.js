@@ -14,11 +14,12 @@ class AdminBannerService extends BaseService {
     super(bannerRepository, 'admin:banner')
   }
 
-  async listAll({ examId, subexamId, status, language, sortOrder, page, limit } = {}) {
+  async listAll({ examId, subexamId, status, language, sortOrder, page, limit, search } = {}) {
     const filter = { isDeleted: false }
     if (examId) filter.examId = examId
     if (subexamId) filter.subexamId = subexamId
     if (status) filter.status = status
+    if (search) filter.name = new RegExp(search, 'i')
     const exactLanguage = getExactLanguageFilter(language)
     if (exactLanguage) filter.language = exactLanguage
     const direction = sortOrder === 'desc' ? -1 : 1

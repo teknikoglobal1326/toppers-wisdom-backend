@@ -30,6 +30,7 @@ const listBannerQuerySchema = Joi.object({
   subexamId: Joi.string().hex().length(24),
   status: Joi.string().valid('active', 'inactive'),
   language: Joi.string().valid('hi', 'en', 'both'),
+  search: Joi.string().trim().max(200),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),

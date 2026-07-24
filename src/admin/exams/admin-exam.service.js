@@ -16,9 +16,11 @@ class AdminExamService extends BaseService {
     this.logger = createLogger('admin:exam:service')
   }
 
-  async listAll({ status, language, sortOrder, page, limit } = {}) {
+  async listAll({ status, language, sortOrder, page, limit, search, qualification } = {}) {
     const filter = { is_deleted: false }
     if (status) filter.status = status
+    if (search) filter.name = new RegExp(search, 'i')
+    if (qualification) filter.qualification = qualification
     const exactLanguage = getExactLanguageFilter(language)
     if (exactLanguage) filter.language = exactLanguage
     const direction = sortOrder === 'desc' ? -1 : 1
