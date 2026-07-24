@@ -1,7 +1,8 @@
 const catchAsync = require('../../core/catchAsync')
-const { sendSuccess, sendCreated } = require('../../core/response')
+const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response')
 const AppError = require('../../core/AppError')
 const Role = require('../../models/Role.model')
+const { paginate } = require('../../core/paginate')
 
 const list = catchAsync(async (req, res) => {
   const filter = { isDeleted: false }
@@ -15,9 +16,16 @@ const list = catchAsync(async (req, res) => {
     filter.$or = [{ name: rx }, { description: rx }]
   }
 
-  const roles = await Role.find(filter).sort({ sortOrder: 1, createdAt: -1 }).lean()
+  const sortBy = req.query.sortBy || 'sortOrder'
+  const sortDirection = req.query.order === 'desc' ? -1 : 1
+  console.log('Query:', req.query, 'SortBy:', sortBy, 'SortDirection:', sortDirection)
+  const { data: roles, pagination } = await paginate(Role, filter, {
+    page: req.query.page,
+    limit: req.query.limit,
+    sort: { [sortBy]: sortDirection },
+  })
 
-  sendSuccess(res, { roles })
+  sendPaginated(res, roles, pagination)
 })
 
 const getOne = catchAsync(async (req, res) => {

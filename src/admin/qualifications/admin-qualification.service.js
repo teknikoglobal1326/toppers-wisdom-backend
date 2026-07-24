@@ -18,12 +18,22 @@ class AdminQualificationService extends BaseService {
     this.logger.info('Listing all qualifications (admin)')
     const filter = { ...(query.filter || {}) }
     if (query.includeDeleted !== 'true') filter.isDelted = false
+
+    if (query.isActive !== undefined) {
+      filter.isActive = query.isActive === 'true' || query.isActive === true;
+    }
+
+    if (query.search) {
+      const rx = new RegExp(query.search, 'i')
+      filter.name = rx
+    }
+
     const direction = query.sortOrder === 'desc' ? -1 : 1
 
     return this.getAll(filter, {
-      page:  parseInt(query.page) || 1,
+      page: parseInt(query.page) || 1,
       limit: parseInt(query.limit) || 10,
-      sort:  query.sort || { sortOrder: direction, createdAt: -1 },
+      sort: query.sort || { sortOrder: direction, createdAt: -1 },
     })
   }
 

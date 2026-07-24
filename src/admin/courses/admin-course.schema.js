@@ -83,6 +83,7 @@ const listQuerySchema = Joi.object({
   examId: objectId.label('examId'),
   subExam: objectId.label('subExam'),
   subExamId: objectId.label('subExamId'),
+  courseId: objectId.label('courseId'),
   search: Joi.string().trim().max(200),
   title: Joi.string().trim().max(200),
   sortBy: Joi.string().valid('createdAt', 'price', 'sortOrder').default('createdAt'),

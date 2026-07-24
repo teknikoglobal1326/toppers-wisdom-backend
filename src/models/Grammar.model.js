@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const chapterSchema = new mongoose.Schema({
   chapterName: { type: String, required: true, trim: true },
   content:     { type: String, default: '' },
+  fileUrl:     { type: String, default: '' },
   sortOrder:   { type: Number, default: 0, index: true },
   totalLikes: {type: Number, default: 0, index: true },
 }, { _id: true })
