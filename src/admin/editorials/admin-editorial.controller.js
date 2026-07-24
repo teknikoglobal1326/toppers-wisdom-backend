@@ -24,4 +24,9 @@ const remove = catchAsync(async (req, res) => {
     sendSuccess(res, null, 'Editorial deleted')
 })
 
-module.exports = { list, getOne, create, update, remove }
+const listTransactions = catchAsync(async (req, res) => {
+    const result = await service.listTransactions(req.query)
+    sendPaginated(res, result.data, result.pagination)
+})
+
+module.exports = { list, getOne, create, update, remove, listTransactions }
