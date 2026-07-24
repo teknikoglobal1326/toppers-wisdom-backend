@@ -5,6 +5,7 @@ const { upload } = require('../../middlewares/upload.middleware');
 
 router.post('/', upload.single('banner'), subscriptionsController.createSubscription);
 router.get('/', subscriptionsController.getAllSubscriptions);
+router.get('/history', subscriptionsController.getSubscriptionHistory);
 router.get('/:id', subscriptionsController.getSubscriptionById);
 router.put('/:id', upload.single('banner'), subscriptionsController.updateSubscription);
 router.delete('/:id', subscriptionsController.deleteSubscription);
