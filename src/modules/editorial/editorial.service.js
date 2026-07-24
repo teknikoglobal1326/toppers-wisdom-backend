@@ -3,6 +3,8 @@ const AppError = require('../../core/AppError')
 const editorialRepository = require('./editorial.repository')
 const Editorial = require('../../models/Editorial.model')
 const UserEditorialLike = require('../../models/EditorialLike.model')
+const EditorialPurchase = require('../../models/EditorialPurchase.model')
+// const EditorialPurchase = require('../../models/EditorialPurchase.model')
 
 class EditorialService extends BaseService {
   constructor() {
@@ -172,7 +174,7 @@ class EditorialService extends BaseService {
   }
 
   async setRead(editorialId, userId, isRead = true) {
-    const editorial = await editorialRepository.findOne({ _id: editorialId, isDeleted: false,  })
+    const editorial = await editorialRepository.findOne({ _id: editorialId, isDeleted: false, })
     if (!editorial) {
       throw new AppError('Editorial not found', 404, 'NOT_FOUND')
     }
@@ -224,6 +226,25 @@ class EditorialService extends BaseService {
     }
 
     return { editorialId, isBookmarked: nextValue, isLiked: nextValue }
+  }
+
+  async getPurchaseStatus(userId) {
+    if (!userId) return false
+    const purchase = await EditorialPurchase.findOne({ user: userId, status: 'completed' }).lean()
+    return !!purchase
+  }
+
+  async purchaseSection(userId, amount = 0) {
+    const existing = await EditorialPurchase.findOne({ user: userId, status: 'completed' }).lean()
+    if (existing) {
+      return existing
+    }
+    return EditorialPurchase.create({
+      user: userId,
+      amount,
+      status: 'completed',
+      purchasedAt: new Date()
+    })
   }
 }
 

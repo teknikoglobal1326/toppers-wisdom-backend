@@ -5,6 +5,7 @@ const { createEditorialSchema, updateEditorialSchema, listEditorialQuerySchema }
 const { uploadEditorialMedia, parseFormData } = require('./admin-editorial.upload')
 
 router.get('/', validateQuery(listEditorialQuerySchema), controller.list)
+router.get('/transactions', controller.listTransactions)
 router.post('/', uploadEditorialMedia, parseFormData, validate(createEditorialSchema), controller.create)
 router.get('/:id', controller.getOne)
 router.put('/:id', uploadEditorialMedia, parseFormData, validate(updateEditorialSchema), controller.update)
