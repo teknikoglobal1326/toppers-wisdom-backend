@@ -28,13 +28,33 @@ class CourseService extends BaseService {
   }
 
   async listCourseSubjects(userId, filters = {}) {
-    const user = await User.findById(userId).select('subExams').lean()
-    const subExamIds = (user?.subExams || []).map((s) => s._id)
-    this.logger.info({ userId, subExamIds, filters }, 'Listing course subjects')
+    const user = await User.findById(userId).select('subExams exam subExam examType').lean()
+    const subExamIds = (user?.subExams || []).map((s) => s._id || s).filter(Boolean)
+    if (user?.subExam?._id && !subExamIds.some(id => String(id) === String(user.subExam._id))) {
+      subExamIds.push(user.subExam._id)
+    }
+    const examId = user?.exam?._id || (typeof user?.exam === 'object' ? user?.exam?._id : user?.exam) || user?.examType?._id
+    this.logger.info({ userId, subExamIds, examId, filters }, 'Listing course subjects')
 
-    const matchQuery = { subExam: { $in: subExamIds }, status: 'published', isDeleted: false }
+    const matchQuery = { status: 'published', isDeleted: false }
     if (filters.type) matchQuery.type = filters.type
     if (filters.isFree !== undefined) matchQuery.isFree = filters.isFree === 'true'
+
+    const reqExam = filters.exam || filters.examId
+    const reqSubExam = filters.subExam || filters.subExamId
+
+    if (reqSubExam) {
+      matchQuery.subExam = reqSubExam
+    } else if (reqExam) {
+      matchQuery.exam = reqExam
+    } else if (subExamIds.length > 0 && examId) {
+      matchQuery.$or = [{ subExam: { $in: subExamIds } }, { exam: examId }]
+    } else if (subExamIds.length > 0) {
+      matchQuery.subExam = { $in: subExamIds }
+    } else if (examId) {
+      matchQuery.exam = examId
+    }
+
     console.log("matchQuery==================>", matchQuery);
     const pipeline = [
       { $match: matchQuery },
@@ -61,15 +81,39 @@ class CourseService extends BaseService {
     return this.repository.aggregate(pipeline)
   }
 
-  async listCourses(userId, _ignored, filters, lang) {
-    const user = await User.findById(userId).select('subExams').lean()
-    const subExamIds = (user?.subExams || []).map((s) => s._id)
-    this.logger.info({ userId, subExamIds }, 'Listing courses')
+  async listCourses(userId, _ignored, filters = {}, lang) {
+    const user = await User.findById(userId).select('subExams exam subExam examType').lean()
+    const subExamIds = (user?.subExams || []).map((s) => s._id || s).filter(Boolean)
+    if (user?.subExam?._id && !subExamIds.some(id => String(id) === String(user.subExam._id))) {
+      subExamIds.push(user.subExam._id)
+    }
+    const examId = user?.exam?._id || (typeof user?.exam === 'object' ? user?.exam?._id : user?.exam) || user?.examType?._id
+
+    this.logger.info({ userId, subExamIds, examId }, 'Listing courses')
 
     const filter = { status: 'published', isDeleted: false }
     if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
-    // if (lang && lang !== 'both') filter.language = { $in: [lang, 'both'] }
+
+    const subjectParam = filters.subject || filters.subjectId
+    if (subjectParam && String(subjectParam).toLowerCase() !== 'all') {
+      filter['subjects.subject'] = subjectParam
+    }
+
+    const reqExam = filters.exam || filters.examId
+    const reqSubExam = filters.subExam || filters.subExamId
+
+    if (reqSubExam) {
+      filter.subExam = reqSubExam
+    } else if (reqExam) {
+      filter.exam = reqExam
+    } else if (subExamIds.length > 0 && examId) {
+      filter.$or = [{ subExam: { $in: subExamIds } }, { exam: examId }]
+    } else if (subExamIds.length > 0) {
+      filter.subExam = { $in: subExamIds }
+    } else if (examId) {
+      filter.exam = examId
+    }
 
     const sortBy = filters.sortBy || 'createdAt'
     const order = filters.order === 'asc' ? 1 : -1
@@ -82,7 +126,7 @@ class CourseService extends BaseService {
     const result = await this.getAll(filter, {
       page: filters.page, limit: filters.limit,
       sort,
-      select: 'title slug thumbnail type mrp price isFree sortOrder avgRating totalEnrollments instructor.name language description longDescription subjects timetable',
+      select: 'title slug thumbnail type mrp price isFree sortOrder avgRating totalEnrollments instructor.name language description longDescription subjects timetable exam subExam',
       populate: [{ path: 'subjects.subject', select: 'name' }]
     })
 
