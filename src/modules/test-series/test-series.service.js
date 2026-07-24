@@ -633,54 +633,69 @@ class TestSeriesService extends BaseService {
             isDeleted: false,
             status: 'active',
         })
-            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime')
+            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime en hi')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
 
-        // Pre-calculate user answers mapped by question order
-        const answersByOrder = {}
+        // Map user answers by questionId for quick lookup
+        const answersByQuestionId = {}
         for (const ans of (attempt.answers || [])) {
-            const q = questions.find(question => question._id.toString() === ans.questionId.toString())
-            if (q) {
-                const correctIndex = q.options.findIndex(opt => opt.isCorrect)
-                const isCorrect = ans.selectedOption === correctIndex
-                answersByOrder[q.order] = {
-                    ...ans,
-                    isCorrect
-                }
+            if (ans && ans.questionId) {
+                answersByQuestionId[ans.questionId.toString()] = ans
             }
         }
 
-        // We use the same grouping but now they include isCorrect and explanation natively.
         const groupedQuestions = {}
         for (const q of questions) {
             const orderKey = String(q.order)
             if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
-            const langs = q.language === 'both' ? ['en', 'hi'] : [q.language]
+
+            // Determine available languages
+            let langs = []
+            if (q.en && (q.en.question?.text || q.en.options?.length)) langs.push('en')
+            if (q.hi && (q.hi.question?.text || q.hi.options?.length)) langs.push('hi')
+            if (langs.length === 0) {
+                langs = q.language === 'both' ? ['en', 'hi'] : [q.language || 'en']
+            }
+
+            const userAnswer = answersByQuestionId[q._id.toString()] || null
 
             for (const lang of langs) {
                 if (lang !== 'en' && lang !== 'hi') continue
+
+                const langObj = q[lang] || {}
+                const questionData = langObj.question || q.question || {}
+                const explanationData = langObj.explanation || q.explanation || {}
+                const optionsData = (langObj.options && langObj.options.length > 0) ? langObj.options : (q.options || [])
+
+                const correctIndex = optionsData.findIndex(opt => opt && opt.isCorrect)
+                const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
+                const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
+
                 groupedQuestions[orderKey][lang] = {
                     _id: q._id,
-                    question: { text: htmlToPlainText(q.question?.text), image: q.question?.image },
-                    // Includes isCorrect here! Editor HTML converted to plain text.
-                    options: (q.options || []).map((opt) => ({
-                        text: htmlToPlainText(opt.text),
-                        image: opt.image,
-                        isCorrect: opt.isCorrect,
+                    question: { text: htmlToPlainText(questionData.text || ''), image: questionData.image || '' },
+                    options: optionsData.map((opt) => ({
+                        text: htmlToPlainText(opt.text || ''),
+                        image: opt.image || '',
+                        isCorrect: !!opt.isCorrect,
                     })),
-                    explanation: { text: htmlToPlainText(q.explanation?.text), image: q.explanation?.image },
+                    explanation: { text: htmlToPlainText(explanationData.text || ''), image: explanationData.image || '' },
                     order: q.order,
                     sortOrder: q.sortOrder,
                     perQuestionTime: q.perQuestionTime,
-                    status,
-                    timeTaken,
-                    isCorrect
+                    userAnswer: userAnswer ? {
+                        selectedOption: userAnswer.selectedOption,
+                        status: userAnswer.status,
+                        timeTaken: userAnswer.timeTaken,
+                    } : null,
+                    status: userAnswer?.status || 'unattempted',
+                    timeTaken: userAnswer?.timeTaken || 0,
+                    isCorrect,
                 }
             }
         }
 
-        // Return just the list of questions to simplify the response
         return Object.values(groupedQuestions)
     }
 
