@@ -86,6 +86,40 @@ class AdminEditorialService extends BaseService {
         if (!existing) throw new AppError('Editorial not found', 404, 'NOT_FOUND')
         return editorialRepository.updateById(id, { isDeleted: true, status: 'inactive', updatedBy: adminId })
     }
+
+    async listTransactions(query = {}) {
+        const { paginate } = require('../../core/paginate')
+        const EditorialPurchase = require('../../models/EditorialPurchase.model')
+        const User = require('../../models/User.model')
+
+        const filter = {}
+
+        if (query.status) {
+            filter.status = query.status
+        }
+
+        if (query.search) {
+            const rx = new RegExp(query.search, 'i')
+            const users = await User.find({
+                $or: [
+                    { name: rx },
+                    { phone: rx },
+                    { email: rx }
+                ]
+            }).select('_id').lean()
+            const userIds = users.map(u => u._id)
+            filter.user = { $in: userIds }
+        }
+
+        const options = {
+            page: query.page,
+            limit: query.limit,
+            sort: { createdAt: -1 },
+            populate: { path: 'user', select: 'name phone email avatar' }
+        }
+
+        return paginate(EditorialPurchase, filter, options)
+    }
 }
 
 module.exports = new AdminEditorialService()

@@ -23,4 +23,14 @@ const setLike = catchAsync(async (req, res) => {
   sendSuccess(res, await editorialService.setLike(req.params.id, req.user?._id, req.body.isLiked), 'Editorial like updated')
 })
 
-module.exports = { list, getOne, setRead, setBookmark, setLike }
+const getPurchaseStatus = catchAsync(async (req, res) => {
+  const isPurchased = await editorialService.getPurchaseStatus(req.user?._id)
+  sendSuccess(res, { isPurchased }, 'Purchase status retrieved successfully')
+})
+
+const purchaseSection = catchAsync(async (req, res) => {
+  const result = await editorialService.purchaseSection(req.user?._id, req.body.amount || 0)
+  sendSuccess(res, result, 'Editorial section purchased successfully')
+})
+
+module.exports = { list, getOne, setRead, setBookmark, setLike, getPurchaseStatus, purchaseSection }
