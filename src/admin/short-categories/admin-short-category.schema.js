@@ -13,6 +13,7 @@ const createShortCategorySchema = Joi.object({
     Joi.string().hex().length(24)
   ).optional(),
   status: Joi.string().valid('active', 'inactive').default('active'),
+  sortOrder: Joi.number().integer().optional(),
 })
 
 const updateShortCategorySchema = Joi.object({
@@ -28,6 +29,7 @@ const updateShortCategorySchema = Joi.object({
     Joi.string().hex().length(24)
   ).optional(),
   status: Joi.string().valid('active', 'inactive'),
+  sortOrder: Joi.number().integer().optional(),
 }).min(1)
 
 const listShortCategoryQuerySchema = Joi.object({
