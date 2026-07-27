@@ -7,8 +7,13 @@ const optionSchema = Joi.object({
 })
 
 const questionPayloadSchema = Joi.object({
-  text: Joi.string().trim().required(),
+  text: Joi.string().trim().optional().allow('', null),
   image: Joi.string().trim().optional().allow('', null),
+}).custom((value, helpers) => {
+  if (!value.text?.trim() && !value.image) {
+    return helpers.message('Question must have text or image')
+  }
+  return value
 })
 
 const explanationPayloadSchema = Joi.object({
@@ -50,6 +55,7 @@ const createQuestionSchema = Joi.object({
   negativeMarks: Joi.number().min(0).default(0),
   sortOrder: Joi.number().integer().min(0).default(0),
   status: Joi.string().valid('active', 'inactive').default('active'),
+  createdBy: Joi.string().hex().length(24).optional().allow(null, ''),
 })
 
 const languageQuestionUpdateSchema = Joi.object({
@@ -87,6 +93,7 @@ const updateQuestionSchema = Joi.object({
   negativeMarks: Joi.number().min(0).optional(),
   sortOrder: Joi.number().integer().min(0).optional(),
   status: Joi.string().valid('active', 'inactive').optional(),
+  createdBy: Joi.string().hex().length(24).optional().allow(null, ''),
 }).min(1)
 
 const listQuestionQuerySchema = Joi.object({
