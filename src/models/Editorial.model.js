@@ -16,6 +16,8 @@ const editorialSchema = new mongoose.Schema({
   totalViews: { type: Number, default: 0 },
   totalLikes: { type: Number, default: 0 },
   status: { type: String, enum: ["draft", "published", "inactive"], default: "draft", index: true },
+  exam: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", default: null, index: true },
+  subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject", index: true }],
   isDeleted: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" }

@@ -14,6 +14,8 @@ const createGrammarSchema = Joi.object({
   chapters: Joi.array().items(chapterSchema).default([]),
   sortOrder: Joi.number().integer().min(0).default(0),
   status: Joi.string().valid('active', 'inactive').default('active'),
+  exam: Joi.string().allow(null, ''),
+  subjectIds: Joi.array().items(Joi.string()).default([]),
 })
 
 const updateGrammarSchema = Joi.object({
@@ -22,6 +24,8 @@ const updateGrammarSchema = Joi.object({
   chapters: Joi.array().items(chapterSchema),
   sortOrder: Joi.number().integer().min(0),
   status: Joi.string().valid('active', 'inactive'),
+  exam: Joi.string().allow(null, ''),
+  subjectIds: Joi.array().items(Joi.string()),
 }).min(1)
 
 const listGrammarQuerySchema = Joi.object({

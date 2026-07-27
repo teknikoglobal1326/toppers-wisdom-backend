@@ -17,7 +17,7 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
-  
+
   const payload = { ...req.body, createdBy: req.admin?._id }
   sendCreated(res, await adminContentService.createContent(payload))
 })
@@ -45,6 +45,7 @@ const createLiveClass = catchAsync(async (req, res) => {
 const goLive = catchAsync(async (req, res) => {
   sendSuccess(res, await adminContentService.goLive(req.params.id, req.body))
 })
+
 
 const endLive = catchAsync(async (req, res) => {
   sendSuccess(res, await adminContentService.endLive(req.params.id))

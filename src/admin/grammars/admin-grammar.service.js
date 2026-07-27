@@ -85,6 +85,10 @@ class AdminGrammarService extends BaseService {
       page: query.page,
       limit: query.limit,
       sort: { [sortBy]: direction, createdAt: -1 },
+      populate: [
+        { path: 'exam', select: 'name' },
+        { path: 'subjectIds', select: 'name' }
+      ]
     })
 
     if (!query.topicSortOrder) {
@@ -100,8 +104,16 @@ class AdminGrammarService extends BaseService {
   }
 
   async getOne(id, topicSortOrder) {
-    const grammar = await grammarRepository.findOne({ _id: id, isDeleted: false })
+    let grammar = await grammarRepository.findOne({ _id: id, isDeleted: false })
     if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
+
+    // Populate exam and subjectIds
+    if (grammar.populate) {
+      grammar = await grammarRepository.model.findById(id)
+        .populate('exam', 'name')
+        .populate('subjectIds', 'name')
+        .lean()
+    }
 
     if (!topicSortOrder) return grammar
 
