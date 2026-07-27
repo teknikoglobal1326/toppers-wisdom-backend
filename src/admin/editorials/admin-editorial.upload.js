@@ -14,6 +14,15 @@ const parseFormData = async (req, _res, next) => {
     try {
         const folder = `editorials/${req.params.id ?? `new-${Date.now()}`}`
 
+        if (typeof req.body.subjectIds === 'string') {
+          try {
+            const parsed = JSON.parse(req.body.subjectIds);
+            req.body.subjectIds = Array.isArray(parsed) ? parsed : [req.body.subjectIds];
+          } catch (_) {
+            req.body.subjectIds = [req.body.subjectIds];
+          }
+        }
+
         if (req.files?.thumbnail?.[0]) {
             const file = req.files.thumbnail[0]
             const ext = path.extname(file.originalname) || '.jpg'
