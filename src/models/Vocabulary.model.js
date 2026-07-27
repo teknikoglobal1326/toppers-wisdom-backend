@@ -16,6 +16,8 @@ const vocabularySchema = new mongoose.Schema({
   publishDate: { type: Date, default: Date.now },
   sortOrder: { type: Number, default: 0 },
   status: { type: String, enum: ["draft", "active", "inactive"], default: "draft" },
+  exam: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", default: null, index: true },
+  subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject", index: true }],
   isDeleted: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" }

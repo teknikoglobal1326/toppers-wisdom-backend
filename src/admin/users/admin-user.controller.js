@@ -11,10 +11,25 @@ class AdminUserService extends BaseService {
 
   async listAll(filters) {
     const filter = { role: 'user', isDeleted: { $ne: true } }
-    if (filters.search) filter.$or = [
-      { name:  { $regex: filters.search, $options: 'i' } },
-      { phone: { $regex: filters.search, $options: 'i' } },
-    ]
+    if (filters.search) {
+      filter.$or = [
+        { name:  { $regex: filters.search, $options: 'i' } },
+        { phone: { $regex: filters.search, $options: 'i' } },
+      ]
+    }
+    if (filters.qualification && filters.qualification !== "") {
+      filter['qualification._id'] = filters.qualification;
+    }
+    if (filters.examId && filters.examId !== "") {
+      filter['exam._id'] = filters.examId;
+    }
+    if (filters.subExamId && filters.subExamId !== "") {
+      filter['subExams._id'] = filters.subExamId;
+    }
+    if (filters.profileCompletionState && filters.profileCompletionState !== "") {
+      filter.profileCompletionState = filters.profileCompletionState;
+    }
+
     return this.getAll(filter, {
       page:   filters.page,
       limit:  filters.limit,
