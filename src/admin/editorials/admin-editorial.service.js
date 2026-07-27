@@ -43,14 +43,14 @@ class AdminEditorialService extends BaseService {
             page: query.page,
             limit: query.limit,
             sort: { [sortBy]: direction, createdAt: -1 },
-            populate: [{ path: 'editorialTest', select: 'title status' }],
+            populate: [{ path: 'editorialTest', select: 'title status' }, 'exam', 'subjectIds'],
         })
     }
 
     async getOne(id) {
         const editorial = await editorialRepository.findOne(
             { _id: id, isDeleted: false },
-            { populate: [{ path: 'editorialTest', select: 'title status' }] }
+            { populate: [{ path: 'editorialTest', select: 'title status' }, 'exam', 'subjectIds'] }
         )
         if (!editorial) throw new AppError('Editorial not found', 404, 'NOT_FOUND')
         return editorial

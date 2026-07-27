@@ -45,11 +45,12 @@ class AdminVocabularyService extends BaseService {
             page: query.page,
             limit: query.limit,
             sort: { [sortBy]: direction, createdAt: -1 },
+            populate: ['exam', 'subjectIds'],
         })
     }
 
     async getOne(id) {
-        const vocabulary = await vocabularyRepository.findOne({ _id: id, isDeleted: false })
+        const vocabulary = await vocabularyRepository.findOne({ _id: id, isDeleted: false }, { populate: ['exam', 'subjectIds'] })
         if (!vocabulary) throw new AppError('Vocabulary not found', 404, 'NOT_FOUND')
         return vocabulary
     }

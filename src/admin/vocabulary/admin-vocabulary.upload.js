@@ -34,7 +34,7 @@ const parseFormData = async (req, _res, next) => {
             req.body.longDescription = req.body.longDescription.join('')
         }
 
-        const arrayFields = ['usages', 'synonyms', 'antonyms'];
+        const arrayFields = ['usages', 'synonyms', 'antonyms', 'subjectIds'];
         arrayFields.forEach((field) => {
           if (typeof req.body[field] === 'string') {
             try {
