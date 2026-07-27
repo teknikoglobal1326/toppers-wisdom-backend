@@ -67,11 +67,11 @@ class AdminQuestionService extends BaseService {
   async getOne(id) {
     const question = await questionRepository.findOne(
       { _id: id, isDeleted: false },
-      { 
+      {
         populate: [
           { path: 'test', select: 'title slug' },
           { path: 'subjectId', select: 'name' },
-        ] 
+        ]
       }
     )
 
@@ -81,6 +81,8 @@ class AdminQuestionService extends BaseService {
 
   buildPayload(data = {}) {
     const payload = { ...data }
+
+    if (payload.createdBy) payload.createdBy = payload.createdBy.toString()
 
     if (payload.testId && !payload.test) payload.test = payload.testId
     delete payload.testId
@@ -133,10 +135,7 @@ class AdminQuestionService extends BaseService {
     if (isPerQuestionTime) {
       const provided = payload.perQuestionTime
       const effective = provided !== undefined && provided !== null ? provided : existing?.perQuestionTime
-      if (effective === undefined || effective === null) {
-        throw new AppError('perQuestionTime is required for this test', 400, 'VALIDATION_ERROR')
-      }
-      payload.perQuestionTime = effective
+      payload.perQuestionTime = effective !== undefined && effective !== null ? effective : null
     } else {
       payload.perQuestionTime = null
     }
@@ -197,6 +196,105 @@ class AdminQuestionService extends BaseService {
     await this.syncQuestionCount(testId)
     this.logger.info({ testId, deletedCount: result.modifiedCount }, 'Questions soft deleted by test')
     return { deletedCount: result.modifiedCount || 0 }
+  }
+
+  async bulkUpload(file, metadata, adminId) {
+    if (!file) throw new AppError('File is required', 400, 'VALIDATION_ERROR')
+    if (!metadata.test) throw new AppError('test ID is required', 400, 'VALIDATION_ERROR')
+
+    const parentTest = await this.resolveParentTest(metadata.test)
+    if (!parentTest) throw new AppError('Parent test not found', 404, 'NOT_FOUND')
+
+    const extension = path.extname(file.originalname).toLowerCase()
+    const { parseWordFile, mapWordQuestionToSchema, parseXmlFile, parseExcelFile, extractTextAndImage } = require('./admin-question-bulk.service')
+
+    let questionsData = []
+
+    if (extension === '.docx' || extension === '.doc') {
+      try {
+        const parsedWord = await parseWordFile(file.buffer)
+        questionsData = parsedWord.map((q) => mapWordQuestionToSchema(q, metadata))
+      } catch (err) {
+        if (extension === '.doc') {
+          throw new AppError('Older Word format (.doc) is not supported directly. Please open the file in Microsoft Word or Google Docs, save it as a modern Document (.docx) file, and try uploading it again.', 400, 'VALIDATION_ERROR')
+        }
+        throw err
+      }
+    } else if (extension === '.xlsx' || extension === '.xls') {
+      questionsData = await parseExcelFile(file.buffer, metadata)
+    } else if (extension === '.xml') {
+      questionsData = await parseXmlFile(file.buffer, metadata)
+    } else {
+      throw new AppError('Invalid file type. Only Word (.docx, .doc), Excel (.xlsx, .xls), and XML (.xml) files are supported.', 400, 'VALIDATION_ERROR')
+    }
+
+    if (!questionsData || questionsData.length === 0) {
+      throw new AppError('No questions parsed from the file.', 400, 'VALIDATION_ERROR')
+    }
+
+    const { createQuestionSchema } = require('./admin-question.schema')
+    let startOrder = await this.nextOrder(metadata.test)
+
+    const cleanTextAndImageFields = (langObj) => {
+      if (!langObj) return
+
+      // Process question
+      if (langObj.question) {
+        const text = langObj.question.text || ''
+        const img = langObj.question.image || ''
+        const combined = text + (img ? `<img src="${img}"/>` : '')
+        const parsed = extractTextAndImage(combined)
+        langObj.question.text = parsed.text
+        langObj.question.image = parsed.image
+      }
+
+      // Process options
+      if (langObj.options && Array.isArray(langObj.options)) {
+        langObj.options.forEach((opt) => {
+          const text = opt.text || ''
+          const img = opt.image || ''
+          const combined = text + (img ? `<img src="${img}"/>` : '')
+          const parsed = extractTextAndImage(combined)
+          opt.text = parsed.text
+          opt.image = parsed.image
+        })
+      }
+
+      // Process explanation
+      if (langObj.explanation) {
+        const text = langObj.explanation.text || ''
+        const img = langObj.explanation.image || ''
+        const combined = text + (img ? `<img src="${img}"/>` : '')
+        const parsed = extractTextAndImage(combined)
+        langObj.explanation.text = parsed.text
+        langObj.explanation.image = parsed.image
+      }
+    }
+
+    const createdQuestions = []
+    for (const qPayload of questionsData) {
+      qPayload.createdBy = adminId ? adminId.toString() : undefined
+      qPayload.order = startOrder++
+
+      // Clean HTML tags and extract text/image fields
+      cleanTextAndImageFields(qPayload.en)
+      cleanTextAndImageFields(qPayload.hi)
+
+      // Validate using Joi schema
+      const { error, value } = createQuestionSchema.validate(qPayload)
+      if (error) {
+        throw new AppError(`Validation failed for parsed question: ${error.message}`, 400, 'VALIDATION_ERROR')
+      }
+
+      await this.applyPerQuestionTime(value)
+      const created = await questionRepository.createSingle(value)
+      createdQuestions.push(created)
+    }
+
+    await this.syncQuestionCount(metadata.test)
+    this.logger.info({ testId: metadata.test, count: createdQuestions.length }, 'Bulk questions uploaded successfully')
+
+    return createdQuestions
   }
 }
 

@@ -2,7 +2,7 @@ const router = require('express').Router()
 const controller = require('./admin-question.controller')
 const { validate, validateQuery } = require('../../core/validate')
 const { createQuestionSchema, updateQuestionSchema, listQuestionQuerySchema } = require('./admin-question.schema')
-const { upload } = require('../../middlewares/upload.middleware')
+const { upload, uploadBulk } = require('../../middlewares/upload.middleware')
 const { attachUploadedFiles } = require('./admin-question.service')
 
 const uploadQuestionFiles = upload.fields([
@@ -28,6 +28,7 @@ const uploadQuestionFiles = upload.fields([
 ])
 
 router.get('/', validateQuery(listQuestionQuerySchema), controller.list)
+router.post('/bulk', uploadBulk.single('file'), controller.bulkUpload)
 router.post('/', uploadQuestionFiles, attachUploadedFiles, validate(createQuestionSchema), controller.create)
 router.delete('/test/:testId', controller.removeByTest)
 router.get('/:id', controller.getOne)

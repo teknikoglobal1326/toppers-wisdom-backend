@@ -7,6 +7,7 @@ const shortCategorySchema = new mongoose.Schema({
   tags: { type: [String], default: [] },
   examIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: [] }],
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
+  sortOrder: { type: Number, default: 0 },
   isDeleted: { type: Boolean, default: false, index: true },
 }, { timestamps: true })
 
