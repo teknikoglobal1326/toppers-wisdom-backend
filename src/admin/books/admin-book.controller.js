@@ -9,10 +9,11 @@ const {
 } = require('../../core/languageUtils')
 
 const list = catchAsync(async (req, res) => {
-    const { status, section, language, page = 1, limit = 10, q, sortOrder = 'asc' } = req.query
+    const { status, section, language, page = 1, limit = 10, q, sortOrder = 'asc', exam } = req.query
     const filter = { isDeleted: false }
     if (status) filter.status = status
     if (section) filter.section = section
+    if (exam) filter.exam = exam
     const exactLanguage = getExactLanguageFilter(language)
     if (exactLanguage) filter.language = exactLanguage
     if (q) filter.title = { $regex: q, $options: 'i' }
