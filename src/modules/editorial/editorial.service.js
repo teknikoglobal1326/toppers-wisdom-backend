@@ -115,9 +115,19 @@ class EditorialService extends BaseService {
   }
 
   async attachLikeState(items = [], userId) {
+    const isPurchased = await this.getPurchaseStatus(userId)
     const ids = items.map((item) => item._id)
     if (!userId || !ids.length) {
-      return items.map((item) => ({ ...item, isRead: false, isBookmarked: false, isLiked: false }))
+      return items.map((item) => {
+        const doc = typeof item.toObject === 'function' ? item.toObject() : item
+        return {
+          ...doc,
+          isRead: false,
+          isBookmarked: false,
+          isLiked: false,
+          hasAccess: doc.isFree !== false
+        }
+      })
     }
 
     const likes = await UserEditorialLike.find({
@@ -127,15 +137,17 @@ class EditorialService extends BaseService {
 
     const stateMap = new Map(likes.map((item) => [String(item.editorialId), item]))
     return items.map((item) => {
-      const state = stateMap.get(String(item._id))
+      const doc = typeof item.toObject === 'function' ? item.toObject() : item
+      const state = stateMap.get(String(doc._id))
       const isBookmarked = !!(state?.isBookmarked || state?.isLiked)
       return {
-        ...item,
+        ...doc,
         isRead: !!state?.isRead,
         isBookmarked,
         isLiked: isBookmarked,
         readAt: state?.readAt || null,
         bookmarkedAt: state?.bookmarkedAt || null,
+        hasAccess: isPurchased || doc.isFree !== false
       }
     })
   }
@@ -230,21 +242,94 @@ class EditorialService extends BaseService {
 
   async getPurchaseStatus(userId) {
     if (!userId) return false
-    const purchase = await EditorialPurchase.findOne({ user: userId, status: 'completed' }).lean()
-    return !!purchase
+
+    // Check dynamic Subscription plans that only contain Editorial boosters
+    const Subscription = require('../../models/Subscription.model')
+    const activeSubs = await Subscription.find({ isActive: true, isDeleted: false }).lean()
+    const editorialSub = activeSubs.find(sub => {
+      const hasNoTests = !sub.tests || sub.tests.length === 0
+      const hasBoosters = sub.boosters && sub.boosters.length > 0
+      const onlyEditorials = hasBoosters && sub.boosters.every(b => b.moduleType === 'Editorial' || b.moduleType === 'editorial')
+      return hasNoTests && onlyEditorials
+    })
+
+    if (editorialSub) {
+      const UserSubscription = require('../../models/UserSubscription.model')
+      const activeUserSub = await UserSubscription.findOne({
+        user: userId,
+        subscription: editorialSub._id,
+        isActive: true,
+        endDate: { $gt: new Date() }
+      }).lean()
+      if (activeUserSub) return true
+    }
+
+    return false
   }
 
-  async purchaseSection(userId, amount = 0) {
-    const existing = await EditorialPurchase.findOne({ user: userId, status: 'completed' }).lean()
-    if (existing) {
-      return existing
-    }
-    return EditorialPurchase.create({
-      user: userId,
-      amount,
-      status: 'completed',
-      purchasedAt: new Date()
+  async purchaseSection(userId, amount) {
+    const Subscription = require('../../models/Subscription.model')
+    const activeSubs = await Subscription.find({ isActive: true, isDeleted: false }).lean()
+    const editorialSub = activeSubs.find(sub => {
+      const hasNoTests = !sub.tests || sub.tests.length === 0
+      const hasBoosters = sub.boosters && sub.boosters.length > 0
+      const onlyEditorials = hasBoosters && sub.boosters.every(b => b.moduleType === 'Editorial' || b.moduleType === 'editorial')
+      return hasNoTests && onlyEditorials
     })
+
+    if (editorialSub) {
+      const UserSubscription = require('../../models/UserSubscription.model')
+      const existingSub = await UserSubscription.findOne({
+        user: userId,
+        subscription: editorialSub._id,
+        isActive: true,
+        endDate: { $gt: new Date() }
+      }).lean()
+
+      if (existingSub) {
+        return existingSub
+      }
+
+      const startDate = new Date()
+      const durationDays = editorialSub.durationDays || 365
+      const endDate = new Date(startDate.getTime() + (durationDays * 24 * 60 * 60 * 1000))
+
+      return UserSubscription.create({
+        user: userId,
+        subscription: editorialSub._id,
+        startDate,
+        endDate,
+        isActive: true
+      })
+    }
+
+    return null
+  }
+
+  async getActivePlan() {
+    const Subscription = require('../../models/Subscription.model')
+    const activeSubs = await Subscription.find({ isActive: true, isDeleted: false }).lean()
+    console.log("activeSubs===================>>", activeSubs);
+    const editorialSub = activeSubs.find(sub => {
+      const hasNoTests = !sub.tests || sub.tests.length === 0
+      const hasBoosters = sub.boosters && sub.boosters.length > 0
+      const onlyEditorials = hasBoosters && sub.boosters.every(b => b.moduleType === 'Editorial' || b.moduleType === 'editorial')
+      return hasNoTests && onlyEditorials
+    })
+
+    if (editorialSub) {
+      return {
+        _id: editorialSub._id,
+        title: editorialSub.name,
+        description: editorialSub.description,
+        price: editorialSub.price,
+        discountPrice: editorialSub.price,
+        validityInMonths: Math.round(editorialSub.durationDays / 30) || 12,
+        isSubscriptionPlan: true
+      }
+    }
+
+    return null
   }
 }
 

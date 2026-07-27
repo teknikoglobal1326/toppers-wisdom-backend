@@ -17,7 +17,9 @@ const contantSchema = new mongoose.Schema({
   liveStatus: { type: String, enum: ['pending', 'ongoing', 'completed'], default: 'pending' },
   agoraChannel: { type: String },
   scheduledStartTime: { type: Date },
-  scheduledEndTime: { type: Date }
+  scheduledEndTime: { type: Date },
+  restreamUrls: { type: [String], default: [] },
+  agoraConverters: { type: [String], default: [] }
 }, { timestamps: true })
 
 module.exports = mongoose.model('Contant', contantSchema)

@@ -125,7 +125,8 @@ class AdminContentService extends BaseService {
     this.logger.info({ contentId: id }, 'Content soft deleted')
   }
 
-  async goLive(id) {
+  async goLive(id, body = {}) {
+    const axios = require('axios')
     const content = await contentRepository.findOne({ _id: id, isDeleted: false })
     if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
     if (!content.isLive) throw new AppError('Content is not a live class', 400)
@@ -134,18 +135,111 @@ class AdminContentService extends BaseService {
       content.agoraChannel = `channel_${Date.now()}_${Math.floor(Math.random() * 10000)}`
     }
     
-    await contentRepository.updateById(id, { liveStatus: 'ongoing', agoraChannel: content.agoraChannel })
-    
     const token = generatePublisherToken(content.agoraChannel)
-    return { token, channel: content.agoraChannel }
+    const rtmpServer = "rtmp://rtmp-ingest.agora.io/live/"
+    const rtmpStreamKey = `${content.agoraChannel}?token=${token}`
+
+    // Parse restream URLs from body
+    let restreamUrls = []
+    if (Array.isArray(body.restreamUrls)) {
+      restreamUrls = body.restreamUrls.filter(Boolean)
+    } else if (typeof body.restreamUrls === 'string' && body.restreamUrls) {
+      restreamUrls = body.restreamUrls.split(',').map(url => url.trim()).filter(Boolean)
+    }
+
+    const agoraConverters = []
+    
+    // If restream URLs are provided, start the Agora RTMP Converter for each
+    if (restreamUrls.length > 0) {
+      const appId = process.env.AGORA_APP_ID
+      const customerId = process.env.AGORA_CUSTOMER_ID
+      const customerCert = process.env.AGORA_CUSTOMER_CERTIFICATE
+
+      if (!appId || !customerId || !customerCert) {
+        this.logger.warn({ appId, hasCustomerId: !!customerId, hasCustomerCert: !!customerCert }, 'Cannot start restreaming: Agora App ID, Customer ID, or Customer Certificate is missing')
+      } else {
+        const auth = Buffer.from(`${customerId}:${customerCert}`).toString('base64')
+        
+        for (let i = 0; i < restreamUrls.length; i++) {
+          const publishUrl = restreamUrls[i]
+          const converterId = `${id}_restream_${i}_${Date.now()}`
+          
+          try {
+            const url = `https://api.agora.io/v1/projects/${appId}/rtmp-converters`
+            await axios.post(url, {
+              converterId,
+              channelName: content.agoraChannel,
+              publishUrl,
+              transcodingEnabled: false
+            }, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${auth}`
+              }
+            })
+            agoraConverters.push(converterId)
+            this.logger.info({ converterId, publishUrl }, 'Agora RTMP converter started successfully')
+          } catch (err) {
+            this.logger.error({ err: err.response?.data || err.message, publishUrl }, 'Failed to start Agora RTMP converter')
+          }
+        }
+      }
+    }
+
+    await contentRepository.updateById(id, {
+      liveStatus: 'ongoing',
+      agoraChannel: content.agoraChannel,
+      restreamUrls,
+      agoraConverters
+    })
+
+    return {
+      token,
+      channel: content.agoraChannel,
+      rtmpServer,
+      rtmpStreamKey,
+      rtmpUrl: `${rtmpServer}${rtmpStreamKey}`,
+      agoraConverters
+    }
   }
 
   async endLive(id) {
+    const axios = require('axios')
     const content = await contentRepository.findOne({ _id: id, isDeleted: false })
     if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
     if (!content.isLive) throw new AppError('Content is not a live class', 400)
     
-    await contentRepository.updateById(id, { liveStatus: 'completed' })
+    // Stop all active Agora converters
+    const converters = content.agoraConverters || []
+    if (converters.length > 0) {
+      const appId = process.env.AGORA_APP_ID
+      const customerId = process.env.AGORA_CUSTOMER_ID
+      const customerCert = process.env.AGORA_CUSTOMER_CERTIFICATE
+
+      if (appId && customerId && customerCert) {
+        const auth = Buffer.from(`${customerId}:${customerCert}`).toString('base64')
+        for (const converterId of converters) {
+          try {
+            const url = `https://api.agora.io/v1/projects/${appId}/rtmp-converters/${converterId}`
+            await axios.delete(url, {
+              headers: {
+                'Authorization': `Basic ${auth}`
+              }
+            })
+            this.logger.info({ converterId }, 'Agora RTMP converter stopped successfully')
+          } catch (err) {
+            this.logger.error({ err: err.response?.data || err.message, converterId }, 'Failed to stop Agora RTMP converter')
+          }
+        }
+      }
+    }
+
+    await contentRepository.updateById(id, {
+      liveStatus: 'completed',
+      restreamUrls: [],
+      agoraConverters: []
+    })
+
     return { message: 'Live class ended successfully' }
   }
 }

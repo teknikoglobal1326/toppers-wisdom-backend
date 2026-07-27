@@ -192,8 +192,19 @@ router.get('/subexams/:examId', catchAsync(async (req, res) => {
 
 // GET /api/v1/admin/common/vocabularies
 router.get('/vocabularies', catchAsync(async (req, res) => {
+  const { examId, exam } = req.query
+  const filter = { status: 'active', isDeleted: false }
+  const targetExam = examId || exam
+  if (targetExam) {
+    if (targetExam.includes(',')) {
+      filter.exam = { $in: targetExam.split(',') }
+    } else {
+      filter.exam = targetExam
+    }
+  }
+
   const vocabularies = await vocabularyRepository.findAll(
-    { status: 'active', isDeleted: false },
+    filter,
     { sort: { title: 1 }, select: 'title _id' }
   )
   sendSuccess(res, vocabularies)
@@ -201,8 +212,19 @@ router.get('/vocabularies', catchAsync(async (req, res) => {
 
 // GET /api/v1/admin/common/editorials
 router.get('/editorials', catchAsync(async (req, res) => {
+  const { examId, exam } = req.query
+  const filter = { status: 'published', isDeleted: false }
+  const targetExam = examId || exam
+  if (targetExam) {
+    if (targetExam.includes(',')) {
+      filter.exam = { $in: targetExam.split(',') }
+    } else {
+      filter.exam = targetExam
+    }
+  }
+
   const editorials = await editorialRepository.findAll(
-    { status: 'published', isDeleted: false },
+    filter,
     { sort: { title: 1 }, select: 'title _id' }
   )
   sendSuccess(res, editorials)
@@ -210,8 +232,19 @@ router.get('/editorials', catchAsync(async (req, res) => {
 
 // GET /api/v1/admin/common/test-series
 router.get('/test-series', catchAsync(async (req, res) => {
+  const { examId, exam } = req.query
+  const filter = { status: 'active', isDeleted: false }
+  const targetExam = examId || exam
+  if (targetExam) {
+    if (targetExam.includes(',')) {
+      filter.exam = { $in: targetExam.split(',') }
+    } else {
+      filter.exam = targetExam
+    }
+  }
+
   const testSeries = await testSeriesRepository.findAll(
-    { status: 'active', isDeleted: false },
+    filter,
     { sort: { title: 1 }, select: 'title _id' }
   )
   sendSuccess(res, testSeries)

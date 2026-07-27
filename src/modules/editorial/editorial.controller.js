@@ -33,4 +33,9 @@ const purchaseSection = catchAsync(async (req, res) => {
   sendSuccess(res, result, 'Editorial section purchased successfully')
 })
 
-module.exports = { list, getOne, setRead, setBookmark, setLike, getPurchaseStatus, purchaseSection }
+const getActivePlan = catchAsync(async (req, res) => {
+  const plan = await editorialService.getActivePlan()
+  sendSuccess(res, plan, 'Active plan retrieved successfully')
+})
+
+module.exports = { list, getOne, setRead, setBookmark, setLike, getPurchaseStatus, purchaseSection, getActivePlan }
