@@ -51,8 +51,18 @@ const listEditorialQuerySchema = Joi.object({
     limit: Joi.number().integer().min(1).max(100).default(20),
 }).unknown(true)
 
+const upsertEditorialPlanSchema = Joi.object({
+    title: Joi.string().trim().min(1).max(200).required(),
+    description: Joi.string().trim().allow(null, ''),
+    price: Joi.number().min(0).default(0),
+    discountPrice: Joi.number().min(0).default(0),
+    validityInMonths: Joi.number().integer().min(1).default(12),
+    status: Joi.string().valid('active', 'inactive').default('active')
+})
+
 module.exports = {
     createEditorialSchema,
     updateEditorialSchema,
     listEditorialQuerySchema,
+    upsertEditorialPlanSchema,
 }

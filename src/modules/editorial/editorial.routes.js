@@ -5,6 +5,7 @@ const { listEditorialQuerySchema, setEditorialLikeSchema, setEditorialReadSchema
 
 router.get('/purchase-status', controller.getPurchaseStatus)
 router.post('/purchase', controller.purchaseSection)
+router.get('/active-plan', controller.getActivePlan)
 
 router.get('/', validateQuery(listEditorialQuerySchema), controller.list)
 router.patch('/read/:id', validate(setEditorialReadSchema), controller.setRead)

@@ -115,10 +115,40 @@ class AdminEditorialService extends BaseService {
             page: query.page,
             limit: query.limit,
             sort: { createdAt: -1 },
-            populate: { path: 'user', select: 'name phone email avatar' }
+            populate: [
+                { path: 'user', select: 'name phone email avatar' },
+                { path: 'plan', select: 'title price discountPrice' }
+            ]
         }
 
         return paginate(EditorialPurchase, filter, options)
+    }
+
+    async getPlan() {
+        const EditorialPlan = require('../../models/EditorialPlan.model')
+        return EditorialPlan.findOne().lean()
+    }
+
+    async upsertPlan(data, adminId) {
+        const EditorialPlan = require('../../models/EditorialPlan.model')
+        let plan = await EditorialPlan.findOne()
+
+        const planData = {
+            title: data.title,
+            description: data.description,
+            price: Number(data.price || 0),
+            discountPrice: Number(data.discountPrice || 0),
+            validityInMonths: Number(data.validityInMonths || 12),
+            status: data.status || 'active'
+        }
+
+        if (plan) {
+            Object.assign(plan, planData)
+            await plan.save()
+        } else {
+            plan = await EditorialPlan.create(planData)
+        }
+        return plan
     }
 }
 

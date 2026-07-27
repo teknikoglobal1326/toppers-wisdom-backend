@@ -49,6 +49,7 @@ app.use('/api/v1/courses', authMiddleware, require('./modules/course/course.rout
 app.use('/api/v1/course-tests', authMiddleware, require('./modules/course-test/course-test.routes'))
 app.use('/api/v1/tests', authMiddleware, require('./modules/test/test.routes'))
 app.use('/api/v1/test-attempts', authMiddleware, require('./modules/test/attempt.routes'))
+app.use('/api/v1/live-tests', authMiddleware, require('./modules/live-test/live-test.routes'))
 app.use('/api/v1/boosters', authMiddleware, require('./modules/booster/booster.routes'))
 app.use('/api/v1/test-series', authMiddleware, require('./modules/test-series/test-series.routes'))
 app.use('/api/v1/previous-year-papers', authMiddleware, require('./modules/previous-year-paper/previous-year-paper.routes'))

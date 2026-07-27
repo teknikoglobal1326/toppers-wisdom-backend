@@ -13,27 +13,30 @@ class SubscriptionService {
 
         const typeStr = type.toLowerCase();
 
+        console.log("typeStr====================>>", typeStr);
         if (['test-series', 'testseries'].includes(typeStr)) {
             queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'TestSeries', moduleId: objectId } } });
         } else if (['previous-year-paper', 'previousyearpaper'].includes(typeStr)) {
             queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'PreviousYearPaper', moduleId: objectId } } });
         } else if (['live-test-series', 'livetestseries'].includes(typeStr)) {
             queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'LiveTestSeries', moduleId: objectId } } });
-        } else if (typeStr === 'booster') {
-            queryOptions.push({ 'boosters': { $elemMatch: { moduleType: 'Booster', moduleId: objectId } } });
+            // } else if (typeStr === 'booster') {
+            //     queryOptions.push({ 'boosters': { $elemMatch: { moduleType: 'Booster', moduleId: objectId } } });
         } else if (['vocabulary', 'editorial'].includes(typeStr)) {
             // Capitalize first letter to match Enum if necessary or use regex/in
             const capType = typeStr.charAt(0).toUpperCase() + typeStr.slice(1);
-            queryOptions.push({ 'boosters': { $elemMatch: { moduleType: { $in: [capType, typeStr] }, moduleId: objectId } } });
+            queryOptions.push({ 'boosters': { $elemMatch: { moduleType: { $in: [capType, typeStr] } } } });
         } else {
             queryOptions.push({ 'tests.moduleId': objectId });
             queryOptions.push({ 'boosters.moduleId': objectId });
         }
 
+        console.log("queryOptions=================>>", queryOptions);
         if (queryOptions.length > 0) {
             filter.$or = queryOptions;
         }
 
+        console.log("filter===============>", filter);
         const subscriptions = await Subscription.find(filter)
             .select('name description price durationDays tests boosters')
             .lean();

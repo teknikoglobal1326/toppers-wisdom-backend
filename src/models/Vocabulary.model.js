@@ -26,4 +26,10 @@ const vocabularySchema = new mongoose.Schema({
 vocabularySchema.index({ type: 1, publishDate: 1 });
 vocabularySchema.index({ title: "text", word: "text", shortDescription: "text" });
 
+<<<<<<< HEAD
+const Vocabulary = mongoose.model("Vocabulary", vocabularySchema);
+mongoose.model("vocabulary", vocabularySchema);
+module.exports = Vocabulary;
+=======
 module.exports = mongoose.model("Vocabulary", vocabularySchema);
+>>>>>>> 56ebb55951343ea523436867fe1d937ee7bb7a7f

@@ -7,6 +7,11 @@ const editorialPurchaseSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  plan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'EditorialPlan',
+    default: null
+  },
   amount: {
     type: Number,
     default: 0
