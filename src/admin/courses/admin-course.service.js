@@ -76,6 +76,8 @@ class AdminCourseService extends BaseService {
     if (filters.subExam) filter.subExam = filters.subExam;
     if (filters.subExamId) filter.subExam = filters.subExamId;
     if (filters.type) filter.type = filters.type;
+    if (filters.language) filter.language = filters.language;
+    if (filters.qualificationId) filter.qualificationId = filters.qualificationId;
     const titleSearch = (filters.search || filters.title || "").trim();
     if (titleSearch) {
       filter.title = {
