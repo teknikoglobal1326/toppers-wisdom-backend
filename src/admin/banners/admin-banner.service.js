@@ -23,7 +23,7 @@ class AdminBannerService extends BaseService {
     const exactLanguage = getExactLanguageFilter(language)
     if (exactLanguage) filter.language = exactLanguage
     const direction = sortOrder === 'desc' ? -1 : 1
-    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
+    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: 'examId subexamId' })
   }
 
   async getOne(id) {

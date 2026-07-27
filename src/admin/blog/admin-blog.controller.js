@@ -41,6 +41,12 @@ class AdminBlogService extends BaseService {
   async listAll(filters) {
     const filter = {}
     if (filters.status) filter.status = filters.status
+    if (filters.category && filters.category !== "") {
+      filter.category = filters.category
+    }
+    if (filters.title && filters.title !== "") {
+      filter.title = { $regex: filters.title, $options: 'i' }
+    }
     const direction = filters.sortOrder === 'desc' ? -1 : 1
     return this.getAll(filter, {
       page: filters.page,

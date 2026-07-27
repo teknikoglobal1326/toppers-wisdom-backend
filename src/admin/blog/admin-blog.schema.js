@@ -49,6 +49,8 @@ const listBlogQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  title: Joi.string().allow('', null).optional(),
+  category: Joi.string().allow('', null).optional(),
 })
 
 module.exports = { createBlogSchema, createBlogDualSchema, updateBlogSchema, updateBlogDualSchema, listBlogQuerySchema }
