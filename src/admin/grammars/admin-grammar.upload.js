@@ -36,6 +36,16 @@ const parseFormData = async (req, _res, next) => {
       if (!Number.isNaN(parsedSortOrder)) req.body.sortOrder = parsedSortOrder
     }
 
+    // Parse subjectIds from JSON string
+    if (typeof req.body.subjectIds === 'string') {
+      try {
+        const parsed = JSON.parse(req.body.subjectIds)
+        req.body.subjectIds = Array.isArray(parsed) ? parsed : []
+      } catch (_) {
+        req.body.subjectIds = []
+      }
+    }
+
     if (!Array.isArray(req.body.chapters)) {
       next()
       return
