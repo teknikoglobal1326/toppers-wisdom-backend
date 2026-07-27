@@ -12,11 +12,11 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
-  sendCreated(res, await adminQuestionService.createQuestion({ ...req.body, createdBy: req.admin?._id }))
+  sendCreated(res, await adminQuestionService.createQuestion({ ...req.body, createdBy: req.admin?._id || req.user?._id || req.user?.id }))
 })
 
 const update = catchAsync(async (req, res) => {
-  const payload = { ...req.body, createdBy: req.admin?._id }
+  const payload = { ...req.body, createdBy: req.admin?._id || req.user?._id || req.user?.id }
   sendSuccess(res, await adminQuestionService.updateQuestion(req.params.id, payload))
 })
 
@@ -29,4 +29,9 @@ const removeByTest = catchAsync(async (req, res) => {
   sendSuccess(res, await adminQuestionService.softDeleteByTest(req.params.testId), 'Questions deleted')
 })
 
-module.exports = { list, getOne, create, update, remove, removeByTest }
+const bulkUpload = catchAsync(async (req, res) => {
+  const result = await adminQuestionService.bulkUpload(req.file, req.body, req.admin?._id || req.user?._id || req.user?.id)
+  sendCreated(res, result)
+})
+
+module.exports = { list, getOne, create, update, remove, removeByTest, bulkUpload }
