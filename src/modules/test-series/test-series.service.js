@@ -16,11 +16,16 @@ class TestSeriesService extends BaseService {
     }
 
     async listSeries(userId, query = {}) {
-        const user = await User.findById(userId).select('subExams language').lean()
+        const user = await User.findById(userId).select('exam subExams language').lean()
         const subExamIds = (user?.subExams || []).map((item) => item._id)
+        const examId = user?.exam?._id || (typeof user?.exam === 'object' ? user?.exam?._id : user?.exam)
 
         const filter = { isDeleted: false, status: query.status || 'active' }
-        if (query.examId) filter.exam = query.examId
+        if (query.examId) {
+            filter.exam = query.examId
+        } else if (examId) {
+            filter.exam = examId
+        }
         if (query.subExamId) filter.subExams = query.subExamId
         if (query.subjectId) filter.subjectIds = query.subjectId
         const clauses = []

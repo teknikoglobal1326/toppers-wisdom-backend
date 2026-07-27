@@ -29,4 +29,12 @@ const listTransactions = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
-module.exports = { list, getOne, create, update, remove, listTransactions }
+const getPlan = catchAsync(async (req, res) => {
+    sendSuccess(res, await service.getPlan())
+})
+
+const upsertPlan = catchAsync(async (req, res) => {
+    sendSuccess(res, await service.upsertPlan(req.body, req.admin?._id))
+})
+
+module.exports = { list, getOne, create, update, remove, listTransactions, getPlan, upsertPlan }

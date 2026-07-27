@@ -29,9 +29,17 @@ class AdminQuestionService extends BaseService {
     )
     if (updatedSeriesTest) return
 
-    await PreviousYearPaperTest.findOneAndUpdate(
+    const updatedPyp = await PreviousYearPaperTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },
       update,
+      { new: true }
+    )
+    if (updatedPyp) return
+
+    const LiveTest = require('../../models/LiveTest.model')
+    await LiveTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      { totalQuestions: count },
       { new: true }
     )
   }
@@ -113,12 +121,14 @@ class AdminQuestionService extends BaseService {
   // id up across all of them and return the first match (a test id lives in one only).
   async resolveParentTest(testId) {
     if (!testId) return null
-    const [courseTest, seriesTest, pypTest] = await Promise.all([
+    const LiveTest = require('../../models/LiveTest.model')
+    const [courseTest, seriesTest, pypTest, liveTest] = await Promise.all([
       CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
       TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
       PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
+      LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id').lean(),
     ])
-    return courseTest || seriesTest || pypTest || null
+    return courseTest || seriesTest || pypTest || liveTest || null
   }
 
   // Enforce the parent test's per-question-time policy on a question payload:

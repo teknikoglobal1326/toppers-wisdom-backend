@@ -268,31 +268,31 @@ class UserService extends BaseService {
     }
 
     async createMcqReport(userId, data) {
-    const report = await McqReport.create({
-        user: userId,
-        type: data.type,
-        typeId: data.typeId,
-        reason: data.reason,
-        description: data.description,
-    })
+        const report = await McqReport.create({
+            user: userId,
+            type: data.type,
+            typeId: data.typeId,
+            reason: data.reason,
+            description: data.description,
+        })
 
-    return report.toObject()
-}
-
-async getMyMcqReportByItemId(userId, itemId) {
-    const report = await McqReport.findOne({
-        user: userId,
-        typeId: itemId,
-    })
-    .sort({ createdAt: -1 })
-    .lean()
-
-    if (!report) {
-        throw new AppError('Report not found', 404, 'NOT_FOUND')
+        return report.toObject()
     }
 
-    return report
-}
+    async getMyMcqReportByItemId(userId, itemId) {
+        const report = await McqReport.findOne({
+            user: userId,
+            typeId: itemId,
+        })
+            .sort({ createdAt: -1 })
+            .lean()
+
+        if (!report) {
+            throw new AppError('Report not found', 404, 'NOT_FOUND')
+        }
+
+        return report
+    }
 
     async createReport(userId, data) {
         const itemModel = data.itemType === 'vocabulary' ? Vocabulary : Editorial

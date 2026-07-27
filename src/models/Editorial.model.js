@@ -25,4 +25,6 @@ const editorialSchema = new mongoose.Schema({
 
 editorialSchema.index({ type: 1, publishDate: 1, status: 1 });
 
-module.exports = mongoose.model("Editorial", editorialSchema);
+const Editorial = mongoose.model("Editorial", editorialSchema);
+mongoose.model("editorial", editorialSchema);
+module.exports = Editorial;
