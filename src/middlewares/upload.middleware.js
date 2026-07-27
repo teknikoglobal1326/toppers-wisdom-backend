@@ -1,9 +1,18 @@
 const multer = require('multer')
+const path = require('path')
 const AppError = require('../core/AppError')
 
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm']
 const ALLOWED_PDF_MIME = ['application/pdf']
+const ALLOWED_BULK_MIME = [
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/xml',
+  'text/xml',
+]
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -11,6 +20,19 @@ const upload = multer({
   fileFilter: (_req, file, cb) => {
     if (ALLOWED_IMAGE_MIME.includes(file.mimetype)) return cb(null, true)
     cb(new AppError('Only JPEG, PNG, WEBP and GIF images are allowed', 400, 'INVALID_FILE_TYPE'))
+  },
+})
+
+const uploadBulk = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase()
+    const allowedExtensions = ['.docx', '.doc', '.xlsx', '.xls', '.xml']
+    if (ALLOWED_BULK_MIME.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+      return cb(null, true)
+    }
+    cb(new AppError('Only Word (.docx, .doc), Excel (.xlsx, .xls) and XML (.xml) files are allowed for bulk upload', 400, 'INVALID_FILE_TYPE'))
   },
 })
 
@@ -77,4 +99,4 @@ const uploadShort = multer({
   },
 })
 
-module.exports = { upload, uploadVideo, uploadPdf, uploadVideoImage, uploadShort }
+module.exports = { upload, uploadBulk, uploadVideo, uploadPdf, uploadVideoImage, uploadShort }
