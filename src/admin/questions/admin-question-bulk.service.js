@@ -308,6 +308,9 @@ function _parseQuestionsFromHTML(html) {
             let negMarksVal = null;
             let perQuestionTimeVal = null;
             let difficultyVal = null;
+            let subjectVal = null;
+            let chapterVal = null;
+            let topicVal = null;
             let seqEnOptions = [];
             let seqHiOptions = [];
 
@@ -355,6 +358,12 @@ function _parseQuestionsFromHTML(html) {
                     seqEnOptions.push(valHtml);
                 } else if (rawKey === "optionhi") {
                     seqHiOptions.push(valHtml);
+                } else if (rawKey === "subject" || rawKey === "subjectname" || rawKey === "subjectid") {
+                    subjectVal = $(cells[1]).text().trim();
+                } else if (rawKey === "chapter" || rawKey === "chaptername" || rawKey === "chapterid") {
+                    chapterVal = $(cells[1]).text().trim();
+                } else if (rawKey === "topic" || rawKey === "topicname" || rawKey === "topicid") {
+                    topicVal = $(cells[1]).text().trim();
                 }
             });
 
@@ -449,7 +458,10 @@ function _parseQuestionsFromHTML(html) {
                 marks: marksVal,
                 negativeMarks: negMarksVal,
                 perQuestionTime: perQuestionTimeVal,
-                difficulty: difficultyVal
+                difficulty: difficultyVal,
+                subjectId: subjectVal,
+                chapterId: chapterVal,
+                topicId: topicVal
             });
         });
         return questions;
@@ -1274,6 +1286,7 @@ async function parseExcelFile(fileBuffer, metadata) {
         const perTimeVal = getVal(["perquestiontime", "time", "duration"]);
         const difficultyVal = getVal(["difficulty", "difficultylevel", "level"]);
 
+        const subjectVal = getVal(["subject", "subjectid", "subjectname"]);
         const chapterVal = getVal(["chapter", "chapterid", "chaptername"]);
         const topicVal = getVal(["topic", "topicid", "topicname"]);
 
@@ -1375,7 +1388,7 @@ async function parseExcelFile(fileBuffer, metadata) {
             en: enObj,
             hi: hiObj,
             test: metadata.test,
-            subjectId,
+            subjectId: subjectVal || subjectId,
             chapterId,
             topicId,
             marks,
