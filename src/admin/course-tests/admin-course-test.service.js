@@ -37,7 +37,7 @@ class AdminCourseTestService extends BaseService {
   }
 
 
-  
+
   async listAll({ page, limit, status, course, subject, topic, chapter, search, sortBy = 'sortOrder', order = 'asc' } = {}) {
     const filter = { isDeleted: false }
     if (status) filter.status = status
@@ -54,8 +54,8 @@ class AdminCourseTestService extends BaseService {
     }
 
     const direction = order === 'desc' ? -1 : 1
-    const sort = sortBy === 'createdAt' 
-      ? { createdAt: direction, sortOrder: 1 } 
+    const sort = sortBy === 'createdAt'
+      ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
     const result = await this.getAll(filter, {

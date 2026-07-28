@@ -37,8 +37,8 @@ const listPdfQuerySchema = Joi.object({
   topic: Joi.string().hex().length(24),
   chapter: Joi.string().hex().length(24),
   search: Joi.string().trim().max(200),
-  sortBy: Joi.string().valid('createdAt', 'sortOrder').default('sortOrder'),
-  order: Joi.string().valid('asc', 'desc').default('asc'),
+  sortBy: Joi.string().valid('createdAt', 'sortOrder').default('createdAt'),
+  order: Joi.string().valid('asc', 'desc').default('desc'),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
 })
