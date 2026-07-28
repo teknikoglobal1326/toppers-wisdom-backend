@@ -427,7 +427,12 @@ class CourseService extends BaseService {
       }
     }
 
-    const gstRate = 18; // 18% standard GST
+    var gstRate = 18; // 18% standard GST
+
+    if (course.price > 1) {
+      gstRate = 0;
+    }
+
     const subtotal = course.price || 0;
     const gstAmount = parseFloat(((subtotal * gstRate) / 100).toFixed(2));
     const grandTotal = parseFloat((subtotal + gstAmount).toFixed(2));

@@ -19,7 +19,11 @@ const contantSchema = new mongoose.Schema({
   scheduledStartTime: { type: Date },
   scheduledEndTime: { type: Date },
   restreamUrls: { type: [String], default: [] },
-  agoraConverters: { type: [String], default: [] }
+  agoraConverters: { type: [String], default: [] },
+  rtmpServer: { type: String },
+  rtmpStreamKey: { type: String },
+  rtmpUrl: { type: String },
+  agoraToken: { type: String }
 }, { timestamps: true })
 
 module.exports = mongoose.model('Contant', contantSchema)
