@@ -287,6 +287,12 @@ const questionSchema = new mongoose.Schema(
       default: "active",
     },
 
+    difficulty: {
+      type: String,
+      enum: ["easy", "medium", "hard"],
+      default: "medium",
+    },
+
 
     isDeleted: {
       type: Boolean,

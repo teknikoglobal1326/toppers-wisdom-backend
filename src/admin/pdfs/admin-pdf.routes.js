@@ -22,13 +22,26 @@ const parseArrays = (req, res, next) => {
   next()
 }
 
+const multer = require('multer')
+const uploadBulkPdf = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 200 * 1024 * 1024 }
+})
+const uploadBulkPdfFields = uploadBulkPdf.fields([
+  { name: 'file', maxCount: 1 },
+  { name: 'pdfFile' },
+  { name: 'pdfFiles' },
+  { name: 'image' },
+  { name: 'imageFiles' }
+])
+
 const uploadPdfFields = uploadPdf.fields([
   { name: 'pdfFile', maxCount: 1 },
   { name: 'image', maxCount: 1 },
 ])
 
 router.get('/', validateQuery(listPdfQuerySchema), controller.list)
-router.post('/bulk', validate(bulkCreatePdfSchema), controller.bulkCreate)
+router.post('/bulk', uploadBulkPdfFields, parseArrays, controller.bulkCreate)
 router.post('/', uploadPdfFields, parseArrays, attachUploadedFiles, validate(createPdfSchema), controller.create)
 router.get('/:id', controller.getOne)
 router.patch('/:id', uploadPdfFields, parseArrays, attachUploadedFiles, validate(updatePdfSchema), controller.update)

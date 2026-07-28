@@ -25,8 +25,8 @@ class AdminPdfService extends BaseService {
     }
 
     const direction = order === 'desc' ? -1 : 1
-    const sort = sortBy === 'createdAt' 
-      ? { createdAt: direction, sortOrder: 1 } 
+    const sort = sortBy === 'createdAt'
+      ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
     return this.getAll(filter, {
@@ -71,7 +71,17 @@ class AdminPdfService extends BaseService {
   }
 
   async bulkCreatePdf(payloadArray) {
-    const builtPayloads = payloadArray.map(data => this.buildPayload(data))
+    const { bulkCreatePdfSchema } = require('./admin-pdf.schema')
+    const { error, value } = bulkCreatePdfSchema.validate(payloadArray, {
+      abortEarly: false,
+      stripUnknown: true,
+      convert: true,
+    })
+    if (error) {
+      const messages = error.details.map((d) => d.message).join(', ')
+      throw new AppError(messages, 400, 'VALIDATION_ERROR')
+    }
+    const builtPayloads = value.map(data => this.buildPayload(data))
     const created = await pdfRepository.insertMany(builtPayloads)
     return created
   }
@@ -88,6 +98,227 @@ class AdminPdfService extends BaseService {
     if (!pdf) throw new AppError('Pdf not found', 404, 'NOT_FOUND')
     await pdfRepository.updateById(id, { isDeleted: true })
     this.logger.info({ pdfId: id }, 'Pdf soft deleted')
+  }
+
+  async bulkUpload(file, common = {}, adminId, files = {}) {
+    if (!file) throw new AppError('Excel or Word metadata file is required', 400, 'VALIDATION_ERROR')
+
+    const extension = path.extname(file.originalname).toLowerCase()
+    let rawRows = []
+
+    if (extension === '.xlsx' || extension === '.xls') {
+      const XLSX = require('xlsx')
+      const workbook = XLSX.read(file.buffer, { type: 'buffer' })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' })
+    } else if (extension === '.docx' || extension === '.doc') {
+      const mammoth = require('mammoth')
+      const cheerio = require('cheerio')
+      const { value: html } = await mammoth.convertToHtml({ buffer: file.buffer })
+      const $ = cheerio.load(html)
+      
+      $("table").each((_, tableDom) => {
+        const tableRows = $(tableDom).find("tr")
+        if (tableRows.length < 2) return
+        
+        const headers = []
+        $(tableRows[0]).find("td, th").each((_, cell) => {
+          headers.push($(cell).text().trim().toLowerCase().replace(/[\s_-]+/g, ""))
+        })
+        
+        for (let i = 1; i < tableRows.length; i++) {
+          const cells = $(tableRows[i]).find("td")
+          const rowData = {}
+          cells.each((cIdx, cell) => {
+            const header = headers[cIdx]
+            if (header) {
+              rowData[header] = $(cell).text().trim()
+            }
+          })
+          if (Object.keys(rowData).length > 0) {
+            rawRows.push(rowData)
+          }
+        }
+      })
+    } else {
+      throw new AppError('Unsupported file type. Use Excel (.xlsx, .xls) or Word (.docx, .doc) files.', 400, 'VALIDATION_ERROR')
+    }
+
+    const payloadArray = []
+    const Subject = require('../../models/Subject.model')
+
+    for (const rawRow of rawRows) {
+      // Normalize row keys
+      const normalizedRow = {}
+      for (const [key, value] of Object.entries(rawRow)) {
+        const cleanKey = key.toLowerCase().replace(/[\s_-]+/g, "")
+        if (cleanKey === "title") normalizedRow.title = value
+        else if (cleanKey === "description" || cleanKey === "desc") normalizedRow.description = value
+        else if (cleanKey === "sortorder" || cleanKey === "order" || cleanKey === "sort") {
+          normalizedRow.sortOrder = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "pdffile" || cleanKey === "file" || cleanKey === "pdf") normalizedRow.pdfFile = value
+        else if (cleanKey === "image" || cleanKey === "thumbnail" || cleanKey === "cover" || cleanKey === "thumb") normalizedRow.image = value
+        else if (cleanKey === "subjects" || cleanKey === "subject") normalizedRow.subjects = value
+        else if (cleanKey === "chapters" || cleanKey === "chapter") normalizedRow.chapters = value
+        else if (cleanKey === "topics" || cleanKey === "topic") normalizedRow.topics = value
+        else if (cleanKey === "status") normalizedRow.status = value
+      }
+
+      if (!normalizedRow.title) continue // skip empty rows with no title
+
+      // Resolve subject name/ID
+      const subjectInput = normalizedRow.subjects || normalizedRow.subject || common.subjects || common.subject
+      let subjectIds = []
+      let subjectDoc = null
+      if (subjectInput) {
+        const inputs = Array.isArray(subjectInput) ? subjectInput : String(subjectInput).split(',').map(s => s.trim())
+        for (let input of inputs) {
+          if (input.match(/^[0-9a-fA-F]{24}$/)) {
+            subjectIds.push(input)
+            subjectDoc = await Subject.findOne({ _id: input, isDeleted: false })
+          } else if (input) {
+            subjectDoc = await Subject.findOne({
+              name: { $regex: new RegExp("^" + input + "$", "i") },
+              isDeleted: false
+            })
+            if (subjectDoc) subjectIds.push(subjectDoc._id.toString())
+          }
+        }
+      }
+
+      // Resolve chapter name/ID
+      let chapterIds = []
+      const chapterInput = normalizedRow.chapters || normalizedRow.chapter || common.chapters || common.chapter
+      if (chapterInput && subjectIds.length > 0) {
+        const inputs = Array.isArray(chapterInput) ? chapterInput : String(chapterInput).split(',').map(c => c.trim())
+        const subDoc = subjectDoc || await Subject.findOne({ _id: subjectIds[0], isDeleted: false })
+        if (subDoc) {
+          for (let input of inputs) {
+            if (input.match(/^[0-9a-fA-F]{24}$/)) {
+              chapterIds.push(input)
+            } else if (input) {
+              const ch = subDoc.chapters.find(c => c.name.trim().toLowerCase() === input.toLowerCase())
+              if (ch) chapterIds.push(ch._id.toString())
+            }
+          }
+        }
+      }
+
+      // Resolve topic name/ID
+      let topicIds = []
+      const topicInput = normalizedRow.topics || normalizedRow.topic || common.topics || common.topic
+      if (topicInput && subjectIds.length > 0 && chapterIds.length > 0) {
+        const inputs = Array.isArray(topicInput) ? topicInput : String(topicInput).split(',').map(t => t.trim())
+        const subDoc = subjectDoc || await Subject.findOne({ _id: subjectIds[0], isDeleted: false })
+        if (subDoc) {
+          const ch = subDoc.chapters.find(c => c._id.toString() === chapterIds[0])
+          if (ch) {
+            for (let input of inputs) {
+              if (input.match(/^[0-9a-fA-F]{24}$/)) {
+                topicIds.push(input)
+              } else if (input) {
+                const tp = ch.topics.find(t => t.name.trim().toLowerCase() === input.toLowerCase())
+                if (tp) topicIds.push(tp._id.toString())
+              }
+            }
+          }
+        }
+      }
+
+      // Resolve physical files if any are attached and the sheet value is a filename
+      const pdfFiles = [
+        ...(files.pdfFile || []),
+        ...(files.pdfFiles || [])
+      ]
+      const imageFiles = [
+        ...(files.image || []),
+        ...(files.imageFiles || [])
+      ]
+
+      let resolvedPdfFile = normalizedRow.pdfFile || ""
+      if (resolvedPdfFile && !resolvedPdfFile.startsWith("http://") && !resolvedPdfFile.startsWith("https://")) {
+        const matched = pdfFiles.find(f => {
+          const origName = f.originalname.trim().toLowerCase()
+          const origBase = path.basename(f.originalname, path.extname(f.originalname)).trim().toLowerCase()
+          const targetName = resolvedPdfFile.trim().toLowerCase()
+          const targetBase = path.basename(resolvedPdfFile, path.extname(resolvedPdfFile)).trim().toLowerCase()
+          return origName === targetName || origBase === targetName || origBase === targetBase || origName === targetBase
+        })
+        if (matched) {
+          const folder = `pdfs/bulk-${Date.now()}`
+          const ext = path.extname(matched.originalname) || '.pdf'
+          resolvedPdfFile = await uploadFile(matched.buffer, `pdf-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`, folder, matched.mimetype)
+        }
+      } else if (!resolvedPdfFile && pdfFiles.length > 0) {
+        const fileToUse = pdfFiles.length === 1 ? pdfFiles[0] : pdfFiles[payloadArray.length]
+        if (fileToUse) {
+          const folder = `pdfs/bulk-${Date.now()}`
+          const ext = path.extname(fileToUse.originalname) || '.pdf'
+          resolvedPdfFile = await uploadFile(fileToUse.buffer, `pdf-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`, folder, fileToUse.mimetype)
+        }
+      }
+
+      let resolvedImage = normalizedRow.image || ""
+      if (resolvedImage && !resolvedImage.startsWith("http://") && !resolvedImage.startsWith("https://")) {
+        const matched = imageFiles.find(f => {
+          const origName = f.originalname.trim().toLowerCase()
+          const origBase = path.basename(f.originalname, path.extname(f.originalname)).trim().toLowerCase()
+          const targetName = resolvedImage.trim().toLowerCase()
+          const targetBase = path.basename(resolvedImage, path.extname(resolvedImage)).trim().toLowerCase()
+          return origName === targetName || origBase === targetName || origBase === targetBase || origName === targetBase
+        })
+        if (matched) {
+          const folder = `pdfs/bulk-${Date.now()}`
+          const ext = path.extname(matched.originalname) || '.jpg'
+          resolvedImage = await uploadFile(matched.buffer, `image-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`, folder, matched.mimetype)
+        }
+      } else if (!resolvedImage && imageFiles.length > 0) {
+        const fileToUse = imageFiles.length === 1 ? imageFiles[0] : imageFiles[payloadArray.length]
+        if (fileToUse) {
+          const folder = `pdfs/bulk-${Date.now()}`
+          const ext = path.extname(fileToUse.originalname) || '.jpg'
+          resolvedImage = await uploadFile(fileToUse.buffer, `image-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`, folder, fileToUse.mimetype)
+        }
+      }
+
+      // Build record data
+      const dataRow = {
+        course: common.course || common.courseId,
+        subjects: subjectIds,
+        chapters: chapterIds,
+        topics: topicIds,
+        title: normalizedRow.title,
+        description: normalizedRow.description || "",
+        pdfFile: resolvedPdfFile,
+        image: resolvedImage,
+        sortOrder: normalizedRow.sortOrder !== undefined ? normalizedRow.sortOrder : 0,
+        status: normalizedRow.status || common.status || "active",
+        createdBy: adminId
+      }
+
+      payloadArray.push(dataRow)
+    }
+
+    if (payloadArray.length === 0) {
+      throw new AppError('No valid rows found in metadata file', 400, 'VALIDATION_ERROR')
+    }
+
+    // Programmatically validate array
+    const { bulkCreatePdfSchema } = require('./admin-pdf.schema')
+    const { error, value } = bulkCreatePdfSchema.validate(payloadArray, {
+      abortEarly: false,
+      stripUnknown: true,
+      convert: true,
+    })
+
+    if (error) {
+      const messages = error.details.map((d) => d.message).join(', ')
+      throw new AppError(messages, 400, 'VALIDATION_ERROR')
+    }
+
+    return this.bulkCreatePdf(value)
   }
 }
 
