@@ -30,6 +30,8 @@ const createLiveClassSchema = Joi.object({
   scheduledStartTime: Joi.date().iso().required(),
   scheduledEndTime: Joi.date().iso().min(Joi.ref('scheduledStartTime')).optional(),
   status: Joi.string().valid('active', 'inactive').default('active'),
+  restreamUrls: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
+  agoraConverters: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
 })
 const updateContentSchema = Joi.object({
   course: Joi.string().hex().length(24).optional(),
@@ -73,6 +75,8 @@ const updateLiveClassSchema = Joi.object({
   scheduledStartTime: Joi.date().iso().optional(),
   scheduledEndTime: Joi.date().iso().min(Joi.ref('scheduledStartTime')).optional(),
   status: Joi.string().valid('active', 'inactive'),
+  restreamUrls: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
+  agoraConverters: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
 }).min(1)
 
 module.exports = { createContentSchema, createLiveClassSchema, updateContentSchema, listContentQuerySchema, updateLiveClassSchema }
