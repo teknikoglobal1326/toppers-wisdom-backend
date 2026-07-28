@@ -17,6 +17,7 @@ const courseTestSchema = new mongoose.Schema({
   slug: { type: String, required: true },
   description: { type: String, default: '' },
   instruction: { type: String, default: '' },
+  instructionsNew: { type: String, default: null },
   localizedContent: {
     en: { type: localizedBlock, default: {} },
     hi: { type: localizedBlock, default: null },

@@ -55,6 +55,7 @@ const createQuestionSchema = Joi.object({
   negativeMarks: Joi.number().min(0).default(0),
   sortOrder: Joi.number().integer().min(0).default(0),
   status: Joi.string().valid('active', 'inactive').default('active'),
+  difficulty: Joi.string().valid('easy', 'medium', 'hard').default('medium'),
   createdBy: Joi.string().hex().length(24).optional().allow(null, ''),
 })
 
@@ -93,6 +94,7 @@ const updateQuestionSchema = Joi.object({
   negativeMarks: Joi.number().min(0).optional(),
   sortOrder: Joi.number().integer().min(0).optional(),
   status: Joi.string().valid('active', 'inactive').optional(),
+  difficulty: Joi.string().valid('easy', 'medium', 'hard').optional(),
   createdBy: Joi.string().hex().length(24).optional().allow(null, ''),
 }).min(1)
 

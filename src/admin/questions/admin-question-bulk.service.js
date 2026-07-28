@@ -293,6 +293,168 @@ const _appendContentToMode = (q, mode, content, separator = " ") => {
 function _parseQuestionsFromHTML(html) {
     const $ = cheerio.load(html);
 
+    if ($("table").length > 0) {
+        const questions = [];
+        $("table").each((_, tableDom) => {
+            const $table = $(tableDom);
+            let enQuestionHtml = "";
+            let hiQuestionHtml = "";
+            let enOptionsHtml = [];
+            let hiOptionsHtml = [];
+            let enExplanationHtml = "";
+            let hiExplanationHtml = "";
+            let correctAnswerStr = "";
+            let marksVal = null;
+            let negMarksVal = null;
+            let perQuestionTimeVal = null;
+            let difficultyVal = null;
+            let seqEnOptions = [];
+            let seqHiOptions = [];
+
+            $table.find("tr").each((_, trDom) => {
+                const cells = $(trDom).find("td");
+                if (cells.length < 2) return;
+                const rawKey = $(cells[0]).text().trim().toLowerCase().replace(/[\s_-]+/g, "");
+                const valHtml = $(cells[1]).html() || "";
+
+                if (rawKey === "question" || rawKey === "questionen" || rawKey === "questiontext") {
+                    enQuestionHtml = valHtml;
+                } else if (rawKey === "questionhi" || rawKey === "questionhindi" || rawKey === "questiontexthi") {
+                    hiQuestionHtml = valHtml;
+                } else if (rawKey === "solution" || rawKey === "solutionen" || rawKey === "explanation" || rawKey === "explanationen") {
+                    enExplanationHtml = valHtml;
+                } else if (rawKey === "solutionhi" || rawKey === "solutionhindi" || rawKey === "explanationhi" || rawKey === "explanationhindi") {
+                    hiExplanationHtml = valHtml;
+                } else if (rawKey === "answer" || rawKey === "correctanswer" || rawKey === "correctoption") {
+                    correctAnswerStr = $(cells[1]).text().trim();
+                } else if (rawKey === "marks" || rawKey === "mark") {
+                    marksVal = $(cells[1]).text().trim();
+                } else if (rawKey === "negativemarks" || rawKey === "negativemark") {
+                    negMarksVal = $(cells[1]).text().trim();
+                } else if (rawKey === "perquestiontime" || rawKey === "time" || rawKey === "duration") {
+                    perQuestionTimeVal = $(cells[1]).text().trim();
+                } else if (rawKey === "difficulty" || rawKey === "difficultylevel" || rawKey === "level") {
+                    difficultyVal = $(cells[1]).text().trim();
+                } else if (rawKey === "optiona" || rawKey === "option1") {
+                    enOptionsHtml.push({ key: "A", html: valHtml });
+                } else if (rawKey === "optionb" || rawKey === "option2") {
+                    enOptionsHtml.push({ key: "B", html: valHtml });
+                } else if (rawKey === "optionc" || rawKey === "option3") {
+                    enOptionsHtml.push({ key: "C", html: valHtml });
+                } else if (rawKey === "optiond" || rawKey === "option4") {
+                    enOptionsHtml.push({ key: "D", html: valHtml });
+                } else if (rawKey === "optionahi" || rawKey === "option1hi") {
+                    hiOptionsHtml.push({ key: "A", html: valHtml });
+                } else if (rawKey === "optionbhi" || rawKey === "option2hi") {
+                    hiOptionsHtml.push({ key: "B", html: valHtml });
+                } else if (rawKey === "optionchi" || rawKey === "option3hi") {
+                    hiOptionsHtml.push({ key: "C", html: valHtml });
+                } else if (rawKey === "optiondhi" || rawKey === "option4hi") {
+                    hiOptionsHtml.push({ key: "D", html: valHtml });
+                } else if (rawKey === "option") {
+                    seqEnOptions.push(valHtml);
+                } else if (rawKey === "optionhi") {
+                    seqHiOptions.push(valHtml);
+                }
+            });
+
+            if (!enQuestionHtml && !hiQuestionHtml && seqEnOptions.length === 0 && enOptionsHtml.length === 0) {
+                return;
+            }
+
+            let correctKey = "";
+            const cleanAns = correctAnswerStr.toUpperCase().trim();
+            if (["A", "B", "C", "D"].includes(cleanAns)) {
+                correctKey = cleanAns;
+            } else if (cleanAns === "1" || cleanAns === "A)") {
+                correctKey = "A";
+            } else if (cleanAns === "2" || cleanAns === "B)") {
+                correctKey = "B";
+            } else if (cleanAns === "3" || cleanAns === "C)") {
+                correctKey = "C";
+            } else if (cleanAns === "4" || cleanAns === "D)") {
+                correctKey = "D";
+            }
+
+            const qParsedEn = extractTextAndImage(enQuestionHtml);
+            const qParsedHi = extractTextAndImage(hiQuestionHtml);
+
+            const enQuestionText = qParsedEn.text || qParsedHi.text || "";
+            const enQuestionImage = qParsedEn.image || qParsedHi.image || "";
+            const hiQuestionText = qParsedHi.text || qParsedEn.text || "";
+            const hiQuestionImage = qParsedHi.image || qParsedEn.image || "";
+
+            const optionKeys = ["A", "B", "C", "D"];
+            const enOptions = [];
+            const hiOptions = [];
+
+            for (let idx = 0; idx < 4; idx++) {
+                const key = optionKeys[idx];
+                let optEnHtml = "";
+                let optHiHtml = "";
+
+                const keyedEn = enOptionsHtml.find(o => o.key === key);
+                if (keyedEn) {
+                    optEnHtml = keyedEn.html;
+                } else if (seqEnOptions[idx] !== undefined) {
+                    optEnHtml = seqEnOptions[idx];
+                }
+
+                const keyedHi = hiOptionsHtml.find(o => o.key === key);
+                if (keyedHi) {
+                    optHiHtml = keyedHi.html;
+                } else if (seqHiOptions[idx] !== undefined) {
+                    optHiHtml = seqHiOptions[idx];
+                }
+
+                if (!optEnHtml && optHiHtml) optEnHtml = optHiHtml;
+                if (!optHiHtml && optEnHtml) optHiHtml = optEnHtml;
+
+                const parsedEn = extractTextAndImage(optEnHtml);
+                const parsedHi = extractTextAndImage(optHiHtml);
+
+                enOptions.push({
+                    text: parsedEn.text,
+                    image: parsedEn.image,
+                    isCorrect: correctKey === key
+                });
+
+                hiOptions.push({
+                    text: parsedHi.text,
+                    image: parsedHi.image,
+                    isCorrect: correctKey === key
+                });
+            }
+
+            const expParsedEn = extractTextAndImage(enExplanationHtml);
+            const expParsedHi = extractTextAndImage(hiExplanationHtml);
+
+            const enExpText = expParsedEn.text || expParsedHi.text || "";
+            const enExpImage = expParsedEn.image || expParsedHi.image || "";
+            const hiExpText = expParsedHi.text || expParsedEn.text || "";
+            const hiExpImage = expParsedHi.image || expParsedEn.image || "";
+
+            questions.push({
+                isTableFormat: true,
+                en: {
+                    question: { text: enQuestionText, image: enQuestionImage },
+                    options: enOptions,
+                    explanation: { text: enExpText, image: enExpImage }
+                },
+                hi: {
+                    question: { text: hiQuestionText, image: hiQuestionImage },
+                    options: hiOptions,
+                    explanation: { text: hiExpText, image: hiExpImage }
+                },
+                marks: marksVal,
+                negativeMarks: negMarksVal,
+                perQuestionTime: perQuestionTimeVal,
+                difficulty: difficultyVal
+            });
+        });
+        return questions;
+    }
+
     const questions = [];
     let currentQuestion = null;
     let mode = null;
@@ -420,7 +582,7 @@ const parseWordFile = async (fileBuffer) => {
         }
         const xmlContent = await xmlFile.async("text");
 
-        const doc = new DOMParser().parseFromString(xmlContent);
+        const doc = new DOMParser().parseFromString(xmlContent, "text/xml");
         const mathNodes = mathSelect("//*[local-name()='oMath']", doc);
 
         const wNS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
@@ -555,8 +717,10 @@ const parseWordFile = async (fileBuffer) => {
                         }
                     }
                 }
-                const updatedRelsXml = new XMLSerializer().serializeToString(relsDoc);
-                zip.file("word/_rels/document.xml.rels", updatedRelsXml);
+                if (cropCounter > 1) {
+                    const updatedRelsXml = new XMLSerializer().serializeToString(relsDoc);
+                    zip.file("word/_rels/document.xml.rels", updatedRelsXml);
+                }
             }
         } catch (err) {
             console.error("Critical error in multi-crop logic:", err);
@@ -566,14 +730,21 @@ const parseWordFile = async (fileBuffer) => {
 
         const options = {
             convertImage: mammoth.images.imgElement(async (image) => {
-                const base64Image = await image.read("base64");
-                const buffer = Buffer.from(base64Image, "base64");
-                const ext = image.contentType.split("/")[1] || "png";
-                const filename = `question_image_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+                try {
+                    const base64Image = await image.read("base64");
+                    const buffer = Buffer.from(base64Image, "base64");
+                    const mime = image.contentType || "image/png";
+                    const ext = mime.split("/")[1] || "png";
+                    const filename = `question_image_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
 
-                // Local storage upload
-                const relativeUrl = await uploadFile(buffer, filename, "questions", image.contentType);
-                return { src: relativeUrl };
+                    // Local storage upload
+                    const relativeUrl = await uploadFile(buffer, filename, "questions", mime);
+                    console.log("Uploaded image: ", relativeUrl);
+                    return { src: relativeUrl };
+                } catch (e) {
+                    console.error("Error in convertImage:", e);
+                    throw e;
+                }
             }),
         };
 
@@ -631,6 +802,22 @@ function extractTextAndImage(htmlString) {
 }
 
 function mapWordQuestionToSchema(q, metadata) {
+    if (q.isTableFormat) {
+        return {
+            en: q.en,
+            hi: q.hi,
+            test: metadata.test,
+            subjectId: q.subjectId && q.subjectId.trim() ? q.subjectId.trim() : (metadata.subjectId || null),
+            chapterId: q.chapterId && q.chapterId.trim() ? q.chapterId.trim() : (metadata.chapterId || null),
+            topicId: q.topicId && q.topicId.trim() ? q.topicId.trim() : (metadata.topicId || null),
+            marks: q.marks !== null && q.marks !== undefined && q.marks !== "" ? Number(q.marks) : (Number(metadata.marks) || 1),
+            negativeMarks: q.negativeMarks !== null && q.negativeMarks !== undefined && q.negativeMarks !== "" ? Number(q.negativeMarks) : (Number(metadata.negativeMarks) || 0),
+            perQuestionTime: q.perQuestionTime !== null && q.perQuestionTime !== undefined && q.perQuestionTime !== "" ? Number(q.perQuestionTime) : (metadata.perQuestionTime ? Number(metadata.perQuestionTime) : null),
+            difficulty: q.difficulty && q.difficulty.trim() ? q.difficulty.trim().toLowerCase() : (metadata.difficulty || "medium"),
+            status: metadata.status || "active",
+        };
+    }
+
     const qParsed = extractTextAndImage(q.questionText);
 
     const optionsParsed = q.options.map((opt) => {
@@ -667,6 +854,7 @@ function mapWordQuestionToSchema(q, metadata) {
         marks: Number(metadata.marks) || 1,
         negativeMarks: Number(metadata.negativeMarks) || 0,
         perQuestionTime: metadata.perQuestionTime ? Number(metadata.perQuestionTime) : null,
+        difficulty: metadata.difficulty || "medium",
         status: metadata.status || "active",
     };
 }
@@ -743,6 +931,7 @@ async function parseXmlFile(fileBuffer, metadata) {
         const subjectNode = qNode.getElementsByTagName("subjectId")[0];
         const chapterNode = qNode.getElementsByTagName("chapterId")[0];
         const topicNode = qNode.getElementsByTagName("topicId")[0];
+        const difficultyNode = qNode.getElementsByTagName("difficulty")[0];
 
         const marks = marksNode ? Number(marksNode.textContent) : (Number(metadata.marks) || 1);
         const negativeMarks = negMarksNode ? Number(negMarksNode.textContent) : (Number(metadata.negativeMarks) || 0);
@@ -751,6 +940,7 @@ async function parseXmlFile(fileBuffer, metadata) {
         const subjectId = subjectNode && subjectNode.textContent.trim() ? subjectNode.textContent.trim() : (metadata.subjectId || null);
         const chapterId = chapterNode && chapterNode.textContent.trim() ? chapterNode.textContent.trim() : (metadata.chapterId || null);
         const topicId = topicNode && topicNode.textContent.trim() ? topicNode.textContent.trim() : (metadata.topicId || null);
+        const difficulty = difficultyNode ? difficultyNode.textContent.trim().toLowerCase() : (metadata.difficulty || "medium");
 
         questions.push({
             en,
@@ -762,6 +952,7 @@ async function parseXmlFile(fileBuffer, metadata) {
             marks,
             negativeMarks,
             perQuestionTime,
+            difficulty,
             status,
         });
     }
@@ -1081,6 +1272,7 @@ async function parseExcelFile(fileBuffer, metadata) {
         const marksVal = getVal(["marks", "mark", "points"]);
         const negMarksVal = getVal(["negativemarks", "negmarks", "negativemark"]);
         const perTimeVal = getVal(["perquestiontime", "time", "duration"]);
+        const difficultyVal = getVal(["difficulty", "difficultylevel", "level"]);
 
         const chapterVal = getVal(["chapter", "chapterid", "chaptername"]);
         const topicVal = getVal(["topic", "topicid", "topicname"]);
@@ -1134,6 +1326,7 @@ async function parseExcelFile(fileBuffer, metadata) {
         const marks = marksVal !== undefined && marksVal !== "" ? Number(marksVal) : (Number(metadata.marks) || 1);
         const negativeMarks = negMarksVal !== undefined && negMarksVal !== "" ? Number(negMarksVal) : (Number(metadata.negativeMarks) || 0);
         const perQuestionTime = perTimeVal !== undefined && perTimeVal !== "" ? Number(perTimeVal) : (metadata.perQuestionTime ? Number(metadata.perQuestionTime) : null);
+        const difficulty = difficultyVal && difficultyVal.trim() ? difficultyVal.trim().toLowerCase() : (metadata.difficulty || "medium");
         
         const subjectId = (activeSubjectId && activeSubjectId.match(/^[0-9a-fA-F]{24}$/)) ? activeSubjectId : null;
         
@@ -1188,6 +1381,7 @@ async function parseExcelFile(fileBuffer, metadata) {
             marks,
             negativeMarks,
             perQuestionTime,
+            difficulty,
             status: metadata.status || "active",
         });
     }
