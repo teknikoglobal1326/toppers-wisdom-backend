@@ -27,6 +27,7 @@ const testSeriesTestSchema = new mongoose.Schema({
     negativeMarks: { type: Number, required: true, min: 0, default: 0 },
     passingMarks: { type: Number, required: true, min: 0 },
     instructions: { type: String, default: null },
+    instructionsNew: { type: String, default: null },
     isPaid: { type: Boolean, default: false, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
     // Languages this test is authored in. ['en'] | ['hi'] | ['en','hi'].

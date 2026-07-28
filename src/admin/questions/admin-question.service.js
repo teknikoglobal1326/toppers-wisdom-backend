@@ -215,6 +215,69 @@ class AdminQuestionService extends BaseService {
     const parentTest = await this.resolveParentTest(metadata.test)
     if (!parentTest) throw new AppError('Parent test not found', 404, 'NOT_FOUND')
 
+    // Resolve subject, chapter, and topic from names in metadata to Mongo ObjectIds
+    const Subject = require('../../models/Subject.model')
+    let subjectDoc = null
+    let activeSubjectId = metadata.subjectId || metadata.subject
+
+    if (activeSubjectId && String(activeSubjectId).match(/^[0-9a-fA-F]{24}$/)) {
+      subjectDoc = await Subject.findOne({ _id: activeSubjectId, isDeleted: false })
+    } else if (activeSubjectId) {
+      subjectDoc = await Subject.findOne({
+        name: { $regex: new RegExp("^" + String(activeSubjectId).trim() + "$", "i") },
+        isDeleted: false
+      })
+      if (subjectDoc) {
+        activeSubjectId = subjectDoc._id.toString()
+      }
+    }
+
+    let activeChapterId = metadata.chapterId || metadata.chapter
+    let activeTopicId = metadata.topicId || metadata.topic
+
+    // If subject is still not found, try to locate the subject using the chapter name
+    if (!subjectDoc && activeChapterId && !String(activeChapterId).match(/^[0-9a-fA-F]{24}$/)) {
+      const cleanChName = String(activeChapterId).trim()
+      subjectDoc = await Subject.findOne({
+        "chapters.name": { $regex: new RegExp("^" + cleanChName + "$", "i") },
+        isDeleted: false
+      })
+      if (subjectDoc) {
+        activeSubjectId = subjectDoc._id.toString()
+      }
+    }
+
+    if (subjectDoc) {
+      if (activeChapterId && !String(activeChapterId).match(/^[0-9a-fA-F]{24}$/)) {
+        const cleanChapterName = String(activeChapterId).trim().toLowerCase()
+        const ch = subjectDoc.chapters.find(c => c.name.trim().toLowerCase() === cleanChapterName)
+        if (ch) {
+          activeChapterId = ch._id.toString()
+        } else {
+          activeChapterId = null
+        }
+      }
+
+      if (activeTopicId && !String(activeTopicId).match(/^[0-9a-fA-F]{24}$/) && activeChapterId) {
+        const cleanTopicName = String(activeTopicId).trim().toLowerCase()
+        const ch = subjectDoc.chapters.find(c => c._id.toString() === activeChapterId)
+        if (ch) {
+          const tp = ch.topics.find(t => t.name.trim().toLowerCase() === cleanTopicName)
+          if (tp) {
+            activeTopicId = tp._id.toString()
+          } else {
+            activeTopicId = null
+          }
+        } else {
+          activeTopicId = null
+        }
+      }
+    }
+
+    metadata.subjectId = activeSubjectId || null
+    metadata.chapterId = activeChapterId || null
+    metadata.topicId = activeTopicId || null
+
     const extension = path.extname(file.originalname).toLowerCase()
     const { parseWordFile, mapWordQuestionToSchema, parseXmlFile, parseExcelFile, extractTextAndImage } = require('./admin-question-bulk.service')
 

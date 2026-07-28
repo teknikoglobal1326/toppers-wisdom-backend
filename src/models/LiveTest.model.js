@@ -24,6 +24,7 @@ const liveTestSchema = new mongoose.Schema({
     negativeMarks: { type: Number, required: true, min: 0, default: 0 },
     passingMarks: { type: Number, required: true, min: 0 },
     instructions: { type: String, default: null },
+    instructionsNew: { type: String, default: null },
     startDateTime: { type: Date, required: true },
     endDateTime: { type: Date, required: true },
     isPaid: { type: Boolean, default: false, index: true },
