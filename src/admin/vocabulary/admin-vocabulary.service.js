@@ -8,7 +8,7 @@ class AdminVocabularyService extends BaseService {
         super(vocabularyRepository, 'admin:vocabulary')
     }
 
-    buildFilter({ type, status, search, word } = {}) {
+    buildFilter({ type, status, search, word, examId, exam } = {}) {
         const filter = { isDeleted: false }
 
         if (type) {
@@ -22,6 +22,19 @@ class AdminVocabularyService extends BaseService {
 
         if (word) {
             filter.word = new RegExp(word, 'i')
+        }
+
+        const targetExam = examId || exam
+        if (targetExam) {
+            if (Array.isArray(targetExam)) {
+                filter.exam = { $in: targetExam }
+            } else if (typeof targetExam === 'string') {
+                if (targetExam.includes(',')) {
+                    filter.exam = { $in: targetExam.split(',') }
+                } else {
+                    filter.exam = targetExam
+                }
+            }
         }
 
         if (search) {

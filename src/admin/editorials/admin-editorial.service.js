@@ -15,12 +15,25 @@ class AdminEditorialService extends BaseService {
         super(editorialRepository, 'admin:editorial')
     }
 
-    buildFilter({ type, status, isFree, editorialTest, search } = {}) {
+    buildFilter({ type, status, isFree, editorialTest, search, examId, exam } = {}) {
         const filter = { isDeleted: false }
         if (type) filter.type = type
         if (status) filter.status = status
         if (typeof isFree === 'boolean') filter.isFree = isFree
         if (editorialTest) filter.editorialTest = editorialTest
+
+        const targetExam = examId || exam
+        if (targetExam) {
+            if (Array.isArray(targetExam)) {
+                filter.exam = { $in: targetExam }
+            } else if (typeof targetExam === 'string') {
+                if (targetExam.includes(',')) {
+                    filter.exam = { $in: targetExam.split(',') }
+                } else {
+                    filter.exam = targetExam
+                }
+            }
+        }
 
         if (search) {
             const rx = new RegExp(search, 'i')
