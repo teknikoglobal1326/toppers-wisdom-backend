@@ -20,9 +20,18 @@ class PaymentService extends BaseService {
     const totalAmount = metadata.totalAmount ?? items.reduce((sum, i) => sum + i.price, 0)
     const grandTotal = metadata.grandTotal ?? totalAmount
 
-    const rzpOrder = await razorpay.orders.create({
-      amount: Math.round(grandTotal * 100), currency: 'INR', receipt: `receipt_${Date.now()}`,
-    })
+    let rzpOrder = null
+    let status = 'pending'
+    let paidAt = null
+
+    if (grandTotal > 0) {
+      rzpOrder = await razorpay.orders.create({
+        amount: Math.round(grandTotal * 100), currency: 'INR', receipt: `receipt_${Date.now()}`,
+      })
+    } else {
+      status = 'paid'
+      paidAt = new Date()
+    }
 
     const orderData = {
       user: userId,
@@ -33,13 +42,34 @@ class PaymentService extends BaseService {
       gstAmount: metadata.gstAmount || 0,
       grandTotal,
       currency: 'INR',
-      razorpayOrderId: rzpOrder.id,
-      status: 'pending'
+      razorpayOrderId: rzpOrder ? rzpOrder.id : null,
+      status,
+      paidAt
     }
 
     const order = await this.create(orderData)
     this.logger.info({ userId, orderId: order._id, grandTotal }, 'Order created')
-    return { orderId: order._id, razorpayOrderId: rzpOrder.id, amount: grandTotal, currency: 'INR', keyId: config.RAZORPAY_KEY_ID }
+
+    if (status === 'paid') {
+      const courseItems = order.items.filter((i) => i.itemType === 'course')
+      await paymentRepository.createEnrollmentsForOrder(userId, courseItems)
+
+      const { notificationQueue, emailQueue } = require('../../jobs/queue')
+      await Promise.all([
+        notificationQueue.add('payment-success', { userId, orderId: order._id, amount: order.totalAmount }),
+        emailQueue.add('payment-receipt', { userId, orderId: order._id }),
+      ]).catch(err => this.logger.error({ err }, 'Failed to queue notifications for free purchase'))
+    }
+
+    return {
+      orderId: order._id,
+      razorpayOrderId: rzpOrder ? rzpOrder.id : null,
+      amount: grandTotal,
+      currency: 'INR',
+      keyId: rzpOrder ? config.RAZORPAY_KEY_ID : null,
+      status,
+      payment_status: status === 'paid' ? 'success' : 'pending'
+    }
   }
 
   async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {

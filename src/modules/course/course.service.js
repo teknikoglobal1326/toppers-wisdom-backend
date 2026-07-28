@@ -451,7 +451,7 @@ class CourseService extends BaseService {
     const { amount, discount, gstRate, gstAmount, grandTotal } = amountDetails;
     this.logger.info({ courseId, userId, amount, grandTotal }, 'Creating razorpay order for course')
 
-    if (!amount || !grandTotal) {
+    if (amount === undefined || amount === null || grandTotal === undefined || grandTotal === null) {
       throw new AppError('Amount and grandTotal are required', 400)
     }
 
