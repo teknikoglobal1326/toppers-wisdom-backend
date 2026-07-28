@@ -17,7 +17,7 @@ const createEditorialSchema = Joi.object({
     isFree: Joi.boolean(),
     sortOrder: Joi.number().integer().min(0),
     status: Joi.string().valid(...STATUS_VALUES),
-    exam: Joi.string().allow(null, ''),
+    exam: Joi.array().items(Joi.string()).default([]),
     subjectIds: Joi.array().items(Joi.string()).default([]),
 })
 
@@ -35,7 +35,7 @@ const updateEditorialSchema = Joi.object({
     isFree: Joi.boolean(),
     sortOrder: Joi.number().integer().min(0),
     status: Joi.string().valid(...STATUS_VALUES),
-    exam: Joi.string().allow(null, ''),
+    exam: Joi.array().items(Joi.string()),
     subjectIds: Joi.array().items(Joi.string()),
 }).min(1)
 
