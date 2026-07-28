@@ -7,12 +7,25 @@ class AdminGrammarService extends BaseService {
     super(grammarRepository, 'admin:grammar')
   }
 
-  buildFilter({ status, title, topicName, search } = {}) {
+  buildFilter({ status, title, topicName, search, examId, exam } = {}) {
     const filter = { isDeleted: false }
 
     if (status) filter.status = status
     if (title) filter.title = { $regex: title, $options: 'i' }
     if (topicName) filter.topicName = { $regex: topicName, $options: 'i' }
+
+    const targetExam = examId || exam
+    if (targetExam) {
+      if (Array.isArray(targetExam)) {
+        filter.exam = { $in: targetExam }
+      } else if (typeof targetExam === 'string') {
+        if (targetExam.includes(',')) {
+          filter.exam = { $in: targetExam.split(',') }
+        } else {
+          filter.exam = targetExam
+        }
+      }
+    }
 
     if (search) {
       filter.$or = [

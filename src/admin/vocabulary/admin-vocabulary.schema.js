@@ -19,7 +19,7 @@ const createVocabularySchema = Joi.object({
     publishDate: Joi.date(),
     sortOrder: Joi.number().integer().min(0).default(0),
     status: Joi.string().valid(...VALID_STATUS).default('draft'),
-    exam: Joi.string().allow(null, ''),
+    exam: Joi.array().items(Joi.string()).default([]),
     subjectIds: Joi.array().items(Joi.string()).default([]),
 })
 
@@ -39,7 +39,7 @@ const updateVocabularySchema = Joi.object({
     publishDate: Joi.date(),
     sortOrder: Joi.number().integer().min(0),
     status: Joi.string().valid(...VALID_STATUS),
-    exam: Joi.string().allow(null, ''),
+    exam: Joi.array().items(Joi.string()),
     subjectIds: Joi.array().items(Joi.string()),
 }).min(1)
 
