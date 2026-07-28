@@ -51,7 +51,7 @@ const listVocabularyQuerySchema = Joi.object({
     sortBy: Joi.string().valid('sortOrder', 'publishDate', 'createdAt', 'updatedAt', 'title').default('sortOrder'),
     sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
     page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(100).default(20),
+    limit: Joi.number().integer().min(1).default(20),
 }).unknown(true)
 
 module.exports = { VALID_TYPES, createVocabularySchema, updateVocabularySchema, listVocabularyQuerySchema }
