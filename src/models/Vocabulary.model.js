@@ -16,7 +16,7 @@ const vocabularySchema = new mongoose.Schema({
   publishDate: { type: Date, default: Date.now },
   sortOrder: { type: Number, default: 0 },
   status: { type: String, enum: ["draft", "active", "inactive"], default: "draft" },
-  exam: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", default: null, index: true },
+  exam: [{ type: mongoose.Schema.Types.ObjectId, ref: "Exam", index: true }],
   subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject", index: true }],
   isDeleted: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
@@ -30,3 +30,6 @@ vocabularySchema.index({ title: "text", word: "text", shortDescription: "text" }
 // mongoose.model("vocabulary", vocabularySchema);
 // module.exports = Vocabulary;
 module.exports = mongoose.model("Vocabulary", vocabularySchema);
+const Vocabulary = mongoose.model("Vocabulary", vocabularySchema);
+mongoose.model("vocabulary", vocabularySchema);
+module.exports = Vocabulary;
