@@ -25,8 +25,8 @@ class AdminContentService extends BaseService {
     }
 
     const direction = order === 'desc' ? -1 : 1
-    const sort = sortBy === 'createdAt' 
-      ? { createdAt: direction, sortOrder: 1 } 
+    const sort = sortBy === 'createdAt'
+      ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
     return this.getAll(filter, {
@@ -54,8 +54,8 @@ class AdminContentService extends BaseService {
     }
 
     const direction = order === 'desc' ? -1 : 1
-    const sort = sortBy === 'createdAt' 
-      ? { createdAt: direction, sortOrder: 1 } 
+    const sort = sortBy === 'createdAt'
+      ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
     return this.getAll(filter, {
@@ -78,6 +78,26 @@ class AdminContentService extends BaseService {
       }
     )
     if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
+
+    if (content.isLive && content.liveStatus === 'ongoing') {
+      const contentObj = content.toObject()
+      
+      // Fallback if not stored yet in database
+      if (!contentObj.rtmpServer && contentObj.agoraChannel) {
+        const token = generatePublisherToken(contentObj.agoraChannel)
+        const rtmpServer = "rtmp://rtmp-ingest.agora.io/live/"
+        const rtmpStreamKey = `${contentObj.agoraChannel}?token=${token}`
+
+        contentObj.token = token
+        contentObj.rtmpServer = rtmpServer
+        contentObj.rtmpStreamKey = rtmpStreamKey
+        contentObj.rtmpUrl = `${rtmpServer}${rtmpStreamKey}`
+      } else {
+        contentObj.token = contentObj.agoraToken
+      }
+      return contentObj
+    }
+
     return content
   }
 
@@ -87,7 +107,7 @@ class AdminContentService extends BaseService {
     if (payload.subjectId && !payload.subject) payload.subject = payload.subjectId
     if (payload.topicId && !payload.topic) payload.topic = payload.topicId
     if (payload.chapterId && !payload.chapter) payload.chapter = payload.chapterId
-    
+
     if (payload.subject && !Array.isArray(payload.subject)) payload.subject = [payload.subject]
     if (payload.topic && !Array.isArray(payload.topic)) payload.topic = [payload.topic]
     if (payload.chapter !== undefined) {
@@ -103,8 +123,28 @@ class AdminContentService extends BaseService {
       const parsedSortOrder = Number(payload.sortOrder)
       if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
     }
+    if (payload.restreamUrls !== undefined) {
+      if (Array.isArray(payload.restreamUrls)) {
+        payload.restreamUrls = payload.restreamUrls.filter(Boolean)
+      } else if (typeof payload.restreamUrls === 'string') {
+        payload.restreamUrls = payload.restreamUrls.split(',').map(url => url.trim()).filter(Boolean)
+      } else {
+        payload.restreamUrls = []
+      }
+    }
+    if (payload.agoraConverters !== undefined) {
+      if (Array.isArray(payload.agoraConverters)) {
+        payload.agoraConverters = payload.agoraConverters.filter(Boolean)
+      } else if (typeof payload.agoraConverters === 'string') {
+        payload.agoraConverters = payload.agoraConverters.split(',').map(item => item.trim()).filter(Boolean)
+      } else {
+        payload.agoraConverters = []
+      }
+    }
     if (payload.video === '') delete payload.video
     if (payload.image === '') delete payload.image
+
+    console.log("payload==========================.>", payload);
     return payload
   }
 
@@ -115,7 +155,18 @@ class AdminContentService extends BaseService {
   async updateContent(id, data) {
     const content = await contentRepository.findOne({ _id: id, isDeleted: false })
     if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
-    return contentRepository.updateById(id, this.buildPayload(data))
+
+    const payload = this.buildPayload(data)
+    if (content.isLive) {
+      if (payload.restreamUrls === undefined && !content.restreamUrls) {
+        payload.restreamUrls = []
+      }
+      if (payload.agoraConverters === undefined && !content.agoraConverters) {
+        payload.agoraConverters = []
+      }
+    }
+
+    return contentRepository.updateById(id, payload)
   }
 
   async softDelete(id) {
@@ -130,11 +181,11 @@ class AdminContentService extends BaseService {
     const content = await contentRepository.findOne({ _id: id, isDeleted: false })
     if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
     if (!content.isLive) throw new AppError('Content is not a live class', 400)
-    
+
     if (!content.agoraChannel) {
       content.agoraChannel = `channel_${Date.now()}_${Math.floor(Math.random() * 10000)}`
     }
-    
+
     const token = generatePublisherToken(content.agoraChannel)
     const rtmpServer = "rtmp://rtmp-ingest.agora.io/live/"
     const rtmpStreamKey = `${content.agoraChannel}?token=${token}`
@@ -148,7 +199,7 @@ class AdminContentService extends BaseService {
     }
 
     const agoraConverters = []
-    
+
     // If restream URLs are provided, start the Agora RTMP Converter for each
     if (restreamUrls.length > 0) {
       const appId = process.env.AGORA_APP_ID
@@ -159,11 +210,11 @@ class AdminContentService extends BaseService {
         this.logger.warn({ appId, hasCustomerId: !!customerId, hasCustomerCert: !!customerCert }, 'Cannot start restreaming: Agora App ID, Customer ID, or Customer Certificate is missing')
       } else {
         const auth = Buffer.from(`${customerId}:${customerCert}`).toString('base64')
-        
+
         for (let i = 0; i < restreamUrls.length; i++) {
           const publishUrl = restreamUrls[i]
           const converterId = `${id}_restream_${i}_${Date.now()}`
-          
+
           try {
             const url = `https://api.agora.io/v1/projects/${appId}/rtmp-converters`
             await axios.post(url, {
@@ -190,7 +241,11 @@ class AdminContentService extends BaseService {
       liveStatus: 'ongoing',
       agoraChannel: content.agoraChannel,
       restreamUrls,
-      agoraConverters
+      agoraConverters,
+      rtmpServer,
+      rtmpStreamKey,
+      rtmpUrl: `${rtmpServer}${rtmpStreamKey}`,
+      agoraToken: token
     })
 
     return {
@@ -208,7 +263,7 @@ class AdminContentService extends BaseService {
     const content = await contentRepository.findOne({ _id: id, isDeleted: false })
     if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
     if (!content.isLive) throw new AppError('Content is not a live class', 400)
-    
+
     // Stop all active Agora converters
     const converters = content.agoraConverters || []
     if (converters.length > 0) {
@@ -237,7 +292,11 @@ class AdminContentService extends BaseService {
     await contentRepository.updateById(id, {
       liveStatus: 'completed',
       restreamUrls: [],
-      agoraConverters: []
+      agoraConverters: [],
+      rtmpServer: '',
+      rtmpStreamKey: '',
+      rtmpUrl: '',
+      agoraToken: ''
     })
 
     return { message: 'Live class ended successfully' }
@@ -248,9 +307,9 @@ const adminContentService = new AdminContentService()
 
 adminContentService.attachUploadedFiles = async (req, _res, next) => {
   try {
-    ['subject', 'topic', 'chapter', 'subjectId', 'topicId', 'chapterId'].forEach(field => {
+    ['subject', 'topic', 'chapter', 'subjectId', 'topicId', 'chapterId', 'restreamUrls', 'agoraConverters'].forEach(field => {
       if (typeof req.body[field] === 'string' && req.body[field].startsWith('[')) {
-        try { req.body[field] = JSON.parse(req.body[field]) } catch (e) {}
+        try { req.body[field] = JSON.parse(req.body[field]) } catch (e) { }
       }
     })
     const folder = `contents/${req.params.id ?? `new-${Date.now()}`}`

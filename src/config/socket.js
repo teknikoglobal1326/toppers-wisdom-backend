@@ -13,7 +13,15 @@ let io;
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
-      origin: [config.FRONTEND_URL, 'http://localhost:3001', 'http://localhost:3000'],
+      origin: [
+        config.FRONTEND_URL,
+        'http://localhost:3001',
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://192.168.1.58:3001',
+        'http://192.168.1.58:3000',
+        'http://192.168.1.58:5173'
+      ],
       methods: ['GET', 'POST'],
       credentials: true
     }
@@ -22,7 +30,21 @@ const initSocket = (httpServer) => {
   // Authentication Middleware
   io.use((socket, next) => {
     try {
-      const token = socket.handshake.auth.token;
+      rootLogger.info(`[SOCKET AUTH] Authenticating connection. Socket ID: ${socket.id}`);
+      let token = socket.handshake.auth?.token || socket.handshake.query?.token;
+      rootLogger.info(`[SOCKET AUTH] Token from auth/query: ${token}`);
+      if (!token) {
+        const authHeader = socket.handshake.headers?.authorization || socket.handshake.headers?.token;
+        rootLogger.info(`[SOCKET AUTH] Token from headers: ${authHeader}`);
+        if (authHeader) {
+          if (authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7);
+          } else {
+            token = authHeader;
+          }
+        }
+      }
+
       if (!token) return next(new Error('Authentication error'));
 
       let decoded;
@@ -56,12 +78,18 @@ const initSocket = (httpServer) => {
 
         const roomName = `live_${contentId}`;
         socket.join(roomName);
+        rootLogger.info(`[SOCKET] User ${socket.user?._id || 'anonymous'} (role: ${socket.role}) joined room ${roomName}. Socket ID: ${socket.id}`);
 
         // Fetch current chat mode from redis
         const chatMode = await redis.get(`live_chat_mode:${contentId}`) || 'public';
 
         // Fetch the active poll from DB
         const activePoll = await LivePoll.findOne({ content: contentId, isActive: true }).lean();
+
+        // Fetch poll history from DB
+        const pollHistory = await LivePoll.find({ content: contentId, isActive: false })
+          .sort({ createdAt: -1 })
+          .lean();
 
         // Fetch recent chat history from DB
         const recentChats = await LiveChatMessage.find({ content: contentId })
@@ -72,15 +100,62 @@ const initSocket = (httpServer) => {
         // Reverse so they are in chronological order
         recentChats.reverse();
 
-        socket.emit('live-state', { chatMode, activePoll, recentChats });
+        socket.emit('live-state', { chatMode, activePoll, recentChats, pollHistory });
 
         // Broadcast updated viewer count
         const currentSize = io.sockets.adapter.rooms.get(roomName)?.size || 1;
         io.to(roomName).emit('viewer-count-updated', { count: currentSize });
 
-        if (callback) callback({ success: true, room: roomName, chatMode, activePoll, recentChats, viewerCount: currentSize });
+        if (callback) callback({ success: true, room: roomName, chatMode, activePoll, recentChats, pollHistory, viewerCount: currentSize });
       } catch (error) {
         rootLogger.error(error, 'Error in join-live');
+        if (callback) callback({ error: 'Internal server error' });
+      }
+    });
+
+    // Get list of joined users (only admin)
+    socket.on('get-live-users', async (data, callback) => {
+      try {
+        if (socket.role !== 'admin') {
+          if (callback) callback({ error: 'Unauthorized' });
+          return;
+        }
+
+        const { contentId } = data;
+        if (!contentId) {
+          if (callback) callback({ error: 'contentId is required' });
+          return;
+        }
+
+        const roomName = `live_${contentId}`;
+        const sockets = await io.in(roomName).fetchSockets();
+        rootLogger.info(`[SOCKET DEBUG] get-live-users requested for room ${roomName}. Total active connections in room: ${sockets.length}`);
+        
+        sockets.forEach(s => {
+          rootLogger.info(`[SOCKET DEBUG] Socket ID: ${s.id} | User ID: ${s.user?._id || 'none'} | User Role: ${s.role || 'none'}`);
+        });
+
+        const users = sockets
+          .filter(s => s.user && s.role !== 'admin') // exclude admins
+          .map(s => ({
+            id: s.user._id,
+            name: s.user.name || 'Anonymous Student',
+            phone: s.user.phone || '',
+          }));
+
+        // Deduplicate users by ID
+        const uniqueUsers = [];
+        const seen = new Set();
+        for (const user of users) {
+          if (!seen.has(user.id)) {
+            seen.add(user.id);
+            uniqueUsers.push(user);
+          }
+        }
+
+        if (callback) callback({ success: true, users: uniqueUsers });
+      } catch (error) {
+        rootLogger.error(error, 'Error in get-live-users');
         if (callback) callback({ error: 'Internal server error' });
       }
     });
@@ -115,7 +190,9 @@ const initSocket = (httpServer) => {
     socket.on('chat-message', async (data, callback) => {
       try {
         const { contentId, message } = data;
+        rootLogger.info(`[SOCKET MESSAGE] Received chat-message from user ${socket.user?._id || 'anonymous'} (role: ${socket.role}) in room live_${contentId}. Message: "${message}"`);
         if (!contentId || !message) {
+          rootLogger.warn(`[SOCKET MESSAGE] Invalid payload received: contentId=${contentId}, message=${message}`);
           if (callback) callback({ error: 'Invalid payload' });
           return;
         }
