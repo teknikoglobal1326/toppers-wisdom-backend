@@ -42,6 +42,7 @@ const courseSchema = new mongoose.Schema({
   avgRating: { type: Number, default: 0 },
   totalReviews: { type: Number, default: 0 },
   totalEnrollments: { type: Number, default: 0 },
+  instructionsNew: { type: String, default: null },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true })
 
