@@ -34,17 +34,17 @@ const parseFormData = async (req, _res, next) => {
             req.body.longDescription = req.body.longDescription.join('')
         }
 
-        const arrayFields = ['usages', 'synonyms', 'antonyms', 'subjectIds'];
+        const arrayFields = ['usages', 'synonyms', 'antonyms', 'subjectIds', 'exam'];
         arrayFields.forEach((field) => {
-          if (typeof req.body[field] === 'string') {
-            try {
-              const parsed = JSON.parse(req.body[field]);
-              req.body[field] = Array.isArray(parsed) ? parsed : [req.body[field]];
-            } catch (_) {
-              // Not a JSON string, wrap the single value into an array
-              req.body[field] = [req.body[field]];
+            if (typeof req.body[field] === 'string') {
+                try {
+                    const parsed = JSON.parse(req.body[field]);
+                    req.body[field] = Array.isArray(parsed) ? parsed : [req.body[field]];
+                } catch (_) {
+                    // Not a JSON string, wrap the single value into an array
+                    req.body[field] = [req.body[field]];
+                }
             }
-          }
         });
 
         const folder = `vocabulary/${req.params.id ?? `new-${Date.now()}`}`
