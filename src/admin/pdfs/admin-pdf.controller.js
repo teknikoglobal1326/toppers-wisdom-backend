@@ -28,6 +28,13 @@ const remove = catchAsync(async (req, res) => {
 })
 
 const bulkCreate = catchAsync(async (req, res) => {
+  if (req.files && req.files.file) {
+    const file = req.files.file[0]
+    const common = req.body || {}
+    const adminId = req.admin?._id
+    const created = await adminPdfService.bulkUpload(file, common, adminId, req.files)
+    return sendCreated(res, created)
+  }
   const payloadArray = req.body.map(item => ({ ...item, createdBy: req.admin?._id }))
   sendCreated(res, await adminPdfService.bulkCreatePdf(payloadArray))
 })
