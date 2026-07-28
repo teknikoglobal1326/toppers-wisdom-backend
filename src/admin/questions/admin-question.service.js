@@ -349,6 +349,70 @@ class AdminQuestionService extends BaseService {
       qPayload.createdBy = adminId ? adminId.toString() : undefined
       qPayload.order = startOrder++
 
+      // Resolve subject, chapter, and topic for individual question payload
+      let qSubjectDoc = null;
+      let qSubjectId = qPayload.subjectId;
+      if (qSubjectId) {
+        if (qSubjectId.toString().match(/^[0-9a-fA-F]{24}$/)) {
+          qSubjectDoc = await Subject.findOne({ _id: qSubjectId, isDeleted: false });
+        } else {
+          qSubjectDoc = await Subject.findOne({
+            name: { $regex: new RegExp("^" + String(qSubjectId).trim() + "$", "i") },
+            isDeleted: false
+          });
+          if (qSubjectDoc) {
+            qSubjectId = qSubjectDoc._id.toString();
+          } else {
+            qSubjectId = null;
+          }
+        }
+      }
+
+      let qChapterId = qPayload.chapterId;
+      let qTopicId = qPayload.topicId;
+
+      if (!qSubjectDoc && qChapterId && !qChapterId.toString().match(/^[0-9a-fA-F]{24}$/)) {
+        const cleanChName = String(qChapterId).trim();
+        qSubjectDoc = await Subject.findOne({
+          "chapters.name": { $regex: new RegExp("^" + cleanChName + "$", "i") },
+          isDeleted: false
+        });
+        if (qSubjectDoc) {
+          qSubjectId = qSubjectDoc._id.toString();
+        }
+      }
+
+      if (qSubjectDoc) {
+        if (qChapterId && !qChapterId.toString().match(/^[0-9a-fA-F]{24}$/)) {
+          const cleanChapterName = String(qChapterId).trim().toLowerCase();
+          const ch = qSubjectDoc.chapters.find(c => c.name.trim().toLowerCase() === cleanChapterName);
+          if (ch) {
+            qChapterId = ch._id.toString();
+          } else {
+            qChapterId = null;
+          }
+        }
+
+        if (qTopicId && !qTopicId.toString().match(/^[0-9a-fA-F]{24}$/) && qChapterId) {
+          const cleanTopicName = String(qTopicId).trim().toLowerCase();
+          const ch = qSubjectDoc.chapters.find(c => c._id.toString() === qChapterId);
+          if (ch) {
+            const tp = ch.topics.find(t => t.name.trim().toLowerCase() === cleanTopicName);
+            if (tp) {
+              qTopicId = tp._id.toString();
+            } else {
+              qTopicId = null;
+            }
+          } else {
+            qTopicId = null;
+          }
+        }
+      }
+
+      qPayload.subjectId = qSubjectId || null;
+      qPayload.chapterId = qChapterId || null;
+      qPayload.topicId = qTopicId || null;
+
       // Clean HTML tags and extract text/image fields
       cleanTextAndImageFields(qPayload.en)
       cleanTextAndImageFields(qPayload.hi)
