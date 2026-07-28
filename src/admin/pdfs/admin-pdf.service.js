@@ -25,8 +25,8 @@ class AdminPdfService extends BaseService {
     }
 
     const direction = order === 'desc' ? -1 : 1
-    const sort = sortBy === 'createdAt' 
-      ? { createdAt: direction, sortOrder: 1 } 
+    const sort = sortBy === 'createdAt'
+      ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
     return this.getAll(filter, {
