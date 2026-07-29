@@ -438,5 +438,20 @@ router.get('/test-subjects-chapters', catchAsync(async (req, res) => {
   sendSuccess(res, filteredSubjects)
 }))
 
+  // POST /api/v1/admin/common/upload-chat-attachment
+  router.post('/upload-chat-attachment', require('../../middlewares/upload.middleware').uploadVideoImage.single('file'), catchAsync(async (req, res) => {
+    if (!req.file) {
+      return sendError(res, 'No file uploaded', 400)
+    }
 
-module.exports = router
+    const { uploadFile } = require('../../lib/fileUpload')
+    const path = require('path')
+    const ext = path.extname(req.file.originalname).toLowerCase()
+    const filename = `chat-${Date.now()}${ext}`
+    const folder = 'chat'
+    const fileUrl = await uploadFile(req.file.buffer, filename, folder, req.file.mimetype)
+
+    sendSuccess(res, { url: fileUrl, filename: req.file.originalname })
+  }))
+
+  module.exports = router
