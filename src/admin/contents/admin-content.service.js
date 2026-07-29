@@ -84,9 +84,10 @@ class AdminContentService extends BaseService {
       
       // Fallback if not stored yet in database
       if (!contentObj.rtmpServer && contentObj.agoraChannel) {
-        const token = generatePublisherToken(contentObj.agoraChannel)
-        const rtmpServer = "rtmp://rtmp-ingest.agora.io/live/"
-        const rtmpStreamKey = `${contentObj.agoraChannel}?token=${token}`
+        const rtmpUid = 666666
+        const token = generatePublisherToken(contentObj.agoraChannel, rtmpUid)
+        const rtmpServer = "rtmp://rtls-ingress-prod-ap.agoramdn.com/live/"
+        const rtmpStreamKey = `${contentObj.agoraChannel}?token=${token}&uid=${rtmpUid}`
 
         contentObj.token = token
         contentObj.rtmpServer = rtmpServer
@@ -186,9 +187,48 @@ class AdminContentService extends BaseService {
       content.agoraChannel = `channel_${Date.now()}_${Math.floor(Math.random() * 10000)}`
     }
 
-    const token = generatePublisherToken(content.agoraChannel)
-    const rtmpServer = "rtmp://rtmp-ingest.agora.io/live/"
-    const rtmpStreamKey = `${content.agoraChannel}?token=${token}`
+    const appId = process.env.AGORA_APP_ID
+    const customerId = process.env.AGORA_CUSTOMER_ID
+    const customerCert = process.env.AGORA_CUSTOMER_CERTIFICATE
+
+    const rtmpUid = 666666
+    const token = generatePublisherToken(content.agoraChannel, rtmpUid)
+    const rtmpServer = "rtmp://rtls-ingress-prod-ap.agoramdn.com/live/"
+    let rtmpStreamKey = `${content.agoraChannel}?token=${token}&uid=${rtmpUid}`
+
+    if (appId && customerId && customerCert) {
+      const url = `https://api.agora.io/ap/v1/projects/${appId}/rtls/ingress/streamkeys`
+      try {
+        const auth = Buffer.from(`${customerId}:${customerCert}`).toString('base64')
+        const res = await axios.post(url, {
+          cname: content.agoraChannel,
+          uid: rtmpUid
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${auth}`
+          }
+        })
+        if (res.data && res.data.data && res.data.data.streamKey) {
+          rtmpStreamKey = res.data.data.streamKey
+          this.logger.info({ streamKey: rtmpStreamKey }, 'Agora Media Ingress streamkey generated successfully via REST API')
+        }
+      } catch (err) {
+        const errorDetail = {
+          message: err.message,
+          status: err.response?.status,
+          data: err.response?.data,
+          requestBody: {
+            cname: content?.agoraChannel,
+            uid: rtmpUid
+          },
+          url,
+          stack: err.stack
+        }
+        require('fs').writeFileSync('agora-api-error.log', JSON.stringify(errorDetail, null, 2))
+        this.logger.error({ err: err.response?.data || err.message }, 'Failed to generate Agora Media Ingress streamkey via REST API')
+      }
+    }
 
     // Parse restream URLs from body
     let restreamUrls = []
