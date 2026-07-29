@@ -28,7 +28,7 @@ const initSocket = (httpServer) => {
   });
 
   // Authentication Middleware
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     try {
       rootLogger.info(`[SOCKET AUTH] Authenticating connection. Socket ID: ${socket.id}`);
       let token = socket.handshake.auth?.token || socket.handshake.query?.token;
@@ -56,6 +56,15 @@ const initSocket = (httpServer) => {
         decoded = jwt.verify(token, config.JWT_ACCESS_SECRET);
       }
 
+      if (decoded && decoded._id && role === 'user') {
+        const User = require('../models/User.model');
+        const dbUser = await User.findById(decoded._id).lean();
+        if (dbUser) {
+          decoded.name = dbUser.name;
+          decoded.phone = dbUser.phone;
+        }
+      }
+
       socket.user = decoded;
       socket.role = role;
       next();
@@ -81,7 +90,7 @@ const initSocket = (httpServer) => {
         rootLogger.info(`[SOCKET] User ${socket.user?._id || 'anonymous'} (role: ${socket.role}) joined room ${roomName}. Socket ID: ${socket.id}`);
 
         // Fetch current chat mode from redis
-        const chatMode = await redis.get(`live_chat_mode:${contentId}`) || 'public';
+        const chatMode = await redis.get(`live_chat_mode:${contentId}`) || 'private';
 
         // Fetch the active poll from DB
         const activePoll = await LivePoll.findOne({ content: contentId, isActive: true }).lean();
@@ -103,10 +112,14 @@ const initSocket = (httpServer) => {
         socket.emit('live-state', { chatMode, activePoll, recentChats, pollHistory });
 
         // Broadcast updated viewer count
+        const customCountStr = await redis.get(`live_viewer_offset:${contentId}`);
+        const customCount = customCountStr ? parseInt(customCountStr, 10) : 0;
         const currentSize = io.sockets.adapter.rooms.get(roomName)?.size || 1;
-        io.to(roomName).emit('viewer-count-updated', { count: currentSize });
+        const displayCount = customCount > 0 ? customCount : currentSize;
 
-        if (callback) callback({ success: true, room: roomName, chatMode, activePoll, recentChats, pollHistory, viewerCount: currentSize });
+        io.to(roomName).emit('viewer-count-updated', { count: displayCount, actualCount: currentSize });
+
+        if (callback) callback({ success: true, room: roomName, chatMode, activePoll, recentChats, pollHistory, viewerCount: displayCount, actualCount: currentSize });
       } catch (error) {
         rootLogger.error(error, 'Error in join-live');
         if (callback) callback({ error: 'Internal server error' });
@@ -130,7 +143,7 @@ const initSocket = (httpServer) => {
         const roomName = `live_${contentId}`;
         const sockets = await io.in(roomName).fetchSockets();
         rootLogger.info(`[SOCKET DEBUG] get-live-users requested for room ${roomName}. Total active connections in room: ${sockets.length}`);
-        
+
         sockets.forEach(s => {
           rootLogger.info(`[SOCKET DEBUG] Socket ID: ${s.id} | User ID: ${s.user?._id || 'none'} | User Role: ${s.role || 'none'}`);
         });
@@ -175,6 +188,7 @@ const initSocket = (httpServer) => {
         }
 
         const roomName = `live_${contentId}`;
+        rootLogger.info(`[SOCKET CHAT MODE] Host ${socket.user?._id || 'anonymous'} is changing chat mode for room ${roomName} to "${mode}"`);
         await redis.set(`live_chat_mode:${contentId}`, mode);
 
         io.to(roomName).emit('chat-mode-changed', { mode });
@@ -186,7 +200,71 @@ const initSocket = (httpServer) => {
       }
     });
 
-    // Send chat message
+    // Recalculate and sync viewer count
+    socket.on('sync-viewer-count', async (data, callback) => {
+      try {
+        const { contentId } = data;
+        if (!contentId) {
+          if (callback) callback({ error: 'contentId is required' });
+          return;
+        }
+
+        // Broadcast updated viewer count
+        const customCountStr = await redis.get(`live_viewer_offset:${contentId}`);
+        const customCount = customCountStr ? parseInt(customCountStr, 10) : 0;
+        const currentSize = io.sockets.adapter.rooms.get(roomName)?.size || 1;
+        const displayCount = customCount > 0 ? customCount : currentSize;
+
+        io.to(roomName).emit('viewer-count-updated', { count: displayCount, actualCount: currentSize });
+        rootLogger.info(`[SOCKET SYNC] Forced viewer count sync for room ${roomName}. New size: ${currentSize}`);
+
+        if (callback) callback({ success: true, count: displayCount, actualCount: currentSize });
+      } catch (error) {
+        rootLogger.error(error, 'Error in sync-viewer-count');
+        if (callback) callback({ error: 'Internal server error' });
+      }
+    });
+
+    // Set custom/override viewer count shown to students
+    socket.on('set-viewer-count', async (data, callback) => {
+      try {
+        if (socket.role !== 'admin') {
+          if (callback) callback({ error: 'Unauthorized' });
+          return;
+        }
+
+        const { contentId, count } = data;
+        if (!contentId) {
+          if (callback) callback({ error: 'contentId is required' });
+          return;
+        }
+
+        const parsedCount = parseInt(count, 10);
+        if (isNaN(parsedCount)) {
+          if (callback) callback({ error: 'Invalid count value' });
+          return;
+        }
+
+        const roomName = `live_${contentId}`;
+        if (parsedCount > 0) {
+          await redis.set(`live_viewer_offset:${contentId}`, parsedCount);
+        } else {
+          await redis.del(`live_viewer_offset:${contentId}`);
+        }
+
+        const currentSize = io.sockets.adapter.rooms.get(roomName)?.size || 1;
+        const displayCount = parsedCount > 0 ? parsedCount : currentSize;
+
+        io.to(roomName).emit('viewer-count-updated', { count: displayCount, actualCount: currentSize });
+        rootLogger.info(`[SOCKET OVERRIDE] Set display viewer count override for room ${roomName} to: ${displayCount}`);
+
+        if (callback) callback({ success: true, count: displayCount, actualCount: currentSize });
+      } catch (error) {
+        rootLogger.error(error, 'Error in set-viewer-count');
+        if (callback) callback({ error: 'Internal server error' });
+      }
+    });
+
     socket.on('chat-message', async (data, callback) => {
       try {
         const { contentId, message } = data;
@@ -198,7 +276,7 @@ const initSocket = (httpServer) => {
         }
 
         const roomName = `live_${contentId}`;
-        const chatMode = await redis.get(`live_chat_mode:${contentId}`) || 'public';
+        const chatMode = await redis.get(`live_chat_mode:${contentId}`) || 'private';
 
         // Construct message payload and save to DB
         const chatMessage = await LiveChatMessage.create({
@@ -362,12 +440,21 @@ const initSocket = (httpServer) => {
       }
     });
 
-    socket.on('disconnecting', () => {
+    socket.on('disconnecting', async () => {
       for (const room of socket.rooms) {
         if (room.startsWith('live_')) {
-          // The size still includes the disconnecting socket, so we subtract 1
-          const currentSize = io.sockets.adapter.rooms.get(room)?.size || 1;
-          io.to(room).emit('viewer-count-updated', { count: currentSize - 1 });
+          const contentId = room.substring(5);
+          try {
+            const customCountStr = await redis.get(`live_viewer_offset:${contentId}`);
+            const customCount = customCountStr ? parseInt(customCountStr, 10) : 0;
+            // The size still includes the disconnecting socket, so we subtract 1
+            const currentSize = io.sockets.adapter.rooms.get(room)?.size || 1;
+            const actualCount = Math.max(1, currentSize - 1);
+            const displayCount = customCount > 0 ? customCount : actualCount;
+            io.to(room).emit('viewer-count-updated', { count: displayCount, actualCount });
+          } catch (err) {
+            rootLogger.error(err, 'Error in disconnecting viewer broadcast');
+          }
         }
       }
     });
