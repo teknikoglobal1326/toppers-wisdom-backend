@@ -26,4 +26,13 @@ const remove = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Course test deleted')
 })
 
-module.exports = { list, getOne, create, update, remove }
+const bulkCreate = catchAsync(async (req, res) => {
+  const common = req.body || {}
+  const file = req.files && req.files.file ? req.files.file[0] : (req.file || null)
+  const adminId = req.admin?._id || req.user?._id || req.user?.id
+
+  const created = await adminCourseTestService.bulkUpload(file, common, adminId)
+  sendCreated(res, created)
+})
+
+module.exports = { list, getOne, create, update, remove, bulkCreate }

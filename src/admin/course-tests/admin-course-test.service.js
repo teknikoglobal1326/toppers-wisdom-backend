@@ -117,6 +117,210 @@ class AdminCourseTestService extends BaseService {
     await courseTestRepository.updateById(id, { isDeleted: true })
     this.logger.info({ courseTestId: id }, 'Course test soft deleted')
   }
+
+  async bulkUpload(file, common = {}, adminId) {
+    if (!file) throw new AppError('Excel or Word metadata file is required', 400, 'VALIDATION_ERROR')
+
+    const extension = path.extname(file.originalname).toLowerCase()
+    let rawRows = []
+
+    if (extension === '.xlsx' || extension === '.xls') {
+      const XLSX = require('xlsx')
+      const workbook = XLSX.read(file.buffer, { type: 'buffer' })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' })
+    } else if (extension === '.docx' || extension === '.doc') {
+      const mammoth = require('mammoth')
+      const cheerio = require('cheerio')
+      const { value: html } = await mammoth.convertToHtml({ buffer: file.buffer })
+      const $ = cheerio.load(html)
+      
+      $("table").each((_, tableDom) => {
+        const tableRows = $(tableDom).find("tr")
+        if (tableRows.length < 2) return
+        
+        const headers = []
+        $(tableRows[0]).find("td, th").each((_, cell) => {
+          headers.push($(cell).text().trim().toLowerCase().replace(/[\s_-]+/g, ""))
+        })
+        
+        for (let i = 1; i < tableRows.length; i++) {
+          const cells = $(tableRows[i]).find("td")
+          const rowData = {}
+          cells.each((cIdx, cell) => {
+            const header = headers[cIdx]
+            if (header) {
+              rowData[header] = $(cell).text().trim()
+            }
+          })
+          if (Object.keys(rowData).length > 0) {
+            rawRows.push(rowData)
+          }
+        }
+      })
+    } else {
+      throw new AppError('Unsupported file type. Use Excel (.xlsx, .xls) or Word (.docx, .doc) files.', 400, 'VALIDATION_ERROR')
+    }
+
+    const payloadArray = []
+    const Subject = require('../../models/Subject.model')
+
+    for (const rawRow of rawRows) {
+      const normalizedRow = {}
+      for (const [key, value] of Object.entries(rawRow)) {
+        const cleanKey = key.toLowerCase().replace(/[\s_-]+/g, "")
+        if (cleanKey === "title") normalizedRow.title = value
+        else if (cleanKey === "description" || cleanKey === "desc") normalizedRow.description = value
+        else if (cleanKey === "instruction" || cleanKey === "inst") normalizedRow.instruction = value
+        else if (cleanKey === "instructionsnew") normalizedRow.instructionsNew = value
+        else if (cleanKey === "sortorder" || cleanKey === "order" || cleanKey === "sort") {
+          normalizedRow.sortOrder = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "subjects" || cleanKey === "subject") normalizedRow.subjects = value
+        else if (cleanKey === "chapters" || cleanKey === "chapter") normalizedRow.chapters = value
+        else if (cleanKey === "topics" || cleanKey === "topic") normalizedRow.topics = value
+        else if (cleanKey === "duration" || cleanKey === "time") {
+          normalizedRow.duration = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "totalquestions" || cleanKey === "questions") {
+          normalizedRow.totalQuestions = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "totalmarks" || cleanKey === "marks") {
+          normalizedRow.totalMarks = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "passingmarks") {
+          normalizedRow.passingMarks = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "marksperquestion") {
+          normalizedRow.marksPerQuestion = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "negativemarks") {
+          normalizedRow.negativeMarks = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "maxattempts" || cleanKey === "attempts") {
+          normalizedRow.maxAttempts = value !== "" ? Number(value) : undefined
+        }
+        else if (cleanKey === "difficulty") normalizedRow.difficulty = value
+        else if (cleanKey === "testtype" || cleanKey === "type") normalizedRow.testType = value
+        else if (cleanKey === "startdate") normalizedRow.startDate = value
+        else if (cleanKey === "enddate") normalizedRow.endDate = value
+        else if (cleanKey === "scheduleat" || cleanKey === "scheduledat") normalizedRow.scheduleAt = value
+        else if (cleanKey === "language") normalizedRow.language = value
+        else if (cleanKey === "status") normalizedRow.status = value
+      }
+
+      if (!normalizedRow.title) continue
+
+      // Resolve subject name/ID
+      const subjectInput = normalizedRow.subjects || normalizedRow.subject || common.subjects || common.subject
+      let subjectIds = []
+      let subjectDoc = null
+      if (subjectInput) {
+        const inputs = Array.isArray(subjectInput) ? subjectInput : String(subjectInput).split(',').map(s => s.trim())
+        for (let input of inputs) {
+          if (input.match(/^[0-9a-fA-F]{24}$/)) {
+            subjectIds.push(input)
+            subjectDoc = await Subject.findOne({ _id: input, isDeleted: false })
+          } else if (input) {
+            subjectDoc = await Subject.findOne({
+              name: { $regex: new RegExp("^" + input + "$", "i") },
+              isDeleted: false
+            })
+            if (subjectDoc) subjectIds.push(subjectDoc._id.toString())
+          }
+        }
+      }
+
+      // Resolve chapter name/ID
+      const chapterInput = normalizedRow.chapters || normalizedRow.chapter || common.chapters || common.chapter
+      let chapterIds = []
+      if (chapterInput && subjectIds.length > 0) {
+        const inputs = Array.isArray(chapterInput) ? chapterInput : String(chapterInput).split(',').map(c => c.trim())
+        const subDoc = subjectDoc || await Subject.findOne({ _id: subjectIds[0], isDeleted: false })
+        if (subDoc) {
+          for (let input of inputs) {
+            if (input.match(/^[0-9a-fA-F]{24}$/)) {
+              chapterIds.push(input)
+            } else if (input) {
+              const ch = subDoc.chapters.find(c => c.name.trim().toLowerCase() === input.toLowerCase())
+              if (ch) chapterIds.push(ch._id.toString())
+            }
+          }
+        }
+      }
+
+      // Resolve topic name/ID
+      const topicInput = normalizedRow.topics || normalizedRow.topic || common.topics || common.topic
+      let topicIds = []
+      if (topicInput && subjectIds.length > 0 && chapterIds.length > 0) {
+        const inputs = Array.isArray(topicInput) ? topicInput : String(topicInput).split(',').map(t => t.trim())
+        const subDoc = subjectDoc || await Subject.findOne({ _id: subjectIds[0], isDeleted: false })
+        if (subDoc) {
+          const ch = subDoc.chapters.find(c => c._id.toString() === chapterIds[0])
+          if (ch) {
+            for (let input of inputs) {
+              if (input.match(/^[0-9a-fA-F]{24}$/)) {
+                topicIds.push(input)
+              } else if (input) {
+                const tp = ch.topics.find(t => t.name.trim().toLowerCase() === input.toLowerCase())
+                if (tp) topicIds.push(tp._id.toString())
+              }
+            }
+          }
+        }
+      }
+
+      // Build payload
+      const dataRow = {
+        course: common.course || common.courseId,
+        subjects: subjectIds,
+        chapters: chapterIds,
+        topics: topicIds,
+        title: normalizedRow.title,
+        slug: generateSlug(normalizedRow.title),
+        description: normalizedRow.description || "",
+        instruction: normalizedRow.instruction || "",
+        instructionsNew: normalizedRow.instructionsNew || null,
+        image: "",
+        duration: normalizedRow.duration !== undefined ? normalizedRow.duration : (common.duration || 60),
+        sortOrder: normalizedRow.sortOrder !== undefined ? normalizedRow.sortOrder : 0,
+        totalQuestions: normalizedRow.totalQuestions !== undefined ? normalizedRow.totalQuestions : 0,
+        totalMarks: normalizedRow.totalMarks !== undefined ? normalizedRow.totalMarks : 0,
+        passingMarks: normalizedRow.passingMarks !== undefined ? normalizedRow.passingMarks : 0,
+        marksPerQuestion: normalizedRow.marksPerQuestion !== undefined ? normalizedRow.marksPerQuestion : 1,
+        negativeMarks: normalizedRow.negativeMarks !== undefined ? normalizedRow.negativeMarks : 0,
+        maxAttempts: normalizedRow.maxAttempts !== undefined ? normalizedRow.maxAttempts : 1,
+        difficulty: normalizedRow.difficulty || "medium",
+        testType: normalizedRow.testType || "practice",
+        startDate: normalizedRow.startDate || null,
+        endDate: normalizedRow.endDate || null,
+        scheduleAt: normalizedRow.scheduleAt || null,
+        language: normalizedRow.language || "hi",
+        status: normalizedRow.status || common.status || "draft",
+        createdBy: adminId
+      }
+
+      payloadArray.push(dataRow)
+    }
+
+    if (payloadArray.length === 0) {
+      throw new AppError('No valid rows found in metadata file', 400, 'VALIDATION_ERROR')
+    }
+
+    const { bulkCreateCourseTestSchema } = require('./admin-course-test.schema')
+    const { error, value } = bulkCreateCourseTestSchema.validate(payloadArray, {
+      abortEarly: false,
+      stripUnknown: true,
+      convert: true,
+    })
+    if (error) {
+      const details = error.details.map(d => `${d.path.join('.')}: ${d.message}`).join('; ')
+      throw new AppError(`Validation failed for bulk data: ${details}`, 400, 'VALIDATION_ERROR')
+    }
+
+    return courseTestRepository.create(value)
+  }
 }
 
 const adminCourseTestService = new AdminCourseTestService()

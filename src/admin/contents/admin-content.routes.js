@@ -4,13 +4,23 @@ const { validate, validateQuery } = require('../../core/validate')
 const { createContentSchema, createLiveClassSchema, updateContentSchema, listContentQuerySchema, updateLiveClassSchema } = require('./admin-content.schema')
 const { uploadVideoImage } = require('../../middlewares/upload.middleware')
 const { attachUploadedFiles } = require('./admin-content.service')
+const multer = require('multer')
 
 const uploadContentFiles = uploadVideoImage.fields([
   { name: 'video', maxCount: 1 },
   { name: 'image', maxCount: 1 },
 ])
 
+const uploadBulkContent = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }
+})
+const uploadBulkContentFields = uploadBulkContent.fields([
+  { name: 'file', maxCount: 1 }
+])
+
 router.get('/', validateQuery(listContentQuerySchema), controller.list)
+router.post('/bulk', uploadBulkContentFields, controller.bulkCreate)
 router.post('/', uploadContentFiles, attachUploadedFiles, validate(createContentSchema), controller.create)
 router.post('/live', uploadContentFiles, attachUploadedFiles, validate(createLiveClassSchema), controller.createLiveClass)
 router.get('/live', validateQuery(listContentQuerySchema), controller.listLiveClasses)

@@ -27,6 +27,8 @@ const remove = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Pdf deleted')
 })
 
+const AppError = require('../../core/AppError')
+
 const bulkCreate = catchAsync(async (req, res) => {
   if (req.files && req.files.file) {
     const file = req.files.file[0]
@@ -39,4 +41,18 @@ const bulkCreate = catchAsync(async (req, res) => {
   sendCreated(res, await adminPdfService.bulkCreatePdf(payloadArray))
 })
 
-module.exports = { list, getOne, create, update, remove, bulkCreate }
+const uploadForDocument = catchAsync(async (req, res) => {
+  const { id } = req.params
+  const payload = {}
+  if (req.body.pdfFile) payload.pdfFile = req.body.pdfFile
+  if (req.body.image) payload.image = req.body.image
+
+  if (Object.keys(payload).length === 0) {
+    throw new AppError('At least one file (pdfFile or image) must be uploaded', 400, 'VALIDATION_ERROR')
+  }
+
+  const updated = await adminPdfService.updatePdf(id, payload)
+  sendSuccess(res, updated, 'Files uploaded and document updated successfully')
+})
+
+module.exports = { list, getOne, create, update, remove, bulkCreate, uploadForDocument }

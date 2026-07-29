@@ -14,9 +14,10 @@ const createTodayQuizSchema = Joi.object({
     instructionsNew: Joi.string().trim().optional().allow(null, ''),
     startDateTime: Joi.date().required(),
     endDateTime: Joi.date().greater(Joi.ref('startDateTime')).required(),
+    scheduleAt: Joi.date().optional().allow(null, ''),
     isPaid: Joi.boolean().optional().default(false),
     status: Joi.string().valid('active', 'inactive').optional().default('active'),
-    language: Joi.string().valid('en', 'hi').optional().default('en'),
+    language: Joi.string().valid('en', 'hi', 'both').optional().default('en'),
 })
 
 const updateTodayQuizSchema = Joi.object({
@@ -33,9 +34,32 @@ const updateTodayQuizSchema = Joi.object({
     instructionsNew: Joi.string().trim().optional().allow(null, ''),
     startDateTime: Joi.date(),
     endDateTime: Joi.date(),
+    scheduleAt: Joi.date().optional().allow(null, ''),
     isPaid: Joi.boolean().optional(),
     status: Joi.string().valid('active', 'inactive').optional(),
-    language: Joi.string().valid('en', 'hi').optional(),
+    language: Joi.string().valid('en', 'hi', 'both').optional(),
 }).min(1)
 
-module.exports = { createTodayQuizSchema, updateTodayQuizSchema }
+const bulkCreateTodayQuizSchema = Joi.array().items(
+    Joi.object({
+        title: Joi.string().trim().required(),
+        description: Joi.string().optional().allow(null, ''),
+        thumbnail: Joi.string().optional().allow(null, '').default(''),
+        duration: Joi.number().integer().min(1).required(),
+        totalQuestions: Joi.number().integer().min(1).required(),
+        totalMarks: Joi.number().min(0).required(),
+        marksPerQuestion: Joi.number().min(0).required(),
+        negativeMarks: Joi.number().min(0).required(),
+        passingMarks: Joi.number().min(0).required(),
+        instructions: Joi.string().optional().allow(null, ''),
+        instructionsNew: Joi.string().trim().optional().allow(null, ''),
+        startDateTime: Joi.date().required(),
+        endDateTime: Joi.date().required(),
+        scheduleAt: Joi.date().optional().allow(null, ''),
+        isPaid: Joi.boolean().optional().default(false),
+        status: Joi.string().valid('active', 'inactive').optional().default('active'),
+        language: Joi.string().valid('en', 'hi', 'both').optional().default('en'),
+    })
+).min(1)
+
+module.exports = { createTodayQuizSchema, updateTodayQuizSchema, bulkCreateTodayQuizSchema }
