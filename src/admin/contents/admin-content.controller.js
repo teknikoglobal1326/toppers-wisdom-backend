@@ -56,4 +56,13 @@ const updateLiveClass = catchAsync(async (req, res) => {
   sendSuccess(res, await adminContentService.updateContent(req.params.id, payload))
 })
 
-module.exports = { list, listLiveClasses, getOne, create, update, remove, createLiveClass, goLive, endLive, updateLiveClass }
+const bulkCreate = catchAsync(async (req, res) => {
+  const common = req.body || {}
+  const file = req.files && req.files.file ? req.files.file[0] : (req.file || null)
+  const adminId = req.admin?._id || req.user?._id || req.user?.id
+
+  const created = await adminContentService.bulkUpload(file, common, adminId)
+  sendCreated(res, created)
+})
+
+module.exports = { list, listLiveClasses, getOne, create, update, remove, createLiveClass, goLive, endLive, updateLiveClass, bulkCreate }
