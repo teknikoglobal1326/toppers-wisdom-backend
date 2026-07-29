@@ -35,8 +35,8 @@ const list = catchAsync(async (req, res) => {
     filter.$or = [{ name: rx }, { email: rx }]
   }
 
-  const sortBy = req.query.sortBy || 'sortOrder'
-  const sortDirection = req.query.order === 'desc' ? -1 : 1
+  const sortBy = req.query.sortBy || 'createdAt'
+  const sortDirection = req.query.order === 'asc' ? 1 : -1
   console.log('Query:', req.query, 'SortBy:', sortBy, 'SortDirection:', sortDirection)
 
   const { data: members, pagination } = await paginate(Member, filter, {

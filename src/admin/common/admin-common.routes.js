@@ -88,6 +88,44 @@ router.get('/subjects/:courseId', catchAsync(async (req, res) => {
   sendSuccess(res, subjects)
 }))
 
+// GET /api/v1/admin/common/tree/:courseId
+router.get('/tree/:courseId', catchAsync(async (req, res) => {
+  const { courseId } = req.params
+
+  const course = await courseRepository.findById(courseId, {
+    select: 'subjects'
+  })
+
+  if (!course) {
+    return sendError(res, 'Course not found', 404)
+  }
+
+  const subjectIds = (course.subjects || []).map(item => item.subject)
+
+  const subjects = await Subject.find({
+    _id: { $in: subjectIds },
+    isDeleted: false,
+    status: 'active'
+  })
+  .sort({ sortOrder: 1, createdAt: -1 })
+  .lean()
+
+  const tree = subjects.map(sub => ({
+    _id: sub._id,
+    name: sub.name,
+    chapters: (sub.chapters || []).map(ch => ({
+      _id: ch._id,
+      name: ch.name,
+      topics: (ch.topics || []).map(tp => ({
+        _id: tp._id,
+        name: tp.name
+      }))
+    }))
+  }))
+
+  sendSuccess(res, tree)
+}))
+
 // GET /api/v1/admin/common/chapters/:courseId
 router.get('/chapters/:courseId', catchAsync(async (req, res) => {
   const { courseId } = req.params;

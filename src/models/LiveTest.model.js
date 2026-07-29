@@ -35,6 +35,7 @@ const liveTestSchema = new mongoose.Schema({
         hi: { type: localizedBlock, default: null },
     },
     isDeleted: { type: Boolean, default: false, index: true },
+    scheduleAt: { type: Date, default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
 }, { timestamps: true })
 

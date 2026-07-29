@@ -158,12 +158,13 @@ class AdminPdfService extends BaseService {
         else if (cleanKey === "sortorder" || cleanKey === "order" || cleanKey === "sort") {
           normalizedRow.sortOrder = value !== "" ? Number(value) : undefined
         }
-        else if (cleanKey === "pdffile" || cleanKey === "file" || cleanKey === "pdf") normalizedRow.pdfFile = value
-        else if (cleanKey === "image" || cleanKey === "thumbnail" || cleanKey === "cover" || cleanKey === "thumb") normalizedRow.image = value
         else if (cleanKey === "subjects" || cleanKey === "subject") normalizedRow.subjects = value
         else if (cleanKey === "chapters" || cleanKey === "chapter") normalizedRow.chapters = value
         else if (cleanKey === "topics" || cleanKey === "topic") normalizedRow.topics = value
         else if (cleanKey === "status") normalizedRow.status = value
+        else if (cleanKey === "scheduleat" || cleanKey === "schedule" || cleanKey === "scheduledtime") {
+          normalizedRow.scheduleAt = value !== "" ? value : undefined
+        }
       }
 
       if (!normalizedRow.title) continue // skip empty rows with no title
@@ -227,62 +228,6 @@ class AdminPdfService extends BaseService {
         }
       }
 
-      // Resolve physical files if any are attached and the sheet value is a filename
-      const pdfFiles = [
-        ...(files.pdfFile || []),
-        ...(files.pdfFiles || [])
-      ]
-      const imageFiles = [
-        ...(files.image || []),
-        ...(files.imageFiles || [])
-      ]
-
-      let resolvedPdfFile = normalizedRow.pdfFile || ""
-      if (resolvedPdfFile && !resolvedPdfFile.startsWith("http://") && !resolvedPdfFile.startsWith("https://")) {
-        const matched = pdfFiles.find(f => {
-          const origName = f.originalname.trim().toLowerCase()
-          const origBase = path.basename(f.originalname, path.extname(f.originalname)).trim().toLowerCase()
-          const targetName = resolvedPdfFile.trim().toLowerCase()
-          const targetBase = path.basename(resolvedPdfFile, path.extname(resolvedPdfFile)).trim().toLowerCase()
-          return origName === targetName || origBase === targetName || origBase === targetBase || origName === targetBase
-        })
-        if (matched) {
-          const folder = `pdfs/bulk-${Date.now()}`
-          const ext = path.extname(matched.originalname) || '.pdf'
-          resolvedPdfFile = await uploadFile(matched.buffer, `pdf-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`, folder, matched.mimetype)
-        }
-      } else if (!resolvedPdfFile && pdfFiles.length > 0) {
-        const fileToUse = pdfFiles.length === 1 ? pdfFiles[0] : pdfFiles[payloadArray.length]
-        if (fileToUse) {
-          const folder = `pdfs/bulk-${Date.now()}`
-          const ext = path.extname(fileToUse.originalname) || '.pdf'
-          resolvedPdfFile = await uploadFile(fileToUse.buffer, `pdf-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`, folder, fileToUse.mimetype)
-        }
-      }
-
-      let resolvedImage = normalizedRow.image || ""
-      if (resolvedImage && !resolvedImage.startsWith("http://") && !resolvedImage.startsWith("https://")) {
-        const matched = imageFiles.find(f => {
-          const origName = f.originalname.trim().toLowerCase()
-          const origBase = path.basename(f.originalname, path.extname(f.originalname)).trim().toLowerCase()
-          const targetName = resolvedImage.trim().toLowerCase()
-          const targetBase = path.basename(resolvedImage, path.extname(resolvedImage)).trim().toLowerCase()
-          return origName === targetName || origBase === targetName || origBase === targetBase || origName === targetBase
-        })
-        if (matched) {
-          const folder = `pdfs/bulk-${Date.now()}`
-          const ext = path.extname(matched.originalname) || '.jpg'
-          resolvedImage = await uploadFile(matched.buffer, `image-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`, folder, matched.mimetype)
-        }
-      } else if (!resolvedImage && imageFiles.length > 0) {
-        const fileToUse = imageFiles.length === 1 ? imageFiles[0] : imageFiles[payloadArray.length]
-        if (fileToUse) {
-          const folder = `pdfs/bulk-${Date.now()}`
-          const ext = path.extname(fileToUse.originalname) || '.jpg'
-          resolvedImage = await uploadFile(fileToUse.buffer, `image-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`, folder, fileToUse.mimetype)
-        }
-      }
-
       // Build record data
       const dataRow = {
         course: common.course || common.courseId,
@@ -291,10 +236,11 @@ class AdminPdfService extends BaseService {
         topics: topicIds,
         title: normalizedRow.title,
         description: normalizedRow.description || "",
-        pdfFile: resolvedPdfFile,
-        image: resolvedImage,
+        pdfFile: "pending",
+        image: "",
         sortOrder: normalizedRow.sortOrder !== undefined ? normalizedRow.sortOrder : 0,
         status: normalizedRow.status || common.status || "active",
+        scheduleAt: normalizedRow.scheduleAt !== undefined ? normalizedRow.scheduleAt : (common.scheduleAt || null),
         createdBy: adminId
       }
 

@@ -44,6 +44,7 @@ router.get('/', validateQuery(listPdfQuerySchema), controller.list)
 router.post('/bulk', uploadBulkPdfFields, parseArrays, controller.bulkCreate)
 router.post('/', uploadPdfFields, parseArrays, attachUploadedFiles, validate(createPdfSchema), controller.create)
 router.get('/:id', controller.getOne)
+router.patch('/:id/upload', uploadPdfFields, attachUploadedFiles, controller.uploadForDocument)
 router.patch('/:id', uploadPdfFields, parseArrays, attachUploadedFiles, validate(updatePdfSchema), controller.update)
 router.delete('/:id', controller.remove)
 
