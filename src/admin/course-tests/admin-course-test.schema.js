@@ -24,6 +24,7 @@ const createCourseTestSchema = Joi.object({
   testType: Joi.string().valid('practice', 'mock', 'exam').default('practice'),
   startDate: Joi.date().optional(),
   endDate: Joi.date().optional(),
+  scheduleAt: Joi.date().optional().allow('', null),
   language: Joi.string().valid('hi', 'en', 'both').default('hi'),
   status: Joi.string().valid('draft', 'active', 'inactive').default('draft'),
 })
@@ -52,6 +53,7 @@ const updateCourseTestSchema = Joi.object({
   testType: Joi.string().valid('practice', 'mock', 'exam'),
   startDate: Joi.date().optional(),
   endDate: Joi.date().optional(),
+  scheduleAt: Joi.date().optional().allow('', null),
   language: Joi.string().valid('hi', 'en', 'both'),
   status: Joi.string().valid('draft', 'active', 'inactive'),
 }).min(1)
@@ -69,4 +71,34 @@ const listCourseTestQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 })
 
-module.exports = { createCourseTestSchema, updateCourseTestSchema, listCourseTestQuerySchema }
+const bulkCreateCourseTestSchema = Joi.array().items(
+  Joi.object({
+    course: Joi.string().hex().length(24).required(),
+    subjects: Joi.array().items(Joi.string().hex().length(24)).optional(),
+    topics: Joi.array().items(Joi.string().hex().length(24)).optional(),
+    chapters: Joi.array().items(Joi.string().hex().length(24)).optional(),
+    title: Joi.string().trim().required(),
+    slug: Joi.string().trim().optional(),
+    description: Joi.string().trim().optional().allow('', null),
+    instruction: Joi.string().trim().optional().allow('', null),
+    instructionsNew: Joi.string().trim().optional().allow('', null),
+    image: Joi.string().trim().optional().allow('', null).default(''),
+    duration: Joi.number().min(1).required(),
+    sortOrder: Joi.number().integer().min(0).default(0),
+    totalQuestions: Joi.number().min(0).default(0),
+    totalMarks: Joi.number().min(0).default(0),
+    passingMarks: Joi.number().min(0).default(0),
+    marksPerQuestion: Joi.number().min(1).default(1),
+    negativeMarks: Joi.number().min(0).default(0),
+    maxAttempts: Joi.number().min(1).default(1),
+    difficulty: Joi.string().valid('easy', 'medium', 'hard').default('medium'),
+    testType: Joi.string().valid('practice', 'mock', 'exam', 'other').default('practice'),
+    startDate: Joi.date().optional().allow(null, ''),
+    endDate: Joi.date().optional().allow(null, ''),
+    scheduleAt: Joi.date().optional().allow(null, ''),
+    language: Joi.string().valid('hi', 'en', 'both').default('hi'),
+    status: Joi.string().valid('draft', 'active', 'inactive').default('draft'),
+  })
+).min(1)
+
+module.exports = { createCourseTestSchema, updateCourseTestSchema, listCourseTestQuerySchema, bulkCreateCourseTestSchema }

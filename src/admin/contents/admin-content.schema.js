@@ -14,6 +14,7 @@ const createContentSchema = Joi.object({
   video: Joi.string().trim().required(),
   image: Joi.string().trim().optional().allow('', null),
   status: Joi.string().valid('active', 'inactive').default('active'),
+  scheduleAt: Joi.date().optional().allow('', null),
 })
 
 const createLiveClassSchema = Joi.object({
@@ -47,6 +48,7 @@ const updateContentSchema = Joi.object({
   video: Joi.string().trim(),
   image: Joi.string().trim().optional().allow('', null),
   status: Joi.string().valid('active', 'inactive'),
+  scheduleAt: Joi.date().optional().allow('', null),
 }).min(1)
 
 const listContentQuerySchema = Joi.object({
@@ -79,4 +81,30 @@ const updateLiveClassSchema = Joi.object({
   agoraConverters: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
 }).min(1)
 
-module.exports = { createContentSchema, createLiveClassSchema, updateContentSchema, listContentQuerySchema, updateLiveClassSchema }
+const bulkCreateContentSchema = Joi.array().items(
+  Joi.object({
+    course: Joi.string().hex().length(24).required(),
+    subject: Joi.array().items(Joi.string().hex().length(24)).optional(),
+    topic: Joi.array().items(Joi.string().hex().length(24)).required(),
+    chapter: Joi.array().items(Joi.string().hex().length(24)).optional(),
+    title: Joi.string().trim().required(),
+    sortOrder: Joi.number().integer().min(0).default(0),
+    description: Joi.string().trim().optional().allow('', null),
+    video: Joi.string().trim().required(),
+    image: Joi.string().trim().optional().allow('', null),
+    status: Joi.string().valid('active', 'inactive').default('active'),
+    isLive: Joi.boolean().default(false),
+    scheduledStartTime: Joi.date().optional().allow(null, ''),
+    scheduledEndTime: Joi.date().optional().allow(null, ''),
+    scheduleAt: Joi.date().optional().allow(null, ''),
+  })
+).min(1)
+
+module.exports = {
+  createContentSchema,
+  createLiveClassSchema,
+  updateContentSchema,
+  listContentQuerySchema,
+  updateLiveClassSchema,
+  bulkCreateContentSchema
+}
