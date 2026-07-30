@@ -87,12 +87,27 @@ class AdminCourseService extends BaseService {
     }
 
     // inherited getAll
-    return this.getAll(filter, {
+    const result = await this.getAll(filter, {
       page: filters.page,
       limit: filters.limit,
       sort: buildCourseSort(filters),
       populate: COURSE_NAME_POPULATE,
     });
+
+    const [globalTotal, globalPublished, globalFree] = await Promise.all([
+      this.repository.count({ isDeleted: false }),
+      this.repository.count({ isDeleted: false, status: 'published' }),
+      this.repository.count({
+        isDeleted: false,
+        $or: [{ isFree: true }, { type: 'free' }],
+      }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalPublished = globalPublished
+    result.pagination.globalFree = globalFree
+
+    return result
   }
 
   async getById(id) {
