@@ -282,12 +282,6 @@ class TestSeriesService extends BaseService {
 
         this.logger.info({ userId, testId, score, accuracy }, 'Submitted test-series test')
 
-        try {
-            await rewardsService.logActivity(userId, 'mock_test');
-        } catch (err) {
-            this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity in submitTest');
-        }
-
         return {
             attemptId: attempt._id,
             score,

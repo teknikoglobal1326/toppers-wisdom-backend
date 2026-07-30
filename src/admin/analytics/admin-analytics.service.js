@@ -6,6 +6,9 @@ const TestSeries = require('../../models/TestSeries.model')
 const CourseOrder      = require('../../models/CourseOrder.model')
 const Test       = require('../../models/Test.model')
 const TestSeriesTest = require('../../models/TestSeriesTest.model')
+const PreviousYearPaper = require('../../models/PreviousYearPaper.model')
+const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
 const { createLogger } = require('../../config/logger')
 const AppError = require('../../core/AppError')
 
@@ -197,169 +200,7 @@ const courseEnrollments = async (courseId, filters = {}) => {
   })
 }
 
-const testSeriesAttempts = async (testSeriesId, filters = {}) => {
-  const testSeries = await TestSeries.findOne({ _id: testSeriesId, isDeleted: false })
-    .select('_id title thumbnail status isPaid')
-    .lean()
 
-  if (!testSeries) throw new AppError('Test series not found', 404)
-
-  const { page, limit, skip } = buildPagination(filters.page, filters.limit)
-  const searchMatch = buildSearchMatch(filters.search, ['user.name', 'user.email', 'user.phone'])
-
-  logger.info({ page, limit, search: filters.search, testSeriesId }, 'Fetching test-series attempts analytics')
-
-  const pipeline = [
-    { $match: { testSeries: testSeries._id } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'user',
-        foreignField: '_id',
-        as: 'user',
-      },
-    },
-    { $unwind: '$user' },
-    { $match: { 'user.role': 'user', 'user.isDeleted': { $ne: true } } },
-  ]
-
-  if (searchMatch) pipeline.push({ $match: searchMatch })
-
-  pipeline.push(
-    {
-      $lookup: {
-        from: 'testseries',
-        localField: 'testSeries',
-        foreignField: '_id',
-        as: 'testSeries',
-      },
-    },
-    {
-      $unwind: {
-        path: '$testSeries',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $lookup: {
-        from: 'testseriestests',
-        localField: 'test',
-        foreignField: '_id',
-        as: 'test',
-      },
-    },
-    {
-      $unwind: {
-        path: '$test',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $facet: {
-        data: [
-          { $sort: { attemptedAt: -1, createdAt: -1 } },
-          {
-            $group: {
-              _id: '$user._id',
-              doc: { $first: '$$ROOT' },
-              userAttemptsCount: { $sum: 1 },
-            },
-          },
-          {
-            $replaceRoot: {
-              newRoot: { $mergeObjects: ['$doc', { userAttemptsCount: '$userAttemptsCount' }] },
-            },
-          },
-          { $sort: { attemptedAt: -1, createdAt: -1 } },
-          { $skip: skip },
-          { $limit: limit },
-          {
-            $project: {
-              _id: 1,
-              sessionId: 1,
-              status: 1,
-              score: 1,
-              totalMarks: 1,
-              accuracy: 1,
-              timeTaken: 1,
-              totalTime: 1,
-              correct: 1,
-              wrong: 1,
-              skipped: 1,
-              unattempted: 1,
-              attemptedAt: 1,
-              createdAt: 1,
-              updatedAt: 1,
-              userAttemptsCount: 1,
-              user: {
-                _id: '$user._id',
-                name: '$user.name',
-                email: '$user.email',
-                phone: '$user.phone',
-                avatar: '$user.avatar',
-              },
-              testSeries: {
-                _id: testSeries._id,
-                title: testSeries.title,
-                thumbnail: testSeries.thumbnail,
-                status: testSeries.status,
-                // isPaid: testSeries.isPaid,
-              },
-              test: {
-                _id: '$test._id',
-                title: '$test.title',
-                duration: '$test.duration',
-                totalQuestions: '$test.totalQuestions',
-                totalMarks: '$test.totalMarks',
-                status: '$test.status',
-              },
-            },
-          },
-        ],
-        summary: [
-          {
-            $group: {
-              _id: null,
-              totalAttempts: { $sum: 1 },
-              startedAttempts: { $sum: { $cond: [{ $eq: ['$status', 'started'] }, 1, 0] } },
-              ongoingAttempts: { $sum: { $cond: [{ $eq: ['$status', 'ongoing'] }, 1, 0] } },
-              completedAttempts: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
-              abandonedAttempts: { $sum: { $cond: [{ $eq: ['$status', 'abandoned'] }, 1, 0] } },
-              totalUsers: { $addToSet: '$user._id' },
-            },
-          },
-          {
-            $project: {
-              _id: 0,
-              totalAttempts: 1,
-              startedAttempts: 1,
-              ongoingAttempts: 1,
-              completedAttempts: 1,
-              abandonedAttempts: 1,
-              totalUsers: { $size: '$totalUsers' },
-            },
-          },
-        ],
-      },
-    }
-  )
-
-  const [result] = await TestSeriesAttempt.aggregate(pipeline)
-  const summary = result?.summary?.[0] || {
-    totalAttempts: 0,
-    startedAttempts: 0,
-    ongoingAttempts: 0,
-    completedAttempts: 0,
-    abandonedAttempts: 0,
-    totalUsers: 0,
-  }
-
-  const total = summary.totalUsers
-  return buildPaginatedResult(result?.data || [], total, page, limit, {
-    ...summary,
-    testSeries,
-  })
-}
 
 const testLeaderboard = async (testId, filters = {}) => {
 
@@ -511,49 +352,29 @@ const testLeaderboard = async (testId, filters = {}) => {
     })
 
   }
-
-
-
   pipeline.push({
 
     $facet: {
-
-
       data: [
-
         {
           $sort: {
             rank: 1
           }
         },
-
-
         {
           $skip: skip
         },
-
-
         {
           $limit: limit
         },
-
-
         {
           $project: {
-
             _id: 0,
-
             rank: 1,
-
             score: 1,
-
             totalMarks: 1,
-
             accuracy: 1,
-
             timeTaken: 1,
-
-
             user: {
 
               _id: '$user._id',
@@ -631,4 +452,138 @@ const testLeaderboard = async (testId, filters = {}) => {
 
 }
 
-module.exports = { overview, revenue, users, courseEnrollments, testSeriesAttempts, testLeaderboard }
+
+const previousYearPaperTestLeaderboard = async (testId, filters = {}) => {
+  const test = await PreviousYearPaperTest.findOne({
+    _id: testId
+  })
+  .select('_id title totalMarks duration status')
+  .lean()
+
+  if (!test) {
+    throw new AppError('Test not found', 404)
+  }
+
+  const { page, limit, skip } = buildPagination(filters.page, filters.limit)
+  const fromRank = filters.fromRank ? Number(filters.fromRank) : null
+  const toRank = filters.toRank ? Number(filters.toRank) : null
+
+  const pipeline = [
+    {
+      $match: {
+        test: test._id,
+        status: 'completed'
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    {
+      $unwind: '$user'
+    },
+    {
+      $match: {
+        'user.role': 'user',
+        'user.isDeleted': { $ne: true }
+      }
+    },
+    {
+      $sort: {
+        score: -1,
+        accuracy: -1,
+        timeTaken: 1
+      }
+    },
+    {
+      $group: {
+        _id: '$user._id',
+        score: { $first: '$score' },
+        totalMarks: { $first: '$totalMarks' },
+        accuracy: { $first: '$accuracy' },
+        timeTaken: { $first: '$timeTaken' },
+        user: { $first: '$user' }
+      }
+    },
+    {
+      $setWindowFields: {
+        sortBy: { score: -1 },
+        output: {
+          rank: { $rank: {} }
+        }
+      }
+    }
+  ]
+
+  if (fromRank && toRank) {
+    pipeline.push({
+      $match: {
+        rank: {
+          $gte: fromRank,
+          $lte: toRank
+        }
+      }
+    })
+  }
+
+  pipeline.push({
+    $facet: {
+      data: [
+        { $sort: { rank: 1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $project: {
+            _id: 0,
+            rank: 1,
+            score: 1,
+            totalMarks: 1,
+            accuracy: 1,
+            timeTaken: 1,
+            user: {
+              _id: '$user._id',
+              name: '$user.name',
+              email: '$user.email',
+              phone: '$user.phone',
+              avatar: '$user.avatar'
+            }
+          }
+        }
+      ],
+      summary: [
+        { $count: 'totalUsers' }
+      ]
+    }
+  })
+
+  const [result] = await PreviousYearPaperAttempt.aggregate(pipeline)
+  const totalUsers = result?.summary?.[0]?.totalUsers || 0
+
+  return buildPaginatedResult(
+    result?.data || [],
+    totalUsers,
+    page,
+    limit,
+    {
+      test,
+      totalUsers,
+      rankRange: {
+        fromRank,
+        toRank
+      }
+    }
+  )
+}
+
+module.exports = { 
+  overview, 
+  revenue, 
+  users, 
+  courseEnrollments,  
+  testLeaderboard, 
+  previousYearPaperTestLeaderboard 
+}
