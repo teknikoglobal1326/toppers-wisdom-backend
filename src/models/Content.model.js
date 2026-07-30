@@ -18,6 +18,7 @@ const contantSchema = new mongoose.Schema({
   agoraChannel: { type: String },
   scheduledStartTime: { type: Date },
   scheduledEndTime: { type: Date },
+  scheduleAt: { type: Date, default: null },
   restreamUrls: { type: [String], default: [] },
   agoraConverters: { type: [String], default: [] },
   rtmpServer: { type: String },

@@ -12,6 +12,7 @@ const pdfSchema = new mongoose.Schema({
   sortOrder: { type: Number, default: 0, index: true },
 //   instruction: { type: String, default: '' },
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
+  scheduleAt: { type: Date, default: null },
   isDeleted: { type: Boolean, default: false, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true })

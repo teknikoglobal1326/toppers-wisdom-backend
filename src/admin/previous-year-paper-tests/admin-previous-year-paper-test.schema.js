@@ -77,4 +77,28 @@ const updatePreviousYearPaperTestSchema = Joi.object({
     hi: localizedBlock.optional(),
 }).min(1)
 
-module.exports = { createPreviousYearPaperTestSchema, updatePreviousYearPaperTestSchema }
+const bulkCreatePreviousYearPaperTestSchema = Joi.array().items(
+  Joi.object({
+    previousYearPaper: Joi.string().hex().length(24).required(),
+    subjectIds: Joi.array().items(objectId).single().default([]),
+    chapterIds: Joi.array().items(objectId).single().default([]),
+    topicIds: Joi.array().items(objectId).single().default([]),
+    title: Joi.string().trim().required(),
+    description: Joi.string().trim().optional().allow('', null),
+    instructions: Joi.string().trim().optional().allow('', null),
+    instructionsNew: Joi.string().trim().optional().allow('', null),
+    thumbnail: Joi.string().trim().optional().allow('', null).default(''),
+    duration: Joi.number().min(1).required(),
+    isPerQuestionTime: Joi.boolean().default(true),
+    totalQuestions: Joi.number().min(1).required(),
+    totalMarks: Joi.number().min(0).required(),
+    marksPerQuestion: Joi.number().min(0).required(),
+    negativeMarks: Joi.number().min(0).default(0),
+    passingMarks: Joi.number().min(0).required(),
+    isPaid: Joi.boolean().default(false),
+    status: Joi.string().valid('active', 'inactive').default('active'),
+    scheduleAt: Joi.date().optional().allow(null, ''),
+  })
+).min(1)
+
+module.exports = { createPreviousYearPaperTestSchema, updatePreviousYearPaperTestSchema, bulkCreatePreviousYearPaperTestSchema }

@@ -37,6 +37,7 @@ const courseTestSchema = new mongoose.Schema({
   testType: { type: String, enum: ['practice', 'mock', 'exam', 'other'], default: 'other' },
   startDate: { type: Date },
   endDate: { type: Date },
+  scheduleAt: { type: Date, default: null },
   language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
   status: { type: String, enum: ['draft', 'active', 'inactive', 'other'], default: 'other' },
   isDeleted: { type: Boolean, default: false },
