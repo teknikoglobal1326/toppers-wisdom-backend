@@ -30,9 +30,16 @@ const groupQuestionsByLanguage = (questions = []) => {
   const grouped = {}
 
   for (const question of questions) {
-    const orderKey = String(question.order)
-    if (!grouped[orderKey]) grouped[orderKey] = { en: {}, hi: {} }
+    let orderKey = String(question.order || 1)
+    if (grouped[orderKey]) {
+      let temp = 1
+      while (grouped[String(temp)]) {
+        temp++
+      }
+      orderKey = String(temp)
+    }
 
+    grouped[orderKey] = { en: {}, hi: {} }
     grouped[orderKey].en = sanitizeQuestion(question, 'en')
     grouped[orderKey].hi = sanitizeQuestion(question, 'hi')
   }
@@ -46,28 +53,33 @@ const groupQuestionsBySubject = (questions = []) => {
   for (const question of questions) {
     const subjectId = question.subjectId?._id ? String(question.subjectId._id) : (question.subjectId ? String(question.subjectId) : 'uncategorized')
     const subjectName = question.subjectId?.name || 'Uncategorized'
-    
+
     if (!subjectMap.has(subjectId)) {
-        subjectMap.set(subjectId, {
-            subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
-            questions: {}
-        })
+      subjectMap.set(subjectId, {
+        subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
+        questions: {}
+      })
     }
 
     const group = subjectMap.get(subjectId)
-    const orderKey = String(question.order)
-    
-    if (!group.questions[orderKey]) {
-        group.questions[orderKey] = { en: {}, hi: {} }
+    let orderKey = String(question.order || 1)
+
+    if (group.questions[orderKey]) {
+      let temp = 1
+      while (group.questions[String(temp)]) {
+        temp++
+      }
+      orderKey = String(temp)
     }
 
+    group.questions[orderKey] = { en: {}, hi: {} }
     group.questions[orderKey].en = sanitizeQuestion(question, 'en')
     group.questions[orderKey].hi = sanitizeQuestion(question, 'hi')
   }
 
   return Array.from(subjectMap.values()).map((subj) => ({
-      subject: subj.subject,
-      questions: subj.questions
+    subject: subj.subject,
+    questions: subj.questions
   }))
 }
 
