@@ -24,7 +24,20 @@ class AdminExamService extends BaseService {
     const exactLanguage = getExactLanguageFilter(language)
     if (exactLanguage) filter.language = exactLanguage
     const direction = sortOrder === 'desc' ? -1 : 1
-    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: { path: "qualification", select: "name" } })
+    
+    const result = await this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: { path: "qualification", select: "name" } })
+
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      this.repository.count({ is_deleted: false }),
+      this.repository.count({ is_deleted: false, status: 'active' }),
+      this.repository.count({ is_deleted: false, status: 'inactive' }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+
+    return result
   }
 
   async getOne(id) {

@@ -68,6 +68,18 @@ class AdminCourseTestService extends BaseService {
       ],
     })
 
+    const [globalTotal, globalActive, globalInactive, globalDraft] = await Promise.all([
+      this.repository.count({ isDeleted: false }),
+      this.repository.count({ isDeleted: false, status: 'active' }),
+      this.repository.count({ isDeleted: false, status: 'inactive' }),
+      this.repository.count({ isDeleted: false, status: 'draft' }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+    result.pagination.globalDraft = globalDraft
+
     return this.attachMappedQuestionCounts(result)
   }
 
