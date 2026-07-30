@@ -11,7 +11,7 @@ class AdminContentService extends BaseService {
   }
 
   async listAll({ page, limit, status, course, chapter, topic, search, sortBy = 'sortOrder', order = 'asc' } = {}) {
-    const filter = { isDeleted: false }
+    const filter = { isDeleted: false, isLive: { $ne: true } }
     if (status) filter.status = status
     if (course) filter.course = course
     if (chapter) filter.chapter = chapter
@@ -29,7 +29,7 @@ class AdminContentService extends BaseService {
       ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
-    return this.getAll(filter, {
+    const result = await this.getAll(filter, {
       page,
       limit,
       sort,
@@ -37,6 +37,18 @@ class AdminContentService extends BaseService {
         { path: 'course', select: 'title slug' },
       ],
     })
+
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      this.repository.count({ isDeleted: false, isLive: { $ne: true } }),
+      this.repository.count({ isDeleted: false, isLive: { $ne: true }, status: 'active' }),
+      this.repository.count({ isDeleted: false, isLive: { $ne: true }, status: 'inactive' }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+
+    return result
   }
 
   async listLiveClasses({ page, limit, status, course, chapter, topic, search, sortBy = 'sortOrder', order = 'asc' } = {}) {
@@ -58,7 +70,7 @@ class AdminContentService extends BaseService {
       ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
-    return this.getAll(filter, {
+    const result = await this.getAll(filter, {
       page,
       limit,
       sort,
@@ -66,6 +78,18 @@ class AdminContentService extends BaseService {
         { path: 'course', select: 'title slug' },
       ],
     })
+
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      this.repository.count({ isDeleted: false, isLive: true }),
+      this.repository.count({ isDeleted: false, isLive: true, status: 'active' }),
+      this.repository.count({ isDeleted: false, isLive: true, status: 'inactive' }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+
+    return result
   }
 
   async getOne(id) {

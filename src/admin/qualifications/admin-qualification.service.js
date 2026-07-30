@@ -30,11 +30,23 @@ class AdminQualificationService extends BaseService {
 
     const direction = query.sortOrder === 'desc' ? -1 : 1
 
-    return this.getAll(filter, {
+    const result = await this.getAll(filter, {
       page: parseInt(query.page) || 1,
       limit: parseInt(query.limit) || 10,
       sort: query.sort || { sortOrder: direction, createdAt: -1 },
     })
+
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      this.repository.count({ isDelted: false }),
+      this.repository.count({ isDelted: false, isActive: true }),
+      this.repository.count({ isDelted: false, isActive: false }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+
+    return result
   }
 
   async getOne(id) {
