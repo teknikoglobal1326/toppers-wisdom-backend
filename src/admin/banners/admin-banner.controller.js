@@ -2,7 +2,19 @@ const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response')
 const adminBannerService = require('./admin-banner.service')
 
-const list   = catchAsync(async (req, res) => { const r = await adminBannerService.listAll(req.query); sendPaginated(res, r.data, r.pagination) })
+const list = catchAsync(async (req, res) => {
+    const r = await adminBannerService.listAll(req.query);
+    const Banner = require('../../models/Banner.model');
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+        Banner.countDocuments({ isDeleted: false }),
+        Banner.countDocuments({ isDeleted: false, status: 'active' }),
+        Banner.countDocuments({ isDeleted: false, status: 'inactive' }),
+    ]);
+    r.pagination.globalTotal = globalTotal;
+    r.pagination.globalActive = globalActive;
+    r.pagination.globalInactive = globalInactive;
+    sendPaginated(res, r.data, r.pagination);
+})
 const getOne = catchAsync(async (req, res) => { sendSuccess(res, await adminBannerService.getOne(req.params.id)) })
 const create = catchAsync(async (req, res) => { sendCreated(res, await adminBannerService.createBanner(req.body, req.files)) })
 const update = catchAsync(async (req, res) => { sendSuccess(res, await adminBannerService.updateBanner(req.params.id, req.body, req.file)) })

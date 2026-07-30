@@ -15,7 +15,19 @@ class AdminShortService extends BaseService {
     if (categoryId) filter.categoryId = categoryId
     if (status) filter.status = status
     const direction = sortOrder === 'desc' ? -1 : 1
-    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
+    const result = await this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
+
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      this.repository.count({ isDeleted: false }),
+      this.repository.count({ isDeleted: false, status: 'active' }),
+      this.repository.count({ isDeleted: false, status: 'inactive' }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+
+    return result
   }
 
   async getOne(id) {
