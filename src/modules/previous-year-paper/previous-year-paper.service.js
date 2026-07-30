@@ -246,12 +246,6 @@ class PreviousYearPaperService extends BaseService {
 
         this.logger.info({ userId, testId, score, accuracy }, 'Submitted previous-year-paper test')
 
-        try {
-            await rewardsService.logActivity(userId, 'pyp_paper');
-        } catch (err) {
-            this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity in submitTest');
-        }
-
         return {
             attemptId: attempt._id,
             score,
