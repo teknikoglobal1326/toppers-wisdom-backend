@@ -34,8 +34,8 @@ class AdminSubExamService extends BaseService {
     const exam = await examRepository.findOne({ _id: payload.examId, is_deleted: false })
     if (!exam) throw new AppError('Exam not found', 404, 'NOT_FOUND')
 
-    const subExam = await createWithLanguage((d) => subExamRepository.create(d), payload)
-    await examRepository.increment(payload.examId, { subexamCount: Array.isArray(subExam) ? 2 : 1 })
+    const subExam = await subExamRepository.create(payload)
+    await examRepository.increment(payload.examId, { subexamCount: 1 })
     return subExam
   }
 
