@@ -1081,7 +1081,7 @@ async function extractEmbeddedImagesFromExcel(fileBuffer) {
             for (let j = 0; j < blips.length; j++) {
                 if (blips[j].localName === "blip") {
                     rId = blips[j].getAttribute("r:embed") || blips[j].getAttribute("r:link") ||
-                          blips[j].getAttribute("embed") || blips[j].getAttribute("link");
+                        blips[j].getAttribute("embed") || blips[j].getAttribute("link");
                     if (rId) break;
                 }
             }
@@ -1135,7 +1135,7 @@ async function parseExcelFile(fileBuffer, metadata) {
     const Subject = require("../../models/Subject.model");
     let subjectDoc = null;
     let activeSubjectId = metadata.subjectId || metadata.subject;
-    
+
     // Resolve subject ID
     if (activeSubjectId && String(activeSubjectId).match(/^[0-9a-fA-F]{24}$/)) {
         subjectDoc = await Subject.findOne({ _id: activeSubjectId, isDeleted: false });
@@ -1340,9 +1340,9 @@ async function parseExcelFile(fileBuffer, metadata) {
         const negativeMarks = negMarksVal !== undefined && negMarksVal !== "" ? Number(negMarksVal) : (Number(metadata.negativeMarks) || 0);
         const perQuestionTime = perTimeVal !== undefined && perTimeVal !== "" ? Number(perTimeVal) : (metadata.perQuestionTime ? Number(metadata.perQuestionTime) : null);
         const difficulty = difficultyVal && difficultyVal.trim() ? difficultyVal.trim().toLowerCase() : (metadata.difficulty || "medium");
-        
+
         const subjectId = (activeSubjectId && activeSubjectId.match(/^[0-9a-fA-F]{24}$/)) ? activeSubjectId : null;
-        
+
         let chapterId = null;
         if (chapterVal) {
             const cleanChapterVal = String(chapterVal).trim();
