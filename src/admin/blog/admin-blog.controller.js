@@ -63,7 +63,19 @@ class AdminBlogService extends BaseService {
 
 const svc = new AdminBlogService()
 
-const listAll = catchAsync(async (req, res) => { const r = await svc.listAll(req.query); sendPaginated(res, r.data, r.pagination) })
+const listAll = catchAsync(async (req, res) => {
+    const r = await svc.listAll(req.query);
+    const Blog = require('../../models/Blog.model');
+    const [globalTotal, globalPublished, globalDraft] = await Promise.all([
+        Blog.countDocuments({}),
+        Blog.countDocuments({ status: 'published' }),
+        Blog.countDocuments({ status: 'draft' }),
+    ]);
+    r.pagination.globalTotal = globalTotal;
+    r.pagination.globalPublished = globalPublished;
+    r.pagination.globalDraft = globalDraft;
+    sendPaginated(res, r.data, r.pagination);
+})
 const getOne = catchAsync(async (req, res) => { sendSuccess(res, await svc.getById(req.params.id)) })
 const createPost = catchAsync(async (req, res) => {
   if (req.body.hi && req.body.en) {

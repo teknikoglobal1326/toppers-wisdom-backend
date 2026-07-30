@@ -22,7 +22,7 @@ class CourseRepository extends BaseRepository {
     if (expiresAt) data.expiresAt = expiresAt;
     return Enrollment.create(data)
   }
-
+//real
   async addLesson(courseId, lesson) {
     return this.pushToArray(courseId, 'lessons', lesson)  // BaseRepository.pushToArray
   }
