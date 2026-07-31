@@ -15,10 +15,14 @@ const getStats = catchAsync(async (req, res) => { sendSuccess(res, await userSer
 const getCommonStudyStats = catchAsync(async (req, res) => { sendSuccess(res, await userService.getCommonStudyStats(req.user._id)) })
 const removeSaved = catchAsync(async (req, res) => { await userService.removeSaved(req.user._id, req.params.itemId); sendSuccess(res, null, 'Removed') })
 const markNotifRead = catchAsync(async (req, res) => { await userService.markNotificationRead(req.user._id, req.params.id); sendSuccess(res, null, 'Marked as read') })
-const updateFcmToken = catchAsync(async (req, res) => { await userService.updateFcmToken(req.user._id, req.body.fcmToken); sendSuccess(res, null, 'Updated') })
+const updateFcmToken = catchAsync(async (req, res) => { const updatedUser = await userService.updateFcmToken(req.user._id, req.body); sendSuccess(res, updatedUser, 'Updated') })
 const createReport = catchAsync(async (req, res) => { sendCreated(res, await userService.createReport(req.user._id, req.body), 'Report submitted') })
 const createMcqReport = catchAsync(async (req, res) => { sendCreated(res, await userService.createMcqReport(req.user._id, req.body), 'MCQ Report submitted') })
 const getMyMcqReportByItemId = catchAsync(async (req, res) => { sendSuccess(res, await userService.getMyMcqReportByItemId(req.user._id, req.params.itemId)) })
+const getMyMcqReports = catchAsync(async (req, res) => {
+  const r = await userService.getMyMcqReports(req.user._id, req.query)
+  sendPaginated(res, r.data, r.pagination)
+})
 
 const getSaved = catchAsync(async (req, res) => {
   const r = await userService.getSaved(req.user._id, req.query)
@@ -44,4 +48,23 @@ const getMyReportByItemId = catchAsync(async (req, res) => {
   sendSuccess(res, await userService.getMyReportByItemId(req.user._id, req.params.itemId))
 })
 
-module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, markNotifRead, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId }
+const saveQuestion = catchAsync(async (req, res) => {
+  sendCreated(res, await userService.saveQuestion(req.user._id, req.body), 'Question saved')
+})
+
+const unsaveQuestion = catchAsync(async (req, res) => {
+  await userService.unsaveQuestion(req.user._id, req.params.questionId)
+  sendSuccess(res, null, 'Removed')
+})
+
+const getSavedQuestions = catchAsync(async (req, res) => {
+  const r = await userService.getSavedQuestions(req.user._id, req.query)
+  sendPaginated(res, r.data, r.pagination)
+})
+
+const sendTestNotification = catchAsync(async (req, res) => {
+  const result = await userService.sendTestNotification(req.user._id, req.body)
+  sendSuccess(res, result)
+})
+
+module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, markNotifRead, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification }

@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema({
   subExams: [{ _id: { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam' }, name: String }],
   avatar:          String,
   fcmToken:        String,
+  deviceId:        String,
+  deviceName:      String,
+  deviceType:      String,
+  modelName:       String,
+  versionCode:     String,
   savedItems: [{
     itemType: String,
     itemId:   mongoose.Schema.Types.ObjectId,

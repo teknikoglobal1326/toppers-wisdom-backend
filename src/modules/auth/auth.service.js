@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs')
 const { createLogger } = require('../../config/logger')
 const rewardsService = require('../rewards/rewards.service')
 const crypto = require('crypto')
+const { notificationQueue } = require('../../jobs/queue')
 
 const logger = createLogger('auth:service')
 
@@ -22,6 +23,9 @@ const sendOtp = async (phone) => {
     const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamIds: (user.subExams || []).map((s) => s._id) }
     const accessToken = signAccessToken(payload)
     const refreshToken = signRefreshToken({ _id: user._id })
+
+
+    notificationQueue.add('login', { userId: user._id }).catch((err) => logger.error({ err }, 'Failed to queue login notification on OTP skip'))
 
     return {
       message: 'User already exists, OTP skipped',
@@ -89,8 +93,12 @@ const verifyOtpAndLogin = async (phone, otp, providedReferralCode) => {
       }
     }
     logger.info({ phone, userId: user._id }, 'New user registered')
+    const { notificationQueue } = require('../../jobs/queue')
+    notificationQueue.add('signup', { userId: user._id }).catch((err) => logger.error({ err }, 'Failed to queue signup notification'))
   } else {
     logger.info({ phone, userId: user._id }, 'Existing user logged in')
+    const { notificationQueue } = require('../../jobs/queue')
+    notificationQueue.add('login', { userId: user._id }).catch((err) => logger.error({ err }, 'Failed to queue login notification'))
   }
 
   const payload = { _id: user._id, phone: user.phone, role: user.role, qualificationId: user.qualification?._id || null, examId: user.exam?._id || null, subExamIds: (user.subExams || []).map((s) => s._id) }
@@ -252,6 +260,9 @@ const loginWithPassword = async (phone, password) => {
   const refreshToken = signRefreshToken({ _id: user._id })
 
   logger.info({ userId: user._id }, 'User logged in with password')
+
+  notificationQueue.add('login', { userId: user._id }).catch((err) => logger.error({ err }, 'Failed to queue login notification'))
+
   return { accessToken, refreshToken, isNewUser: false, profileCompletionState: user.profileCompletionState, profileComplete: user.profileComplete }
 }
 
