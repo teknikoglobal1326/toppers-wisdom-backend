@@ -18,6 +18,11 @@ const setupProfileSchema = Joi.object({
 
 const updateFcmSchema = Joi.object({
   fcmToken: Joi.string().required(),
+  deviceId: Joi.string().optional().allow(''),
+  deviceName: Joi.string().optional().allow(''),
+  deviceType: Joi.string().optional().allow(''),
+  modelName: Joi.string().optional().allow(''),
+  versionCode: Joi.string().optional().allow(''),
 })
 
 const createReportSchema = Joi.object({
@@ -33,4 +38,10 @@ const createMcqReportSchema = Joi.object({
   description: Joi.string().trim().min(2).max(1000),
 })
 
-module.exports = { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema, createMcqReportSchema }
+const saveQuestionSchema = Joi.object({
+  questionId: Joi.string().hex().length(24).required(),
+  testType: Joi.string().valid('course-test', 'test-series', 'previous-year-paper', 'live-test', 'quiz').optional(),
+  testId: Joi.string().hex().length(24).optional(),
+})
+
+module.exports = { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema, createMcqReportSchema, saveQuestionSchema }

@@ -263,11 +263,25 @@ class UserService extends BaseService {
         return Notification.findOneAndUpdate({ _id: notifId, user: userId }, { isRead: true })
     }
 
-    async updateFcmToken(userId, fcmToken) {
-        return userRepository.updateById(userId, { fcmToken })
+    async updateFcmToken(userId, data) {
+        const { fcmToken, deviceId, deviceName, deviceType, modelName, versionCode } = data
+        const updated = await userRepository.updateById(userId, { fcmToken, deviceId, deviceName, deviceType, modelName, versionCode })
+        return {
+            fcmToken: updated.fcmToken,
+            deviceId: updated.deviceId,
+            deviceName: updated.deviceName,
+            deviceType: updated.deviceType,
+            modelName: updated.modelName,
+            versionCode: updated.versionCode
+        }
     }
 
     async createMcqReport(userId, data) {
+        const existing = await McqReport.findOne({ user: userId, type: data.type, typeId: data.typeId, reason: data.reason }).lean()
+        if (existing) {
+            throw new AppError('You have already submitted a report for this item with the same reason.', 400, 'ALREADY_REPORTED')
+        }
+
         const report = await McqReport.create({
             user: userId,
             type: data.type,
@@ -292,6 +306,59 @@ class UserService extends BaseService {
         }
 
         return report
+    }
+
+    async getMyMcqReports(userId, opts = {}) {
+        const result = await paginate(
+            McqReport,
+            { user: userId },
+            {
+                ...opts,
+                sort: { createdAt: -1 }
+            }
+        )
+
+        const typeGroups = {}
+        result.data.forEach(item => {
+            let modelName = ''
+            if (item.type === 'question') modelName = 'Question'
+            else if (item.type === 'test') modelName = 'CourseTest'
+            else if (item.type === 'testSeries') modelName = 'TestSeriesTest'
+            else if (item.type === 'previousYearPaper') modelName = 'PreviousYearPaperTest'
+            else if (item.type === 'liveTest') modelName = 'LiveTest'
+
+            if (modelName && item.typeId) {
+                if (!typeGroups[modelName]) typeGroups[modelName] = []
+                typeGroups[modelName].push(item.typeId)
+            }
+        })
+
+        const fetchedItems = {}
+        await Promise.all(
+            Object.keys(typeGroups).map(async modelName => {
+                const Model = mongoose.model(modelName)
+                let selectFields = ''
+                if (modelName === 'Question') {
+                    selectFields = 'en.question.text hi.question.text'
+                } else {
+                    selectFields = 'name title'
+                }
+                const docs = await Model.find({ _id: { $in: typeGroups[modelName] } }).select(selectFields).lean()
+                docs.forEach(doc => {
+                    fetchedItems[doc._id.toString()] = doc
+                })
+            })
+        )
+
+        result.data = result.data.map(item => {
+            const doc = fetchedItems[item.typeId?.toString()] || null
+            return {
+                ...item,
+                typeId: doc || item.typeId
+            }
+        })
+
+        return result
     }
 
     async createReport(userId, data) {
@@ -337,6 +404,68 @@ class UserService extends BaseService {
         }
 
         return report
+    }
+
+    async saveQuestion(userId, data) {
+        const Question = require('../../models/Question.model')
+        const SavedQuestion = require('../../models/SavedQuestion.model')
+
+        const question = await Question.findOne({ _id: data.questionId, isDeleted: false }).lean()
+        if (!question) {
+            throw new AppError('Question not found', 404, 'NOT_FOUND')
+        }
+
+        const existing = await SavedQuestion.findOne({ user: userId, question: data.questionId }).lean()
+        if (existing) {
+            return existing
+        }
+
+        const saved = await SavedQuestion.create({
+            user: userId,
+            question: data.questionId,
+            testType: data.testType,
+            testId: data.testId,
+        })
+
+        return saved.toObject()
+    }
+
+    async unsaveQuestion(userId, questionId) {
+        const SavedQuestion = require('../../models/SavedQuestion.model')
+        const result = await SavedQuestion.deleteOne({ user: userId, question: questionId })
+        if (result.deletedCount === 0) {
+            throw new AppError('Saved question not found', 404, 'NOT_FOUND')
+        }
+        return { success: true }
+    }
+
+    async getSavedQuestions(userId, opts = {}) {
+        const SavedQuestion = require('../../models/SavedQuestion.model')
+        return paginate(
+            SavedQuestion,
+            { user: userId },
+            {
+                ...opts,
+                populate: {
+                    path: 'question',
+                    // select: 'en.question.text hi.question.text'
+                },
+                sort: { createdAt: -1 }
+            }
+        )
+    }
+
+    async sendTestNotification(userId, data = {}) {
+        const { notificationQueue } = require('../../jobs/queue')
+        const title = data.title || 'Test Notification'
+        const body = data.body || 'This is a test notification from the backend.'
+        await notificationQueue.add('broadcast', {
+            userId,
+            title,
+            body,
+            data: { type: 'test' }
+        })
+        return { success: true, message: 'Test notification queued successfully' }
     }
 }
 

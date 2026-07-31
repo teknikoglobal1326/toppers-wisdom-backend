@@ -38,15 +38,15 @@ class TestSeriesService extends BaseService {
             })
         }
 
-        if (!query.subExamId && subExamIds.length) {
-            clauses.push({
-                $or: [
-                    { subExams: { $exists: false } },
-                    { subExams: { $size: 0 } },
-                    { subExams: { $in: subExamIds } },
-                ],
-            })
-        }
+        // if (!query.subExamId && subExamIds.length) {
+        //     clauses.push({
+        //         $or: [
+        //             { subExams: { $exists: false } },
+        //             { subExams: { $size: 0 } },
+        //             { subExams: { $in: subExamIds } },
+        //         ],
+        //     })
+        // }
 
         if (clauses.length === 1) Object.assign(filter, clauses[0])
         if (clauses.length > 1) filter.$and = clauses

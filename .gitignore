@@ -6,3 +6,4 @@ logs/
 *.zip
 docs/
 /scripts
+src/firebase/*.json
