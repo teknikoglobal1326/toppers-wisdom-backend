@@ -22,7 +22,7 @@ class CourseRepository extends BaseRepository {
     if (expiresAt) data.expiresAt = expiresAt;
     return Enrollment.create(data)
   }
-
+//real
   async addLesson(courseId, lesson) {
     return this.pushToArray(courseId, 'lessons', lesson)  // BaseRepository.pushToArray
   }
@@ -71,7 +71,7 @@ class CourseRepository extends BaseRepository {
       ]
     }
 
-    return paginate(CourseOrder, filter, {
+    const result = await paginate(CourseOrder, filter, {
       page: query.page,
       limit: query.limit,
       sort: { createdAt: -1 },
@@ -79,6 +79,25 @@ class CourseRepository extends BaseRepository {
         { path: 'user', select: 'name email phone qualification' }
       ]
     })
+
+    const globalFilter = { status: 'paid', 'items.itemType': 'course' }
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const [globalTotalTransactions, todayCountRes, revenueRes] = await Promise.all([
+      CourseOrder.countDocuments(globalFilter),
+      CourseOrder.countDocuments({ ...globalFilter, createdAt: { $gte: today } }),
+      CourseOrder.aggregate([
+        { $match: globalFilter },
+        { $group: { _id: null, totalRevenue: { $sum: '$grandTotal' } } }
+      ])
+    ])
+
+    result.pagination.globalTotalTransactions = globalTotalTransactions
+    result.pagination.globalTodayTransactions = todayCountRes
+    result.pagination.globalRevenue = revenueRes.length > 0 ? revenueRes[0].totalRevenue : 0
+
+    return result
   }
 }
 

@@ -47,6 +47,16 @@ const list = catchAsync(async (req, res) => {
     populate: { path: 'role', select: 'name permissions', match: { isDeleted: false } },
   })
 
+  const [globalTotal, globalActive, globalInactive] = await Promise.all([
+    Member.countDocuments({ isDeleted: false }),
+    Member.countDocuments({ isDeleted: false, isActive: true }),
+    Member.countDocuments({ isDeleted: false, isActive: false }),
+  ])
+
+  pagination.globalTotal = globalTotal
+  pagination.globalActive = globalActive
+  pagination.globalInactive = globalInactive
+
   sendPaginated(res, members, pagination)
 })
 

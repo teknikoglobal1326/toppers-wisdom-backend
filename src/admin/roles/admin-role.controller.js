@@ -25,6 +25,16 @@ const list = catchAsync(async (req, res) => {
     sort: { [sortBy]: sortDirection },
   })
 
+  const [globalTotal, globalActive, globalInactive] = await Promise.all([
+    Role.countDocuments({ isDeleted: false }),
+    Role.countDocuments({ isDeleted: false, isActive: true }),
+    Role.countDocuments({ isDeleted: false, isActive: false }),
+  ])
+
+  pagination.globalTotal = globalTotal
+  pagination.globalActive = globalActive
+  pagination.globalInactive = globalInactive
+
   sendPaginated(res, roles, pagination)
 })
 

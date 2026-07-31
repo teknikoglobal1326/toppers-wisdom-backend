@@ -15,7 +15,20 @@ class AdminSubExamService extends BaseService {
     if (status) filter.status = status
     if (search) filter.name = new RegExp(search, 'i')
     const direction = sortOrder === 'desc' ? -1 : 1
-    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: { path: "examId", select: "name" } })
+    
+    const result = await this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: { path: "examId", select: "name" } })
+
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      this.repository.count({ is_deleted: false }),
+      this.repository.count({ is_deleted: false, status: 'active' }),
+      this.repository.count({ is_deleted: false, status: 'inactive' }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+
+    return result
   }
 
   async getOne(id) {
