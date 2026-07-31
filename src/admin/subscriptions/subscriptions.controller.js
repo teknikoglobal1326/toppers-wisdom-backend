@@ -207,6 +207,12 @@ exports.getSubscriptionHistory = async (req, res, next) => {
 
     const total = await UserSubscription.countDocuments(filter);
 
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      UserSubscription.countDocuments({}),
+      UserSubscription.countDocuments({ isActive: true }),
+      UserSubscription.countDocuments({ isActive: false })
+    ]);
+
     const history = await UserSubscription.find(filter)
       .populate('user', 'name phone email avatar')
       .populate('subscription', 'name price durationDays')
@@ -223,7 +229,10 @@ exports.getSubscriptionHistory = async (req, res, next) => {
         total,
         page: pageNum,
         limit: limitNum,
-        totalPages: Math.ceil(total / limitNum)
+        totalPages: Math.ceil(total / limitNum),
+        globalTotal,
+        globalActive,
+        globalInactive
       }
     });
   } catch (error) {
