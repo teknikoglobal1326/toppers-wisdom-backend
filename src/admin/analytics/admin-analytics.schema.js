@@ -6,6 +6,8 @@ const analyticsListQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
   fromRank: Joi.number().integer().min(1).optional(),
   toRank: Joi.number().integer().min(1).optional(),
+  fromScore: Joi.number().min(0).optional(),
+  toScore: Joi.number().min(0).optional(),
 })
 
 module.exports = { analyticsListQuerySchema }
