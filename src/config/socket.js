@@ -10,6 +10,7 @@ const LivePoll = require('../models/LivePoll.model');
 
 let io;
 
+console.log("config.FRONTEND_URL==============?", config.FRONTEND_URL);
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
@@ -20,7 +21,8 @@ const initSocket = (httpServer) => {
         'http://localhost:5173',
         'http://192.168.1.58:3001',
         'http://192.168.1.58:3000',
-        'http://192.168.1.58:5173'
+        'http://192.168.1.58:5173',
+        // 'http://160.187.87.138:8002'
       ],
       methods: ['GET', 'POST'],
       credentials: true
@@ -204,6 +206,7 @@ const initSocket = (httpServer) => {
     socket.on('sync-viewer-count', async (data, callback) => {
       try {
         const { contentId } = data;
+        const roomName = `live_${contentId}`;
         if (!contentId) {
           if (callback) callback({ error: 'contentId is required' });
           return;

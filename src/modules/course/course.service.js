@@ -453,39 +453,64 @@ class CourseService extends BaseService {
   }
 
   async createRazorpayOrder(courseId, userId, amountDetails) {
-    const { amount, discount, gstRate, gstAmount, grandTotal } = amountDetails;
-    this.logger.info({ courseId, userId, amount, grandTotal }, 'Creating razorpay order for course')
+    try {
+      const { amount, discount, gstRate, gstAmount, grandTotal } = amountDetails;
+      console.log("check token==============>");
+      this.logger.info({ courseId, userId, amount, grandTotal }, 'Creating razorpay order for course')
 
-    if (amount === undefined || amount === null || grandTotal === undefined || grandTotal === null) {
-      throw new AppError('Amount and grandTotal are required', 400)
+      if (amount === undefined || amount === null || grandTotal === undefined || grandTotal === null) {
+        throw new AppError('Amount and grandTotal are required', 400)
+      }
+
+      const existing = await courseRepository.findEnrollment(userId, courseId)
+      if (existing) throw new AppError('Already enrolled', 409, 'DUPLICATE_ERROR')
+
+      const course = await this.getById(courseId, { select: 'title isFree validityInMonths isLifetime' })
+      if (!course) throw new AppError('Course not found', 404, 'NOT_FOUND')
+
+      if (course.isFree) {
+        throw new AppError('Course is free, use enroll endpoint instead', 400)
+      }
+
+      const items = [{
+        itemType: 'course',
+        itemId: courseId,
+        title: course.title,
+        price: Number(amount),
+        validityInMonths: course.validityInMonths,
+        isLifetime: course.isLifetime
+      }]
+
+      // const paymentService = require('../payment/payment.service')
+      return await paymentService.createOrder(userId, items, {
+        totalAmount: Number(amount),
+        discount: Number(discount || 0),
+        gstRate: Number(gstRate || 0),
+        gstAmount: Number(gstAmount || 0),
+        grandTotal: Number(grandTotal)
+      })
+    } catch (error) {
+      this.logger.error({ courseId, userId, error }, 'Error creating razorpay order')
+      if (error instanceof AppError) throw error
+
+      let message = 'Failed to create payment order'
+      let statusCode = 500
+
+      if (error && typeof error === 'object') {
+        if (error.error && error.error.description) {
+          message = `Razorpay: ${error.error.description}`
+        } else if (error.message) {
+          message = error.message
+        }
+        if (error.statusCode) {
+          statusCode = error.statusCode
+        }
+      } else if (typeof error === 'string') {
+        message = error
+      }
+
+      throw new AppError(message, statusCode)
     }
-
-    const existing = await courseRepository.findEnrollment(userId, courseId)
-    if (existing) throw new AppError('Already enrolled', 409, 'DUPLICATE_ERROR')
-
-    const course = await this.getById(courseId, { select: 'title isFree validityInMonths isLifetime' })
-
-    if (course.isFree) {
-      throw new AppError('Course is free, use enroll endpoint instead', 400)
-    }
-
-    const items = [{
-      itemType: 'course',
-      itemId: courseId,
-      title: course.title,
-      price: Number(amount),
-      validityInMonths: course.validityInMonths,
-      isLifetime: course.isLifetime
-    }]
-
-    // const paymentService = require('../payment/payment.service')
-    return await paymentService.createOrder(userId, items, {
-      totalAmount: Number(amount),
-      discount: Number(discount || 0),
-      gstRate: Number(gstRate || 0),
-      gstAmount: Number(gstAmount || 0),
-      grandTotal: Number(grandTotal)
-    })
   }
 
   async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {

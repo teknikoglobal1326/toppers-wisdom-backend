@@ -1,6 +1,6 @@
-const router     = require('express').Router()
+const router = require('express').Router()
 const controller = require('./admin-subexam.controller')
-const { validate, validateQuery }              = require('../../core/validate')
+const { validate, validateQuery } = require('../../core/validate')
 const { createSubExamSchema, createSubExamDualSchema, updateSubExamSchema, listSubExamQuerySchema } = require('./admin-subexam.schema')
 
 const validateCreate = (req, res, next) => {
@@ -8,8 +8,8 @@ const validateCreate = (req, res, next) => {
   return validate(schema)(req, res, next)
 }
 
-router.get('/',    validateQuery(listSubExamQuerySchema), controller.list)
-router.post('/',   validateCreate, controller.create)
+router.get('/', validateQuery(listSubExamQuerySchema), controller.list)
+router.post('/', validateCreate, controller.create)
 router.get('/:id', controller.getOne)
 router.put('/:id', validate(updateSubExamSchema), controller.update)
 router.delete('/:id', controller.remove)

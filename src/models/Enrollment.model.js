@@ -5,6 +5,7 @@ const enrollmentSchema = new mongoose.Schema({
   course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
   progress: [{
     lessonId:       mongoose.Schema.Types.ObjectId,
+    topicId:        mongoose.Schema.Types.ObjectId,
     completed:      { type: Boolean, default: false },
     watchedSeconds: { type: Number, default: 0 },
     completedAt:    Date,
