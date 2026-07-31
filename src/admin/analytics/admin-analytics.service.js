@@ -506,7 +506,9 @@ const testLeaderboard = async (testId, filters = {}) => {
       $setWindowFields: {
 
         sortBy: {
-          score: -1
+          score: -1,
+          accuracy: -1,
+          timeTaken: 1
         },
 
         output: {
