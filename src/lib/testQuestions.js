@@ -30,14 +30,8 @@ const groupQuestionsByLanguage = (questions = []) => {
   const grouped = {}
 
   for (const question of questions) {
-    let orderKey = String(question.order || 1)
-    if (grouped[orderKey]) {
-      let temp = 1
-      while (grouped[String(temp)]) {
-        temp++
-      }
-      orderKey = String(temp)
-    }
+    const orderKey = question._id.toString()
+    if (!grouped[orderKey]) grouped[orderKey] = { en: {}, hi: {} }
 
     grouped[orderKey] = { en: {}, hi: {} }
     grouped[orderKey].en = sanitizeQuestion(question, 'en')
@@ -62,14 +56,10 @@ const groupQuestionsBySubject = (questions = []) => {
     }
 
     const group = subjectMap.get(subjectId)
-    let orderKey = String(question.order || 1)
-
-    if (group.questions[orderKey]) {
-      let temp = 1
-      while (group.questions[String(temp)]) {
-        temp++
-      }
-      orderKey = String(temp)
+    const orderKey = question._id.toString()
+    
+    if (!group.questions[orderKey]) {
+        group.questions[orderKey] = { en: {}, hi: {} }
     }
 
     group.questions[orderKey] = { en: {}, hi: {} }

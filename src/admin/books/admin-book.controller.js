@@ -28,7 +28,20 @@ const list = catchAsync(async (req, res) => {
         .limit(limit)
     const total = await Book.countDocuments(filter)
 
-    sendPaginated(res, docs, { page: Number(page), limit: Number(limit), total })
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+        Book.countDocuments({ isDeleted: false }),
+        Book.countDocuments({ isDeleted: false, status: 'active' }),
+        Book.countDocuments({ isDeleted: false, status: 'inactive' }),
+    ])
+
+    sendPaginated(res, docs, { 
+        page: Number(page), 
+        limit: Number(limit), 
+        total,
+        globalTotal,
+        globalActive,
+        globalInactive
+    })
 })
 
 const getOne = catchAsync(async (req, res) => {

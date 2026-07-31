@@ -15,12 +15,24 @@ class AdminShortCategoryService extends BaseService {
     const filter = { isDeleted: false }
     if (examId) filter.examIds = examId
     if (status) filter.status = status
-    return this.getAll(filter, {
+    const result = await this.getAll(filter, {
       page,
       limit,
       sort: { createdAt: -1 },
       populate: EXAM_POPULATE
     })
+
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      this.repository.count({ isDeleted: false }),
+      this.repository.count({ isDeleted: false, status: 'active' }),
+      this.repository.count({ isDeleted: false, status: 'inactive' }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+
+    return result
   }
 
   async getOne(id) {
