@@ -29,7 +29,7 @@ class AdminPdfService extends BaseService {
       ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
-    return this.getAll(filter, {
+    const result = await this.getAll(filter, {
       page,
       limit,
       sort,
@@ -38,6 +38,18 @@ class AdminPdfService extends BaseService {
         { path: 'subjects' },
       ],
     })
+
+    const [globalTotal, globalActive, globalInactive] = await Promise.all([
+      this.repository.count({ isDeleted: false }),
+      this.repository.count({ isDeleted: false, status: 'active' }),
+      this.repository.count({ isDeleted: false, status: 'inactive' }),
+    ])
+
+    result.pagination.globalTotal = globalTotal
+    result.pagination.globalActive = globalActive
+    result.pagination.globalInactive = globalInactive
+
+    return result
   }
 
   async getOne(id) {

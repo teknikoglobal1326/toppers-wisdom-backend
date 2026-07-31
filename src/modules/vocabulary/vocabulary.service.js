@@ -178,7 +178,7 @@ class VocabularyService extends BaseService {
         const vocabulary = await vocabularyRepository.findOne({ _id: vocabularyId, isDeleted: false, })
         if (!vocabulary) throw new AppError('Vocabulary not found', 404, 'NOT_FOUND')
 
-        return VocabularyUserState.findOneAndUpdate(
+        const result = await VocabularyUserState.findOneAndUpdate(
             { user: userId, vocabulary: vocabularyId },
             {
                 $set: { isRead: true, readAt: new Date() },
@@ -186,6 +186,29 @@ class VocabularyService extends BaseService {
             },
             { new: true, upsert: true, setDefaultsOnInsert: true }
         ).lean()
+
+        // Automatically trigger daily streak mission completion if 30 words are read today
+        try {
+            const startOfToday = new Date()
+            startOfToday.setHours(0, 0, 0, 0)
+            const endOfToday = new Date()
+            endOfToday.setHours(23, 59, 59, 999)
+
+            const count = await VocabularyUserState.countDocuments({
+                user: userId,
+                isRead: true,
+                readAt: { $gte: startOfToday, $lte: endOfToday }
+            })
+
+            if (count >= 30) {
+                const rewardsService = require('../rewards/rewards.service')
+                await rewardsService.logActivity(userId, 'pyp_dictionary')
+            }
+        } catch (error) {
+            console.error('Failed to automatically check or log daily vocabulary activity:', error)
+        }
+
+        return result
     }
 
     async setBookmark(vocabularyId, userId, isBookmarked = true) {

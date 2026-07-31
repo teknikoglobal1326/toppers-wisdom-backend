@@ -246,12 +246,6 @@ class PreviousYearPaperService extends BaseService {
 
         this.logger.info({ userId, testId, score, accuracy }, 'Submitted previous-year-paper test')
 
-        try {
-            await rewardsService.logActivity(userId, 'pyp_paper');
-        } catch (err) {
-            this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity in submitTest');
-        }
-
         return {
             attemptId: attempt._id,
             score,
@@ -280,7 +274,28 @@ class PreviousYearPaperService extends BaseService {
         const hasAccess = !test.isPaid
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
+        /* eslint-disable no-console */
+        const Question = require('../../models/Question.model')
+        const rawQuestions = await Question.find({ test: testId }).lean()
+        console.log(`[DIAGNOSTIC] startSession called for testId: ${testId}`)
+        console.log(`[DIAGNOSTIC] Raw questions found in DB for this test: ${rawQuestions.length}`)
+        rawQuestions.forEach((q, idx) => {
+            console.log(`[DIAGNOSTIC] Question #${idx + 1}:
+               _id: ${q._id}
+               order: ${q.order}
+               sortOrder: ${q.sortOrder}
+               status: ${q.status}
+               isDeleted: ${q.isDeleted}
+               subjectId: ${q.subjectId}
+               chapterId: ${q.chapterId}
+               topicId: ${q.topicId}
+            `)
+        })
+
         const questions = await this.repository.findQuestionsForTest(testId)
+        console.log(`[DIAGNOSTIC] Active & non-deleted questions found by repository: ${questions.length}`)
+        /* eslint-enable no-console */
+
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
 
         const sessionId = crypto.randomUUID()
