@@ -1,7 +1,7 @@
-const BaseService        = require('../../core/BaseService')
+const BaseService = require('../../core/BaseService')
 const progressRepository = require('./progress.repository')
-const AppError           = require('../../core/AppError')
-const { createLogger }   = require('../../config/logger')
+const AppError = require('../../core/AppError')
+const { createLogger } = require('../../config/logger')
 
 class ProgressService extends BaseService {
   constructor() {
@@ -10,22 +10,63 @@ class ProgressService extends BaseService {
   }
 
   async updateLesson(userId, data) {
-    const { lessonId, courseId, watchedSeconds, completed } = data
-    this.logger.info({ userId, courseId, lessonId, watchedSeconds, completed }, 'Updating lesson progress')
+    const { lessonId, topicId, courseId, watchedSeconds, completed } = data
+    this.logger.info({ userId, courseId, lessonId, topicId, watchedSeconds, completed }, 'Updating lesson progress')
 
     const enrollment = await progressRepository.getEnrollment(userId, courseId)
     if (!enrollment) throw new AppError('You are not enrolled in this course', 403, 'FORBIDDEN')
 
-    const result = await progressRepository.updateLessonProgress(userId, courseId, lessonId, watchedSeconds || 0, completed || false)
+    const result = await progressRepository.updateLessonProgress(userId, courseId, lessonId, watchedSeconds || 0, completed || false, topicId)
     this.logger.info({ userId, courseId, progress: result.progressPercent }, 'Progress updated')
-    return { progressPercent: result.progressPercent, lessonId, completed }
+    return { progressPercent: result.progressPercent, lessonId, topicId, completed }
   }
 
   async getCourseProgress(userId, courseId) {
     this.logger.info({ userId, courseId }, 'Fetching course progress')
+
+    const Course = require('../../models/Course.model')
+    const Content = require('../../models/Content.model')
+    const Pdf = require('../../models/Pdf.model')
+    const CourseTest = require('../../models/CourseTest.model')
+
+    const coursePromise = Course.findById(courseId).select('lessons isFree').lean()
+    const contentCountPromise = Content.countDocuments({ course: courseId, isDeleted: false, status: 'active' })
+    const pdfCountPromise = Pdf.countDocuments({ course: courseId, isDeleted: false, status: 'active' })
+    const testCountPromise = CourseTest.countDocuments({ course: courseId, isDeleted: false, status: 'active' })
+
+    const [course, contentCount, pdfCount, testCount] = await Promise.all([
+      coursePromise,
+      contentCountPromise,
+      pdfCountPromise,
+      testCountPromise
+    ])
+
+    if (!course) throw new AppError('Course not found', 404, 'NOT_FOUND')
+
     const enrollment = await progressRepository.getEnrollment(userId, courseId)
-    if (!enrollment) throw new AppError('You are not enrolled in this course', 403, 'FORBIDDEN')
-    return enrollment
+
+    const totalItems = (course.lessons?.length || 0) + contentCount + pdfCount + testCount
+
+    if (!enrollment) {
+      if (course.isFree) {
+        return {
+          progress: [],
+          progressPercent: 0,
+          totalItems,
+          completedItems: 0
+        }
+      }
+      throw new AppError('You are not enrolled in this course', 403, 'FORBIDDEN')
+    }
+
+    const completedItems = enrollment.progress.filter((p) => p.completed).length
+
+    const enrollmentObj = enrollment.toObject ? enrollment.toObject() : enrollment
+    return {
+      ...enrollmentObj,
+      totalItems,
+      completedItems
+    }
   }
 
   // Reduce raw per-test best-attempt rows into a module summary.

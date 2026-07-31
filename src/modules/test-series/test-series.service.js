@@ -217,8 +217,6 @@ class TestSeriesService extends BaseService {
 
         const groupedQuestions = groupQuestionsBySubject(questions)
 
-        this.logger.info({ userId, testId, count: questions.length }, 'Starting test-series test')
-
         return {
             series: {
                 _id: series._id,
@@ -331,7 +329,6 @@ class TestSeriesService extends BaseService {
         })
 
         const groupedQuestions = groupQuestionsBySubject(questions)
-
         return {
             sessionId,
             series: {
@@ -474,14 +471,17 @@ class TestSeriesService extends BaseService {
             const siblingQuestionIds = questions.filter(sq => sq.order === q.order).map(sq => String(sq._id))
             const ans = userAnswers.find(a => siblingQuestionIds.includes(String(a.questionId)))
 
+            let isAttempted = false
+            let isCorrect = false
+            let marksObtained = 0
+
             if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
-                sec.attempted++
+                isAttempted = true
 
                 // Which specific question ID was answered?
                 const answeredQ = questions.find(sq => String(sq._id) === String(ans.questionId))
                 const correctIndex = answeredQ ? (answeredQ.options || []).findIndex(opt => opt.isCorrect) : -1
 
-                let marksObtained = 0
                 if (correctIndex !== -1 && ans.selectedOption === correctIndex) {
                     isCorrect = true
                     marksObtained = marksPerQuestion
@@ -497,7 +497,7 @@ class TestSeriesService extends BaseService {
             for (const subj of subjectsToProcess) {
                 const subjectId = subj?._id ? String(subj._id) : (subj ? String(subj) : 'uncategorized');
                 const subjectName = subj?.name || 'Uncategorized';
-                
+
                 if (!sectionWise.has(subjectId)) {
                     sectionWise.set(subjectId, {
                         subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
@@ -522,8 +522,8 @@ class TestSeriesService extends BaseService {
                     const chapterId = String(chap);
                     let chapterName = 'Uncategorized';
                     if (subj && subj.chapters && chapterId !== 'uncategorized') {
-                       const foundChapter = subj.chapters.find((c) => String(c._id) === chapterId);
-                       if (foundChapter) chapterName = foundChapter.name;
+                        const foundChapter = subj.chapters.find((c) => String(c._id) === chapterId);
+                        if (foundChapter) chapterName = foundChapter.name;
                     }
 
                     if (!sec.chapters.has(chapterId)) {
@@ -542,11 +542,11 @@ class TestSeriesService extends BaseService {
                         const topicId = String(top);
                         let topicName = 'Uncategorized';
                         if (subj && subj.chapters && chapterId !== 'uncategorized' && topicId !== 'uncategorized') {
-                           const foundChapter = subj.chapters.find((c) => String(c._id) === chapterId);
-                           if (foundChapter && foundChapter.topics) {
-                               const foundTopic = foundChapter.topics.find((t) => String(t._id) === topicId);
-                               if (foundTopic) topicName = foundTopic.name;
-                           }
+                            const foundChapter = subj.chapters.find((c) => String(c._id) === chapterId);
+                            if (foundChapter && foundChapter.topics) {
+                                const foundTopic = foundChapter.topics.find((t) => String(t._id) === topicId);
+                                if (foundTopic) topicName = foundTopic.name;
+                            }
                         }
 
                         if (!chapStats.topics.has(topicId)) {
