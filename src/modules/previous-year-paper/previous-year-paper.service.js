@@ -277,8 +277,7 @@ class PreviousYearPaperService extends BaseService {
         /* eslint-disable no-console */
         const Question = require('../../models/Question.model')
         const rawQuestions = await Question.find({ test: testId }).lean()
-        console.log(`[DIAGNOSTIC] startSession called for testId: ${testId}`)
-        console.log(`[DIAGNOSTIC] Raw questions found in DB for this test: ${rawQuestions.length}`)
+
         rawQuestions.forEach((q, idx) => {
             console.log(`[DIAGNOSTIC] Question #${idx + 1}:
                _id: ${q._id}
@@ -293,7 +292,7 @@ class PreviousYearPaperService extends BaseService {
         })
 
         const questions = await this.repository.findQuestionsForTest(testId)
-        console.log(`[DIAGNOSTIC] Active & non-deleted questions found by repository: ${questions.length}`)
+     
         /* eslint-enable no-console */
 
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
@@ -474,9 +473,9 @@ class PreviousYearPaperService extends BaseService {
                 }
             }
 
-            const subjectsToProcess = (q.subjects && q.subjects.length > 0) ? q.subjects : [null];
-            const chaptersToProcess = (q.chapters && q.chapters.length > 0) ? q.chapters : ['uncategorized'];
-            const topicsToProcess = (q.topics && q.topics.length > 0) ? q.topics : ['uncategorized'];
+            const subjectsToProcess = q.subjectId ? [q.subjectId] : [null];
+            const chaptersToProcess = q.chapterId ? [q.chapterId] : ['uncategorized'];
+            const topicsToProcess = q.topicId ? [q.topicId] : ['uncategorized'];
 
             for (const subj of subjectsToProcess) {
                 const subjectId = subj?._id ? String(subj._id) : (subj ? String(subj) : 'uncategorized');

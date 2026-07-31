@@ -490,9 +490,9 @@ class TestSeriesService extends BaseService {
                 }
             }
 
-            const subjectsToProcess = (q.subjects && q.subjects.length > 0) ? q.subjects : [null];
-            const chaptersToProcess = (q.chapters && q.chapters.length > 0) ? q.chapters : ['uncategorized'];
-            const topicsToProcess = (q.topics && q.topics.length > 0) ? q.topics : ['uncategorized'];
+            const subjectsToProcess = q.subjectId ? [q.subjectId] : [null];
+            const chaptersToProcess = q.chapterId ? [q.chapterId] : ['uncategorized'];
+            const topicsToProcess = q.topicId ? [q.topicId] : ['uncategorized'];
 
             for (const subj of subjectsToProcess) {
                 const subjectId = subj?._id ? String(subj._id) : (subj ? String(subj) : 'uncategorized');

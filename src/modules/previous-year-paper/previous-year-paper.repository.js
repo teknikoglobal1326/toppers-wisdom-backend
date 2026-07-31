@@ -136,7 +136,7 @@ class PreviousYearPaperRepository extends BaseRepository {
             status: 'active',
         })
             .select('en hi order sortOrder perQuestionTime subjectId chapterId topicId')
-            .populate('subjectId', 'name')
+            .populate('subjectId', 'name chapters')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
     }
