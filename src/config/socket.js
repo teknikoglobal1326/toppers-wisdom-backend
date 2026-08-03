@@ -11,6 +11,15 @@ const LivePoll = require('../models/LivePoll.model');
 let io;
 
 console.log("config.FRONTEND_URL==============?", config.FRONTEND_URL);
+
+const getRaisedHands = async (contentId) => {
+  const data = await redis.get(`live_raised_hands:${contentId}`)
+  return data ? JSON.parse(data) : []
+}
+
+const saveRaisedHands = async (contentId, list) => {
+  await redis.set(`live_raised_hands:${contentId}`, JSON.stringify(list))
+}
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
@@ -111,7 +120,10 @@ const initSocket = (httpServer) => {
         // Reverse so they are in chronological order
         recentChats.reverse();
 
-        socket.emit('live-state', { chatMode, activePoll, recentChats, pollHistory });
+        // Fetch raised hands
+        const raisedHandsList = await getRaisedHands(contentId);
+
+        socket.emit('live-state', { chatMode, activePoll, recentChats, pollHistory, raisedHands: { list: raisedHandsList, count: raisedHandsList.length } });
 
         // Broadcast updated viewer count
         const customCountStr = await redis.get(`live_viewer_offset:${contentId}`);
@@ -121,9 +133,84 @@ const initSocket = (httpServer) => {
 
         io.to(roomName).emit('viewer-count-updated', { count: displayCount, actualCount: currentSize });
 
-        if (callback) callback({ success: true, room: roomName, chatMode, activePoll, recentChats, pollHistory, viewerCount: displayCount, actualCount: currentSize });
+        if (callback) callback({ success: true, room: roomName, chatMode, activePoll, recentChats, pollHistory, raisedHands: { list: raisedHandsList, count: raisedHandsList.length }, viewerCount: displayCount, actualCount: currentSize });
       } catch (error) {
         rootLogger.error(error, 'Error in join-live');
+        if (callback) callback({ error: 'Internal server error' });
+      }
+    });
+
+    // Raise Hand
+    socket.on('raise-hand', async (data, callback) => {
+      try {
+        const { contentId } = data;
+        if (!contentId) {
+          if (callback) callback({ error: 'contentId is required' });
+          return;
+        }
+
+        const roomName = `live_${contentId}`;
+        const list = await getRaisedHands(contentId);
+        const userId = socket.user?._id;
+
+        if (!userId) {
+          if (callback) callback({ error: 'Authentication required' });
+          return;
+        }
+
+        // Check if already in the list
+        const exists = list.some(item => item.userId === userId.toString());
+        if (!exists) {
+          list.push({
+            userId: userId.toString(),
+            name: socket.user.name || 'Anonymous Student',
+            phone: socket.user.phone || '',
+            socketId: socket.id,
+            raisedAt: new Date()
+          });
+          await saveRaisedHands(contentId, list);
+        }
+
+        io.to(roomName).emit('hand-raised-sync', { list, count: list.length });
+
+        if (callback) callback({ success: true, list });
+      } catch (error) {
+        rootLogger.error(error, 'Error in raise-hand');
+        if (callback) callback({ error: 'Internal server error' });
+      }
+    });
+
+    // Lower Hand
+    socket.on('lower-hand', async (data, callback) => {
+      try {
+        const { contentId } = data;
+        let targetUserId = data.userId; // Admin can specify whose hand to lower
+        if (!contentId) {
+          if (callback) callback({ error: 'contentId is required' });
+          return;
+        }
+
+        const roomName = `live_${contentId}`;
+        const list = await getRaisedHands(contentId);
+
+        // If not admin, or targetUserId not specified, default to self
+        if (socket.role !== 'admin' || !targetUserId) {
+          targetUserId = socket.user?._id?.toString();
+        }
+
+        if (!targetUserId) {
+          if (callback) callback({ error: 'User ID is required' });
+          return;
+        }
+
+        const updatedList = list.filter(item => item.userId !== targetUserId.toString());
+        await saveRaisedHands(contentId, updatedList);
+
+        io.to(roomName).emit('hand-raised-sync', { list: updatedList, count: updatedList.length });
+
+        if (callback) callback({ success: true, list: updatedList });
+      } catch (error) {
+        rootLogger.error(error, 'Error in lower-hand');
         if (callback) callback({ error: 'Internal server error' });
       }
     });
@@ -448,6 +535,17 @@ const initSocket = (httpServer) => {
         if (room.startsWith('live_')) {
           const contentId = room.substring(5);
           try {
+            // Remove raised hand if this user had raised their hand
+            const list = await getRaisedHands(contentId);
+            const userId = socket.user?._id?.toString();
+            if (userId) {
+              const updatedList = list.filter(item => item.userId !== userId);
+              if (updatedList.length !== list.length) {
+                await saveRaisedHands(contentId, updatedList);
+                io.to(room).emit('hand-raised-sync', { list: updatedList, count: updatedList.length });
+              }
+            }
+
             const customCountStr = await redis.get(`live_viewer_offset:${contentId}`);
             const customCount = customCountStr ? parseInt(customCountStr, 10) : 0;
             // The size still includes the disconnecting socket, so we subtract 1

@@ -13,10 +13,26 @@ class ProgressService extends BaseService {
     const { lessonId, topicId, courseId, watchedSeconds, completed } = data
     this.logger.info({ userId, courseId, lessonId, topicId, watchedSeconds, completed }, 'Updating lesson progress')
 
-    const enrollment = await progressRepository.getEnrollment(userId, courseId)
-    if (!enrollment) throw new AppError('You are not enrolled in this course', 403, 'FORBIDDEN')
+    let enrollment = await progressRepository.getEnrollment(userId, courseId)
+    if (!enrollment) {
+      const Course = require('../../models/Course.model')
+      const course = await Course.findById(courseId).lean()
+      if (!course) throw new AppError('Course not found', 404, 'NOT_FOUND')
+
+      if (course.isFree) {
+        const EnrollmentModel = require('../../models/Enrollment.model')
+        try {
+          enrollment = await EnrollmentModel.create({ user: userId, course: courseId })
+        } catch (err) {
+          enrollment = await progressRepository.getEnrollment(userId, courseId)
+        }
+      } else {
+        throw new AppError('You are not enrolled in this course', 403, 'FORBIDDEN')
+      }
+    }
 
     const result = await progressRepository.updateLessonProgress(userId, courseId, lessonId, watchedSeconds || 0, completed || false, topicId)
+    if (!result) throw new AppError('Failed to update progress', 500, 'SERVER_ERROR')
     this.logger.info({ userId, courseId, progress: result.progressPercent }, 'Progress updated')
     return { progressPercent: result.progressPercent, lessonId, topicId, completed }
   }

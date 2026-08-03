@@ -3,16 +3,10 @@ const Short = require('../../models/Short.model')
 const ShortCategory = require('../../models/ShortCategory.model')
 const Course = require('../../models/Course.model')
 const { createLogger } = require('../../config/logger')
-
+const Testimonial = require('../../models/Testimonial.model')
 const logger = createLogger('home:service')
 
-// Static placeholder data until a Testimonial model/admin CRUD is built
-const TESTIMONIALS = [
-  { _id: '1', name: 'Ravi Kumar', designation: 'SSC CGL 2024', photo: "/uploads/banners/Container.png", message: 'Toppers Wisdom helped me crack SSC CGL in my first attempt!', rating: 5 },
-  { _id: '2', name: 'Priya Sharma', designation: 'IBPS PO 2024', photo: "/uploads/banners/Container.png", message: 'The mock tests were exactly like the real exam pattern.', rating: 5 },
-  { _id: '3', name: 'Amit Singh', designation: 'Railway Group D', photo: "/uploads/banners/Container.png", message: 'Best platform for railway exam preparation in Hindi.', rating: 4 },
-  { _id: '4', name: 'Sneha Verma', designation: 'UPSC Prelims 2024', photo: "/uploads/banners/Container.png", message: 'Quality content and very affordable courses.', rating: 5 },
-]
+
 
 const getHome = async (examId) => {
   logger.info({ examId }, 'Fetching home data')
@@ -48,11 +42,17 @@ const getHome = async (examId) => {
     })
   )
 
+  const testimonials = await Testimonial.find({ isDeleted: false })
+    .sort({ priority: 1 })
+    .limit(10)
+    .select('name exam reviewText image')
+    .lean()
+
   return {
     banners,
     shorts: shortsData,
     courses,
-    testimonials: TESTIMONIALS,
+    testimonials
   }
 }
 

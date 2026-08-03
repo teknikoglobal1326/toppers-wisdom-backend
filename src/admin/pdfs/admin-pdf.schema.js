@@ -1,7 +1,7 @@
 const Joi = require('joi')
 
 const createPdfSchema = Joi.object({
-  course: Joi.string().hex().length(24).required(),
+  course: Joi.string().hex().length(24).optional(),
   courseId: Joi.string().hex().length(24).optional(),
   subjects: Joi.array().items(Joi.string().hex().length(24)).optional(),
   topics: Joi.array().items(Joi.string().hex().length(24)).optional(),
@@ -45,6 +45,17 @@ const listPdfQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 })
 
+const assignPdfSchema = Joi.object({
+  assignments: Joi.array().items(
+    Joi.object({
+      course: Joi.string().hex().length(24).required(),
+      subjects: Joi.array().items(Joi.string().hex().length(24)).optional(),
+      chapters: Joi.array().items(Joi.string().hex().length(24)).optional(),
+      topics: Joi.array().items(Joi.string().hex().length(24)).optional(),
+    })
+  ).min(1).required()
+})
+
 const bulkCreatePdfSchema = Joi.array().items(createPdfSchema).min(1)
 
-module.exports = { createPdfSchema, updatePdfSchema, listPdfQuerySchema, bulkCreatePdfSchema }
+module.exports = { createPdfSchema, updatePdfSchema, listPdfQuerySchema, assignPdfSchema, bulkCreatePdfSchema }

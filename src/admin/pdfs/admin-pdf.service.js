@@ -112,6 +112,46 @@ class AdminPdfService extends BaseService {
     this.logger.info({ pdfId: id }, 'Pdf soft deleted')
   }
 
+  async assignPdf(id, { assignments }, adminId) {
+    const masterPdf = await pdfRepository.findOne({ _id: id, isDeleted: false })
+    if (!masterPdf) throw new AppError('Pdf not found', 404, 'NOT_FOUND')
+
+    const results = []
+    let updatedMaster = false
+
+    for (let i = 0; i < assignments.length; i++) {
+      const assignment = assignments[i]
+      if (!masterPdf.course && !updatedMaster) {
+        const updated = await pdfRepository.updateById(id, {
+          course: assignment.course,
+          subjects: assignment.subjects || [],
+          chapters: assignment.chapters || [],
+          topics: assignment.topics || []
+        })
+        results.push(updated)
+        updatedMaster = true
+      } else {
+        const clonedData = {
+          title: masterPdf.title,
+          description: masterPdf.description,
+          pdfFile: masterPdf.pdfFile,
+          image: masterPdf.image,
+          sortOrder: masterPdf.sortOrder,
+          status: masterPdf.status,
+          scheduleAt: masterPdf.scheduleAt,
+          createdBy: adminId,
+          course: assignment.course,
+          subjects: assignment.subjects || [],
+          chapters: assignment.chapters || [],
+          topics: assignment.topics || []
+        }
+        const cloned = await pdfRepository.create(clonedData)
+        results.push(cloned)
+      }
+    }
+    return results
+  }
+
   async bulkUpload(file, common = {}, adminId, files = {}) {
     if (!file) throw new AppError('Excel or Word metadata file is required', 400, 'VALIDATION_ERROR')
 
@@ -129,16 +169,16 @@ class AdminPdfService extends BaseService {
       const cheerio = require('cheerio')
       const { value: html } = await mammoth.convertToHtml({ buffer: file.buffer })
       const $ = cheerio.load(html)
-      
+
       $("table").each((_, tableDom) => {
         const tableRows = $(tableDom).find("tr")
         if (tableRows.length < 2) return
-        
+
         const headers = []
         $(tableRows[0]).find("td, th").each((_, cell) => {
           headers.push($(cell).text().trim().toLowerCase().replace(/[\s_-]+/g, ""))
         })
-        
+
         for (let i = 1; i < tableRows.length; i++) {
           const cells = $(tableRows[i]).find("td")
           const rowData = {}

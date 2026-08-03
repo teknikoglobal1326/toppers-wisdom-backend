@@ -55,4 +55,11 @@ const uploadForDocument = catchAsync(async (req, res) => {
   sendSuccess(res, updated, 'Files uploaded and document updated successfully')
 })
 
-module.exports = { list, getOne, create, update, remove, bulkCreate, uploadForDocument }
+const assign = catchAsync(async (req, res) => {
+  const { id } = req.params
+  const adminId = req.admin?._id
+  const assigned = await adminPdfService.assignPdf(id, req.body, adminId)
+  sendSuccess(res, assigned, 'Pdf assigned successfully')
+})
+
+module.exports = { list, getOne, create, update, remove, bulkCreate, uploadForDocument, assign }

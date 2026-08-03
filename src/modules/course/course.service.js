@@ -175,6 +175,81 @@ class CourseService extends BaseService {
     return result
   }
 
+  async getScheduledLiveClasses(userId, filters = {}) {
+    this.logger.info({ userId }, 'Fetching scheduled live classes')
+
+    const enrollments = await courseRepository.findEnrollmentsByUser(userId)
+    const enrolledCourseIds = enrollments.map(e => e.course)
+
+    const Course = require('../../models/Course.model')
+
+    const freeCourses = await Course.find({ isFree: true, status: 'published', isDeleted: false }).select('_id').lean()
+    const freeCourseIds = freeCourses.map(c => c._id)
+
+    const allAllowedCourseIds = Array.from(new Set([
+      ...enrolledCourseIds.map(id => id.toString()),
+      ...freeCourseIds.map(id => id.toString())
+    ]))
+
+    // this.logger.info({ userId, enrolledCount: enrolledCourseIds.length, freeCount: freeCourseIds.length, totalAllowed: allAllowedCourseIds.length }, 'Scheduled live classes course mapping info')
+
+    if (allAllowedCourseIds.length === 0) {
+      return {
+        data: [],
+        pagination: {
+          total: 0,
+          page: Number(filters.page) || 1,
+          limit: Number(filters.limit) || 20,
+          totalPages: 0
+        }
+      }
+    }
+
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+
+    const filter = {
+      course: { $in: allAllowedCourseIds },
+      isLive: true,
+      isDeleted: false,
+      status: 'active',
+      liveStatus: { $in: ['pending', 'ongoing'] },
+      scheduledStartTime: { $gte: startOfToday }
+    }
+
+    // this.logger.info({ filter }, 'Scheduled live classes MongoDB query filter')
+
+    const page = Math.max(1, Number(filters.page) || 1)
+    const limit = Math.max(1, Number(filters.limit) || 20)
+    const skip = (page - 1) * limit
+
+    // console.log("filter============>", filter);
+    const [total, data] = await Promise.all([
+      Content.countDocuments(filter),
+      Content.find(filter)
+        .select('title description isLive liveStatus scheduledStartTime scheduledEndTime course agoraChannel rtmpServer rtmpStreamKey rtmpUrl agoraToken restreamUrls')
+        .sort({ scheduledStartTime: 1 })
+        .skip(skip)
+        .limit(limit)
+        .populate([
+          { path: 'course', select: 'title thumbnail' }
+        ])
+        .lean()
+    ])
+
+    // this.logger.info({ total, foundCount: data.length }, 'Scheduled live classes query result')
+
+    return {
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  }
+
   async getCourse(courseId, userId) {
     this.logger.info({ courseId, userId }, 'Fetching course detail')
     // inherited: this.getById() throws 404 automatically if not found
