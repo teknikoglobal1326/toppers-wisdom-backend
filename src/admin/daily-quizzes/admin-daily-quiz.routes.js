@@ -1,7 +1,7 @@
 const router = require('express').Router()
-const controller = require('./admin-today-quiz.controller')
+const controller = require('./admin-daily-quiz.controller')
 const { validate } = require('../../core/validate')
-const { createTodayQuizSchema, updateTodayQuizSchema } = require('./admin-today-quiz.schema')
+const { createDailyQuizSchema, updateDailyQuizSchema } = require('./admin-daily-quiz.schema')
 const { uploadThumbnail, parseThumbnail } = require('../test-management-thumbnail.upload')
 const multer = require('multer')
 
@@ -15,9 +15,9 @@ const uploadBulkFields = uploadBulk.fields([
 
 router.get('/', controller.list)
 router.post('/bulk', uploadBulkFields, controller.bulkCreate)
-router.post('/', uploadThumbnail, parseThumbnail('today-quizzes/thumbnails'), validate(createTodayQuizSchema), controller.create)
+router.post('/', uploadThumbnail, parseThumbnail('daily-quizzes/thumbnails'), validate(createDailyQuizSchema), controller.create)
 router.get('/:id', controller.getOne)
-router.put('/:id', uploadThumbnail, parseThumbnail('today-quizzes/thumbnails'), validate(updateTodayQuizSchema), controller.update)
+router.put('/:id', uploadThumbnail, parseThumbnail('daily-quizzes/thumbnails'), validate(updateDailyQuizSchema), controller.update)
 router.delete('/:id', controller.remove)
 
 module.exports = router

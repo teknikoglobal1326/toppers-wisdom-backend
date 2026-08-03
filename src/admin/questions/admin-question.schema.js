@@ -57,6 +57,10 @@ const createQuestionSchema = Joi.object({
   status: Joi.string().valid('active', 'inactive').default('active'),
   difficulty: Joi.string().valid('easy', 'medium', 'hard').default('medium'),
   createdBy: Joi.string().hex().length(24).optional().allow(null, ''),
+  exam: Joi.string().hex().length(24).optional().allow(null, ''),
+  examId: Joi.string().hex().length(24).optional().allow(null, ''),
+  subExams: Joi.array().items(Joi.string().hex().length(24)).optional(),
+  subExamIds: Joi.alternatives().try(Joi.array().items(Joi.string().hex().length(24)), Joi.string()).optional(),
 })
 
 const languageQuestionUpdateSchema = Joi.object({
@@ -96,6 +100,10 @@ const updateQuestionSchema = Joi.object({
   status: Joi.string().valid('active', 'inactive').optional(),
   difficulty: Joi.string().valid('easy', 'medium', 'hard').optional(),
   createdBy: Joi.string().hex().length(24).optional().allow(null, ''),
+  exam: Joi.string().hex().length(24).optional().allow(null, ''),
+  examId: Joi.string().hex().length(24).optional().allow(null, ''),
+  subExams: Joi.array().items(Joi.string().hex().length(24)).optional(),
+  subExamIds: Joi.alternatives().try(Joi.array().items(Joi.string().hex().length(24)), Joi.string()).optional(),
 }).min(1)
 
 const listQuestionQuerySchema = Joi.object({

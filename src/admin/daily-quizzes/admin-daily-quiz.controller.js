@@ -1,10 +1,29 @@
 const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response')
 const AppError = require('../../core/AppError')
-const TodayQuiz = require('../../models/TodayQuiz.model')
+const DailyQuiz = require('../../models/DailyQuiz.model')
 
 const normalizePayload = (data = {}) => {
     const payload = { ...data }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'examId')) {
+        payload.exam = payload.examId || null
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'subExamIds')) {
+        if (Array.isArray(payload.subExamIds)) {
+            payload.subExams = payload.subExamIds
+        } else if (typeof payload.subExamIds === 'string' && payload.subExamIds) {
+            payload.subExams = payload.subExamIds.includes(',') 
+                ? payload.subExamIds.split(',').map(s => s.trim()) 
+                : [payload.subExamIds.trim()]
+        } else {
+            payload.subExams = []
+        }
+    }
+
+    delete payload.examId
+    delete payload.subExamIds
 
     const title = payload.title || ''
     const description = payload.description || null
@@ -39,10 +58,12 @@ const normalizePayload = (data = {}) => {
 }
 
 const list = catchAsync(async (req, res) => {
-    const { status, page = 1, limit = 10, q, todayOnly } = req.query
+    const { status, page = 1, limit = 10, q, todayOnly, examId, subExamId } = req.query
     const filter = { isDeleted: false }
 
     if (status) filter.status = status
+    if (examId) filter.exam = examId
+    if (subExamId) filter.subExams = subExamId
     if (q) {
         filter.$or = [
             { title: { $regex: q, $options: 'i' } },
@@ -61,46 +82,61 @@ const list = catchAsync(async (req, res) => {
     }
 
     const skip = (page - 1) * limit
-    const docs = await TodayQuiz.find(filter)
+    const docs = await DailyQuiz.find(filter)
+        .populate('exam', 'name')
+        .populate('subExams', 'name')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
 
-    const total = await TodayQuiz.countDocuments(filter)
+    const total = await DailyQuiz.countDocuments(filter)
 
     sendPaginated(res, docs, { page: Number(page), limit: Number(limit), total })
 })
 
 const getOne = catchAsync(async (req, res) => {
-    const doc = await TodayQuiz.findOne({ _id: req.params.id, isDeleted: false })
+    const doc = await DailyQuiz.findOne({ _id: req.params.id, isDeleted: false })
+        .populate('exam', 'name')
+        .populate('subExams', 'name')
+        .lean()
 
-    if (!doc) throw new AppError('Today quiz not found', 404, 'NOT_FOUND')
+    if (!doc) throw new AppError('Daily quiz not found', 404, 'NOT_FOUND')
+
+    const Question = require('../../models/Question.model')
+    const questions = await Question.find({ test: req.params.id, isDeleted: false })
+        .sort({ sortOrder: 1, order: 1, createdAt: 1 })
+        .lean()
+
+    doc.questions = questions
     sendSuccess(res, doc)
 })
 
 const create = catchAsync(async (req, res) => {
     const payload = normalizePayload({ ...req.body, createdBy: req.admin?._id || null })
-    sendCreated(res, await TodayQuiz.create(payload))
+    const createdDoc = await DailyQuiz.create(payload)
+    const populated = await DailyQuiz.findById(createdDoc._id).populate('exam', 'name').populate('subExams', 'name')
+    sendCreated(res, populated)
 })
 
 const update = catchAsync(async (req, res) => {
-    const doc = await TodayQuiz.findOne({ _id: req.params.id, isDeleted: false })
-    if (!doc) throw new AppError('Today quiz not found', 404, 'NOT_FOUND')
+    const doc = await DailyQuiz.findOne({ _id: req.params.id, isDeleted: false })
+    if (!doc) throw new AppError('Daily quiz not found', 404, 'NOT_FOUND')
 
     Object.assign(doc, normalizePayload(req.body))
     await doc.save()
 
-    sendSuccess(res, doc)
+    const populated = await DailyQuiz.findById(doc._id).populate('exam', 'name').populate('subExams', 'name')
+    sendSuccess(res, populated)
 })
 
 const remove = catchAsync(async (req, res) => {
-    const doc = await TodayQuiz.findOne({ _id: req.params.id, isDeleted: false })
-    if (!doc) throw new AppError('Today quiz not found', 404, 'NOT_FOUND')
+    const doc = await DailyQuiz.findOne({ _id: req.params.id, isDeleted: false })
+    if (!doc) throw new AppError('Daily quiz not found', 404, 'NOT_FOUND')
 
     doc.isDeleted = true
     await doc.save()
 
-    sendSuccess(res, null, 'Today quiz deleted')
+    sendSuccess(res, null, 'Daily quiz deleted')
 })
 
 const bulkCreate = catchAsync(async (req, res) => {
@@ -188,9 +224,15 @@ const bulkCreate = catchAsync(async (req, res) => {
         else if (cleanKey === "status") normalizedRow.status = value
         else if (cleanKey === "scheduleat" || cleanKey === "scheduledat") normalizedRow.scheduleAt = value
         else if (cleanKey === "language") normalizedRow.language = value
+        else if (cleanKey === "exam" || cleanKey === "examid") normalizedRow.exam = value
+        else if (cleanKey === "subexams" || cleanKey === "subexamids") {
+          normalizedRow.subExams = value ? String(value).split(',').map(s => s.trim()) : undefined
+        }
       }
 
       if (!normalizedRow.title) continue
+
+      const rawSubExams = normalizedRow.subExams || (common.subExams ? (Array.isArray(common.subExams) ? common.subExams : String(common.subExams).split(',').map(s => s.trim())) : [])
 
       const dataRow = {
         title: normalizedRow.title,
@@ -210,6 +252,8 @@ const bulkCreate = catchAsync(async (req, res) => {
         status: normalizedRow.status || common.status || "active",
         language: normalizedRow.language || common.language || "en",
         scheduleAt: normalizedRow.scheduleAt || null,
+        exam: normalizedRow.exam || common.exam || common.examId,
+        subExams: rawSubExams,
       }
 
       payloadArray.push(dataRow)
@@ -219,8 +263,8 @@ const bulkCreate = catchAsync(async (req, res) => {
       throw new AppError('No valid rows found in metadata file', 400, 'VALIDATION_ERROR')
     }
 
-    const { bulkCreateTodayQuizSchema } = require('./admin-today-quiz.schema')
-    const { error, value } = bulkCreateTodayQuizSchema.validate(payloadArray, {
+    const { bulkCreateDailyQuizSchema } = require('./admin-daily-quiz.schema')
+    const { error, value } = bulkCreateDailyQuizSchema.validate(payloadArray, {
       abortEarly: false,
       stripUnknown: true,
       convert: true,
@@ -236,7 +280,7 @@ const bulkCreate = catchAsync(async (req, res) => {
       return parsed
     })
 
-    const created = await TodayQuiz.create(finalDocs)
+    const created = await DailyQuiz.create(finalDocs)
     sendCreated(res, created)
 })
 

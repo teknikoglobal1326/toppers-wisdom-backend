@@ -44,8 +44,8 @@ class AdminQuestionService extends BaseService {
     )
     if (updatedLiveTest) return
 
-    const TodayQuiz = require('../../models/TodayQuiz.model')
-    await TodayQuiz.findOneAndUpdate(
+    const DailyQuiz = require('../../models/DailyQuiz.model')
+    await DailyQuiz.findOneAndUpdate(
       { _id: testId, isDeleted: false },
       { totalQuestions: count },
       { new: true }
@@ -98,6 +98,19 @@ class AdminQuestionService extends BaseService {
   buildPayload(data = {}) {
     const payload = { ...data }
 
+    if (payload.examId) {
+      payload.exam = payload.examId
+    }
+    if (payload.subExamIds) {
+      if (Array.isArray(payload.subExamIds)) {
+        payload.subExams = payload.subExamIds
+      } else if (typeof payload.subExamIds === 'string' && payload.subExamIds) {
+        payload.subExams = payload.subExamIds.split(',').map(s => s.trim())
+      }
+    }
+    delete payload.examId
+    delete payload.subExamIds
+
     if (payload.createdBy) payload.createdBy = payload.createdBy.toString()
 
     if (payload.testId && !payload.test) payload.test = payload.testId
@@ -130,15 +143,15 @@ class AdminQuestionService extends BaseService {
   async resolveParentTest(testId) {
     if (!testId) return null
     const LiveTest = require('../../models/LiveTest.model')
-    const TodayQuiz = require('../../models/TodayQuiz.model')
-    const [courseTest, seriesTest, pypTest, liveTest, todayQuiz] = await Promise.all([
+    const DailyQuiz = require('../../models/DailyQuiz.model')
+    const [courseTest, seriesTest, pypTest, liveTest, dailyQuiz] = await Promise.all([
       CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
       TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
       PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
       LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id').lean(),
-      TodayQuiz.findOne({ _id: testId, isDeleted: false }).select('_id').lean(),
+      DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id').lean(),
     ])
-    return courseTest || seriesTest || pypTest || liveTest || todayQuiz || null
+    return courseTest || seriesTest || pypTest || liveTest || dailyQuiz || null
   }
 
   // Enforce the parent test's per-question-time policy on a question payload:
@@ -176,6 +189,13 @@ class AdminQuestionService extends BaseService {
       payload.order = await this.nextOrder(payload.test)
     }
     await this.applyPerQuestionTime(payload)
+
+    const parentTest = await this.resolveParentTest(payload.test)
+    if (parentTest && (parentTest.exam || parentTest.subExams)) {
+      if (!payload.exam) payload.exam = parentTest.exam
+      if (!payload.subExams || !payload.subExams.length) payload.subExams = parentTest.subExams
+    }
+
     const result = await questionRepository.createSingle(payload)
     if (payload.test) await this.syncQuestionCount(payload.test)
     return this.getOne(result._id)
@@ -188,8 +208,14 @@ class AdminQuestionService extends BaseService {
     const payload = this.buildPayload(data)
     await this.applyPerQuestionTime(payload, question)
 
-    const updated = await questionRepository.updateById(id, payload)
     const testId = payload.test || question.test
+    const parentTest = await this.resolveParentTest(testId)
+    if (parentTest && (parentTest.exam || parentTest.subExams)) {
+      if (!payload.exam) payload.exam = parentTest.exam
+      if (!payload.subExams || !payload.subExams.length) payload.subExams = parentTest.subExams
+    }
+
+    const updated = await questionRepository.updateById(id, payload)
     if (testId) await this.syncQuestionCount(testId)
 
     return this.getOne(updated._id)
@@ -224,6 +250,25 @@ class AdminQuestionService extends BaseService {
 
     const parentTest = await this.resolveParentTest(metadata.test)
     if (!parentTest) throw new AppError('Parent test not found', 404, 'NOT_FOUND')
+
+    // Parse exam and subExams from metadata if provided
+    if (metadata.examId) {
+      metadata.exam = metadata.examId
+    }
+    if (metadata.subExamIds) {
+      if (Array.isArray(metadata.subExamIds)) {
+        metadata.subExams = metadata.subExamIds
+      } else if (typeof metadata.subExamIds === 'string' && metadata.subExamIds) {
+        metadata.subExams = metadata.subExamIds.split(',').map(s => s.trim())
+      }
+    }
+    // Fallback to parentTest values if not provided in metadata
+    if (parentTest && (parentTest.exam || parentTest.subExams)) {
+      if (!metadata.exam) metadata.exam = parentTest.exam ? parentTest.exam.toString() : null
+      if (!metadata.subExams || !metadata.subExams.length) {
+        metadata.subExams = parentTest.subExams ? parentTest.subExams.map(s => s.toString()) : []
+      }
+    }
 
     // Resolve subject, chapter, and topic from names in metadata to Mongo ObjectIds
     const Subject = require('../../models/Subject.model')
@@ -422,6 +467,8 @@ class AdminQuestionService extends BaseService {
       qPayload.subjectId = qSubjectId || null;
       qPayload.chapterId = qChapterId || null;
       qPayload.topicId = qTopicId || null;
+      qPayload.exam = metadata.exam || null;
+      qPayload.subExams = metadata.subExams || [];
 
       // Clean HTML tags and extract text/image fields
       cleanTextAndImageFields(qPayload.en)
