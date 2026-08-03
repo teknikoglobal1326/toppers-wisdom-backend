@@ -231,6 +231,20 @@ const questionSchema = new mongoose.Schema(
       index: true,
     },
 
+    exam: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Exam',
+      default: null,
+      index: true,
+    },
+
+    subExams: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'SubExam',
+      }
+    ],
+
     subjectId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subject",

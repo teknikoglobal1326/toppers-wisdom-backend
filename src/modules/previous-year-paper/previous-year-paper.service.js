@@ -563,7 +563,7 @@ class PreviousYearPaperService extends BaseService {
                     score: top.score
                 }))
             }))
-        }))
+        }))                  
 
         const percentile = totalParticipants > 1 
             ? parseFloat((((totalParticipants - rank) / (totalParticipants - 1)) * 100).toFixed(2)) 
@@ -609,59 +609,76 @@ class PreviousYearPaperService extends BaseService {
             throw new AppError('Session not found', 404, 'NOT_FOUND')
         }
 
+        // Fetch questions with explanations
         const questions = await require('../../models/Question.model').find({
             test: testId,
             isDeleted: false,
             status: 'active',
         })
-            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime')
+            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime en hi')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
+
+        // Map user answers by questionId for quick lookup
+        const answersByQuestionId = {}
+        for (const ans of (attempt.answers || [])) {
+            if (ans && ans.questionId) {
+                answersByQuestionId[ans.questionId.toString()] = ans
+            }
+        }
 
         const groupedQuestions = {}
         for (const q of questions) {
             const orderKey = String(q.order)
             if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
-            const langs = q.language === 'both' ? ['en', 'hi'] : [q.language]
+
+            // Determine available languages
+            let langs = []
+            if (q.en && (q.en.question?.text || q.en.options?.length)) langs.push('en')
+            if (q.hi && (q.hi.question?.text || q.hi.options?.length)) langs.push('hi')
+            if (langs.length === 0) {
+                langs = q.language === 'both' ? ['en', 'hi'] : [q.language || 'en']
+            }
+
+            const userAnswer = answersByQuestionId[q._id.toString()] || null
 
             for (const lang of langs) {
                 if (lang !== 'en' && lang !== 'hi') continue
+
+                const langObj = q[lang] || {}
+                const questionData = langObj.question || q.question || {}
+                const explanationData = langObj.explanation || q.explanation || {}
+                const optionsData = (langObj.options && langObj.options.length > 0) ? langObj.options : (q.options || [])
+
+                const correctIndex = optionsData.findIndex(opt => opt && opt.isCorrect)
+                const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
+                const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
+
                 groupedQuestions[orderKey][lang] = {
                     _id: q._id,
-                    question: q.question,
-                    options: q.options,
-                    explanation: q.explanation,
+                    question: { text: htmlToPlainText(questionData.text || ''), image: questionData.image || '' },
+                    options: optionsData.map((opt) => ({
+                        text: htmlToPlainText(opt.text || ''),
+                        image: opt.image || '',
+                        isCorrect: !!opt.isCorrect,
+                    })),
+                    explanation: { text: htmlToPlainText(explanationData.text || ''), image: explanationData.image || '' },
                     order: q.order,
                     sortOrder: q.sortOrder,
-                    perQuestionTime: q.perQuestionTime
+                    perQuestionTime: q.perQuestionTime,
+                    userAnswer: userAnswer ? {
+                        selectedOption: userAnswer.selectedOption,
+                        status: userAnswer.status,
+                        timeTaken: userAnswer.timeTaken,
+                    } : null,
+                    status: userAnswer?.status || 'unattempted',
+                    timeTaken: userAnswer?.timeTaken || 0,
+                    isCorrect,
                 }
             }
         }
 
-        return {
-            sessionId: attempt.sessionId,
-            status: attempt.status,
-            score: attempt.score,
-            totalMarks: attempt.totalMarks,
-            accuracy: attempt.accuracy,
-            timeTaken: attempt.timeTaken,
-            totalTime: attempt.totalTime,
-            correct: attempt.correct,
-            wrong: attempt.wrong,
-            skipped: attempt.skipped,
-            unattempted: attempt.unattempted,
-            userAnswers: attempt.answers,
-            test: {
-                _id: test._id,
-                title: test.title,
-                duration: test.duration,
-                totalQuestions: test.totalQuestions,
-                passingMarks: test.passingMarks,
-                negativeMarks: test.negativeMarks,
-                marksPerQuestion: test.marksPerQuestion
-            },
-            questions: groupedQuestions
-        }
+        return Object.values(groupedQuestions)
     }
 
     async listMyAttempts(userId, query = {}) {

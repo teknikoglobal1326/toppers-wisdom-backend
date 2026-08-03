@@ -6,7 +6,7 @@ const localizedBlock = {
     instructions: { type: String, default: null },
 }
 
-const todayQuizSchema = new mongoose.Schema({
+const dailyQuizSchema = new mongoose.Schema({
     title: { type: String, required: true, trim: true },
     description: { type: String, default: null },
     thumbnail: { type: String, default: null },
@@ -23,6 +23,8 @@ const todayQuizSchema = new mongoose.Schema({
     isPaid: { type: Boolean, default: false, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
     language: { type: String, enum: ['en', 'hi', 'both'], default: 'en' },
+    exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true, index: true },
+    subExams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubExam' }],
     localizedContent: {
         en: { type: localizedBlock, default: {} },
         hi: { type: localizedBlock, default: null },
@@ -32,4 +34,4 @@ const todayQuizSchema = new mongoose.Schema({
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
 }, { timestamps: true })
 
-module.exports = mongoose.model('TodayQuiz', todayQuizSchema)
+module.exports = mongoose.model('DailyQuiz', dailyQuizSchema)

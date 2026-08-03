@@ -10,7 +10,7 @@ router.use('/test-series', requirePermission('tests'), require('./test-series/ad
 router.use('/test-series-tests', requirePermission('tests'), require('./test-series-tests/admin-test-series-test.routes'))
 router.use('/previous-year-papers', requirePermission('tests'), require('./previous-year-papers/admin-previous-year-paper.routes'))
 router.use('/previous-year-paper-tests', requirePermission('tests'), require('./previous-year-paper-tests/admin-previous-year-paper-test.routes'))
-router.use('/today-quizzes', requirePermission('tests'), require('./today-quizzes/admin-today-quiz.routes'))
+router.use('/daily-quizzes', requirePermission('tests'), require('./daily-quizzes/admin-daily-quiz.routes'))
 router.use('/live-tests', requirePermission('tests'), require('./live-tests/admin-live-test.routes'))
 router.use('/boosters', requirePermission('boosters'), require('./boosters/admin-booster.routes'))
 router.use('/users', requirePermission('users'), require('./users/admin-user.routes'))

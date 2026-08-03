@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
-const createTodayQuizSchema = Joi.object({
+const createDailyQuizSchema = Joi.object({
     title: Joi.string().trim().required(),
     description: Joi.string().optional().allow(null, ''),
     thumbnail: Joi.string().optional().allow(null, ''),
@@ -18,9 +18,13 @@ const createTodayQuizSchema = Joi.object({
     isPaid: Joi.boolean().optional().default(false),
     status: Joi.string().valid('active', 'inactive').optional().default('active'),
     language: Joi.string().valid('en', 'hi', 'both').optional().default('en'),
-})
+    exam: Joi.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
+    examId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
+    subExams: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).optional().default([]),
+    subExamIds: Joi.alternatives().try(Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)), Joi.string()).optional(),
+}).or('exam', 'examId')
 
-const updateTodayQuizSchema = Joi.object({
+const updateDailyQuizSchema = Joi.object({
     title: Joi.string().trim(),
     description: Joi.string().optional().allow(null, ''),
     thumbnail: Joi.string().optional().allow(null, ''),
@@ -38,9 +42,13 @@ const updateTodayQuizSchema = Joi.object({
     isPaid: Joi.boolean().optional(),
     status: Joi.string().valid('active', 'inactive').optional(),
     language: Joi.string().valid('en', 'hi', 'both').optional(),
+    exam: Joi.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
+    examId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
+    subExams: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).optional(),
+    subExamIds: Joi.alternatives().try(Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)), Joi.string()).optional(),
 }).min(1)
 
-const bulkCreateTodayQuizSchema = Joi.array().items(
+const bulkCreateDailyQuizSchema = Joi.array().items(
     Joi.object({
         title: Joi.string().trim().required(),
         description: Joi.string().optional().allow(null, ''),
@@ -59,7 +67,9 @@ const bulkCreateTodayQuizSchema = Joi.array().items(
         isPaid: Joi.boolean().optional().default(false),
         status: Joi.string().valid('active', 'inactive').optional().default('active'),
         language: Joi.string().valid('en', 'hi', 'both').optional().default('en'),
+        exam: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
+        subExams: Joi.array().items(Joi.string().regex(/^[0-9a-fA-F]{24}$/)).optional().default([]),
     })
 ).min(1)
 
-module.exports = { createTodayQuizSchema, updateTodayQuizSchema, bulkCreateTodayQuizSchema }
+module.exports = { createDailyQuizSchema, updateDailyQuizSchema, bulkCreateDailyQuizSchema }
