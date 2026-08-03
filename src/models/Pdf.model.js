@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const pdfSchema = new mongoose.Schema({
-  course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+  course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: false, index: true },
   subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject', index: true }],
   topics: [{ type: mongoose.Schema.Types.ObjectId, index: true }],
   chapters: [{ type: mongoose.Schema.Types.ObjectId, index: true }],

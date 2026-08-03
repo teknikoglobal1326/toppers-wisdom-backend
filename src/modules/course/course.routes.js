@@ -5,6 +5,7 @@ const { reviewSchema } = require('./course.schema')
 
 router.get('/subjects', controller.listCourseSubjects)
 router.get('/my-courses', controller.myCourses)
+router.get('/scheduled-live-classes', controller.getScheduledLiveClasses)
 router.get('/', controller.listCourses)
 router.get('/:id', controller.getCourse)
 router.get('/:id/subjects/:subjectId/materials', controller.getSubjectMaterials)

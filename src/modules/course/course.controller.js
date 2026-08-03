@@ -73,4 +73,9 @@ const joinLive = catchAsync(async (req, res) => {
   sendSuccess(res, await courseService.joinLive(req.params.id, req.params.contentId, req.user._id))
 })
 
-module.exports = { listCourseSubjects, listCourses, myCourses, getCourse, getSubjectMaterials, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment, joinLive }
+const getScheduledLiveClasses = catchAsync(async (req, res) => {
+  const result = await courseService.getScheduledLiveClasses(req.user._id, req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
+module.exports = { listCourseSubjects, listCourses, myCourses, getCourse, getSubjectMaterials, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment, joinLive, getScheduledLiveClasses }

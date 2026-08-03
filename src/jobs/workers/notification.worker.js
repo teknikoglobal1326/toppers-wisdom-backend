@@ -37,8 +37,166 @@ if (config.FCM_SERVICE_ACCOUNT_JSON) {
 
 new Worker('notification', async (job) => {
   const { name } = job
+  logger.info({ jobId: job.id, name }, 'Notification job started')
+
+  if (name === 'notification-campaign-broadcast') {
+    const { campaignId } = job.data
+    const NotificationCampaign = require('../../models/NotificationCampaign.model')
+    const campaign = await NotificationCampaign.findOne({ _id: campaignId, isDeleted: false })
+    if (!campaign) {
+      logger.warn({ campaignId }, 'Notification campaign not found or deleted')
+      return
+    }
+
+    const { title, message, image, notificationType } = campaign
+    const batchSize = 500
+    let skip = 0
+    let hasMore = true
+    let totalSent = 0
+
+    while (hasMore) {
+      const batchUsers = await User.find({ fcmToken: { $ne: null, $exists: true } })
+        .select('_id fcmToken')
+        .skip(skip)
+        .limit(batchSize)
+        .lean()
+
+      if (batchUsers.length === 0) {
+        hasMore = false
+        break
+      }
+
+      const tokens = batchUsers.map((u) => u.fcmToken).filter(Boolean)
+      if (fcmEnabled && tokens.length) {
+        try {
+          const result = await admin.messaging().sendEachForMulticast({
+            tokens,
+            notification: {
+              title,
+              body: message,
+              imageUrl: image || undefined
+            },
+            data: {
+              type: notificationType || 'marketing',
+              campaignId: String(campaignId)
+            }
+          })
+          logger.info({ jobId: job.id, sent: result.successCount, failed: result.failureCount }, 'FCM notification campaign batch sent')
+        } catch (err) {
+          logger.error({ err }, 'FCM notification campaign batch send failed')
+        }
+      }
+
+      const notificationDocs = batchUsers.map((u) => ({
+        user: u._id,
+        title,
+        body: message,
+        type: 'system',
+        data: {
+          type: notificationType || 'marketing',
+          campaignId: String(campaignId)
+        }
+      }))
+
+      if (notificationDocs.length) {
+        try {
+          await Notification.insertMany(notificationDocs)
+        } catch (err) {
+          logger.error({ err }, 'In-app notification campaign batch insert failed')
+        }
+      }
+
+      totalSent += batchUsers.length
+      skip += batchSize
+    }
+
+    campaign.isProcessed = true
+    await campaign.save()
+    logger.info({ jobId: job.id, totalSent }, 'Notification campaign broadcast done')
+    return
+  }
+
+  if (name === 'announcement-campaign-broadcast') {
+    const { announcementId } = job.data
+    const Announcement = require('../../models/Announcement.model')
+    const announcement = await Announcement.findOne({ _id: announcementId, isDeleted: false })
+    if (!announcement) {
+      logger.warn({ announcementId }, 'Announcement not found or deleted')
+      return
+    }
+
+    const title = announcement.title
+    const firstBlockText = announcement.announcementBlocks?.[0]?.text || 'New announcement published'
+    const pushBody = firstBlockText.length > 100 ? firstBlockText.substring(0, 100) + '...' : firstBlockText
+
+    const batchSize = 500
+    let skip = 0
+    let hasMore = true
+    let totalSent = 0
+
+    while (hasMore) {
+      const batchUsers = await User.find({ fcmToken: { $ne: null, $exists: true } })
+        .select('_id fcmToken')
+        .skip(skip)
+        .limit(batchSize)
+        .lean()
+
+      if (batchUsers.length === 0) {
+        hasMore = false
+        break
+      }
+
+      const tokens = batchUsers.map((u) => u.fcmToken).filter(Boolean)
+      if (fcmEnabled && tokens.length) {
+        try {
+          const result = await admin.messaging().sendEachForMulticast({
+            tokens,
+            notification: {
+              title,
+              body: pushBody,
+              imageUrl: announcement.image || undefined
+            },
+            data: {
+              type: 'announcement',
+              announcementId: String(announcementId)
+            }
+          })
+          logger.info({ jobId: job.id, sent: result.successCount, failed: result.failureCount }, 'FCM announcement campaign batch sent')
+        } catch (err) {
+          logger.error({ err }, 'FCM announcement campaign batch send failed')
+        }
+      }
+
+      const notificationDocs = batchUsers.map((u) => ({
+        user: u._id,
+        title,
+        body: pushBody,
+        type: 'system',
+        data: {
+          type: 'announcement',
+          announcementId: String(announcementId)
+        }
+      }))
+
+      if (notificationDocs.length) {
+        try {
+          await Notification.insertMany(notificationDocs)
+        } catch (err) {
+          logger.error({ err }, 'In-app notification announcement batch insert failed')
+        }
+      }
+
+      totalSent += batchUsers.length
+      skip += batchSize
+    }
+
+    announcement.isProcessed = true
+    await announcement.save()
+    logger.info({ jobId: job.id, totalSent }, 'Announcement campaign broadcast done')
+    return
+  }
+
   let { userId, subExamId, all, title, body, data } = job.data
-  logger.info({ jobId: job.id, name, title }, 'Notification job started')
 
   if (name === 'payment-success') {
     title = 'Course Purchased!'
