@@ -608,6 +608,68 @@ class CourseService extends BaseService {
     const token = generateSubscriberToken(content.agoraChannel, 0)
     return { token, channel: content.agoraChannel }
   }
+
+  async createNote(courseId, lessonId, userId, data) {
+    const Note = require('../../models/Note.model')
+    const course = await this.getById(courseId, { select: 'isFree' })
+    if (!course) throw new AppError('Course not found', 404, 'NOT_FOUND')
+
+    const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId)
+    if (!hasAccess) throw new AppError('You do not have access to this course', 403, 'FORBIDDEN')
+
+    let noteDoc = await Note.findOne({ user: userId, course: courseId, lessonId, isDeleted: false })
+    if (noteDoc) {
+      noteDoc.notes.push({
+        title: data.title || '',
+        text: data.text || '',
+        image: data.image || '',
+        audio: data.audio || '',
+        videoTimestamp: data.videoTimestamp || 0
+      })
+      await noteDoc.save()
+    } else {
+      noteDoc = await Note.create({
+        user: userId,
+        course: courseId,
+        lessonId,
+        notes: [{
+          title: data.title || '',
+          text: data.text || '',
+          image: data.image || '',
+          audio: data.audio || '',
+          videoTimestamp: data.videoTimestamp || 0
+        }]
+      })
+    }
+
+    return noteDoc
+  }
+
+  async getNotes(courseId, lessonId, userId) {
+    const Note = require('../../models/Note.model')
+    const noteDoc = await Note.findOne({
+      user: userId,
+      course: courseId,
+      lessonId,
+      isDeleted: false
+    }).lean()
+
+    if (!noteDoc) return []
+    const list = noteDoc.notes || []
+    list.sort((a, b) => a.videoTimestamp - b.videoTimestamp)
+    return list
+  }
+
+  async deleteNote(courseId, lessonId, noteId, userId) {
+    const Note = require('../../models/Note.model')
+    const result = await Note.findOneAndUpdate(
+      { user: userId, course: courseId, lessonId, isDeleted: false },
+      { $pull: { notes: { _id: noteId } } },
+      { new: true }
+    )
+    if (!result) throw new AppError('Notes record not found', 404, 'NOT_FOUND')
+    return result
+  }
 }
 
 module.exports = new CourseService()

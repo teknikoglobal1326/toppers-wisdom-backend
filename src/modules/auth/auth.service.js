@@ -112,7 +112,7 @@ const refreshToken = async (token) => {
   const payload = verifyRefreshToken(token)
   // uses BaseRepository.findByIdOrFail — throws 401 if not found
   const user = await authRepository.findByIdOrFail(payload._id, 'User not found')
-  const accessToken = signAccessToken({ _id: user._id, phone: user.phone, role: user.role, examId: user.exam?._id || null, subExamIds: (user.subExams || []).map((s) => s._id) }, '30d')
+  const accessToken = signAccessToken({ _id: user._id, phone: user.phone, role: user.role, examId: user.exam?._id || null, subExamIds: (user.subExams || []).map((s) => s._id) }, '5m')
   logger.info({ userId: user._id }, 'Token refreshed')
   return { accessToken }
 }

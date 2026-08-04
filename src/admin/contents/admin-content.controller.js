@@ -65,4 +65,21 @@ const bulkCreate = catchAsync(async (req, res) => {
   sendCreated(res, created)
 })
 
-module.exports = { list, listLiveClasses, getOne, create, update, remove, createLiveClass, goLive, endLive, updateLiveClass, bulkCreate }
+const getLiveClassStats = catchAsync(async (req, res) => {
+  sendSuccess(res, await adminContentService.getLiveClassStats(req.params.id))
+})
+
+module.exports = {
+  list,
+  listLiveClasses,
+  getOne,
+  create,
+  update,
+  remove,
+  createLiveClass,
+  goLive,
+  endLive,
+  updateLiveClass,
+  bulkCreate,
+  getLiveClassStats
+}

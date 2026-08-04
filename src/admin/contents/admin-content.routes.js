@@ -27,6 +27,7 @@ router.get('/live', validateQuery(listContentQuerySchema), controller.listLiveCl
 router.patch('/live/:id', uploadContentFiles, attachUploadedFiles, validate(updateLiveClassSchema), controller.updateLiveClass)
 router.put('/:id/go-live', controller.goLive)
 router.put('/:id/end-live', controller.endLive)
+router.get('/live/:id/stats', controller.getLiveClassStats)
 router.get('/:id', controller.getOne)
 router.patch('/:id', uploadContentFiles, attachUploadedFiles, validate(updateContentSchema), controller.update)
 router.delete('/:id', controller.remove)
