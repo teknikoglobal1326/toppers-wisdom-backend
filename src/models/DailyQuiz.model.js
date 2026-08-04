@@ -25,6 +25,9 @@ const dailyQuizSchema = new mongoose.Schema({
     language: { type: String, enum: ['en', 'hi', 'both'], default: 'en' },
     exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true, index: true },
     subExams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubExam' }],
+    subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
+    chapterIds: [{ type: mongoose.Schema.Types.ObjectId }],
+    topicIds: [{ type: mongoose.Schema.Types.ObjectId }],
     localizedContent: {
         en: { type: localizedBlock, default: {} },
         hi: { type: localizedBlock, default: null },

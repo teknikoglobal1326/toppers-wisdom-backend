@@ -14,6 +14,7 @@ const uploadBulkFields = uploadBulk.fields([
 ])
 
 router.get('/', controller.list)
+router.get('/metadata/options', controller.metadata)
 router.post('/bulk', uploadBulkFields, controller.bulkCreate)
 router.post('/', uploadThumbnail, parseThumbnail('daily-quizzes/thumbnails'), validate(createDailyQuizSchema), controller.create)
 router.get('/:id', controller.getOne)
