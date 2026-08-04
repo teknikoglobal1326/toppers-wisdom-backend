@@ -100,6 +100,7 @@ const list = catchAsync(async (req, res) => {
     const docs = await DailyQuiz.find(filter)
         .populate('exam', 'name')
         .populate('subExams', 'name')
+        .populate('subjectIds', 'name chapters')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -113,6 +114,7 @@ const getOne = catchAsync(async (req, res) => {
     const doc = await DailyQuiz.findOne({ _id: req.params.id, isDeleted: false })
         .populate('exam', 'name')
         .populate('subExams', 'name')
+        .populate('subjectIds', 'name chapters')
         .lean()
 
     if (!doc) throw new AppError('Daily quiz not found', 404, 'NOT_FOUND')
@@ -129,7 +131,10 @@ const getOne = catchAsync(async (req, res) => {
 const create = catchAsync(async (req, res) => {
     const payload = normalizePayload({ ...req.body, createdBy: req.admin?._id || null })
     const createdDoc = await DailyQuiz.create(payload)
-    const populated = await DailyQuiz.findById(createdDoc._id).populate('exam', 'name').populate('subExams', 'name')
+    const populated = await DailyQuiz.findById(createdDoc._id)
+        .populate('exam', 'name')
+        .populate('subExams', 'name')
+        .populate('subjectIds', 'name chapters')
     sendCreated(res, populated)
 })
 
@@ -140,7 +145,10 @@ const update = catchAsync(async (req, res) => {
     Object.assign(doc, normalizePayload(req.body))
     await doc.save()
 
-    const populated = await DailyQuiz.findById(doc._id).populate('exam', 'name').populate('subExams', 'name')
+    const populated = await DailyQuiz.findById(doc._id)
+        .populate('exam', 'name')
+        .populate('subExams', 'name')
+        .populate('subjectIds', 'name chapters')
     sendSuccess(res, populated)
 })
 
