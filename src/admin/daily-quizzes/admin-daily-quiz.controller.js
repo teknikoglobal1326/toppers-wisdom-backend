@@ -25,6 +25,21 @@ const normalizePayload = (data = {}) => {
     delete payload.examId
     delete payload.subExamIds
 
+    for (const key of ['subjectIds', 'chapterIds', 'topicIds']) {
+        if (Object.prototype.hasOwnProperty.call(payload, key)) {
+            const val = payload[key];
+            if (Array.isArray(val)) {
+                payload[key] = val;
+            } else if (typeof val === 'string' && val) {
+                payload[key] = val.includes(',')
+                    ? val.split(',').map(s => s.trim())
+                    : [val.trim()];
+            } else {
+                payload[key] = [];
+            }
+        }
+    }
+
     const title = payload.title || ''
     const description = payload.description || null
     const instructions = payload.instructions || null
@@ -284,4 +299,59 @@ const bulkCreate = catchAsync(async (req, res) => {
     sendCreated(res, created)
 })
 
-module.exports = { list, getOne, create, update, remove, bulkCreate }
+const metadata = catchAsync(async (req, res) => {
+    const Subject = require('../../models/Subject.model')
+    const rawExamIds = req.query.examId ?? req.query.examIds
+    const selectedExamIds = (Array.isArray(rawExamIds)
+        ? rawExamIds
+        : typeof rawExamIds === 'string'
+            ? rawExamIds.split(',')
+            : [])
+        .map((id) => String(id).trim())
+        .filter(Boolean)
+
+    if (selectedExamIds.length === 0) {
+        return sendSuccess(res, { subjects: [], chapters: [] })
+    }
+
+    const rawSubjectIds = req.query.subjectIds ?? req.query.subjectId
+    const selectedSubjectIds = (Array.isArray(rawSubjectIds)
+        ? rawSubjectIds
+        : typeof rawSubjectIds === 'string'
+            ? rawSubjectIds.split(',')
+            : [])
+        .map((id) => String(id).trim())
+        .filter(Boolean)
+
+    const subjects = await Subject.find({
+        examIds: { $in: selectedExamIds },
+        isDeleted: false,
+        status: 'active',
+    })
+        .sort({ sortOrder: 1, createdAt: -1 })
+        .lean()
+
+    const selectedSet = new Set(selectedSubjectIds)
+    const chapterOptions = []
+    for (const subject of subjects) {
+        if (selectedSet.size && !selectedSet.has(String(subject._id))) continue
+        const embeddedChapters = Array.isArray(subject.chapters) ? subject.chapters : []
+        for (const chapter of embeddedChapters) {
+            chapterOptions.push({
+                _id: chapter._id,
+                chapterName: chapter.name,
+                subjectId: subject._id,
+                topics: Array.isArray(chapter.topics)
+                    ? chapter.topics.map((topic) => ({ _id: topic._id, name: topic.name }))
+                    : [],
+            })
+        }
+    }
+
+    sendSuccess(res, {
+        subjects,
+        chapters: chapterOptions,
+    })
+})
+
+module.exports = { list, getOne, create, update, remove, bulkCreate, metadata }
