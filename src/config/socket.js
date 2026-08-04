@@ -100,6 +100,26 @@ const initSocket = (httpServer) => {
         socket.join(roomName);
         rootLogger.info(`[SOCKET] User ${socket.user?._id || 'anonymous'} (role: ${socket.role}) joined room ${roomName}. Socket ID: ${socket.id}`);
 
+        // Create live class attendance record for student
+        if (socket.user?._id && socket.role === 'user') {
+          try {
+            const Contant = require('../models/Content.model')
+            const LiveClassAttendance = require('../models/LiveClassAttendance.model')
+            const content = await Contant.findById(contentId).select('course').lean()
+            if (content) {
+              const attendance = await LiveClassAttendance.create({
+                user: socket.user._id,
+                course: content.course,
+                content: contentId,
+                joinedAt: new Date(),
+              })
+              socket.attendanceId = attendance._id
+            }
+          } catch (err) {
+            rootLogger.error(err, 'Error creating live class attendance on join')
+          }
+        }
+
         // Fetch current chat mode from redis
         const chatMode = await redis.get(`live_chat_mode:${contentId}`) || 'private';
 
@@ -531,6 +551,21 @@ const initSocket = (httpServer) => {
     });
 
     socket.on('disconnecting', async () => {
+      // Update Live Class Attendance
+      if (socket.attendanceId) {
+        try {
+          const LiveClassAttendance = require('../models/LiveClassAttendance.model')
+          const attendance = await LiveClassAttendance.findById(socket.attendanceId)
+          if (attendance) {
+            attendance.leftAt = new Date()
+            attendance.duration = Math.round((attendance.leftAt - attendance.joinedAt) / 1000)
+            await attendance.save()
+          }
+        } catch (err) {
+          rootLogger.error(err, 'Error updating live class attendance on disconnect')
+        }
+      }
+
       for (const room of socket.rooms) {
         if (room.startsWith('live_')) {
           const contentId = room.substring(5);

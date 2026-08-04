@@ -1,5 +1,5 @@
-const BaseService       = require('../../core/BaseService')
-const examRepository    = require('./exam.repository')
+const BaseService = require('../../core/BaseService')
+const examRepository = require('./exam.repository')
 const subExamRepository = require('../subexam/subexam.repository')
 
 class ExamService extends BaseService {
@@ -10,7 +10,7 @@ class ExamService extends BaseService {
   async listByQualification(qualificationId) {
     const exams = await examRepository.findAll(
       { qualification: qualificationId, status: 'active', is_deleted: false },
-      { sort: { createdAt: -1 }, select: '_id name image' },
+      { sort: { sortOrder: 1 }, select: '_id name image sortOrder' },
     )
 
     const examIds = exams.map((exam) => exam._id)
@@ -18,6 +18,7 @@ class ExamService extends BaseService {
       { examId: { $in: examIds }, status: 'active', is_deleted: false },
       { sort: { createdAt: -1 }, select: '_id name examId' },
     )
+    console.log("exams===========>", exams);
 
     return exams.map((exam) => ({
       ...exam,

@@ -536,6 +536,37 @@ class AdminContentService extends BaseService {
 
     return contentRepository.create(value)
   }
+
+  async getLiveClassStats(contentId) {
+    const LiveClassAttendance = require('../../models/LiveClassAttendance.model')
+    const Content = require('../../models/Content.model')
+    
+    const content = await Content.findOne({ _id: contentId, isLive: true, isDeleted: false }).lean()
+    if (!content) throw new AppError('Live class not found', 404, 'NOT_FOUND')
+
+    const attendanceRecords = await LiveClassAttendance.find({ content: contentId })
+      .populate({ path: 'user', select: 'name phone' })
+      .sort({ joinedAt: 1 })
+      .lean()
+
+    const uniqueUsersCount = await LiveClassAttendance.distinct('user', { content: contentId }).then(res => res.length)
+
+    const totalDuration = attendanceRecords.reduce((sum, item) => sum + (item.duration || 0), 0)
+
+    return {
+      contentId,
+      title: content.title,
+      uniqueStudentsCount: uniqueUsersCount,
+      totalDurationSeconds: totalDuration,
+      attendance: attendanceRecords.map(record => ({
+        id: record._id,
+        user: record.user,
+        joinedAt: record.joinedAt,
+        leftAt: record.leftAt,
+        durationSeconds: record.duration || 0
+      }))
+    }
+  }
 }
 
 const adminContentService = new AdminContentService()

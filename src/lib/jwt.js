@@ -2,7 +2,7 @@ const jwt    = require('jsonwebtoken')
 const config = require('../config/env')
 const AppError = require('../core/AppError')
 
-const signAccessToken  = (payload, expiresIn = '15m') => jwt.sign(payload, config.JWT_ACCESS_SECRET,  { expiresIn })
+const signAccessToken  = (payload, expiresIn = '5m') => jwt.sign(payload, config.JWT_ACCESS_SECRET,  { expiresIn })
 const signRefreshToken = (payload) => jwt.sign(payload, config.JWT_REFRESH_SECRET, { expiresIn: '30d' })
 
 const verifyAccessToken = (token) => {

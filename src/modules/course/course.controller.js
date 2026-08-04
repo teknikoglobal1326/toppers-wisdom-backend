@@ -78,4 +78,37 @@ const getScheduledLiveClasses = catchAsync(async (req, res) => {
   sendPaginated(res, result.data, result.pagination)
 })
 
-module.exports = { listCourseSubjects, listCourses, myCourses, getCourse, getSubjectMaterials, getVideoUrl, enrollFree, addReview, getTimetable, checkout, createRazorpayOrder, verifyPayment, joinLive, getScheduledLiveClasses }
+const createNote = catchAsync(async (req, res) => {
+  const note = await courseService.createNote(req.params.id, req.params.lessonId, req.user._id, req.body)
+  sendSuccess(res, note, 'Note saved successfully')
+})
+
+const getNotes = catchAsync(async (req, res) => {
+  const notes = await courseService.getNotes(req.params.id, req.params.lessonId, req.user._id)
+  sendSuccess(res, notes)
+})
+
+const deleteNote = catchAsync(async (req, res) => {
+  await courseService.deleteNote(req.params.id, req.params.lessonId, req.params.noteId, req.user._id)
+  sendSuccess(res, null, 'Note deleted successfully')
+})
+
+module.exports = {
+  listCourseSubjects,
+  listCourses,
+  myCourses,
+  getCourse,
+  getSubjectMaterials,
+  getVideoUrl,
+  enrollFree,
+  addReview,
+  getTimetable,
+  checkout,
+  createRazorpayOrder,
+  verifyPayment,
+  joinLive,
+  getScheduledLiveClasses,
+  createNote,
+  getNotes,
+  deleteNote
+}
