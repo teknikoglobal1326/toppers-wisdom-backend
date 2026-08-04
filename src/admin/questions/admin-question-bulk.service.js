@@ -1140,10 +1140,12 @@ async function parseExcelFile(fileBuffer, metadata) {
     if (activeSubjectId && String(activeSubjectId).match(/^[0-9a-fA-F]{24}$/)) {
         subjectDoc = await Subject.findOne({ _id: activeSubjectId, isDeleted: false });
     } else if (activeSubjectId) {
-        subjectDoc = await Subject.findOne({
+        const query = {
             name: { $regex: new RegExp("^" + String(activeSubjectId).trim() + "$", "i") },
             isDeleted: false
-        });
+        };
+        if (metadata.exam) query.examIds = metadata.exam;
+        subjectDoc = await Subject.findOne(query);
         if (subjectDoc) {
             activeSubjectId = subjectDoc._id.toString();
         }
@@ -1169,10 +1171,12 @@ async function parseExcelFile(fileBuffer, metadata) {
         if (potentialChapterName && !String(potentialChapterName).match(/^[0-9a-fA-F]{24}$/)) {
             const cleanChName = String(potentialChapterName).trim();
             const escapedChName = cleanChName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-            subjectDoc = await Subject.findOne({
+            const query = {
                 "chapters.name": { $regex: new RegExp("^" + escapedChName + "$", "i") },
                 isDeleted: false
-            });
+            };
+            if (metadata.exam) query.examIds = metadata.exam;
+            subjectDoc = await Subject.findOne(query);
             if (subjectDoc) {
                 activeSubjectId = subjectDoc._id.toString();
             }
@@ -1358,6 +1362,7 @@ async function parseExcelFile(fileBuffer, metadata) {
                     chapterId = chapter._id.toString();
                 }
             }
+            if (!chapterId) chapterId = cleanChapterVal;
         }
         if (!chapterId && activeChapterId) {
             chapterId = activeChapterId;
@@ -1368,7 +1373,7 @@ async function parseExcelFile(fileBuffer, metadata) {
             const cleanTopicVal = String(topicVal).trim();
             if (cleanTopicVal.match(/^[0-9a-fA-F]{24}$/)) {
                 topicId = cleanTopicVal;
-            } else if (subjectDoc && chapterId) {
+            } else if (subjectDoc && chapterId && chapterId.match(/^[0-9a-fA-F]{24}$/)) {
                 const chapter = subjectDoc.chapters.find(
                     (c) => c._id.toString() === chapterId
                 );
@@ -1382,6 +1387,7 @@ async function parseExcelFile(fileBuffer, metadata) {
                     }
                 }
             }
+            if (!topicId) topicId = cleanTopicVal;
         }
         if (!topicId && activeTopicId) {
             topicId = activeTopicId;

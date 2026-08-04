@@ -278,10 +278,12 @@ class AdminQuestionService extends BaseService {
     if (activeSubjectId && String(activeSubjectId).match(/^[0-9a-fA-F]{24}$/)) {
       subjectDoc = await Subject.findOne({ _id: activeSubjectId, isDeleted: false })
     } else if (activeSubjectId) {
-      subjectDoc = await Subject.findOne({
+      const query = {
         name: { $regex: new RegExp("^" + String(activeSubjectId).trim() + "$", "i") },
         isDeleted: false
-      })
+      };
+      if (metadata.exam) query.examIds = metadata.exam;
+      subjectDoc = await Subject.findOne(query)
       if (subjectDoc) {
         activeSubjectId = subjectDoc._id.toString()
       }
@@ -293,10 +295,12 @@ class AdminQuestionService extends BaseService {
     // If subject is still not found, try to locate the subject using the chapter name
     if (!subjectDoc && activeChapterId && !String(activeChapterId).match(/^[0-9a-fA-F]{24}$/)) {
       const cleanChName = String(activeChapterId).trim()
-      subjectDoc = await Subject.findOne({
+      const query = {
         "chapters.name": { $regex: new RegExp("^" + cleanChName + "$", "i") },
         isDeleted: false
-      })
+      };
+      if (metadata.exam) query.examIds = metadata.exam;
+      subjectDoc = await Subject.findOne(query)
       if (subjectDoc) {
         activeSubjectId = subjectDoc._id.toString()
       }
@@ -411,10 +415,12 @@ class AdminQuestionService extends BaseService {
         if (qSubjectId.toString().match(/^[0-9a-fA-F]{24}$/)) {
           qSubjectDoc = await Subject.findOne({ _id: qSubjectId, isDeleted: false });
         } else {
-          qSubjectDoc = await Subject.findOne({
+          const query = {
             name: { $regex: new RegExp("^" + String(qSubjectId).trim() + "$", "i") },
             isDeleted: false
-          });
+          };
+          if (metadata.exam) query.examIds = metadata.exam;
+          qSubjectDoc = await Subject.findOne(query);
           if (qSubjectDoc) {
             qSubjectId = qSubjectDoc._id.toString();
           } else {
@@ -428,10 +434,12 @@ class AdminQuestionService extends BaseService {
 
       if (!qSubjectDoc && qChapterId && !qChapterId.toString().match(/^[0-9a-fA-F]{24}$/)) {
         const cleanChName = String(qChapterId).trim();
-        qSubjectDoc = await Subject.findOne({
+        const query = {
           "chapters.name": { $regex: new RegExp("^" + cleanChName + "$", "i") },
           isDeleted: false
-        });
+        };
+        if (metadata.exam) query.examIds = metadata.exam;
+        qSubjectDoc = await Subject.findOne(query);
         if (qSubjectDoc) {
           qSubjectId = qSubjectDoc._id.toString();
         }
@@ -439,8 +447,8 @@ class AdminQuestionService extends BaseService {
 
       if (qSubjectDoc) {
         if (qChapterId && !qChapterId.toString().match(/^[0-9a-fA-F]{24}$/)) {
-          const cleanChapterName = String(qChapterId).trim().toLowerCase();
-          const ch = qSubjectDoc.chapters.find(c => c.name.trim().toLowerCase() === cleanChapterName);
+          const cleanChapterName = String(qChapterId).trim().toLowerCase().replace(/\s+/g, '');
+          const ch = qSubjectDoc.chapters.find(c => c.name.trim().toLowerCase().replace(/\s+/g, '') === cleanChapterName);
           if (ch) {
             qChapterId = ch._id.toString();
           } else {
@@ -448,16 +456,17 @@ class AdminQuestionService extends BaseService {
           }
         }
 
-        if (qTopicId && !qTopicId.toString().match(/^[0-9a-fA-F]{24}$/) && qChapterId) {
-          const cleanTopicName = String(qTopicId).trim().toLowerCase();
-          const ch = qSubjectDoc.chapters.find(c => c._id.toString() === qChapterId);
-          if (ch) {
-            const tp = ch.topics.find(t => t.name.trim().toLowerCase() === cleanTopicName);
-            if (tp) {
-              qTopicId = tp._id.toString();
-            } else {
-              qTopicId = null;
+        if (qTopicId && !qTopicId.toString().match(/^[0-9a-fA-F]{24}$/)) {
+          let tp = null;
+          if (qChapterId) {
+            const cleanTopicName = String(qTopicId).trim().toLowerCase().replace(/\s+/g, '');
+            const ch = qSubjectDoc.chapters.find(c => c._id.toString() === qChapterId);
+            if (ch) {
+              tp = ch.topics.find(t => t.name.trim().toLowerCase().replace(/\s+/g, '') === cleanTopicName);
             }
+          }
+          if (tp) {
+            qTopicId = tp._id.toString();
           } else {
             qTopicId = null;
           }
