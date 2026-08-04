@@ -1168,8 +1168,9 @@ async function parseExcelFile(fileBuffer, metadata) {
         }
         if (potentialChapterName && !String(potentialChapterName).match(/^[0-9a-fA-F]{24}$/)) {
             const cleanChName = String(potentialChapterName).trim();
+            const escapedChName = cleanChName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
             subjectDoc = await Subject.findOne({
-                "chapters.name": { $regex: new RegExp("^" + cleanChName + "$", "i") },
+                "chapters.name": { $regex: new RegExp("^" + escapedChName + "$", "i") },
                 isDeleted: false
             });
             if (subjectDoc) {
@@ -1180,8 +1181,8 @@ async function parseExcelFile(fileBuffer, metadata) {
 
     if (subjectDoc) {
         if (activeChapterId && !String(activeChapterId).match(/^[0-9a-fA-F]{24}$/)) {
-            const cleanChapterName = String(activeChapterId).trim().toLowerCase();
-            const ch = subjectDoc.chapters.find(c => c.name.trim().toLowerCase() === cleanChapterName);
+            const cleanChapterName = String(activeChapterId).trim().toLowerCase().replace(/\s+/g, '');
+            const ch = subjectDoc.chapters.find(c => c.name.trim().toLowerCase().replace(/\s+/g, '') === cleanChapterName);
             if (ch) {
                 activeChapterId = ch._id.toString();
             } else {
@@ -1190,10 +1191,10 @@ async function parseExcelFile(fileBuffer, metadata) {
         }
 
         if (activeTopicId && !String(activeTopicId).match(/^[0-9a-fA-F]{24}$/) && activeChapterId) {
-            const cleanTopicName = String(activeTopicId).trim().toLowerCase();
+            const cleanTopicName = String(activeTopicId).trim().toLowerCase().replace(/\s+/g, '');
             const ch = subjectDoc.chapters.find(c => c._id.toString() === activeChapterId);
             if (ch) {
-                const tp = ch.topics.find(t => t.name.trim().toLowerCase() === cleanTopicName);
+                const tp = ch.topics.find(t => t.name.trim().toLowerCase().replace(/\s+/g, '') === cleanTopicName);
                 if (tp) {
                     activeTopicId = tp._id.toString();
                 } else {
@@ -1349,8 +1350,9 @@ async function parseExcelFile(fileBuffer, metadata) {
             if (cleanChapterVal.match(/^[0-9a-fA-F]{24}$/)) {
                 chapterId = cleanChapterVal;
             } else if (subjectDoc) {
+                const cleanExcelCh = cleanChapterVal.toLowerCase().replace(/\s+/g, '');
                 const chapter = subjectDoc.chapters.find(
-                    (c) => c.name.trim().toLowerCase() === cleanChapterVal.toLowerCase()
+                    (c) => c.name.trim().toLowerCase().replace(/\s+/g, '') === cleanExcelCh
                 );
                 if (chapter) {
                     chapterId = chapter._id.toString();
@@ -1371,8 +1373,9 @@ async function parseExcelFile(fileBuffer, metadata) {
                     (c) => c._id.toString() === chapterId
                 );
                 if (chapter) {
+                    const cleanExcelTp = cleanTopicVal.toLowerCase().replace(/\s+/g, '');
                     const topic = chapter.topics.find(
-                        (t) => t.name.trim().toLowerCase() === cleanTopicVal.toLowerCase()
+                        (t) => t.name.trim().toLowerCase().replace(/\s+/g, '') === cleanExcelTp
                     );
                     if (topic) {
                         topicId = topic._id.toString();
