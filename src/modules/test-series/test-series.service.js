@@ -156,6 +156,7 @@ class TestSeriesService extends BaseService {
                 isLocked: !hasAccess,
                 attemptStatus: attemptStats ? 'attempted' : 'not_attempted',
                 latestAttempt: attemptStats || null,
+                attemptCount: attemptStats ? attemptStats.attemptsCount : 0,
             }
         })
 
