@@ -4,7 +4,7 @@ const editorialService = require('./editorial.service')
 
 const list = catchAsync(async (req, res) => {
   const result = await editorialService.listAll(req.query, req.user?._id)
-  sendPaginated(res, result.data, result.pagination)
+  sendPaginated(res, result)
 })
 
 const getOne = catchAsync(async (req, res) => {
