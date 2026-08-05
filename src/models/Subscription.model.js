@@ -38,6 +38,7 @@ const subscriptionSchema = new mongoose.Schema({
 
   tests: [testItemSchema],
   boosters: [boosterItemSchema],
+  materials: [{ type: mongoose.Schema.Types.ObjectId }],
 
   isActive: { type: Boolean, default: true, index: true },
   isDeleted: { type: Boolean, default: false, index: true },

@@ -43,34 +43,34 @@ const uploadNoteAttachments = multer({
 })
 
 const attachNoteFiles = async (req, res, next) => {
-    try {
-        if (req.files) {
-            if (req.files.image && req.files.image[0]) {
-                const file = req.files.image[0]
-                const ext = path.extname(file.originalname) || '.jpg'
-                const folder = `notes/images/${Date.now()}`
-                req.body.image = await uploadFile(file.buffer, `image${ext}`, folder, file.mimetype)
-            }
-            if (req.files.audio && req.files.audio[0]) {
-                const file = req.files.audio[0]
-                const ext = path.extname(file.originalname) || '.mp3'
-                const folder = `notes/audio/${Date.now()}`
-                req.body.audio = await uploadFile(file.buffer, `audio${ext}`, folder, file.mimetype)
-            }
-        }
-        next()
-    } catch (err) {
-        next(err)
+  try {
+    if (req.files) {
+      if (req.files.image && req.files.image[0]) {
+        const file = req.files.image[0]
+        const ext = path.extname(file.originalname) || '.jpg'
+        const folder = `notes/images/${Date.now()}`
+        req.body.image = await uploadFile(file.buffer, `image${ext}`, folder, file.mimetype)
+      }
+      if (req.files.audio && req.files.audio[0]) {
+        const file = req.files.audio[0]
+        const ext = path.extname(file.originalname) || '.mp3'
+        const folder = `notes/audio/${Date.now()}`
+        req.body.audio = await uploadFile(file.buffer, `audio${ext}`, folder, file.mimetype)
+      }
     }
+    next()
+  } catch (err) {
+    next(err)
+  }
 }
 
 // Content (Video) Notes
 router.post(
-    '/:id/lessons/:lessonId/notes',
-    uploadNoteAttachments.fields([{ name: 'image', maxCount: 1 }, { name: 'audio', maxCount: 1 }]),
-    attachNoteFiles,
-    validate(noteSchema),
-    controller.createNote
+  '/:id/lessons/:lessonId/notes',
+  uploadNoteAttachments.fields([{ name: 'image', maxCount: 1 }, { name: 'audio', maxCount: 1 }]),
+  attachNoteFiles,
+  validate(noteSchema),
+  controller.createNote
 )
 router.get('/:id/lessons/:lessonId/notes', controller.getNotes)
 router.delete('/:id/lessons/:lessonId/notes/:noteId', controller.deleteNote)

@@ -11,6 +11,7 @@ const editorialSchema = new mongoose.Schema({
   description: { type: String, default: "" },
   videoUrl: { type: String, default: "" },
   editorialTest: { type: mongoose.Schema.Types.ObjectId, ref: "EditorialTest", default: null },
+  editorialTopic: { type: mongoose.Schema.Types.ObjectId, ref: "EditorialTopic", default: null, index: true },
   isFree: { type: Boolean, default: true },
   sortOrder: { type: Number, default: 0 },
   totalViews: { type: Number, default: 0 },

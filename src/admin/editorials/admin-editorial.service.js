@@ -15,12 +15,13 @@ class AdminEditorialService extends BaseService {
         super(editorialRepository, 'admin:editorial')
     }
 
-    buildFilter({ type, status, isFree, editorialTest, search, examId, exam } = {}) {
+    buildFilter({ type, status, isFree, editorialTest, editorialTopic, search, examId, exam } = {}) {
         const filter = { isDeleted: false }
         if (type) filter.type = type
         if (status) filter.status = status
         if (typeof isFree === 'boolean') filter.isFree = isFree
         if (editorialTest) filter.editorialTest = editorialTest
+        if (editorialTopic) filter.editorialTopic = editorialTopic
 
         const targetExam = examId || exam
         if (targetExam) {
@@ -56,14 +57,14 @@ class AdminEditorialService extends BaseService {
             page: query.page,
             limit: query.limit,
             sort: { [sortBy]: direction, createdAt: -1 },
-            populate: [{ path: 'editorialTest', select: 'title status' }, 'exam', 'subjectIds'],
+            populate: [{ path: 'editorialTest', select: 'title status' }, 'exam', 'subjectIds', { path: 'editorialTopic', select: 'name status' }],
         })
     }
 
     async getOne(id) {
         const editorial = await editorialRepository.findOne(
             { _id: id, isDeleted: false },
-            { populate: [{ path: 'editorialTest', select: 'title status' }, 'exam', 'subjectIds'] }
+            { populate: [{ path: 'editorialTest', select: 'title status' }, 'exam', 'subjectIds', { path: 'editorialTopic', select: 'name status' }] }
         )
         if (!editorial) throw new AppError('Editorial not found', 404, 'NOT_FOUND')
         return editorial
@@ -79,6 +80,7 @@ class AdminEditorialService extends BaseService {
             if (!Number.isNaN(parsed)) payload.sortOrder = parsed
         }
         if (payload.editorialTest === '') payload.editorialTest = null
+        if (payload.editorialTopic === '') payload.editorialTopic = null
         return payload
     }
 
