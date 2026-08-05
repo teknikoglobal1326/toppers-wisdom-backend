@@ -443,6 +443,14 @@ class EditorialService extends BaseService {
 
     return null
   }
+
+  async getTopics() {
+    const EditorialTopic = require('../../models/EditorialTopic.model')
+    return EditorialTopic.find({ status: 'active', isDeleted: false })
+      .sort({ sortOrder: 1, name: 1 })
+      .select('name')
+      .lean()
+  }
 }
 
 module.exports = new EditorialService()

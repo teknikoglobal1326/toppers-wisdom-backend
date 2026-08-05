@@ -11,6 +11,7 @@ router.get('/', validateQuery(listEditorialQuerySchema), controller.list)
 router.patch('/read/:id', validate(setEditorialReadSchema), controller.setRead)
 router.patch('/bookmark/:id', validate(setEditorialBookmarkSchema), controller.setBookmark)
 router.patch('/:id/like', validate(setEditorialLikeSchema), controller.setLike)
+router.get('/topics', controller.getTopics)
 router.get('/:id', controller.getOne)
 
 module.exports = router
