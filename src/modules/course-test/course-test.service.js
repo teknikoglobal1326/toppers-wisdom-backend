@@ -405,6 +405,43 @@ class CourseTestService extends BaseService {
             limit: query.limit,
         })
     }
+
+    /**
+     * GET /course-tests/:testId/instruction
+     * Returns test instructions and basic details without questions.
+     */
+    async getInstruction(testId, userId, language = 'hi') {
+        const test = await this.repository.getCourseTestById(testId)
+        if (!test || test.isDeleted || !['active'].includes(test.status)) {
+            throw new AppError('Course test not found', 404, 'NOT_FOUND')
+        }
+
+        const hasAccess = await checkAccess(userId, 'course', test.course)
+        if (!hasAccess) throw new AppError('Please purchase this course to access the test', 403, 'FORBIDDEN')
+
+        const localizedInstruction =
+            test.localizedContent?.[language]?.instructions ||
+            test.localizedContent?.en?.instructions ||
+            test.instruction ||
+            ''
+
+        return {
+            _id: test._id,
+            title: test.title,
+            slug: test.slug,
+            description: test.description,
+            duration: test.duration,
+            totalQuestions: test.totalQuestions,
+            totalMarks: test.totalMarks,
+            passingMarks: test.passingMarks,
+            marksPerQuestion: test.marksPerQuestion,
+            negativeMarks: test.negativeMarks,
+            maxAttempts: test.maxAttempts,
+            difficulty: test.difficulty,
+            language: test.language,
+            instruction: localizedInstruction
+        }
+    }
 }
 
 module.exports = new CourseTestService()

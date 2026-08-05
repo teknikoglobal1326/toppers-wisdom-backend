@@ -54,6 +54,14 @@ const listMyAttempts = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
+const getInstruction = catchAsync(async (req, res) => {
+    sendSuccess(
+        res,
+        await courseTestService.getInstruction(req.params.CourseTestId, req.user._id, req.user.language || 'hi'),
+        'Test instruction and basic details retrieved successfully'
+    )
+})
+
 module.exports = {
     startTest,
     submitTest,
@@ -62,4 +70,5 @@ module.exports = {
     getSessionAnalytics,
     getSessionSolution,
     listMyAttempts,
+    getInstruction,
 }
