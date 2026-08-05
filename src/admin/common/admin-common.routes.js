@@ -14,6 +14,15 @@ const previousYearPaperRepository = require('../../modules/previous-year-paper/p
 const subjectRepository = require('../../modules/subject/subject.repository')
 const Subject = require('../../models/Subject.model')
 const Role = require('../../models/Role.model')
+const EditorialTopic = require('../../models/EditorialTopic.model')
+
+// GET /api/v1/admin/common/editorial-topics
+router.get('/editorial-topics', catchAsync(async (req, res) => {
+  const topics = await EditorialTopic.find(
+    { isDeleted: false, status: 'active' }
+  ).sort({ sortOrder: 1, name: 1 }).select('_id name').lean()
+  sendSuccess(res, topics)
+}))
 
 // GET /api/v1/admin/common/short-categories
 router.get('/short-categories', catchAsync(async (req, res) => {
@@ -107,8 +116,8 @@ router.get('/tree/:courseId', catchAsync(async (req, res) => {
     isDeleted: false,
     status: 'active'
   })
-  .sort({ sortOrder: 1, createdAt: -1 })
-  .lean()
+    .sort({ sortOrder: 1, createdAt: -1 })
+    .lean()
 
   const tree = subjects.map(sub => ({
     _id: sub._id,
@@ -476,20 +485,20 @@ router.get('/test-subjects-chapters', catchAsync(async (req, res) => {
   sendSuccess(res, filteredSubjects)
 }))
 
-  // POST /api/v1/admin/common/upload-chat-attachment
-  router.post('/upload-chat-attachment', require('../../middlewares/upload.middleware').uploadVideoImage.single('file'), catchAsync(async (req, res) => {
-    if (!req.file) {
-      return sendError(res, 'No file uploaded', 400)
-    }
+// POST /api/v1/admin/common/upload-chat-attachment
+router.post('/upload-chat-attachment', require('../../middlewares/upload.middleware').uploadVideoImage.single('file'), catchAsync(async (req, res) => {
+  if (!req.file) {
+    return sendError(res, 'No file uploaded', 400)
+  }
 
-    const { uploadFile } = require('../../lib/fileUpload')
-    const path = require('path')
-    const ext = path.extname(req.file.originalname).toLowerCase()
-    const filename = `chat-${Date.now()}${ext}`
-    const folder = 'chat'
-    const fileUrl = await uploadFile(req.file.buffer, filename, folder, req.file.mimetype)
+  const { uploadFile } = require('../../lib/fileUpload')
+  const path = require('path')
+  const ext = path.extname(req.file.originalname).toLowerCase()
+  const filename = `chat-${Date.now()}${ext}`
+  const folder = 'chat'
+  const fileUrl = await uploadFile(req.file.buffer, filename, folder, req.file.mimetype)
 
-    sendSuccess(res, { url: fileUrl, filename: req.file.originalname })
-  }))
+  sendSuccess(res, { url: fileUrl, filename: req.file.originalname })
+}))
 
-  module.exports = router
+module.exports = router

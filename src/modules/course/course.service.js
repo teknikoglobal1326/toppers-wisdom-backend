@@ -285,12 +285,19 @@ class CourseService extends BaseService {
       test: subjectsList
     };
 
+    const Faq = require('../../models/Faq.model');
+    const faqs = await Faq.find({ course: courseId, status: 'active', isDeleted: false })
+      .sort({ sortOrder: 1 })
+      .select('question answer sortOrder')
+      .lean();
+
     return {
       ...course,
       hasAccess,
       enrollmentProgress: enrollment?.progressPercent || 0,
       syllabus,
-      tests // kept root level tests in case they are needed
+      tests, // kept root level tests in case they are needed
+      faqs
     }
   }
 
@@ -301,6 +308,72 @@ class CourseService extends BaseService {
     if (course.isDeleted) throw new AppError('Course not found', 404, 'NOT_FOUND');
 
     const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId);
+
+    // Fetch allowed materials via active subscription plans
+    const allowedMaterialIds = new Set();
+    if (!hasAccess && userId) {
+      const UserSubscription = require('../../models/UserSubscription.model');
+      const userSubs = await UserSubscription.find({
+        user: userId,
+        isActive: true,
+        endDate: { $gt: new Date() }
+      }).populate('subscription').lean();
+
+      userSubs.forEach(us => {
+        if (us.subscription && Array.isArray(us.subscription.materials)) {
+          us.subscription.materials.forEach(id => allowedMaterialIds.add(id.toString()));
+        }
+      });
+    }
+
+    // Fetch user progress for content / pdf
+    const Enrollment = require('../../models/Enrollment.model');
+    const enrollment = userId ? await Enrollment.findOne({ user: userId, course: courseId }).lean() : null;
+    const progressList = enrollment?.progress || [];
+    const progressMap = new Map(progressList.map(p => [p.lessonId.toString(), p]));
+
+    // Fetch user attempts for tests
+    const CourseTestAttempt = require('../../models/CourseTestAttempt.model');
+    const attempts = userId ? await CourseTestAttempt.find({ user: userId, course: courseId }).lean() : [];
+    const testAttemptsMap = new Map();
+    attempts.forEach(att => {
+      if (att.courseTest) {
+        const testId = att.courseTest.toString();
+        const existing = testAttemptsMap.get(testId);
+        if (!existing || att.status === 'completed' || (existing.status !== 'completed' && att.updatedAt > existing.updatedAt)) {
+          testAttemptsMap.set(testId, att);
+        }
+      }
+    });
+
+    const mapAccess = (item) => {
+      const idStr = item._id.toString();
+      const hasItemAccess = hasAccess || allowedMaterialIds.has(idStr);
+
+      let progressObj = null;
+      if (item.materialType === 'content' || item.materialType === 'pdf') {
+        const prog = progressMap.get(idStr);
+        progressObj = {
+          completed: prog?.completed || false,
+          watchedSeconds: prog?.watchedSeconds || 0
+        };
+      } else if (item.materialType === 'test') {
+        const attempt = testAttemptsMap.get(idStr);
+        progressObj = {
+          completed: attempt?.status === 'completed',
+          status: attempt?.status || 'unstarted',
+          score: attempt?.score || 0,
+          totalMarks: attempt?.totalMarks || 0,
+          accuracy: attempt?.accuracy || 0
+        };
+      }
+
+      return {
+        ...item,
+        hasAccess: hasItemAccess,
+        progress: progressObj
+      };
+    };
 
     const subject = await Subject.findOne({ _id: subjectId, isDeleted: false }).select('chapters name').lean();
     if (!subject) throw new AppError('Subject not found', 404, 'NOT_FOUND');
@@ -367,8 +440,8 @@ class CourseService extends BaseService {
         const topicTests = courseTests.filter(t => (t.chapters || []).some(ch => ch.toString() === chapterId) && matchTopic(t, 'test'));
 
         const combinedData = [
-          ...topicContents.map(c => ({ ...c, materialType: 'content' })),
-          ...topicPdfs.map(p => ({ ...p, materialType: 'pdf' }))
+          ...topicContents.map(c => mapAccess({ ...c, materialType: 'content' })),
+          ...topicPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' }))
         ];
 
         if (combinedData.length > 0) {
@@ -376,11 +449,11 @@ class CourseService extends BaseService {
         }
 
         if (topicPdfs.length > 0) {
-          pdfTopics.push({ _id: topic._id, title: topicName, data: topicPdfs });
+          pdfTopics.push({ _id: topic._id, title: topicName, data: topicPdfs.map(t => mapAccess({ ...t, materialType: 'pdf' })) });
         }
 
         if (topicTests.length > 0) {
-          testTopics.push({ _id: topic._id, title: topicName, data: topicTests });
+          testTopics.push({ _id: topic._id, title: topicName, data: topicTests.map(t => mapAccess({ ...t, materialType: 'test' })) });
         }
       });
 
@@ -389,8 +462,8 @@ class CourseService extends BaseService {
       const unassignedTests = courseTests.filter(t => (t.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(t, 'test'));
 
       const combinedUnassigned = [
-        ...unassignedContents.map(c => ({ ...c, materialType: 'content' })),
-        ...unassignedPdfs.map(p => ({ ...p, materialType: 'pdf' }))
+        ...unassignedContents.map(c => mapAccess({ ...c, materialType: 'content' })),
+        ...unassignedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' }))
       ];
 
       if (contentTopics.length > 0 || combinedUnassigned.length > 0) {
@@ -408,7 +481,7 @@ class CourseService extends BaseService {
           _id: chapterId,
           chapterName,
           topics: pdfTopics,
-          ...(unassignedPdfs.length > 0 && { unassignedData: unassignedPdfs })
+          ...(unassignedPdfs.length > 0 && { unassignedData: unassignedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' })) })
         });
       }
 
@@ -417,7 +490,7 @@ class CourseService extends BaseService {
           _id: chapterId,
           chapterName,
           topics: testTopics,
-          ...(unassignedTests.length > 0 && { unassignedData: unassignedTests })
+          ...(unassignedTests.length > 0 && { unassignedData: unassignedTests.map(t => mapAccess({ ...t, materialType: 'test' })) })
         });
       }
     });
