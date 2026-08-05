@@ -12,6 +12,7 @@ router.get('/attempts', validateQuery(listAttemptsQuerySchema), controller.listM
 
 // Simple one-shot test flow (legacy / no session)
 router.get('/:CourseTestId/start', controller.startTest)
+router.get('/:CourseTestId/instruction', controller.getInstruction)
 router.post('/:CourseTestId/submit', validate(submitCourseTestSchema), controller.submitTest)
 
 // Session-based test flow (recommended)
