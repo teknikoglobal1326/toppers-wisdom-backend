@@ -46,5 +46,6 @@ router.use('/subscriptions', requirePermission('subscriptions'), require('./subs
 router.use('/offers', requirePermission('offers'), require('./offers/admin-offer.routes'))
 router.use('/marketing', requirePermission('notifications'), require('./marketing/admin-marketing.routes'))
 router.use('/testimonials', requirePermission('testimonials'), require('./testimonials/admin-testimonial.routes'))
+router.use('/wrapper-packages', requirePermission('courses'), require('./wrapper-packages/admin-wrapper-package.routes'))
 
 module.exports = router
