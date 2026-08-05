@@ -4,7 +4,7 @@ const editorialService = require('./editorial.service')
 
 const list = catchAsync(async (req, res) => {
   const result = await editorialService.listAll(req.query, req.user?._id)
-  sendPaginated(res, result)
+  sendPaginated(res, result.data, result.pagination)
 })
 
 const getOne = catchAsync(async (req, res) => {
@@ -38,4 +38,8 @@ const getActivePlan = catchAsync(async (req, res) => {
   sendSuccess(res, plan, 'Active plan retrieved successfully')
 })
 
-module.exports = { list, getOne, setRead, setBookmark, setLike, getPurchaseStatus, purchaseSection, getActivePlan }
+const getTopics = catchAsync(async (req, res) => {
+  sendSuccess(res, await editorialService.getTopics(), 'Active topics retrieved successfully')
+})
+
+module.exports = { list, getOne, setRead, setBookmark, setLike, getPurchaseStatus, purchaseSection, getActivePlan, getTopics }

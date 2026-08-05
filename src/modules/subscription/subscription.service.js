@@ -3,32 +3,58 @@ const mongoose = require('mongoose');
 
 class SubscriptionService {
     async checkSubscriptions(type, id) {
-        if (!type || !id) {
+        if (!type) {
             return [];
         }
 
-        const objectId = new mongoose.Types.ObjectId(id);
+        const objectId = id && mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null;
         const filter = { isActive: true, isDeleted: false };
         const queryOptions = [];
 
         const typeStr = type.toLowerCase();
 
         console.log("typeStr====================>>", typeStr);
-        if (['test-series', 'testseries'].includes(typeStr)) {
-            queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'TestSeries', moduleId: objectId } } });
+        if (typeStr === 'editorial') {
+            if (!objectId) {
+                queryOptions.push({ 'boosters.moduleType': { $in: ['Editorial', 'editorial'] } });
+            } else {
+                queryOptions.push({
+                    $or: [
+                        {
+                            boosters: {
+                                $elemMatch: {
+                                    moduleType: { $in: ['Editorial', 'editorial'] },
+                                    $or: [
+                                        { moduleId: { $exists: false } },
+                                        { moduleId: { $size: 0 } }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            boosters: {
+                                $elemMatch: {
+                                    moduleType: { $in: ['Editorial', 'editorial'] },
+                                    moduleId: objectId
+                                }
+                            }
+                        }
+                    ]
+                });
+            }
+        } else if (['test-series', 'testseries'].includes(typeStr)) {
+            if (objectId) queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'TestSeries', moduleId: objectId } } });
         } else if (['previous-year-paper', 'previousyearpaper'].includes(typeStr)) {
-            queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'PreviousYearPaper', moduleId: objectId } } });
+            if (objectId) queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'PreviousYearPaper', moduleId: objectId } } });
         } else if (['live-test-series', 'livetestseries'].includes(typeStr)) {
-            queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'LiveTestSeries', moduleId: objectId } } });
-            // } else if (typeStr === 'booster') {
-            //     queryOptions.push({ 'boosters': { $elemMatch: { moduleType: 'Booster', moduleId: objectId } } });
-        } else if (['vocabulary', 'editorial'].includes(typeStr)) {
-            // Capitalize first letter to match Enum if necessary or use regex/in
-            const capType = typeStr.charAt(0).toUpperCase() + typeStr.slice(1);
-            queryOptions.push({ 'boosters': { $elemMatch: { moduleType: { $in: [capType, typeStr] } } } });
+            if (objectId) queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'LiveTestSeries', moduleId: objectId } } });
+        } else if (typeStr === 'vocabulary') {
+            if (objectId) queryOptions.push({ 'boosters': { $elemMatch: { moduleType: { $in: ['Vocabulary', 'vocabulary'] }, moduleId: objectId } } });
         } else {
-            queryOptions.push({ 'tests.moduleId': objectId });
-            queryOptions.push({ 'boosters.moduleId': objectId });
+            if (objectId) {
+                queryOptions.push({ 'tests.moduleId': objectId });
+                queryOptions.push({ 'boosters.moduleId': objectId });
+            }
         }
 
         console.log("queryOptions=================>>", queryOptions);

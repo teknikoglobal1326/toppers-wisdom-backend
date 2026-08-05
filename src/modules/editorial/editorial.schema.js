@@ -8,6 +8,7 @@ const listEditorialQuerySchema = Joi.object({
   status: Joi.string().valid(...STATUS_VALUES),
   listType: Joi.string().valid('all', 'read', 'bookmarked', 'unread').default('all'),
   editorialTest: Joi.string().hex().length(24),
+  editorialTopic: Joi.string().hex().length(24),
   isFree: Joi.boolean(),
   search: Joi.string().trim().allow(''),
   publishDate: Joi.date().iso(),
