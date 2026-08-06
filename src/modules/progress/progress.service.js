@@ -75,7 +75,7 @@ class ProgressService extends BaseService {
       throw new AppError('You are not enrolled in this course', 403, 'FORBIDDEN')
     }
 
-    const completedItems = enrollment.progress.filter((p) => p.completed).length
+    const completedItems = enrollment.progress.length
 
     const enrollmentObj = enrollment.toObject ? enrollment.toObject() : enrollment
     return {

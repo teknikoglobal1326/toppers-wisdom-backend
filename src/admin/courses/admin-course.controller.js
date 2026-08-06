@@ -15,5 +15,12 @@ const uploadUrl         = catchAsync(async (req, res) => { sendSuccess(res, awai
 const thumbnailUploadUrl = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getThumbnailUploadUrl(req.params.id, req.body.contentType)) })
 const bannerUploadUrl    = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getBannerUploadUrl(req.params.id, req.body.contentType)) })
 const updateTimetable    = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.updateTimetable(req.params.id, req.body), 'Timetable updated successfully') })
+const getAssociatedData  = catchAsync(async (req, res) => {
+  const { courseId, type } = req.query
+  if (!courseId || !type) {
+    return res.status(400).json({ success: false, message: 'courseId and type are required' })
+  }
+  sendSuccess(res, await adminCourseService.getAssociatedData(courseId, type))
+})
 
-module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable }
+module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData }

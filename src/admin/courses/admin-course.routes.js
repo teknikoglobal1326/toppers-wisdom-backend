@@ -14,6 +14,7 @@ const {
 router.get('/', validateQuery(listQuerySchema), controller.listAll)
 router.get('/purchases', validateQuery(listQuerySchema), controller.listPurchases)
 router.post('/', uploadCourseImages, parseFormData, validate(createCourseSchema), controller.createCourse)
+router.get('/associated-data', controller.getAssociatedData)
 router.get('/:id', controller.getOne)
 router.put('/:id', uploadCourseImages, parseFormData, validate(updateCourseSchema), controller.updateCourse)
 router.delete('/:id', controller.deleteCourse)

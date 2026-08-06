@@ -31,7 +31,8 @@ const initSocket = (httpServer) => {
         'http://192.168.1.58:3001',
         'http://192.168.1.58:3000',
         'http://192.168.1.58:5173',
-        // 'http://160.187.87.138:8002'
+        'http://160.187.87.138:8002',
+        'https://topperswisdom.teknikoglobal.in'
       ],
       methods: ['GET', 'POST'],
       credentials: true
