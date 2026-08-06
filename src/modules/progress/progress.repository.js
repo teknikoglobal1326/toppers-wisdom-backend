@@ -44,10 +44,13 @@ class ProgressRepository extends BaseRepository {
     if (!enrollment) return null
 
     const existing = enrollment.progress.find((p) => {
+      if (lessonId && p.lessonId) {
+        return p.lessonId.toString() === lessonId
+      }
       if (topicId && p.topicId) {
         return p.topicId.toString() === topicId
       }
-      return lessonId && p.lessonId && p.lessonId.toString() === lessonId
+      return false
     })
 
     if (existing) {
@@ -84,7 +87,7 @@ class ProgressRepository extends BaseRepository {
     ])
     
     const total = (course?.lessons?.length || 0) + contentCount + pdfCount + testCount || 1
-    const done = enrollment.progress.filter((p) => p.completed).length
+    const done = enrollment.progress.length
     enrollment.progressPercent = parseFloat(((done / total) * 100).toFixed(2))
 
     await enrollment.save()

@@ -1,5 +1,8 @@
 const router = require('express').Router()
 const { requirePermission } = require('../middlewares/permission.middleware')
+const { auditLogger } = require('../middlewares/auditLogger.middleware')
+
+router.use(auditLogger)
 
 router.use('/cms', require('./cms/admin-cms.routes'))
 router.use('/app-version', require('./app-version/admin-app-version.routes'))
@@ -21,6 +24,7 @@ router.use('/admins', requirePermission('admins'), require('./admins/admin-admin
 router.use('/permissions', requirePermission('admins'), require('./permissions/admin-permission.routes'))
 router.use('/roles', requirePermission('admins'), require('./roles/admin-role.routes'))
 router.use('/members', requirePermission('admins'), require('./members/admin-member.routes'))
+router.use('/audit-logs', requirePermission('admins'), require('./audit-logs/admin-audit-log.routes'))
 router.use('/exams', requirePermission('exams'), require('./exams/admin-exam.routes'))
 router.use('/subexams', requirePermission('subexams'), require('./subexams/admin-subexam.routes'))
 router.use('/subjects', requirePermission('subjects'), require('./subjects/admin-subject.routes'))

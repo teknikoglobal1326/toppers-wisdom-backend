@@ -254,7 +254,7 @@ class CourseService extends BaseService {
     this.logger.info({ courseId, userId }, 'Fetching course detail')
     // inherited: this.getById() throws 404 automatically if not found
     const course = await this.getById(courseId, {
-      select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects timetable',
+      select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects timetable courseThought',
       populate: [{ path: 'subjects.subject', select: 'name' }]
     })
     if (course.isDeleted) throw new AppError('Course not found', 404, 'NOT_FOUND')
@@ -267,7 +267,7 @@ class CourseService extends BaseService {
     }
 
     const enrollment = await courseRepository.findEnrollment(userId, courseId)
-
+    console.log("enrollment================>", enrollment);
     const tests = await Test.find({ course: courseId, status: 'published' })
       .select('title slug description image duration totalQuestion totalMarks difficulty')
       .lean();
@@ -297,7 +297,12 @@ class CourseService extends BaseService {
       enrollmentProgress: enrollment?.progressPercent || 0,
       syllabus,
       tests, // kept root level tests in case they are needed
-      faqs
+      faqs,
+      courseThought: {
+        thought: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+        authorName: "Prashant Sir",
+        authorImage: "https://topperswisdom.teknikoglobal.in/prashant_sir.png"
+      }
     }
   }
 
@@ -440,8 +445,7 @@ class CourseService extends BaseService {
         const topicTests = courseTests.filter(t => (t.chapters || []).some(ch => ch.toString() === chapterId) && matchTopic(t, 'test'));
 
         const combinedData = [
-          ...topicContents.map(c => mapAccess({ ...c, materialType: 'content' })),
-          ...topicPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' }))
+          ...topicContents.map(c => mapAccess({ ...c, materialType: 'content' }))
         ];
 
         if (combinedData.length > 0) {
@@ -462,8 +466,7 @@ class CourseService extends BaseService {
       const unassignedTests = courseTests.filter(t => (t.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(t, 'test'));
 
       const combinedUnassigned = [
-        ...unassignedContents.map(c => mapAccess({ ...c, materialType: 'content' })),
-        ...unassignedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' }))
+        ...unassignedContents.map(c => mapAccess({ ...c, materialType: 'content' }))
       ];
 
       if (contentTopics.length > 0 || combinedUnassigned.length > 0) {

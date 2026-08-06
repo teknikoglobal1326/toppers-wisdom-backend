@@ -172,6 +172,76 @@ class AdminCourseService extends BaseService {
   async listPurchases(query) {
     return courseRepository.listPurchases(query);
   }
+
+  async getAssociatedData(courseId, type) {
+    const Course = require('../../models/Course.model')
+    const Subject = require('../../models/Subject.model')
+
+    const course = await Course.findById(courseId).select('subjects').lean()
+    if (!course) {
+      const AppError = require('../../core/AppError')
+      throw new AppError('Course not found', 404)
+    }
+
+    const subjectIds = (course.subjects || []).map(s => s.subject)
+
+    if (type === 'subject') {
+      const subjects = await Subject.find({
+        _id: { $in: subjectIds },
+        isDeleted: false,
+        status: 'active'
+      }).select('_id name sortOrder').sort({ sortOrder: 1, name: 1 }).lean()
+      return subjects
+    }
+
+    if (type === 'chapter') {
+      const subjects = await Subject.find({
+        _id: { $in: subjectIds },
+        isDeleted: false,
+        status: 'active'
+      }).select('_id name chapters').sort({ sortOrder: 1, name: 1 }).lean()
+
+      const chapters = []
+      for (const sub of subjects) {
+        for (const ch of sub.chapters || []) {
+          chapters.push({
+            _id: ch._id,
+            name: ch.name,
+            subjectId: sub._id,
+            subjectName: sub.name
+          })
+        }
+      }
+      return chapters
+    }
+
+    if (type === 'topic') {
+      const subjects = await Subject.find({
+        _id: { $in: subjectIds },
+        isDeleted: false,
+        status: 'active'
+      }).select('_id name chapters').sort({ sortOrder: 1, name: 1 }).lean()
+
+      const topics = []
+      for (const sub of subjects) {
+        for (const ch of sub.chapters || []) {
+          for (const tp of ch.topics || []) {
+            topics.push({
+              _id: tp._id,
+              name: tp.name,
+              chapterId: ch._id,
+              chapterName: ch.name,
+              subjectId: sub._id,
+              subjectName: sub.name
+            })
+          }
+        }
+      }
+      return topics
+    }
+
+    return []
+  }
 }
 
 module.exports = new AdminCourseService();
