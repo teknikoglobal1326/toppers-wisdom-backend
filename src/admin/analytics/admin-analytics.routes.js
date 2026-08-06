@@ -9,5 +9,6 @@ router.get('/users',    controller.users)
 router.get('/course-enrollments/:courseId', validateQuery(analyticsListQuerySchema), controller.courseEnrollments)
 router.get('/test-attempts/:testId/leaderboard', validateQuery(analyticsListQuerySchema),controller.testLeaderboard)
 router.get('/previous-year-paper-test-attempts/:testId/leaderboard', validateQuery(analyticsListQuerySchema), controller.previousYearPaperTestLeaderboard)
+router.get('/course-test-attempts/:testId/leaderboard', validateQuery(analyticsListQuerySchema), controller.courseTestLeaderboard)
 
 module.exports = router

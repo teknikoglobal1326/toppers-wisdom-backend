@@ -32,4 +32,8 @@ const previousYearPaperTestLeaderboard = catchAsync(async (req, res) => {
   sendSuccess(res, await analyticsService.previousYearPaperTestLeaderboard(req.params.testId, req.query), 'Previous year paper test leaderboard fetched')
 })
 
-module.exports = { overview, revenue, users, courseEnrollments, testLeaderboard, previousYearPaperTestLeaderboard }
+const courseTestLeaderboard = catchAsync(async (req, res) => {
+  sendSuccess(res, await analyticsService.courseTestLeaderboard(req.params.testId, req.query), 'Course test leaderboard fetched')
+})
+
+module.exports = { overview, revenue, users, courseEnrollments, testLeaderboard, previousYearPaperTestLeaderboard, courseTestLeaderboard }
