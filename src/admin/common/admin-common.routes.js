@@ -157,6 +157,29 @@ router.get('/chapters/:courseId', catchAsync(async (req, res) => {
   sendSuccess(res, mappings);
 }))
 
+// GET /api/v1/admin/common/topics-by-subject/:subjectId
+router.get('/topics-by-subject/:subjectId', catchAsync(async (req, res) => {
+  const { subjectId } = req.params;
+  const subject = await subjectRepository.findOne({ _id: subjectId, isDeleted: false });
+  if (!subject) {
+    return sendSuccess(res, []);
+  }
+
+  const topics = [];
+  (subject.chapters || []).forEach(ch => {
+    (ch.topics || []).forEach(t => {
+      topics.push({
+        _id: t._id,
+        name: t.name,
+        topicName: t.name,
+        chapterId: ch._id,
+      });
+    });
+  });
+
+  return sendSuccess(res, topics);
+}));
+
 // GET /api/v1/admin/common/topics/:chapterId
 router.get('/topics/:chapterId', catchAsync(async (req, res) => {
   const { chapterId } = req.params;
