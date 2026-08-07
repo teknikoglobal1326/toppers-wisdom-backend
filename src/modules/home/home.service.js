@@ -15,7 +15,7 @@ const getHome = async (examId) => {
     Banner.find({ examId, status: 'active', isDeleted: false })
       .sort({ createdAt: -1 })
       .limit(4)
-      .select('name image examId subexamId')
+      .select('name image examId subexamId url subscriptionId')
       .lean(),
     ShortCategory.find({ examIds: examId, status: 'active', isDeleted: false })
       .sort({ createdAt: -1 })
