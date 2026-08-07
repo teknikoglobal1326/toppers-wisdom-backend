@@ -301,9 +301,9 @@ class AdminContentService extends BaseService {
       }
     }
 
-    await contentRepository.updateById(id, {
+    const Content = require('../../models/Content.model')
+    await Content.updateMany({ agoraChannel: content.agoraChannel, isDeleted: false }, {
       liveStatus: 'ongoing',
-      agoraChannel: content.agoraChannel,
       restreamUrls,
       agoraConverters,
       rtmpServer,
@@ -353,7 +353,8 @@ class AdminContentService extends BaseService {
       }
     }
 
-    await contentRepository.updateById(id, {
+    const Content = require('../../models/Content.model')
+    await Content.updateMany({ agoraChannel: content.agoraChannel, isDeleted: false }, {
       liveStatus: 'completed',
       restreamUrls: [],
       agoraConverters: [],

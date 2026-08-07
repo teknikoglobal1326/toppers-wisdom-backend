@@ -33,6 +33,28 @@ const remove = catchAsync(async (req, res) => {
 })
 
 const createLiveClass = catchAsync(async (req, res) => {
+  const { masterIds, ...rest } = req.body
+
+  if (Array.isArray(masterIds) && masterIds.length > 0) {
+    const createdRecords = []
+    const agoraChannel = `channel_${Date.now()}_${Math.floor(Math.random() * 10000)}`
+    for (const master of masterIds) {
+      const payload = {
+        ...rest,
+        course: master.courseId,
+        subject: master.subjectId || null,
+        chapter: master.chapterId || null,
+        topic: master.topicId,
+        createdBy: req.admin?._id,
+        isLive: true,
+        agoraChannel
+      }
+      const record = await adminContentService.createContent(payload)
+      createdRecords.push(record)
+    }
+    return sendCreated(res, createdRecords)
+  }
+
   const payload = {
     ...req.body,
     createdBy: req.admin?._id,
