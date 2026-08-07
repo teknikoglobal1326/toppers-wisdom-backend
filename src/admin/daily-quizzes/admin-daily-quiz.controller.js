@@ -72,6 +72,64 @@ const normalizePayload = (data = {}) => {
     return payload
 }
 
+// chapterIds/topicIds are embedded ids from Subject.chapters[].topics[]; there is no
+// collection to populate against. Resolve their names from the (populated) mapped
+// subjects so the admin UI can display names instead of raw ids.
+const withResolvedSyllabus = (doc) => {
+    if (!doc) return doc
+    const obj = typeof doc.toObject === 'function' ? doc.toObject() : doc
+    const chapterNameById = new Map()
+    const topicNameById = new Map()
+
+    const subjectList = Array.isArray(obj.subjectIds) ? obj.subjectIds : []
+    for (const subject of subjectList) {
+        if (subject && Array.isArray(subject.chapters)) {
+            for (const chapter of subject.chapters) {
+                if (chapter && chapter._id) {
+                    chapterNameById.set(String(chapter._id), chapter.name)
+                }
+                if (chapter && Array.isArray(chapter.topics)) {
+                    for (const topic of chapter.topics) {
+                        if (topic && topic._id) {
+                            topicNameById.set(String(topic._id), topic.name)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    obj.chapterIds = (Array.isArray(obj.chapterIds) ? obj.chapterIds : []).map((id) => {
+        const name = chapterNameById.get(String(id)) || null
+        return {
+            _id: id,
+            name: name,
+            chapterName: name,
+        }
+    })
+
+    obj.topicIds = (Array.isArray(obj.topicIds) ? obj.topicIds : []).map((id) => {
+        const name = topicNameById.get(String(id)) || null
+        return {
+            _id: id,
+            name: name,
+            topicName: name,
+        }
+    })
+
+    obj.subjectIds = subjectList.map((subject) => {
+        if (subject && typeof subject === 'object' && subject._id) {
+            return {
+                _id: subject._id,
+                name: subject.name || null,
+            }
+        }
+        return { _id: subject, name: null }
+    })
+
+    return obj
+}
+
 const list = catchAsync(async (req, res) => {
     const { status, page = 1, limit = 10, q, todayOnly, examId, subExamId } = req.query
     const filter = { isDeleted: false }
@@ -107,7 +165,7 @@ const list = catchAsync(async (req, res) => {
 
     const total = await DailyQuiz.countDocuments(filter)
 
-    sendPaginated(res, docs, { page: Number(page), limit: Number(limit), total })
+    sendPaginated(res, docs.map(withResolvedSyllabus), { page: Number(page), limit: Number(limit), total })
 })
 
 const getOne = catchAsync(async (req, res) => {
@@ -124,8 +182,9 @@ const getOne = catchAsync(async (req, res) => {
         .sort({ sortOrder: 1, order: 1, createdAt: 1 })
         .lean()
 
-    doc.questions = questions
-    sendSuccess(res, doc)
+    const resolvedDoc = withResolvedSyllabus(doc)
+    resolvedDoc.questions = questions
+    sendSuccess(res, resolvedDoc)
 })
 
 const create = catchAsync(async (req, res) => {
@@ -135,7 +194,7 @@ const create = catchAsync(async (req, res) => {
         .populate('exam', 'name')
         .populate('subExams', 'name')
         .populate('subjectIds', 'name chapters')
-    sendCreated(res, populated)
+    sendCreated(res, withResolvedSyllabus(populated))
 })
 
 const update = catchAsync(async (req, res) => {
@@ -149,7 +208,7 @@ const update = catchAsync(async (req, res) => {
         .populate('exam', 'name')
         .populate('subExams', 'name')
         .populate('subjectIds', 'name chapters')
-    sendSuccess(res, populated)
+    sendSuccess(res, withResolvedSyllabus(populated))
 })
 
 const remove = catchAsync(async (req, res) => {
