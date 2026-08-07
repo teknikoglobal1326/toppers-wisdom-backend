@@ -51,5 +51,7 @@ router.use('/offers', requirePermission('offers'), require('./offers/admin-offer
 router.use('/marketing', requirePermission('notifications'), require('./marketing/admin-marketing.routes'))
 router.use('/testimonials', requirePermission('testimonials'), require('./testimonials/admin-testimonial.routes'))
 router.use('/wrapper-packages', requirePermission('courses'), require('./wrapper-packages/admin-wrapper-package.routes'))
+router.use('/tw-posts', requirePermission('tw-posts'), require('./tw-posts/admin-tw-post.routes'))
+router.use('/thought-of-the-day', requirePermission('thought-of-the-day'), require('./thought-of-the-day/admin-thought-of-the-day.routes'))
 
 module.exports = router

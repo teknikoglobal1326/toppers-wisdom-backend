@@ -204,6 +204,16 @@ router.get('/topics/:chapterId', catchAsync(async (req, res) => {
 })
 );
 
+// GET /api/v1/admin/common/subscriptions
+router.get('/subscriptions', catchAsync(async (req, res) => {
+  const Subscription = require('../../models/Subscription.model')
+  const subscriptions = await Subscription.find({ isActive: true, isDeleted: false })
+    .select('_id name')
+    .sort({ name: 1 })
+    .lean()
+  sendSuccess(res, subscriptions)
+}))
+
 // GET /api/v1/admin/common/all-exams
 router.get('/all-exams', catchAsync(async (req, res) => {
   const exams = await examRepository.findAll(
