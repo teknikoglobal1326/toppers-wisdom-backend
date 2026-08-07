@@ -7,6 +7,61 @@ const { groupQuestionsByLanguage, groupQuestionsBySubject, scoreAnswers } = requ
 const { htmlToPlainText } = require('../../lib/htmlText')
 const dailyQuizRepository = require('./daily-quiz.repository')
 
+const withResolvedSyllabus = (doc) => {
+    if (!doc) return doc
+    const obj = typeof doc.toObject === 'function' ? doc.toObject() : doc
+    const chapterNameById = new Map()
+    const topicNameById = new Map()
+
+    const subjectList = Array.isArray(obj.subjectIds) ? obj.subjectIds : []
+    for (const subject of subjectList) {
+        if (subject && Array.isArray(subject.chapters)) {
+            for (const chapter of subject.chapters) {
+                if (chapter && chapter._id) {
+                    chapterNameById.set(String(chapter._id), chapter.name)
+                }
+                if (chapter && Array.isArray(chapter.topics)) {
+                    for (const topic of chapter.topics) {
+                        if (topic && topic._id) {
+                            topicNameById.set(String(topic._id), topic.name)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    obj.chapterIds = (Array.isArray(obj.chapterIds) ? obj.chapterIds : []).map((id) => {
+        const name = chapterNameById.get(String(id)) || null
+        return {
+            _id: id,
+            name: name,
+            chapterName: name,
+        }
+    })
+
+    obj.topicIds = (Array.isArray(obj.topicIds) ? obj.topicIds : []).map((id) => {
+        const name = topicNameById.get(String(id)) || null
+        return {
+            _id: id,
+            name: name,
+            topicName: name,
+        }
+    })
+
+    obj.subjectIds = subjectList.map((subject) => {
+        if (subject && typeof subject === 'object' && subject._id) {
+            return {
+                _id: subject._id,
+                name: subject.name || null,
+            }
+        }
+        return { _id: subject, name: null }
+    })
+
+    return obj
+}
+
 class DailyQuizService extends BaseService {
     constructor() {
         super(dailyQuizRepository, 'daily-quiz')
@@ -54,7 +109,12 @@ class DailyQuizService extends BaseService {
         const quizzesResult = await this.repository.findMany(filter, {
             page: query.page,
             limit: query.limit,
-            sort: { createdAt: -1 }
+            sort: { createdAt: -1 },
+            populate: [
+                { path: 'exam', select: 'name' },
+                { path: 'subExams', select: 'name' },
+                { path: 'subjectIds', select: 'name chapters' }
+            ]
         })
 
         const Question = require('../../models/Question.model')
@@ -68,8 +128,9 @@ class DailyQuizService extends BaseService {
                 .sort({ attemptedAt: -1 })
                 .lean()
 
+            const resolved = withResolvedSyllabus(item)
             return {
-                ...item,
+                ...resolved,
                 description: htmlToPlainText(item.description || ''),
                 mappedQuestions: questionCount,
                 attemptStatus: attempt ? 'attempted' : 'not_attempted',
