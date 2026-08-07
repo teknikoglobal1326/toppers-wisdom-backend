@@ -15,6 +15,53 @@ class TestSeriesService extends BaseService {
         this.logger = createLogger('test-series:service')
     }
 
+    async checkUserAccess(series, test, userId) {
+        if (test && !test.isPaid) return true
+        if (series && !series.isPaid) return true
+
+        const CourseOrder = require('../../models/CourseOrder.model')
+        const directPurchase = await CourseOrder.findOne({
+            user: userId,
+            status: 'paid',
+            items: {
+                $elemMatch: {
+                    itemType: 'test',
+                    itemId: series._id
+                }
+            }
+        }).lean()
+
+        if (directPurchase) return true
+
+        const UserSubscription = require('../../models/UserSubscription.model')
+        const Subscription = require('../../models/Subscription.model')
+
+        const activeUserSubs = await UserSubscription.find({
+            user: userId,
+            isActive: true,
+            endDate: { $gte: new Date() }
+        }).select('subscription').lean()
+
+        const activeSubIds = activeUserSubs.map(us => us.subscription.toString())
+
+        if (activeSubIds.length > 0) {
+            const count = await Subscription.countDocuments({
+                _id: { $in: activeSubIds },
+                isActive: true,
+                isDeleted: false,
+                'tests': {
+                    $elemMatch: {
+                        moduleType: 'TestSeries',
+                        moduleId: series._id
+                    }
+                }
+            })
+            if (count > 0) return true
+        }
+
+        return false
+    }
+
     async listSeries(userId, query = {}) {
         const user = await User.findById(userId).select('exam subExams language').lean()
         const subExamIds = (user?.subExams || []).map((item) => item._id)
@@ -38,16 +85,6 @@ class TestSeriesService extends BaseService {
             })
         }
 
-        // if (!query.subExamId && subExamIds.length) {
-        //     clauses.push({
-        //         $or: [
-        //             { subExams: { $exists: false } },
-        //             { subExams: { $size: 0 } },
-        //             { subExams: { $in: subExamIds } },
-        //         ],
-        //     })
-        // }
-
         if (clauses.length === 1) Object.assign(filter, clauses[0])
         if (clauses.length > 1) filter.$and = clauses
 
@@ -65,6 +102,53 @@ class TestSeriesService extends BaseService {
         })
 
         const seriesIds = result.data.map((item) => item._id)
+
+        const UserSubscription = require('../../models/UserSubscription.model')
+        const Subscription = require('../../models/Subscription.model')
+        const CourseOrder = require('../../models/CourseOrder.model')
+
+        const [directOrders, activeUserSubs] = await Promise.all([
+            CourseOrder.find({
+                user: userId,
+                status: 'paid',
+                'items.itemType': 'test'
+            }).select('items.itemId').lean(),
+            UserSubscription.find({
+                user: userId,
+                isActive: true,
+                endDate: { $gte: new Date() }
+            }).select('subscription').lean()
+        ])
+
+        const accessedSeriesIds = new Set()
+        for (const order of directOrders) {
+            for (const item of order.items || []) {
+                if (item.itemType === 'test' && item.itemId) {
+                    accessedSeriesIds.add(item.itemId.toString())
+                }
+            }
+        }
+
+        const activeSubIds = activeUserSubs.map(us => us.subscription.toString())
+
+        if (activeSubIds.length > 0) {
+            const subscriptions = await Subscription.find({
+                _id: { $in: activeSubIds },
+                isActive: true,
+                isDeleted: false
+            }).select('tests').lean()
+
+            for (const sub of subscriptions) {
+                for (const testItem of sub.tests || []) {
+                    if (testItem.moduleType === 'TestSeries') {
+                        for (const mid of testItem.moduleId || []) {
+                            accessedSeriesIds.add(mid.toString())
+                        }
+                    }
+                }
+            }
+        }
+
         const [testCounts, attemptCounts] = await Promise.all([
             this.repository.getTestCountsBySeries(seriesIds),
             this.repository.getAttemptCountsBySeries(userId, seriesIds),
@@ -72,7 +156,7 @@ class TestSeriesService extends BaseService {
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
-            const hasAccess = !item.isPaid
+            const hasAccess = !item.isPaid || accessedSeriesIds.has(id)
             return {
                 ...item,
                 description: htmlToPlainText(item.description),
@@ -92,7 +176,7 @@ class TestSeriesService extends BaseService {
             throw new AppError('Test series not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !series.isPaid
+        const hasAccess = await this.checkUserAccess(series, null, userId)
         const testCounts = await this.repository.getTestCountsBySeries([series._id])
 
         return {
@@ -109,6 +193,8 @@ class TestSeriesService extends BaseService {
         if (!series || series.isDeleted || series.status !== 'active') {
             throw new AppError('Test series not found', 404, 'NOT_FOUND')
         }
+
+        const seriesHasAccess = await this.checkUserAccess(series, null, userId)
 
         const filter = {
             testSeries: seriesId,
@@ -145,7 +231,7 @@ class TestSeriesService extends BaseService {
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
-            const hasAccess = !item.isPaid
+            const hasAccess = seriesHasAccess || !item.isPaid
             const attemptStats = latestAttempts[id]
 
             return {
@@ -159,7 +245,7 @@ class TestSeriesService extends BaseService {
                 attemptCount: attemptStats ? attemptStats.attemptsCount : 0,
             }
         })
-
+        console.log("result============>", result);
         return result
     }
 
@@ -210,7 +296,7 @@ class TestSeriesService extends BaseService {
             throw new AppError('Test series not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !test.isPaid
+        const hasAccess = await this.checkUserAccess(series, test, userId)
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
         const questions = await this.repository.findQuestionsForTest(testId)
@@ -250,7 +336,7 @@ class TestSeriesService extends BaseService {
             throw new AppError('Test series not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !test.isPaid
+        const hasAccess = await this.checkUserAccess(series, test, userId)
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
         const questions = await this.repository.findQuestionsForTest(testId)
@@ -306,7 +392,7 @@ class TestSeriesService extends BaseService {
             throw new AppError('Test series not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !test.isPaid
+        const hasAccess = await this.checkUserAccess(series, test, userId)
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
         const questions = await this.repository.findQuestionsForTest(testId)
