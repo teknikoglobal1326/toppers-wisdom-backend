@@ -13,7 +13,7 @@ class SubscriptionService {
 
         const typeStr = type.toLowerCase();
 
-        console.log("typeStr====================>>", typeStr);
+
         if (typeStr === 'editorial') {
             if (!objectId) {
                 queryOptions.push({ 'boosters.moduleType': { $in: ['Editorial', 'editorial'] } });
@@ -57,14 +57,14 @@ class SubscriptionService {
             }
         }
 
-        console.log("queryOptions=================>>", queryOptions);
+
         if (queryOptions.length > 0) {
             filter.$or = queryOptions;
         }
 
-        console.log("filter===============>", filter);
+
         const subscriptions = await Subscription.find(filter)
-            .select('name description price durationDays tests boosters')
+            .select('name description price durationDays tests boosters banner')
             .lean();
 
         return subscriptions.map(sub => ({
@@ -73,7 +73,7 @@ class SubscriptionService {
             description: sub.description,
             price: sub.price,
             durationDays: sub.durationDays,
-            image: null // Fallback since Subscription schema doesn't have an image field yet
+            image: sub.banner || null
         }));
     }
 
