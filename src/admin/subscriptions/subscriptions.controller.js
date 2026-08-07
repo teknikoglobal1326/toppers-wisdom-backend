@@ -7,7 +7,7 @@ const { uploadFile } = require('../../lib/fileUpload');
 // Create Subscription
 exports.createSubscription = async (req, res, next) => {
   try {
-    const { name, description, price, durationDays, isActive } = req.body;
+    const { name, description, price, durationDays, isActive, examId } = req.body;
     let { banner, tests, boosters, materials } = req.body;
 
     if (typeof tests === 'string') {
@@ -46,6 +46,7 @@ exports.createSubscription = async (req, res, next) => {
       boosters: boosters || [],
       materials: materials || [],
       banner,
+      examId: examId || undefined,
       createdBy: req.admin._id
     });
 
@@ -66,6 +67,7 @@ exports.getAllSubscriptions = async (req, res, next) => {
   try {
     const subscriptions = await Subscription.find({ isDeleted: false })
       .populate('createdBy', 'name email')
+      .populate('examId', 'name title')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -82,7 +84,8 @@ exports.getSubscriptionById = async (req, res, next) => {
   try {
     const subscription = await Subscription.findOne({ _id: req.params.id, isDeleted: false })
       .populate('tests.moduleId', 'title thumbnail')
-      .populate('boosters.moduleId', 'title thumbnail');
+      .populate('boosters.moduleId', 'title thumbnail')
+      .populate('examId', 'name title');
 
     if (!subscription) {
       return res.status(404).json({ success: false, message: 'Subscription not found' });
@@ -100,7 +103,7 @@ exports.getSubscriptionById = async (req, res, next) => {
 // Update Subscription
 exports.updateSubscription = async (req, res, next) => {
   try {
-    const { name, description, price, durationDays, isActive } = req.body;
+    const { name, description, price, durationDays, isActive, examId } = req.body;
     let { banner, tests, boosters, materials } = req.body;
 
     if (typeof tests === 'string') {
@@ -129,7 +132,8 @@ exports.updateSubscription = async (req, res, next) => {
     subscription.description = description !== undefined ? description : subscription.description;
     subscription.price = price !== undefined ? price : subscription.price;
     subscription.durationDays = durationDays !== undefined ? durationDays : subscription.durationDays;
-
+    
+    if (examId !== undefined) subscription.examId = examId;
 
     if (tests) subscription.tests = tests;
     if (boosters) subscription.boosters = boosters;

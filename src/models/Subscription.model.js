@@ -40,6 +40,8 @@ const subscriptionSchema = new mongoose.Schema({
   boosters: [boosterItemSchema],
   materials: [{ type: mongoose.Schema.Types.ObjectId }],
 
+  examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam' },
+
   isActive: { type: Boolean, default: true, index: true },
   isDeleted: { type: Boolean, default: false, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' }
