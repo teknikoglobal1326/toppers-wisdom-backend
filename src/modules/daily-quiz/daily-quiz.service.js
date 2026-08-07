@@ -74,15 +74,11 @@ class DailyQuizService extends BaseService {
         const examId = user?.exam?._id || (typeof user?.exam === 'object' ? user?.exam?._id : user?.exam)
 
         const filter = { isDeleted: false, status: query.status || 'active' }
-        if (query.examId) {
-            filter.exam = query.examId
-        } else if (examId) {
+        if (examId) {
             filter.exam = examId
         }
 
-        if (query.subExamId) {
-            filter.subExams = query.subExamId
-        } else if (subExamIds.length && !query.examId) {
+        if (subExamIds.length) {
             filter.$or = [
                 { subExams: { $exists: false } },
                 { subExams: { $size: 0 } },
@@ -129,9 +125,14 @@ class DailyQuizService extends BaseService {
                 .lean()
 
             const resolved = withResolvedSyllabus(item)
+            delete resolved.description
+            delete resolved.instructions
+            delete resolved.instructionsNew
+            delete resolved.thumbnail
+            delete resolved.localizedContent
+
             return {
                 ...resolved,
-                description: htmlToPlainText(item.description || ''),
                 mappedQuestions: questionCount,
                 attemptStatus: attempt ? 'attempted' : 'not_attempted',
                 latestAttempt: attempt || null,
@@ -144,24 +145,22 @@ class DailyQuizService extends BaseService {
         }
     }
 
-    async getQuizInstructions(quizId, userId) {
+    async getQuizInstructions(quizId, _userId) {
         const quiz = await this.repository.getQuizById(quizId)
         if (!quiz) throw new AppError('Daily quiz not found', 404, 'NOT_FOUND')
 
         return {
-            quiz: {
-                _id: quiz._id,
-                title: quiz.title,
-                duration: quiz.duration,
-                totalQuestions: quiz.totalQuestions,
-                totalMarks: quiz.totalMarks,
-                marksPerQuestion: quiz.marksPerQuestion,
-                negativeMarks: quiz.negativeMarks,
-                passingMarks: quiz.passingMarks,
-                instructions: quiz.instructions,
-                instructionsNew: quiz.instructionsNew,
-                localizedContent: quiz.localizedContent
-            }
+            _id: quiz._id,
+            title: quiz.title,
+            duration: quiz.duration,
+            totalQuestions: quiz.totalQuestions,
+            totalMarks: quiz.totalMarks,
+            marksPerQuestion: quiz.marksPerQuestion,
+            negativeMarks: quiz.negativeMarks,
+            passingMarks: quiz.passingMarks,
+            instructions: quiz.instructions,
+            instructionsNew: quiz.instructionsNew,
+            localizedContent: quiz.localizedContent
         }
     }
 
