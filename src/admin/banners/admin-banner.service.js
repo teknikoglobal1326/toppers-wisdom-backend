@@ -5,8 +5,6 @@ const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 const {
   getExactLanguageFilter,
-  isDualLanguagePayload,
-  makeLanguageRecords,
 } = require('../../core/languageUtils')
 
 class AdminBannerService extends BaseService {
@@ -23,7 +21,7 @@ class AdminBannerService extends BaseService {
     const exactLanguage = getExactLanguageFilter(language)
     if (exactLanguage) filter.language = exactLanguage
     const direction = sortOrder === 'desc' ? -1 : 1
-    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: 'examId subexamId' })
+    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: 'examId subexamId subscriptionId' })
   }
 
   async getOne(id) {
@@ -45,7 +43,7 @@ class AdminBannerService extends BaseService {
       const parts = base64String.split(';base64,')
       if (parts.length === 2) {
         const mimeType = parts[0].replace('data:', '')
-        const extMatch = mimeType.match(/image\/([a-zA-Z0-9-+\/]+)/)
+        const extMatch = mimeType.match(/image\/([a-zA-Z0-9-+/]+)/)
         let ext = '.jpg'
         if (extMatch && extMatch[1]) {
            ext = `.${extMatch[1] === 'jpeg' ? 'jpg' : extMatch[1]}`
@@ -62,39 +60,17 @@ class AdminBannerService extends BaseService {
     return null
   }
 
-  async createBanner(data, files = {}) {
-    if (isDualLanguagePayload(data)) {
-      const hiBase64 = data.hi?.image || data.hiImage
-      const enBase64 = data.en?.image || data.enImage
-      
-      const [hiImage, enImage] = await Promise.all([
-        this.processImage(files.hiImage?.[0], hiBase64),
-        this.processImage(files.enImage?.[0], enBase64),
-      ])
-
-      const records = makeLanguageRecords(data).map((record) => {
-        const processedImage = record.language === 'hi' ? hiImage : enImage
-        if (record.examId === '' || record.examId === 'null' || record.examId === 'undefined') record.examId = null
-        if (record.subexamId === '' || record.subexamId === 'null' || record.subexamId === 'undefined') record.subexamId = null
-        if (processedImage) {
-          record.image = processedImage
-        } else if (record.image && typeof record.image === 'string' && record.image.startsWith('data:image/')) {
-          delete record.image
-        }
-        return record
-      })
-      return bannerRepository.insertMany(records)
-    }
-
+  async createBanner(data, file) {
     const payload = { ...data }
     if (payload.examId === '' || payload.examId === 'null' || payload.examId === 'undefined') payload.examId = null
     if (payload.subexamId === '' || payload.subexamId === 'null' || payload.subexamId === 'undefined') payload.subexamId = null
+    if (payload.subscriptionId === '' || payload.subscriptionId === 'null' || payload.subscriptionId === 'undefined') payload.subscriptionId = null
     
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)
       if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
     }
-    const processedImage = await this.processImage(files.image?.[0], data.image)
+    const processedImage = await this.processImage(file, data.image)
     if (processedImage) {
       payload.image = processedImage
     } else if (payload.image && typeof payload.image === 'string' && payload.image.startsWith('data:image/')) {
@@ -110,6 +86,7 @@ class AdminBannerService extends BaseService {
     
     if (payload.examId === '' || payload.examId === 'null' || payload.examId === 'undefined') payload.examId = null
     if (payload.subexamId === '' || payload.subexamId === 'null' || payload.subexamId === 'undefined') payload.subexamId = null
+    if (payload.subscriptionId === '' || payload.subscriptionId === 'null' || payload.subscriptionId === 'undefined') payload.subscriptionId = null
 
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)

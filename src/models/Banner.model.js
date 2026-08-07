@@ -6,6 +6,8 @@ const bannerSchema = new mongoose.Schema({
   sortOrder:  { type: Number, default: 0, index: true },
   examId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null, index: true },
   subexamId:  { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', default: null, index: true },
+  subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', default: null, index: true },
+  url:        { type: String, default: null },
   language:   { type: String, enum: ['hi', 'en', 'both'], default: 'both', index: true },
   status:     { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
   isDeleted:  { type: Boolean, default: false, index: true },
