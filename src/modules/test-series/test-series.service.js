@@ -251,7 +251,7 @@ class TestSeriesService extends BaseService {
 
     async getTestInstructions(testId, userId) {
         const test = await require('../../models/TestSeriesTest.model').findOne({ _id: testId, isDeleted: false })
-            .select('testSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks instructions localizedContent')
+            .select('testSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks instructions instructionsNew localizedContent')
             .lean()
 
         if (!test) {
@@ -275,6 +275,7 @@ class TestSeriesService extends BaseService {
                 passingMarks: test.passingMarks,
                 isPerQuestionTime: test.isPerQuestionTime,
                 instructions: test.instructions,
+                instructionsNew: test.instructionsNew,
                 localizedContent: test.localizedContent,
             series: {
                 _id: series._id,
