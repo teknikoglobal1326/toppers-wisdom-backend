@@ -53,6 +53,7 @@ class CourseTestService extends BaseService {
 
         this.logger.info({ userId, testId, count: questions.length }, 'Starting course test')
 
+        console.log("test check===============>", test);
         return {
             test: {
                 _id: test._id,
@@ -181,6 +182,8 @@ class CourseTestService extends BaseService {
 
         this.logger.info({ userId, testId, sessionId }, 'Course test session started')
 
+        console.log("test check===============>", test);
+        console.log("groupedQuestions =============>", groupedQuestions);
         return {
             sessionId,
             test: {

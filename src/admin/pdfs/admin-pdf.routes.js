@@ -6,7 +6,7 @@ const { uploadPdf } = require('../../middlewares/upload.middleware')
 const { attachUploadedFiles } = require('./admin-pdf.service')
 
 const parseArrays = (req, res, next) => {
-  const arrayFields = ['subjects', 'topics', 'chapters']
+  const arrayFields = ['subjects', 'topics', 'chapters', 'masterIds']
   for (const field of arrayFields) {
     if (req.body[field] && typeof req.body[field] === 'string') {
       try {

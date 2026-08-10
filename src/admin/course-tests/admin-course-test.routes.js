@@ -7,7 +7,7 @@ const { attachUploadedFiles } = require('./admin-course-test.service')
 const multer = require('multer')
 
 const parseArrays = (req, res, next) => {
-  const arrayFields = ['subjects', 'topics', 'chapters']
+  const arrayFields = ['subjects', 'topics', 'chapters', 'masterIds']
   for (const field of arrayFields) {
     if (req.body[field] && typeof req.body[field] === 'string') {
       try {
