@@ -574,7 +574,7 @@ const adminContentService = new AdminContentService()
 
 adminContentService.attachUploadedFiles = async (req, _res, next) => {
   try {
-    ['subject', 'topic', 'chapter', 'subjectId', 'topicId', 'chapterId', 'restreamUrls', 'agoraConverters'].forEach(field => {
+    ['subject', 'topic', 'chapter', 'subjectId', 'topicId', 'chapterId', 'restreamUrls', 'agoraConverters', 'masterIds'].forEach(field => {
       if (typeof req.body[field] === 'string' && req.body[field].startsWith('[')) {
         try { req.body[field] = JSON.parse(req.body[field]) } catch (e) { }
       }

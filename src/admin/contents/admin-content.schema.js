@@ -1,13 +1,21 @@
 const Joi = require('joi')
 
 const createContentSchema = Joi.object({
-  course: Joi.string().hex().length(24).required(),
+  course: Joi.string().hex().length(24).optional(),
   courseId: Joi.string().hex().length(24).optional(),
   subject: Joi.alternatives().try(Joi.array().items(Joi.string().hex().length(24)), Joi.string().hex().length(24)).optional(),
   subjectId: Joi.alternatives().try(Joi.array().items(Joi.string().hex().length(24)), Joi.string().hex().length(24)).optional(),
-  topic: Joi.alternatives().try(Joi.array().items(Joi.string().hex().length(24)), Joi.string().hex().length(24)).required(),
+  topic: Joi.alternatives().try(Joi.array().items(Joi.string().hex().length(24)), Joi.string().hex().length(24)).optional(),
   topicId: Joi.alternatives().try(Joi.array().items(Joi.string().hex().length(24)), Joi.string().hex().length(24)).optional(),
   chapter: Joi.alternatives().try(Joi.array().items(Joi.string().hex().length(24)), Joi.string().hex().length(24), Joi.string().allow('', null)).optional(),
+  masterIds: Joi.array().items(
+    Joi.object({
+      courseId: Joi.string().hex().length(24).required(),
+      subjectId: Joi.string().hex().length(24).optional().allow(null, '', 'null', 'undefined'),
+      chapterId: Joi.string().hex().length(24).optional().allow(null, '', 'null', 'undefined'),
+      topicId: Joi.string().hex().length(24).required(),
+    })
+  ).optional(),
   title: Joi.string().trim().required(),
   sortOrder: Joi.number().integer().min(0).default(0),
   description: Joi.string().trim().optional().allow('', null),

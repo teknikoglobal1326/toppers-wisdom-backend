@@ -12,6 +12,25 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
+  const { masterIds, ...rest } = req.body
+
+  if (Array.isArray(masterIds) && masterIds.length > 0) {
+    const createdRecords = []
+    for (const master of masterIds) {
+      const payload = {
+        ...rest,
+        course: master.courseId,
+        subjects: master.subjectId ? [master.subjectId] : [],
+        chapters: master.chapterId ? [master.chapterId] : [],
+        topics: master.topicId ? [master.topicId] : [],
+        createdBy: req.admin?._id
+      }
+      const record = await adminCourseTestService.createCourseTest(payload)
+      createdRecords.push(record)
+    }
+    return sendCreated(res, createdRecords)
+  }
+
   const payload = { ...req.body, createdBy: req.admin?._id }
   sendCreated(res, await adminCourseTestService.createCourseTest(payload))
 })

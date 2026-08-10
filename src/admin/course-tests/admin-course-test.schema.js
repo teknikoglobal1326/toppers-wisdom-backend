@@ -1,11 +1,19 @@
 const Joi = require('joi')
 
 const createCourseTestSchema = Joi.object({
-  course: Joi.string().hex().length(24).required(),
+  course: Joi.string().hex().length(24).optional(),
   courseId: Joi.string().hex().length(24).optional(),
   subjects: Joi.array().items(Joi.string().hex().length(24)).optional(),
   topics: Joi.array().items(Joi.string().hex().length(24)).optional(),
   chapters: Joi.array().items(Joi.string().hex().length(24)).optional(),
+  masterIds: Joi.array().items(
+    Joi.object({
+      courseId: Joi.string().hex().length(24).required(),
+      subjectId: Joi.string().hex().length(24).optional().allow(null, '', 'null', 'undefined'),
+      chapterId: Joi.string().hex().length(24).optional().allow(null, '', 'null', 'undefined'),
+      topicId: Joi.string().hex().length(24).required(),
+    })
+  ).optional(),
   title: Joi.string().trim().required(),
   slug: Joi.string().trim(),
   description: Joi.string().trim().optional().allow('', null),
