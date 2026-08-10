@@ -572,7 +572,6 @@ const sectionWise = new Map()
             overallPerformance: {
                 score: attempt.score,
                 totalMarks: attempt.totalMarks,
-                1: 1,
                 accuracy: attempt.accuracy,
                 percentile,
                 attempted: attempt.correct + attempt.wrong,

@@ -264,7 +264,7 @@ class TestSeriesService extends BaseService {
         }
 
         return {
-            test: {
+           
                 _id: test._id,
                 title: test.title,
                 duration: test.duration,
@@ -275,8 +275,7 @@ class TestSeriesService extends BaseService {
                 passingMarks: test.passingMarks,
                 isPerQuestionTime: test.isPerQuestionTime,
                 instructions: test.instructions,
-                localizedContent: test.localizedContent
-            },
+                localizedContent: test.localizedContent,
             series: {
                 _id: series._id,
                 title: series.title,

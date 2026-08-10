@@ -71,6 +71,7 @@ class CourseTestService extends BaseService {
                 maxAttempts: test.maxAttempts,
                 difficulty: test.difficulty,
                 language: test.language,
+                instructionsNew: test.instructionsNew
             },
             hasAccess,
             questions: groupedQuestions,
@@ -195,6 +196,7 @@ class CourseTestService extends BaseService {
                 negativeMarks: test.negativeMarks,
                 marksPerQuestion: test.marksPerQuestion,
                 difficulty: test.difficulty,
+                instructionsNew: test.instructionsNew
             },
             hasAccess,
             questions: groupedQuestions,
@@ -736,7 +738,8 @@ class CourseTestService extends BaseService {
             maxAttempts: test.maxAttempts,
             difficulty: test.difficulty,
             language: test.language,
-            instruction: localizedInstruction
+            instruction: localizedInstruction,
+            instructionsNew: test.instructionsNew
         }
     }
 }

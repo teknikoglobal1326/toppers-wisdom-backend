@@ -12,7 +12,7 @@ class CourseTestRepository extends BaseRepository {
 
     async getCourseTestById(testId) {
         return CourseTest.findOne({ _id: testId, isDeleted: false })
-            .select('course topic chapter title slug description instruction localizedContent image duration isPerQuestionTime totalQuestions totalMappedQuestions totalMarks passingMarks marksPerQuestion negativeMarks maxAttempts difficulty language status isDeleted')
+            .select('course topic chapter title slug description instruction instructionsNew localizedContent image duration isPerQuestionTime totalQuestions totalMappedQuestions totalMarks passingMarks marksPerQuestion negativeMarks maxAttempts difficulty language status isDeleted')
             .lean()
     }
 
