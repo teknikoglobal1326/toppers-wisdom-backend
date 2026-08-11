@@ -206,6 +206,7 @@ class TestSeriesRepository extends BaseRepository {
                     _id: '$test',
                     latestAttemptedAt: { $first: '$attemptedAt' },
                     latestScore: { $first: '$score' },
+                    latestSessionId: { $first: '$sessionId' },
                     bestScore: { $max: '$score' },
                     attemptsCount: { $sum: 1 },
                 },
@@ -218,6 +219,7 @@ class TestSeriesRepository extends BaseRepository {
                 latestScore: row.latestScore,
                 bestScore: row.bestScore,
                 attemptsCount: row.attemptsCount,
+                sessionId: row.latestSessionId,
             }
             return acc
         }, {})

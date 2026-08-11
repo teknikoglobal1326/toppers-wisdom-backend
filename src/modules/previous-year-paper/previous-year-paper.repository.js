@@ -4,6 +4,7 @@ const PreviousYearPaper = require('../../models/PreviousYearPaper.model')
 const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
 const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
 const Question = require('../../models/Question.model')
+const CourseOrder = require('../../models/CourseOrder.model')
 
 class PreviousYearPaperRepository extends BaseRepository {
     constructor() {
@@ -95,6 +96,7 @@ class PreviousYearPaperRepository extends BaseRepository {
                     _id: '$test',
                     latestAttemptedAt: { $first: '$attemptedAt' },
                     latestScore: { $first: '$score' },
+                    latestSessionId: { $first: '$sessionId' },
                     bestScore: { $max: '$score' },
                     attemptsCount: { $sum: 1 },
                 },
@@ -107,6 +109,7 @@ class PreviousYearPaperRepository extends BaseRepository {
                 latestScore: row.latestScore,
                 bestScore: row.bestScore,
                 attemptsCount: row.attemptsCount,
+                sessionId: row.latestSessionId,
             }
             return acc
         }, {})
