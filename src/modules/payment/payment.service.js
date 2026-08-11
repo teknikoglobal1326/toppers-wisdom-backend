@@ -53,6 +53,10 @@ class PaymentService extends BaseService {
     if (status === 'paid') {
       const courseItems = order.items.filter((i) => i.itemType === 'course')
       await paymentRepository.createEnrollmentsForOrder(userId, courseItems)
+      const courseRepository = require('../course/course.repository')
+      for (const item of courseItems) {
+        await courseRepository.incrementEnrollments(item.itemId)
+      }
 
       const { notificationQueue, emailQueue } = require('../../jobs/queue')
       await Promise.all([
@@ -94,6 +98,10 @@ class PaymentService extends BaseService {
 
     const courseItems = order.items.filter((i) => i.itemType === 'course')
     await paymentRepository.createEnrollmentsForOrder(userId, courseItems)
+    const courseRepository = require('../course/course.repository')
+    for (const item of courseItems) {
+      await courseRepository.incrementEnrollments(item.itemId)
+    }
 
     const { notificationQueue, emailQueue } = require('../../jobs/queue')
     await Promise.all([
