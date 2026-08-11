@@ -341,12 +341,17 @@ class CourseService extends BaseService {
     const CourseTestAttempt = require('../../models/CourseTestAttempt.model');
     const attempts = userId ? await CourseTestAttempt.find({ user: userId, course: courseId }).lean() : [];
     const testAttemptsMap = new Map();
+    const latestAttemptMap = new Map();
     attempts.forEach(att => {
       if (att.courseTest) {
         const testId = att.courseTest.toString();
         const existing = testAttemptsMap.get(testId);
         if (!existing || att.status === 'completed' || (existing.status !== 'completed' && att.updatedAt > existing.updatedAt)) {
           testAttemptsMap.set(testId, att);
+        }
+        const existingLatest = latestAttemptMap.get(testId);
+        if (!existingLatest || att.updatedAt > existingLatest.updatedAt) {
+          latestAttemptMap.set(testId, att);
         }
       }
     });
@@ -356,6 +361,7 @@ class CourseService extends BaseService {
       const hasItemAccess = hasAccess || allowedMaterialIds.has(idStr);
 
       let progressObj = null;
+      let attemptSessionId = null;
       if (item.materialType === 'content' || item.materialType === 'pdf') {
         const prog = progressMap.get(idStr);
         progressObj = {
@@ -364,19 +370,23 @@ class CourseService extends BaseService {
         };
       } else if (item.materialType === 'test') {
         const attempt = testAttemptsMap.get(idStr);
+        const latestAttempt = latestAttemptMap.get(idStr);
+        attemptSessionId = latestAttempt?.sessionId || null;
         progressObj = {
           completed: attempt?.status === 'completed',
           status: attempt?.status || 'unstarted',
           score: attempt?.score || 0,
           totalMarks: attempt?.totalMarks || 0,
-          accuracy: attempt?.accuracy || 0
+          accuracy: attempt?.accuracy || 0,
+          // sessionId: attemptSessionId
         };
       }
 
       return {
         ...item,
         hasAccess: hasItemAccess,
-        progress: progressObj
+        progress: progressObj,
+        ...(item.materialType === 'test' ? { sessionId: attemptSessionId } : {})
       };
     };
 

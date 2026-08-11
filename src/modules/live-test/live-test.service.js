@@ -73,7 +73,7 @@ class LiveTestService extends BaseService {
 
     async getSyllabus(examId) {
         if (!examId) throw new AppError('examId is required', 400, 'VALIDATION_ERROR')
-        
+
         const filter = { isDeleted: false, status: 'active' }
         if (examId.includes(',')) {
             filter.examIds = { $in: examId.split(',') }
@@ -170,7 +170,7 @@ class LiveTestService extends BaseService {
                 sortOrder: q.sortOrder || 0,
                 perQuestionTime: parentTest.isPerQuestionTime !== false ? (q.perQuestionTime || 60) : null
             }
-            
+
             delete cloned._id
             delete cloned.createdAt
             delete cloned.updatedAt
@@ -194,7 +194,13 @@ class LiveTestService extends BaseService {
 
     // User-side list endpoint (date is required/defaulted, no exam dependence)
     async listLiveTests(userId, query = {}) {
-        const filter = { isDeleted: false, status: query.status || 'active' }
+        const now = new Date()
+        const LiveTestAttempt = require('../../models/LiveTestAttempt.model')
+        const userAttempts = await LiveTestAttempt.find({ user: userId }).select('liveTest status').lean()
+        const completedTestIds = new Set(userAttempts.filter(a => a.status === 'completed').map(a => a.liveTest.toString()))
+        const activeTestIds = Array.from(userAttempts.filter(a => a.status === 'started' || a.status === 'ongoing').map(a => a.liveTest.toString()))
+
+        const filter = { isDeleted: false, status: 'active' }
 
         if (query.q) {
             filter.$or = [
@@ -203,8 +209,35 @@ class LiveTestService extends BaseService {
             ]
         }
 
-        if (query.date !== 'all') {
-            const dateStr = query.date || new Date().toISOString().split('T')[0]
+        const startOfToday = new Date()
+        startOfToday.setUTCHours(0, 0, 0, 0)
+        const endOfToday = new Date()
+        endOfToday.setUTCHours(23, 59, 59, 999)
+
+        // Apply type filter if provided
+        if (query.type === 'ongoing') {
+            filter.$or = [
+                {
+                    scheduleAt: { $gte: startOfToday, $lte: endOfToday },
+                    _id: { $nin: Array.from(completedTestIds) }
+                },
+                {
+                    scheduleAt: null,
+                    startDateTime: { $gte: startOfToday, $lte: endOfToday },
+                    _id: { $nin: Array.from(completedTestIds) }
+                }
+            ]
+        } else if (query.type === 'upcoming') {
+            filter.$or = [
+                { scheduleAt: { $gt: endOfToday } },
+                { scheduleAt: null, startDateTime: { $gt: endOfToday } }
+            ]
+        } else if (query.type === 'attempted') {
+            filter._id = { $in: Array.from(completedTestIds) }
+        }
+
+        if (query.date && query.date !== 'all') {
+            const dateStr = query.date
             const startOfDay = new Date(dateStr)
             startOfDay.setUTCHours(0, 0, 0, 0)
             const endOfDay = new Date(dateStr)
@@ -223,13 +256,16 @@ class LiveTestService extends BaseService {
             ]
         })
 
-        const LiveTestAttempt = require('../../models/LiveTestAttempt.model')
-
         const processedData = await Promise.all(liveTestsResult.data.map(async (item) => {
             const id = item._id.toString()
             const questionCount = await Question.countDocuments({ test: id, isDeleted: false })
-            const attempt = await LiveTestAttempt.findOne({ liveTest: id, user: userId, status: 'completed' })
-                .select('score totalMarks status attemptedAt')
+            const completedAttempt = await LiveTestAttempt.findOne({ liveTest: id, user: userId, status: 'completed' })
+                .select('score totalMarks status attemptedAt sessionId')
+                .sort({ attemptedAt: -1 })
+                .lean()
+
+            const latestAttempt = await LiveTestAttempt.findOne({ liveTest: id, user: userId })
+                .select('sessionId status')
                 .sort({ attemptedAt: -1 })
                 .lean()
 
@@ -240,17 +276,70 @@ class LiveTestService extends BaseService {
             delete resolved.thumbnail
             delete resolved.localizedContent
 
+            let attemptStatus = 'not_attempted'
+            if (completedAttempt) {
+                attemptStatus = 'attempted'
+            } else if (latestAttempt && (latestAttempt.status === 'started' || latestAttempt.status === 'ongoing')) {
+                attemptStatus = 'ongoing'
+            }
+
             return {
                 ...resolved,
                 mappedQuestions: questionCount,
-                attemptStatus: attempt ? 'attempted' : 'not_attempted',
-                latestAttempt: attempt || null,
+                attemptStatus,
+                latestAttempt: completedAttempt || latestAttempt || null,
+                sessionId: latestAttempt?.sessionId || null,
             }
         }))
 
+        // Calculate metadata counts based on search query (if present)
+        const countFilter = { isDeleted: false, status: 'active' }
+        if (query.q) {
+            countFilter.$or = [
+                { title: { $regex: query.q, $options: 'i' } },
+                { description: { $regex: query.q, $options: 'i' } },
+            ]
+        }
+
+        const ongoingCount = await this.repository.model.countDocuments({
+            ...countFilter,
+            $or: [
+                {
+                    scheduleAt: { $gte: startOfToday, $lte: endOfToday },
+                    _id: { $nin: Array.from(completedTestIds) }
+                },
+                {
+                    scheduleAt: null,
+                    startDateTime: { $gte: startOfToday, $lte: endOfToday },
+                    _id: { $nin: Array.from(completedTestIds) }
+                }
+            ]
+        })
+
+        const upcomingCount = await this.repository.model.countDocuments({
+            ...countFilter,
+            $or: [
+                { scheduleAt: { $gt: endOfToday } },
+                { scheduleAt: null, startDateTime: { $gt: endOfToday } }
+            ]
+        })
+
+        const attemptedCount = await this.repository.model.countDocuments({
+            ...countFilter,
+            _id: { $in: Array.from(completedTestIds) }
+        })
+
         return {
             data: processedData,
-            pagination: liveTestsResult.pagination
+            pagination: {
+                ...liveTestsResult.pagination,
+                ongoingCount,
+                upcomingCount,
+                attemptedCount
+            },
+            ongoingCount,
+            upcomingCount,
+            attemptedCount
         }
     }
 

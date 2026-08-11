@@ -119,8 +119,13 @@ class DailyQuizService extends BaseService {
         const processedData = await Promise.all(quizzesResult.data.map(async (item) => {
             const id = item._id.toString()
             const questionCount = await Question.countDocuments({ test: id, isDeleted: false })
-            const attempt = await DailyQuizAttempt.findOne({ quiz: id, user: userId, status: 'completed' })
-                .select('score totalMarks status attemptedAt')
+            const completedAttempt = await DailyQuizAttempt.findOne({ quiz: id, user: userId, status: 'completed' })
+                .select('score totalMarks status attemptedAt sessionId')
+                .sort({ attemptedAt: -1 })
+                .lean()
+
+            const latestAttempt = await DailyQuizAttempt.findOne({ quiz: id, user: userId })
+                .select('sessionId status')
                 .sort({ attemptedAt: -1 })
                 .lean()
 
@@ -134,8 +139,9 @@ class DailyQuizService extends BaseService {
             return {
                 ...resolved,
                 mappedQuestions: questionCount,
-                attemptStatus: attempt ? 'attempted' : 'not_attempted',
-                latestAttempt: attempt || null,
+                attemptStatus: completedAttempt ? 'attempted' : 'not_attempted',
+                latestAttempt: completedAttempt || null,
+                sessionId: latestAttempt?.sessionId || null,
             }
         }))
 
