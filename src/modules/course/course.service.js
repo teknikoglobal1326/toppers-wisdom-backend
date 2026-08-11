@@ -100,7 +100,7 @@ class CourseService extends BaseService {
       const CourseOrder = require('../../models/CourseOrder.model')
       const orders = await CourseOrder.find({
         user: userId,
-        status: 'paid',
+        status: { $in: ['paid', 'pending'] },
         'items.itemType': 'course'
       }).select('items').lean()
 
@@ -111,6 +111,7 @@ class CourseService extends BaseService {
       )
     }
 
+    console.log("purchasedCourseIds.length==============>", purchasedCourseIds.length);
     if (purchasedCourseIds.length > 0) {
       filter._id = { $nin: purchasedCourseIds }
     }
@@ -150,6 +151,7 @@ class CourseService extends BaseService {
       populate: [{ path: 'subjects.subject', select: 'name' }]
     })
 
+    console.log("result.data=============>", result.data);
     result.data = await Promise.all(result.data.map(async (course) => {
       const isPurchased = !!(await courseRepository.findEnrollment(userId, course._id))
       return {

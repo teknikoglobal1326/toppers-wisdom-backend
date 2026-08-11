@@ -16,7 +16,7 @@ const getHome = async (examId, userId) => {
     const CourseOrder = require('../../models/CourseOrder.model')
     const orders = await CourseOrder.find({
       user: userId,
-      status: 'paid',
+      status: { $in: ['paid', 'pending'] },
       'items.itemType': 'course'
     }).select('items').lean()
 
