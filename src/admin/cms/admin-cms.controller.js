@@ -24,9 +24,13 @@ const getPage = catchAsync(async (req, res) => {
 // PUT /api/v1/admin/cms/:type
 const updatePage = catchAsync(async (req, res) => {
   assertValidType(req.params.type)
+  const Admin = require('../../models/Admin.model')
+  const admin = req.admin || (req.member ? await Admin.findOne({ email: req.member.email, isActive: true }) : null)
+  const updatedBy = admin?._id || req.member?._id || req.user?._id || null
+
   const page = await Cms.findOneAndUpdate(
     { type: req.params.type },
-    { content: req.body.content, updatedBy: req.admin._id },
+    { content: req.body.content, updatedBy },
     { new: true, upsert: true, runValidators: true },
   ).lean()
   sendSuccess(res, page, 'CMS page updated successfully')

@@ -32,9 +32,13 @@ const getOne = catchAsync(async (req, res) => {
 // PUT /api/v1/admin/app-version/:platform
 const updateVersion = catchAsync(async (req, res) => {
   assertValidPlatform(req.params.platform)
+  const Admin = require('../../models/Admin.model')
+  const admin = req.admin || (req.member ? await Admin.findOne({ email: req.member.email, isActive: true }) : null)
+  const updatedBy = admin?._id || req.member?._id || req.user?._id || null
+
   const version = await AppVersion.findOneAndUpdate(
     { platform: req.params.platform },
-    { ...req.body, updatedBy: req.admin._id },
+    { ...req.body, updatedBy },
     { new: true, upsert: true, runValidators: true },
   ).lean()
   sendSuccess(res, version, `${req.params.platform} version updated successfully`)
