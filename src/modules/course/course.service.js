@@ -95,6 +95,26 @@ class CourseService extends BaseService {
     if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
 
+    let purchasedCourseIds = []
+    if (userId) {
+      const CourseOrder = require('../../models/CourseOrder.model')
+      const orders = await CourseOrder.find({
+        user: userId,
+        status: 'paid',
+        'items.itemType': 'course'
+      }).select('items').lean()
+
+      purchasedCourseIds = orders.flatMap(order =>
+        order.items
+          .filter(item => item.itemType === 'course')
+          .map(item => item.itemId.toString())
+      )
+    }
+
+    if (purchasedCourseIds.length > 0) {
+      filter._id = { $nin: purchasedCourseIds }
+    }
+
     const subjectParam = filters.subject || filters.subjectId
     if (subjectParam && String(subjectParam).toLowerCase() !== 'all') {
       filter['subjects.subject'] = subjectParam
