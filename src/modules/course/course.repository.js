@@ -22,7 +22,7 @@ class CourseRepository extends BaseRepository {
     if (expiresAt) data.expiresAt = expiresAt;
     return Enrollment.create(data)
   }
-//real
+  //real
   async addLesson(courseId, lesson) {
     return this.pushToArray(courseId, 'lessons', lesson)  // BaseRepository.pushToArray
   }
@@ -83,7 +83,7 @@ class CourseRepository extends BaseRepository {
     const globalFilter = { status: 'paid', 'items.itemType': 'course' }
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
     const [globalTotalTransactions, todayCountRes, revenueRes] = await Promise.all([
       CourseOrder.countDocuments(globalFilter),
       CourseOrder.countDocuments({ ...globalFilter, createdAt: { $gte: today } }),
