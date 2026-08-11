@@ -52,28 +52,44 @@ const hasPermissionFromMixed = (permissions, module, action) => {
   return false
 }
 
-const requirePermission = (module) => (req, _res, next) => {
-  if (!req.admin && !req.member) {
-    return next(new AppError('Admin authentication required', 401, 'UNAUTHORIZED'))
+const requirePermission = (module) => async (req, _res, next) => {
+  try {
+    if (!req.admin && !req.member) {
+      return next(new AppError('Admin authentication required', 401, 'UNAUTHORIZED'))
+    }
+
+    if (req.admin) {
+      if (req.admin.hasPermission(module)) return next()
+
+      logger.warn({ adminId: req.admin._id, role: req.admin.role, module }, 'Permission denied')
+      return next(new AppError('you dont have permission', 403, 'FORBIDDEN'))
+    }
+
+    // Check if this member is also registered as an active admin
+    const Admin = require('../models/Admin.model')
+    const admin = await Admin.findOne({ email: req.member.email, isActive: true })
+    if (admin && admin.hasPermission(module)) {
+      req.admin = admin // Populate req.admin for downstream controllers
+      return next()
+    }
+
+    const rolePermissions = req.member.role?.permissions
+    const requiredAction = METHOD_ACTION_MAP[req.method] || 'read'
+    const hasMemberPermission = hasPermissionFromMixed(rolePermissions, module, requiredAction)
+
+    if (!hasMemberPermission) {
+      logger.warn({ memberId: req.member._id, roleId: req.member.role?._id, module, action: requiredAction }, 'Permission denied')
+      return next(new AppError('you dont have permission', 403, 'FORBIDDEN'))
+    }
+
+    if (!req.admin && req.member) {
+      req.admin = req.member
+    }
+
+    next()
+  } catch (err) {
+    next(err)
   }
-
-  if (req.admin) {
-    if (req.admin.hasPermission(module)) return next()
-
-    logger.warn({ adminId: req.admin._id, role: req.admin.role, module }, 'Permission denied')
-    return next(new AppError('you dont have permission', 403, 'FORBIDDEN'))
-  }
-
-  const rolePermissions = req.member.role?.permissions
-  const requiredAction = METHOD_ACTION_MAP[req.method] || 'read'
-  const hasMemberPermission = hasPermissionFromMixed(rolePermissions, module, requiredAction)
-
-  if (!hasMemberPermission) {
-    logger.warn({ memberId: req.member._id, roleId: req.member.role?._id, module, action: requiredAction }, 'Permission denied')
-    return next(new AppError('you dont have permission', 403, 'FORBIDDEN'))
-  }
-
-  next()
 }
 
 module.exports = { requirePermission }
