@@ -189,6 +189,10 @@ class AdminContentService extends BaseService {
       if (payload.agoraConverters === undefined && !content.agoraConverters) {
         payload.agoraConverters = []
       }
+      if (payload.video) {
+        payload.isLive = false
+        payload.liveStatus = 'completed'
+      }
     }
 
     return contentRepository.updateById(id, payload)

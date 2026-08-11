@@ -8,8 +8,29 @@ const logger = createLogger('home:service')
 
 
 
-const getHome = async (examId) => {
-  logger.info({ examId }, 'Fetching home data')
+const getHome = async (examId, userId) => {
+  logger.info({ examId, userId }, 'Fetching home data')
+
+  let purchasedCourseIds = []
+  if (userId) {
+    const CourseOrder = require('../../models/CourseOrder.model')
+    const orders = await CourseOrder.find({
+      user: userId,
+      status: 'paid',
+      'items.itemType': 'course'
+    }).select('items').lean()
+
+    purchasedCourseIds = orders.flatMap(order =>
+      order.items
+        .filter(item => item.itemType === 'course')
+        .map(item => item.itemId)
+    )
+  }
+
+  const courseQuery = { exam: examId, status: 'published', isDeleted: false }
+  if (purchasedCourseIds.length > 0) {
+    courseQuery._id = { $nin: purchasedCourseIds }
+  }
 
   const [banners, shortCategories, courses] = await Promise.all([
     Banner.find({ examId, status: 'active', isDeleted: false })
@@ -22,7 +43,7 @@ const getHome = async (examId) => {
       .limit(4)
       .select('name bannerImage logo tags examIds')
       .lean(),
-    Course.find({ exam: examId, status: 'published', isDeleted: false })
+    Course.find(courseQuery)
       .sort({ sortOrder: 1, createdAt: -1 })
       .limit(2)
       .select('title slug thumbnail price mrp isFree sortOrder avgRating totalEnrollments description')

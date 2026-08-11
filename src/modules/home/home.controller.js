@@ -3,7 +3,7 @@ const { sendSuccess } = require('../../core/response')
 const homeService = require('./home.service')
 
 const getHome = catchAsync(async (req, res) => {
-  sendSuccess(res, await homeService.getHome(req.user.examId))
+  sendSuccess(res, await homeService.getHome(req.user.examId, req.user._id))
 })
 
 module.exports = { getHome }
