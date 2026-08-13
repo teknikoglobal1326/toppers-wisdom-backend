@@ -235,58 +235,6 @@ class AiTestService extends BaseService {
     return query
   }
 
-  async getQuestions(testId, userId) {
-    this.logger.info({ testId, userId }, 'Fetching questions for AI Test')
-    const aiTest = await this.getById(testId)
-    if (!aiTest || aiTest.isDeleted) {
-      throw new AppError('AI Test not found', 404, 'NOT_FOUND')
-    }
-
-    if (aiTest.user.toString() !== userId.toString()) {
-      throw new AppError('Access denied', 403, 'FORBIDDEN')
-    }
-
-    const query = await this._buildQuestionQuery(aiTest)
-    const totalQuestions = aiTest.totalQuestions || 10
-    const questions = await QuestionModel.find(query).limit(Number(totalQuestions)).lean()
-
-    const { sanitizeQuestion } = require('../../lib/testQuestions')
-    const groupedQuestions = {}
-
-    for (const q of questions) {
-      const idStr = q._id.toString()
-      const enSanitized = sanitizeQuestion(q, 'en')
-      const hiSanitized = sanitizeQuestion(q, 'hi')
-
-      enSanitized.subjectId = q.subjectId || null
-      enSanitized.chapterId = q.chapterId || null
-      enSanitized.topicId = q.topicId || null
-
-      hiSanitized.subjectId = q.subjectId || null
-      hiSanitized.chapterId = q.chapterId || null
-      hiSanitized.topicId = q.topicId || null
-
-      groupedQuestions[idStr] = {
-        en: enSanitized,
-        hi: hiSanitized,
-        subjectId: q.subjectId || null,
-        chapterId: q.chapterId || null,
-        topicId: q.topicId || null,
-      }
-    }
-
-    return {
-      test: {
-        _id: aiTest._id,
-        name: aiTest.name,
-        duration: aiTest.duration,
-        totalQuestions: aiTest.totalQuestions,
-        questionsFound: questions.length,
-      },
-      questions: groupedQuestions
-    }
-  }
-
   async startSession(testId, userId) {
     this.logger.info({ testId, userId }, 'Starting attempt session for AI Test')
     const aiTest = await this.getById(testId)
@@ -300,7 +248,10 @@ class AiTestService extends BaseService {
 
     const query = await this._buildQuestionQuery(aiTest)
     const totalQuestions = aiTest.totalQuestions || 10
-    const questions = await QuestionModel.find(query).limit(Number(totalQuestions)).lean()
+    const questions = await QuestionModel.find(query)
+      .limit(Number(totalQuestions))
+      .populate('subjectId', 'name chapters')
+      .lean()
 
     if (!questions.length) {
       throw new AppError('No questions found for this test', 400, 'VALIDATION_ERROR')
@@ -318,28 +269,29 @@ class AiTestService extends BaseService {
       answers: []
     })
 
-    const { sanitizeQuestion } = require('../../lib/testQuestions')
-    const groupedQuestions = {}
+    const { groupQuestionsBySubject } = require('../../lib/testQuestions')
+    const groupedQuestions = groupQuestionsBySubject(questions)
 
-    for (const q of questions) {
-      const idStr = q._id.toString()
-      const enSanitized = sanitizeQuestion(q, 'en')
-      const hiSanitized = sanitizeQuestion(q, 'hi')
+    // Map questions to include subject, chapter, and topic details
+    const questionInfoMap = new Map(
+      questions.map(q => [
+        q._id.toString(),
+        {
+          subjectId: q.subjectId?._id || q.subjectId || null,
+          chapterId: q.chapterId || null,
+          topicId: q.topicId || null
+        }
+      ])
+    )
 
-      enSanitized.subjectId = q.subjectId || null
-      enSanitized.chapterId = q.chapterId || null
-      enSanitized.topicId = q.topicId || null
-
-      hiSanitized.subjectId = q.subjectId || null
-      hiSanitized.chapterId = q.chapterId || null
-      hiSanitized.topicId = q.topicId || null
-
-      groupedQuestions[idStr] = {
-        en: enSanitized,
-        hi: hiSanitized,
-        subjectId: q.subjectId || null,
-        chapterId: q.chapterId || null,
-        topicId: q.topicId || null,
+    for (const group of groupedQuestions) {
+      for (const questionId of Object.keys(group.questions)) {
+        const info = questionInfoMap.get(questionId)
+        if (info) {
+          group.questions[questionId].subjectId = info.subjectId
+          group.questions[questionId].chapterId = info.chapterId
+          group.questions[questionId].topicId = info.topicId
+        }
       }
     }
 
@@ -350,10 +302,9 @@ class AiTestService extends BaseService {
         name: aiTest.name,
         duration: aiTest.duration,
         totalQuestions: aiTest.totalQuestions,
-        totalQuestionsFound: questions.length,
         questionsFound: questions.length,
       },
-      questions: groupedQuestions
+      questionsBySubject: groupedQuestions
     }
   }
 
