@@ -38,6 +38,8 @@ const courseTestSchema = new mongoose.Schema({
   startDate: { type: Date },
   endDate: { type: Date },
   scheduleAt: { type: Date, default: null },
+  scheduledStartTime: { type: Date },
+  scheduledEndTime: { type: Date },
   language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
   status: { type: String, enum: ['draft', 'active', 'inactive', 'other'], default: 'other' },
   isDeleted: { type: Boolean, default: false },

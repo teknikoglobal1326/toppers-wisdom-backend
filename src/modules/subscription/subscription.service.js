@@ -2,7 +2,7 @@ const Subscription = require('../../models/Subscription.model');
 const mongoose = require('mongoose');
 
 class SubscriptionService {
-    async checkSubscriptions(type, id) {
+    async checkSubscriptions(type, id, user) {
         if (!type) {
             return [];
         }
@@ -57,9 +57,30 @@ class SubscriptionService {
             }
         }
 
-
         if (queryOptions.length > 0) {
-            filter.$or = queryOptions;
+            filter.$and = filter.$and || [];
+            filter.$and.push({ $or: queryOptions });
+        }
+
+        let examId = null;
+        if (user) {
+            const User = require('../../models/User.model');
+            const userDoc = await User.findById(user._id).select('exam').lean();
+            if (userDoc?.exam) {
+                examId = userDoc.exam;
+            } else if (user.examId) {
+                examId = user.examId;
+            }
+        }
+
+        if (examId) {
+            filter.$and = filter.$and || [];
+            filter.$and.push({
+                $or: [
+                    { examIds: examId },
+                    { examId: examId }
+                ]
+            });
         }
 
 

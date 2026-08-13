@@ -4,7 +4,7 @@ const subscriptionService = require('./subscription.service');
 
 const checkSubscriptions = catchAsync(async (req, res) => {
     const { type, id } = req.query;
-    const result = await subscriptionService.checkSubscriptions(type, id);
+    const result = await subscriptionService.checkSubscriptions(type, id, req.user);
     sendSuccess(res, result, 'Subscriptions retrieved successfully');
 });
 

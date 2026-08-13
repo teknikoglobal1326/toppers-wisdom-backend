@@ -7,7 +7,7 @@ const { uploadFile } = require('../../lib/fileUpload');
 // Create Subscription
 exports.createSubscription = async (req, res, next) => {
   try {
-    const { name, description, price, durationDays, isActive, examId } = req.body;
+    const { name, description, price, durationDays, isActive, examId, examIds } = req.body;
     let { banner, tests, boosters, materials } = req.body;
 
     if (typeof tests === 'string') {
@@ -18,6 +18,17 @@ exports.createSubscription = async (req, res, next) => {
     }
     if (typeof materials === 'string') {
       try { materials = JSON.parse(materials); } catch (e) { materials = []; }
+    }
+
+    let parsedExamIds = [];
+    if (examIds) {
+      if (typeof examIds === 'string') {
+        try { parsedExamIds = JSON.parse(examIds); } catch (e) { parsedExamIds = examIds.split(',').map(id => id.trim()).filter(Boolean); }
+      } else if (Array.isArray(examIds)) {
+        parsedExamIds = examIds;
+      }
+    } else if (examId) {
+      parsedExamIds = [examId];
     }
 
     if (Array.isArray(tests)) {
@@ -46,7 +57,8 @@ exports.createSubscription = async (req, res, next) => {
       boosters: boosters || [],
       materials: materials || [],
       banner,
-      examId: examId || undefined,
+      examId: examId || (parsedExamIds.length > 0 ? parsedExamIds[0] : undefined),
+      examIds: parsedExamIds,
       createdBy: req.admin._id
     });
 
@@ -68,6 +80,7 @@ exports.getAllSubscriptions = async (req, res, next) => {
     const subscriptions = await Subscription.find({ isDeleted: false })
       .populate('createdBy', 'name email')
       .populate('examId', 'name title')
+      .populate('examIds', 'name title')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -85,7 +98,8 @@ exports.getSubscriptionById = async (req, res, next) => {
     const subscription = await Subscription.findOne({ _id: req.params.id, isDeleted: false })
       .populate('tests.moduleId', 'title thumbnail')
       .populate('boosters.moduleId', 'title thumbnail')
-      .populate('examId', 'name title');
+      .populate('examId', 'name title')
+      .populate('examIds', 'name title');
 
     if (!subscription) {
       return res.status(404).json({ success: false, message: 'Subscription not found' });
@@ -103,7 +117,7 @@ exports.getSubscriptionById = async (req, res, next) => {
 // Update Subscription
 exports.updateSubscription = async (req, res, next) => {
   try {
-    const { name, description, price, durationDays, isActive, examId } = req.body;
+    const { name, description, price, durationDays, isActive, examId, examIds } = req.body;
     let { banner, tests, boosters, materials } = req.body;
 
     if (typeof tests === 'string') {
@@ -114,6 +128,17 @@ exports.updateSubscription = async (req, res, next) => {
     }
     if (typeof materials === 'string') {
       try { materials = JSON.parse(materials); } catch (e) { materials = []; }
+    }
+
+    let parsedExamIds;
+    if (examIds !== undefined) {
+      if (typeof examIds === 'string') {
+        try { parsedExamIds = JSON.parse(examIds); } catch (e) { parsedExamIds = examIds.split(',').map(id => id.trim()).filter(Boolean); }
+      } else if (Array.isArray(examIds)) {
+        parsedExamIds = examIds;
+      }
+    } else if (examId !== undefined) {
+      parsedExamIds = [examId];
     }
 
     if (Array.isArray(tests)) {
@@ -133,7 +158,12 @@ exports.updateSubscription = async (req, res, next) => {
     subscription.price = price !== undefined ? price : subscription.price;
     subscription.durationDays = durationDays !== undefined ? durationDays : subscription.durationDays;
     
-    if (examId !== undefined) subscription.examId = examId;
+    if (parsedExamIds !== undefined) {
+      subscription.examIds = parsedExamIds;
+      subscription.examId = parsedExamIds.length > 0 ? parsedExamIds[0] : undefined;
+    } else if (examId !== undefined) {
+      subscription.examId = examId;
+    }
 
     if (tests) subscription.tests = tests;
     if (boosters) subscription.boosters = boosters;

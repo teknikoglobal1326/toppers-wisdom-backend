@@ -415,22 +415,23 @@ class CourseService extends BaseService {
     const chapterIds = (subject.chapters || []).map(c => c._id.toString());
     const [pdfs, contents, courseTests, separatedPdfs] = await Promise.all([
       Pdf.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
-        .select('title description pdfFile image topics chapters')
+        .select('title description pdfFile image topics chapters scheduledStartTime scheduledEndTime')
         .lean(),
       Content.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: 'active' })
         .select('title description video image topic chapter isLive liveStatus scheduledStartTime scheduledEndTime agoraChannel type youtubeUrl')
         .lean(),
       CourseTest.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
-        .select('title slug description image duration isPerQuestionTime totalQuestion totalMarks difficulty topics chapters')
+        .select('title slug description image duration isPerQuestionTime totalQuestion scheduledStartTime scheduledEndTime totalMarks difficulty topics chapters')
         .lean(),
       require('../../models/CourseSeparatedPdf.model').find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
-        .select('title description pdfFile image topics chapters')
+        .select('title description pdfFile image topics chapters scheduledStartTime scheduledEndTime')
         .lean()
     ]);
 
     const syllabus = {
       content: [],
-      pdf: separatedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' }))
+      pdf: separatedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' })),
+      test: []
     };
 
     const chapters = subject.chapters || [];

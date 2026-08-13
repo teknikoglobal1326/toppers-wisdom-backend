@@ -33,6 +33,8 @@ const createCourseTestSchema = Joi.object({
   startDate: Joi.date().optional(),
   endDate: Joi.date().optional(),
   scheduleAt: Joi.date().optional().allow('', null),
+  scheduledStartTime: Joi.date().optional().allow('', null),
+  scheduledEndTime: Joi.date().optional().allow('', null),
   language: Joi.string().valid('hi', 'en', 'both').default('hi'),
   status: Joi.string().valid('draft', 'active', 'inactive').default('draft'),
 })
@@ -62,6 +64,8 @@ const updateCourseTestSchema = Joi.object({
   startDate: Joi.date().optional(),
   endDate: Joi.date().optional(),
   scheduleAt: Joi.date().optional().allow('', null),
+  scheduledStartTime: Joi.date().optional().allow('', null),
+  scheduledEndTime: Joi.date().optional().allow('', null),
   language: Joi.string().valid('hi', 'en', 'both'),
   status: Joi.string().valid('draft', 'active', 'inactive'),
 }).min(1)
