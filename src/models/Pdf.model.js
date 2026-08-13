@@ -13,6 +13,8 @@ const pdfSchema = new mongoose.Schema({
 //   instruction: { type: String, default: '' },
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
   scheduleAt: { type: Date, default: null },
+  scheduledStartTime: { type: Date },
+  scheduledEndTime: { type: Date },
   isDeleted: { type: Boolean, default: false, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true })

@@ -247,7 +247,7 @@ class AdminCourseService extends BaseService {
     const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
     const Course = require('../../models/Course.model')
     const AppError = require('../../core/AppError')
-    
+
     const courseObj = await Course.findById(courseId).lean()
     if (!courseObj) {
       throw new AppError('Course not found', 404, 'NOT_FOUND')
@@ -304,22 +304,49 @@ class AdminCourseService extends BaseService {
 
   async getPdfForCourse(courseId, pdfId) {
     const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
+    const Subject = require('../../models/Subject.model')
     const AppError = require('../../core/AppError')
     const pdf = await CourseSeparatedPdf.findOne({ _id: pdfId, course: courseId, isDeleted: false }).populate('subjects').lean()
     if (!pdf) {
       throw new AppError('PDF not found', 404, 'NOT_FOUND')
     }
+
+    const subjectIds = pdf.subjects || []
+    const subjects = await Subject.find({ _id: { $in: subjectIds } }).lean()
+
+    const chapterMap = new Map()
+    const topicMap = new Map()
+
+    subjects.forEach(sub => {
+      (sub.chapters || []).forEach(ch => {
+        chapterMap.set(ch._id.toString(), ch.name)
+        (ch.topics || []).forEach(tp => {
+          topicMap.set(tp._id.toString(), tp.name)
+        })
+      })
+    })
+
+    pdf.chapters = (pdf.chapters || []).map(chId => ({
+      _id: chId,
+      name: chapterMap.get(chId.toString()) || ''
+    }))
+
+    pdf.topics = (pdf.topics || []).map(tpId => ({
+      _id: tpId,
+      name: topicMap.get(tpId.toString()) || ''
+    }))
+
     return pdf
   }
 
   async updatePdfForCourse(courseId, pdfId, payload) {
     const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
     const AppError = require('../../core/AppError')
-    
+
     const arrayFields = ['subjects', 'topics', 'chapters']
     for (const field of arrayFields) {
       if (payload[field] && typeof payload[field] === 'string') {
-        try { payload[field] = JSON.parse(payload[field]) } catch (e) {}
+        try { payload[field] = JSON.parse(payload[field]) } catch (e) { }
       }
     }
 
