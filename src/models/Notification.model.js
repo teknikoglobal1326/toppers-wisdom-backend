@@ -5,6 +5,7 @@ const notificationSchema = new mongoose.Schema({
   title:  { type: String, required: true }, body: { type: String, required: true },
   type:   { type: String, enum: ['course', 'test', 'payment', 'system'], required: true },
   isRead: { type: Boolean, default: false },
+  isDeleted: { type: Boolean, default: false, index: true },
   data:   mongoose.Schema.Types.Mixed,
 }, { timestamps: true })
 

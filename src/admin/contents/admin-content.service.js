@@ -105,7 +105,7 @@ class AdminContentService extends BaseService {
 
     if (content.isLive && content.liveStatus === 'ongoing') {
       const contentObj = content.toObject()
-      
+
       // Fallback if not stored yet in database
       if (!contentObj.rtmpServer && contentObj.agoraChannel) {
         const rtmpUid = 666666
@@ -388,16 +388,16 @@ class AdminContentService extends BaseService {
       const cheerio = require('cheerio')
       const { value: html } = await mammoth.convertToHtml({ buffer: file.buffer })
       const $ = cheerio.load(html)
-      
+
       $("table").each((_, tableDom) => {
         const tableRows = $(tableDom).find("tr")
         if (tableRows.length < 2) return
-        
+
         const headers = []
         $(tableRows[0]).find("td, th").each((_, cell) => {
           headers.push($(cell).text().trim().toLowerCase().replace(/[\s_-]+/g, ""))
         })
-        
+
         for (let i = 1; i < tableRows.length; i++) {
           const cells = $(tableRows[i]).find("td")
           const rowData = {}
@@ -545,7 +545,7 @@ class AdminContentService extends BaseService {
   async getLiveClassStats(contentId) {
     const LiveClassAttendance = require('../../models/LiveClassAttendance.model')
     const Content = require('../../models/Content.model')
-    
+
     const content = await Content.findOne({ _id: contentId, isLive: true, isDeleted: false }).lean()
     if (!content) throw new AppError('Live class not found', 404, 'NOT_FOUND')
 

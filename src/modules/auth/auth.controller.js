@@ -68,4 +68,9 @@ const resetPassword = catchAsync(async (req, res) => {
   sendSuccess(res, data, 'Password reset successfully')
 })
 
-module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, getProfile, updateProfile, login, deleteAccount, forgotPassword, verifyResetOtp, resetPassword }
+const googleSignup = catchAsync(async (req, res) => {
+  const data = await authService.googleSignupOrLogin(req.body)
+  sendSuccess(res, data, 'Login successful')
+})
+
+module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, getProfile, updateProfile, login, deleteAccount, forgotPassword, verifyResetOtp, resetPassword, googleSignup }

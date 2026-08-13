@@ -242,6 +242,110 @@ class AdminCourseService extends BaseService {
 
     return []
   }
+
+  async uploadPdfForCourse(courseId, payload) {
+    const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
+    const Course = require('../../models/Course.model')
+    const AppError = require('../../core/AppError')
+    
+    const courseObj = await Course.findById(courseId).lean()
+    if (!courseObj) {
+      throw new AppError('Course not found', 404, 'NOT_FOUND')
+    }
+
+    const pdf = await CourseSeparatedPdf.create({
+      ...payload,
+      course: courseId
+    })
+
+    return pdf
+  }
+
+  async listPdfsForCourse(courseId, query = {}) {
+    const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 20)
+    const skip = (page - 1) * limit
+
+    const filter = { course: courseId, isDeleted: false }
+    if (query.status) filter.status = query.status
+    if (query.search) {
+      filter.$or = [
+        { title: { $regex: query.search, $options: 'i' } },
+        { description: { $regex: query.search, $options: 'i' } }
+      ]
+    }
+
+    const direction = query.order === 'desc' ? -1 : 1
+    const sort = query.sortBy === 'createdAt'
+      ? { createdAt: direction, sortOrder: 1 }
+      : { sortOrder: direction, createdAt: -1 }
+
+    const [total, data] = await Promise.all([
+      CourseSeparatedPdf.countDocuments(filter),
+      CourseSeparatedPdf.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .populate('subjects')
+        .lean()
+    ])
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  }
+
+  async getPdfForCourse(courseId, pdfId) {
+    const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
+    const AppError = require('../../core/AppError')
+    const pdf = await CourseSeparatedPdf.findOne({ _id: pdfId, course: courseId, isDeleted: false }).populate('subjects').lean()
+    if (!pdf) {
+      throw new AppError('PDF not found', 404, 'NOT_FOUND')
+    }
+    return pdf
+  }
+
+  async updatePdfForCourse(courseId, pdfId, payload) {
+    const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
+    const AppError = require('../../core/AppError')
+    
+    const arrayFields = ['subjects', 'topics', 'chapters']
+    for (const field of arrayFields) {
+      if (payload[field] && typeof payload[field] === 'string') {
+        try { payload[field] = JSON.parse(payload[field]) } catch (e) {}
+      }
+    }
+
+    const pdf = await CourseSeparatedPdf.findOneAndUpdate(
+      { _id: pdfId, course: courseId, isDeleted: false },
+      payload,
+      { new: true }
+    )
+    if (!pdf) {
+      throw new AppError('PDF not found', 404, 'NOT_FOUND')
+    }
+    return pdf
+  }
+
+  async deletePdfForCourse(courseId, pdfId) {
+    const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
+    const AppError = require('../../core/AppError')
+    const pdf = await CourseSeparatedPdf.findOneAndUpdate(
+      { _id: pdfId, course: courseId, isDeleted: false },
+      { isDeleted: true }
+    )
+    if (!pdf) {
+      throw new AppError('PDF not found', 404, 'NOT_FOUND')
+    }
+    return pdf
+  }
 }
 
 module.exports = new AdminCourseService();

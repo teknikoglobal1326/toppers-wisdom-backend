@@ -1,9 +1,10 @@
 const mongoose = require('mongoose')
 
 const userSchema = new mongoose.Schema({
-  phone:           { type: String, required: true, unique: true, index: true },
+  phone:           { type: String, unique: true, sparse: true, index: true },
   name:            { type: String, trim: true },
   email:           { type: String, trim: true, lowercase: true },
+  isSocial:        { type: Boolean, default: false },
   language:        { type: String, enum: ['hi', 'en'], default: 'hi' },
   role:            { type: String, enum: ['user', 'admin'], default: 'user', index: true },
   profileComplete: { type: Boolean, default: false },
