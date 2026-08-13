@@ -474,4 +474,123 @@ const bulkCreate = catchAsync(async (req, res) => {
     sendCreated(res, created)
 })
 
-module.exports = { list, getOne, create, update, remove, metadata, bulkCreate }
+const getTestAnalytics = catchAsync(async (req, res) => {
+    const testId = req.params.id
+    const TestSeriesAttempt = require('../../models/TestSeriesAttempt.model')
+    
+    const test = await TestSeriesTest.findOne({ _id: testId, isDeleted: false }).lean()
+    if (!test) throw new AppError('Test not found', 404, 'NOT_FOUND')
+
+    const attempts = await TestSeriesAttempt.find({ test: testId, status: 'completed' })
+        .populate('user', 'name email phone avatar')
+        .lean()
+
+    // Deduplicate attempts by user, keeping only each user's best attempt (highest score, lowest timeTaken)
+    const bestAttemptsMap = new Map()
+    attempts.forEach(att => {
+        if (!att.user) return
+        const userIdStr = att.user._id.toString()
+        const existing = bestAttemptsMap.get(userIdStr)
+        if (!existing) {
+            bestAttemptsMap.set(userIdStr, att)
+        } else {
+            if (att.score > existing.score || (att.score === existing.score && (att.timeTaken || 0) < (existing.timeTaken || 0))) {
+                bestAttemptsMap.set(userIdStr, att)
+            }
+        }
+    })
+    const uniqueAttempts = Array.from(bestAttemptsMap.values())
+
+    const totalParticipants = uniqueAttempts.length
+
+    let totalScore = 0
+    let maxScore = 0
+    let minScore = totalParticipants > 0 ? uniqueAttempts[0].score : 0
+    let totalAccuracy = 0
+    let totalTimeTaken = 0
+
+    const distribution = {
+        "0-20%": 0,
+        "21-40%": 0,
+        "41-60%": 0,
+        "61-80%": 0,
+        "81-100%": 0
+    }
+
+    uniqueAttempts.forEach(att => {
+        totalScore += att.score
+        if (att.score > maxScore) maxScore = att.score
+        if (att.score < minScore) minScore = att.score
+        totalAccuracy += (att.accuracy || 0)
+        totalTimeTaken += (att.timeTaken || 0)
+
+        const percentage = att.totalMarks > 0 ? (att.score / att.totalMarks) * 100 : 0
+        if (percentage <= 20) distribution["0-20%"]++
+        else if (percentage <= 40) distribution["21-40%"]++
+        else if (percentage <= 60) distribution["41-60%"]++
+        else if (percentage <= 80) distribution["61-80%"]++
+        else distribution["81-100%"]++
+    })
+
+    const averageScore = totalParticipants > 0 ? parseFloat((totalScore / totalParticipants).toFixed(2)) : 0
+    const averageAccuracy = totalParticipants > 0 ? parseFloat((totalAccuracy / totalParticipants).toFixed(2)) : 0
+    const averageTimeTaken = totalParticipants > 0 ? parseFloat((totalTimeTaken / totalParticipants).toFixed(2)) : 0
+
+    const sortedAttempts = [...uniqueAttempts].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score
+        return a.timeTaken - b.timeTaken
+    })
+
+    const topPerformers = sortedAttempts.slice(0, 3).map((att, idx) => ({
+        rank: idx + 1,
+        name: att.user?.name || 'Student',
+        email: att.user?.email || '',
+        phone: att.user?.phone || '',
+        score: att.score,
+        totalMarks: att.totalMarks,
+        accuracy: att.accuracy,
+        timeTaken: att.timeTaken
+    }))
+
+    const speedVsAccuracy = uniqueAttempts.map(att => ({
+        name: att.user?.name || 'Student',
+        speed: att.timeTaken || 0,
+        accuracy: att.accuracy || 0,
+        score: att.score || 0
+    }))
+
+    const allStudents = sortedAttempts.map((att, idx) => ({
+        rank: idx + 1,
+        name: att.user?.name || 'Student',
+        email: att.user?.email || '',
+        phone: att.user?.phone || '',
+        score: att.score,
+        totalMarks: att.totalMarks,
+        accuracy: att.accuracy,
+        timeTaken: att.timeTaken,
+        attemptedAt: att.attemptedAt
+    }))
+
+    sendSuccess(res, {
+        test: {
+            _id: test._id,
+            title: test.title,
+            totalMarks: test.totalMarks,
+            totalQuestions: test.totalQuestions
+        },
+        overview: {
+            totalParticipants,
+            maxScore,
+            minScore,
+            averageScore,
+            averageAccuracy,
+            averageTimeTaken
+        },
+        topPerformers,
+        scoreDistribution: distribution,
+        speedVsAccuracy,
+        allStudents
+    })
+})
+
+module.exports = { list, getOne, create, update, remove, metadata, bulkCreate, getTestAnalytics }

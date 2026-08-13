@@ -25,6 +25,8 @@ const createContentSchema = Joi.object({
   image: Joi.string().trim().optional().allow('', null),
   status: Joi.string().valid('active', 'inactive').default('active'),
   scheduleAt: Joi.date().optional().allow('', null),
+  scheduledStartTime: Joi.date().optional().allow('', null),
+  scheduledEndTime: Joi.date().optional().allow('', null),
 })
 
 const createLiveClassSchema = Joi.object({
@@ -69,6 +71,8 @@ const updateContentSchema = Joi.object({
   image: Joi.string().trim().optional().allow('', null),
   status: Joi.string().valid('active', 'inactive'),
   scheduleAt: Joi.date().optional().allow('', null),
+  scheduledStartTime: Joi.date().optional().allow('', null),
+  scheduledEndTime: Joi.date().optional().allow('', null),
 }).min(1)
 
 const listContentQuerySchema = Joi.object({

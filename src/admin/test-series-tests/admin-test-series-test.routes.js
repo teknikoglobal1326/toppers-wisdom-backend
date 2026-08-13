@@ -19,6 +19,7 @@ router.post('/bulk', uploadBulkFields, controller.bulkCreate)
 router.post('/', uploadThumbnail, parseThumbnail('test-series-tests/thumbnails'), validate(createTestSeriesTestSchema), controller.create)
 router.get('/:id', controller.getOne)
 router.put('/:id', uploadThumbnail, parseThumbnail('test-series-tests/thumbnails'), validate(updateTestSeriesTestSchema), controller.update)
+router.get('/:id/analytics', controller.getTestAnalytics)
 router.delete('/:id', controller.remove)
 
 module.exports = router

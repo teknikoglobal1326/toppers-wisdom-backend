@@ -22,7 +22,11 @@ class CourseTestRepository extends BaseRepository {
             isDeleted: false,
             status: 'active',
         })
-            .select('en hi order sortOrder perQuestionTime')
+            .select('en hi order sortOrder perQuestionTime subjectId chapterId topicId')
+            .populate({
+                path: 'subjectId',
+                select: 'name chapters'
+            })
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
     }
