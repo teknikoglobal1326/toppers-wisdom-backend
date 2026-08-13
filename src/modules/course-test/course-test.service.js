@@ -315,16 +315,8 @@ class CourseTestService extends BaseService {
         const marksPerQuestion = Number(test.marksPerQuestion || 1)
         const negativeMarks = Number(test.negativeMarks || 0)
 
-        // Only process unique logical questions (by order)
-        const processedOrders = new Set()
-
         for (const q of questions) {
-            if (processedOrders.has(q.order)) continue
-            processedOrders.add(q.order)
-
-            // Calculate Marks logic for this logical question first
-            const siblingQuestionIds = questions.filter(sq => sq.order === q.order).map(sq => String(sq._id))
-            const ans = userAnswers.find(a => siblingQuestionIds.includes(String(a.questionId)))
+            const ans = userAnswers.find(a => String(a.questionId) === String(q._id))
 
             let isAttempted = false
             let isCorrect = false
@@ -333,13 +325,9 @@ class CourseTestService extends BaseService {
             if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
                 isAttempted = true
 
-                // Which specific question ID was answered?
-                const answeredQ = questions.find(sq => String(sq._id) === String(ans.questionId))
                 let correctIndex = -1
-                if (answeredQ) {
-                    if (answeredQ.en?.options) correctIndex = answeredQ.en.options.findIndex(opt => opt.isCorrect)
-                    if (correctIndex === -1 && answeredQ.hi?.options) correctIndex = answeredQ.hi.options.findIndex(opt => opt.isCorrect)
-                }
+                if (q.en?.options) correctIndex = q.en.options.findIndex(opt => opt.isCorrect)
+                if (correctIndex === -1 && q.hi?.options) correctIndex = q.hi.options.findIndex(opt => opt.isCorrect)
 
                 if (correctIndex !== -1 && ans.selectedOption === correctIndex) {
                     isCorrect = true
@@ -581,6 +569,11 @@ class CourseTestService extends BaseService {
             isWeak: tw.totalQuestions > 0 ? (tw.correct / tw.totalQuestions) < 0.5 : false
         }))
 
+        let timeTakenSeconds = attempt.timeTaken || 0;
+        if (!timeTakenSeconds && attempt.createdAt && attempt.updatedAt) {
+            timeTakenSeconds = Math.round((new Date(attempt.updatedAt) - new Date(attempt.createdAt)) / 1000);
+        }
+
         return {
             expertComment,
             overallPerformance: {
@@ -591,7 +584,7 @@ class CourseTestService extends BaseService {
                 percentile,
                 attempted: attempt.correct + attempt.wrong,
                 totalQuestions: test.totalQuestions,
-                timeSpent: attempt.timeTaken ? parseFloat((attempt.timeTaken / 60).toFixed(2)) : 0
+                timeSpent: timeTakenSeconds ? `${timeTakenSeconds} sec` : '0 sec'
             },
             sectionWisePerformance,
             topicAnalytics,
