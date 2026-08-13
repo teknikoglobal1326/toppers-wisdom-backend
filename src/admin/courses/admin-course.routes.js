@@ -11,6 +11,32 @@ const {
     listQuerySchema,
 } = require('./admin-course.schema')
 
+const { uploadPdf } = require('../../middlewares/upload.middleware')
+const { attachUploadedFiles } = require('../pdfs/admin-pdf.service')
+const { createPdfSchema, updatePdfSchema } = require('../pdfs/admin-pdf.schema')
+
+const uploadPdfFields = uploadPdf.fields([
+  { name: 'pdfFile', maxCount: 1 },
+  { name: 'image', maxCount: 1 },
+])
+
+const parseArrays = (req, res, next) => {
+  const arrayFields = ['subjects', 'topics', 'chapters', 'masterIds']
+  for (const field of arrayFields) {
+    if (req.body[field] && typeof req.body[field] === 'string') {
+      try {
+        req.body[field] = JSON.parse(req.body[field])
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid ${field} JSON format`
+        })
+      }
+    }
+  }
+  next()
+}
+
 router.get('/', validateQuery(listQuerySchema), controller.listAll)
 router.get('/purchases', validateQuery(listQuerySchema), controller.listPurchases)
 router.post('/', uploadCourseImages, parseFormData, validate(createCourseSchema), controller.createCourse)
@@ -25,5 +51,10 @@ router.post('/:id/lessons/:lessonId/upload-url', validate(uploadUrlSchema), cont
 router.post('/:id/thumbnail-upload-url', validate(imageUploadSchema), controller.thumbnailUploadUrl)
 router.post('/:id/banner-upload-url', validate(imageUploadSchema), controller.bannerUploadUrl)
 router.put('/:id/timetable', uploadTimetableFile, parseTimetableForm, controller.updateTimetable)
+router.post('/:id/pdfs', uploadPdfFields, parseArrays, attachUploadedFiles, validate(createPdfSchema), controller.uploadPdfForCourse)
+router.get('/:id/pdfs', controller.listPdfsForCourse)
+router.get('/:id/pdfs/:pdfId', controller.getPdfForCourse)
+router.patch('/:id/pdfs/:pdfId', uploadPdfFields, parseArrays, attachUploadedFiles, validate(updatePdfSchema), controller.updatePdfForCourse)
+router.delete('/:id/pdfs/:pdfId', controller.deletePdfForCourse)
 
 module.exports = router

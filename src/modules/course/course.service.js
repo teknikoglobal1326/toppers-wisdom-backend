@@ -55,7 +55,6 @@ class CourseService extends BaseService {
       matchQuery.exam = examId
     }
 
-    console.log("matchQuery==================>", matchQuery);
     const pipeline = [
       { $match: matchQuery },
       { $unwind: { path: '$subjects', preserveNullAndEmptyArrays: false } },
@@ -111,7 +110,6 @@ class CourseService extends BaseService {
       )
     }
 
-    console.log("purchasedCourseIds.length==============>", purchasedCourseIds.length);
     if (purchasedCourseIds.length > 0) {
       filter._id = { $nin: purchasedCourseIds }
     }
@@ -151,7 +149,6 @@ class CourseService extends BaseService {
       populate: [{ path: 'subjects.subject', select: 'name' }]
     })
 
-    console.log("result.data=============>", result.data);
     result.data = await Promise.all(result.data.map(async (course) => {
       const isPurchased = !!(await courseRepository.findEnrollment(userId, course._id))
       return {
@@ -200,18 +197,20 @@ class CourseService extends BaseService {
   async getScheduledLiveClasses(userId, filters = {}) {
     this.logger.info({ userId }, 'Fetching scheduled live classes')
 
-    const enrollments = await courseRepository.findEnrollmentsByUser(userId)
-    const enrolledCourseIds = enrollments.map(e => e.course)
+    const CourseOrder = require('../../models/CourseOrder.model')
+    const orders = await CourseOrder.find({
+      user: userId,
+      status: 'paid',
+      'items.itemType': 'course'
+    }).select('items').lean()
 
-    const Course = require('../../models/Course.model')
+    const purchasedCourseIds = orders.flatMap(order =>
+      order.items
+        .filter(item => item.itemType === 'course')
+        .map(item => item.itemId.toString())
+    )
 
-    const freeCourses = await Course.find({ isFree: true, status: 'published', isDeleted: false }).select('_id').lean()
-    const freeCourseIds = freeCourses.map(c => c._id)
-
-    const allAllowedCourseIds = Array.from(new Set([
-      ...enrolledCourseIds.map(id => id.toString()),
-      ...freeCourseIds.map(id => id.toString())
-    ]))
+    const allAllowedCourseIds = Array.from(new Set(purchasedCourseIds))
 
     // this.logger.info({ userId, enrolledCount: enrolledCourseIds.length, freeCount: freeCourseIds.length, totalAllowed: allAllowedCourseIds.length }, 'Scheduled live classes course mapping info')
 
@@ -245,7 +244,6 @@ class CourseService extends BaseService {
     const limit = Math.max(1, Number(filters.limit) || 20)
     const skip = (page - 1) * limit
 
-    // console.log("filter============>", filter);
     const [total, data] = await Promise.all([
       Content.countDocuments(filter),
       Content.find(filter)
@@ -289,7 +287,6 @@ class CourseService extends BaseService {
     }
 
     const enrollment = await courseRepository.findEnrollment(userId, courseId)
-    console.log("enrollment================>", enrollment);
     const tests = await Test.find({ course: courseId, status: 'published' })
       .select('title slug description image duration totalQuestion totalMarks difficulty')
       .lean();
@@ -416,25 +413,24 @@ class CourseService extends BaseService {
     if (!subject) throw new AppError('Subject not found', 404, 'NOT_FOUND');
 
     const chapterIds = (subject.chapters || []).map(c => c._id.toString());
-
-    console.log("chapterIds==================>", chapterIds);
-    console.log("courseId=====================>", courseId);
-    const [pdfs, contents, courseTests] = await Promise.all([
+    const [pdfs, contents, courseTests, separatedPdfs] = await Promise.all([
       Pdf.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
         .select('title description pdfFile image topics chapters')
         .lean(),
       Content.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: 'active' })
-        .select('title description video image topic chapter isLive liveStatus scheduledStartTime scheduledEndTime agoraChannel')
+        .select('title description video image topic chapter isLive liveStatus scheduledStartTime scheduledEndTime agoraChannel type youtubeUrl')
         .lean(),
       CourseTest.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
         .select('title slug description image duration isPerQuestionTime totalQuestion totalMarks difficulty topics chapters')
+        .lean(),
+      require('../../models/CourseSeparatedPdf.model').find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
+        .select('title description pdfFile image topics chapters')
         .lean()
     ]);
 
     const syllabus = {
       content: [],
-      pdf: [],
-      test: []
+      pdf: separatedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' }))
     };
 
     const chapters = subject.chapters || [];
@@ -445,9 +441,7 @@ class CourseService extends BaseService {
       const embeddedTopics = chapterDoc.topics || [];
       const topicIdentifiers = embeddedTopics.flatMap(t => [t.name, t._id?.toString()]).filter(Boolean);
 
-      const contentTopics = [];
-      const pdfTopics = [];
-      const testTopics = [];
+      const combinedTopics = [];
 
       const isUnassigned = (item, type) => {
         const val = (type === 'content') ? item.topic : item.topics;
@@ -476,56 +470,43 @@ class CourseService extends BaseService {
         const topicPdfs = pdfs.filter(p => (p.chapters || []).some(ch => ch.toString() === chapterId) && matchTopic(p, 'pdf'));
         const topicTests = courseTests.filter(t => (t.chapters || []).some(ch => ch.toString() === chapterId) && matchTopic(t, 'test'));
 
-        const combinedData = [
-          ...topicContents.map(c => mapAccess({ ...c, materialType: 'content' }))
-        ];
+        const mappedContents = topicContents.map(c => mapAccess({ ...c, materialType: 'content' }));
+        const mappedPdfs = topicPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' }));
+        const mappedTests = topicTests.map(t => mapAccess({ ...t, materialType: 'test' }));
 
-        if (combinedData.length > 0) {
-          contentTopics.push({ _id: topic._id, title: topicName, data: combinedData });
-        }
-
-        if (topicPdfs.length > 0) {
-          pdfTopics.push({ _id: topic._id, title: topicName, data: topicPdfs.map(t => mapAccess({ ...t, materialType: 'pdf' })) });
-        }
-
-        if (topicTests.length > 0) {
-          testTopics.push({ _id: topic._id, title: topicName, data: topicTests.map(t => mapAccess({ ...t, materialType: 'test' })) });
+        if (mappedContents.length > 0 || mappedPdfs.length > 0 || mappedTests.length > 0) {
+          combinedTopics.push({
+            _id: topic._id,
+            title: topicName,
+            video: mappedContents,
+            pdf: mappedPdfs,
+            test: mappedTests
+          });
         }
       });
 
       const unassignedContents = contents.filter(c => (c.chapter || []).some(ch => ch.toString() === chapterId) && isUnassigned(c, 'content'));
-      let unassignedPdfs = pdfs.filter(p => (p.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(p, 'pdf'));
+      const unassignedPdfs = pdfs.filter(p => (p.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(p, 'pdf'));
       const unassignedTests = courseTests.filter(t => (t.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(t, 'test'));
 
-      const combinedUnassigned = [
-        ...unassignedContents.map(c => mapAccess({ ...c, materialType: 'content' }))
-      ];
+      const mappedUnassignedContents = unassignedContents.map(c => mapAccess({ ...c, materialType: 'content' }));
+      const mappedUnassignedPdfs = unassignedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' }));
+      const mappedUnassignedTests = unassignedTests.map(t => mapAccess({ ...t, materialType: 'test' }));
 
-      if (contentTopics.length > 0 || combinedUnassigned.length > 0) {
+      const hasUnassigned = mappedUnassignedContents.length > 0 || mappedUnassignedPdfs.length > 0 || mappedUnassignedTests.length > 0;
+
+      if (combinedTopics.length > 0 || hasUnassigned) {
         syllabus.content.push({
           _id: chapterId,
           chapterName,
-          topics: contentTopics,
-          ...(combinedUnassigned.length > 0 && { unassignedData: combinedUnassigned })
-        });
-      }
-
-      unassignedPdfs = pdfs.filter(p => (p.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(p, 'pdf'));
-      if (pdfTopics.length > 0 || unassignedPdfs.length > 0) {
-        syllabus.pdf.push({
-          _id: chapterId,
-          chapterName,
-          topics: pdfTopics,
-          ...(unassignedPdfs.length > 0 && { unassignedData: unassignedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' })) })
-        });
-      }
-
-      if (testTopics.length > 0 || unassignedTests.length > 0) {
-        syllabus.test.push({
-          _id: chapterId,
-          chapterName,
-          topics: testTopics,
-          ...(unassignedTests.length > 0 && { unassignedData: unassignedTests.map(t => mapAccess({ ...t, materialType: 'test' })) })
+          topics: combinedTopics,
+          ...(hasUnassigned && {
+            unassignedData: {
+              video: mappedUnassignedContents,
+              pdf: mappedUnassignedPdfs,
+              test: mappedUnassignedTests
+            }
+          })
         });
       }
     });
@@ -638,7 +619,6 @@ class CourseService extends BaseService {
   async createRazorpayOrder(courseId, userId, amountDetails) {
     try {
       const { amount, discount, gstRate, gstAmount, grandTotal } = amountDetails;
-      console.log("check token==============>");
       this.logger.info({ courseId, userId, amount, grandTotal }, 'Creating razorpay order for course')
 
       if (amount === undefined || amount === null || grandTotal === undefined || grandTotal === null) {

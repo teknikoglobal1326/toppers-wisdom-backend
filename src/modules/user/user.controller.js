@@ -15,6 +15,7 @@ const getStats = catchAsync(async (req, res) => { sendSuccess(res, await userSer
 const getCommonStudyStats = catchAsync(async (req, res) => { sendSuccess(res, await userService.getCommonStudyStats(req.user._id)) })
 const removeSaved = catchAsync(async (req, res) => { await userService.removeSaved(req.user._id, req.params.itemId); sendSuccess(res, null, 'Removed') })
 const markNotifRead = catchAsync(async (req, res) => { await userService.markNotificationRead(req.user._id, req.params.id); sendSuccess(res, null, 'Marked as read') })
+const deleteNotification = catchAsync(async (req, res) => { await userService.deleteNotification(req.user._id, req.params.id); sendSuccess(res, null, 'Deleted') })
 const updateFcmToken = catchAsync(async (req, res) => { const updatedUser = await userService.updateFcmToken(req.user._id, req.body); sendSuccess(res, updatedUser, 'Updated') })
 const createReport = catchAsync(async (req, res) => { sendCreated(res, await userService.createReport(req.user._id, req.body), 'Report submitted') })
 const createMcqReport = catchAsync(async (req, res) => { sendCreated(res, await userService.createMcqReport(req.user._id, req.body), 'MCQ Report submitted') })
@@ -37,6 +38,11 @@ const getOrders = catchAsync(async (req, res) => {
 const getNotifications = catchAsync(async (req, res) => {
   const r = await userService.getNotifications(req.user._id, req.query)
   sendPaginated(res, r.data, r.pagination)
+})
+
+const getUnreadNotificationCount = catchAsync(async (req, res) => {
+  const count = await userService.getUnreadNotificationCount(req.user._id)
+  sendSuccess(res, { count })
 })
 
 const getMyReports = catchAsync(async (req, res) => {
@@ -67,4 +73,4 @@ const sendTestNotification = catchAsync(async (req, res) => {
   sendSuccess(res, result)
 })
 
-module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, markNotifRead, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification }
+module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification }

@@ -152,6 +152,13 @@ const updateProfile = async (userId, payload) => {
   const currentUser = await authRepository.findByIdOrFail(userId, 'User not found')
   const alreadyComplete = currentUser.profileComplete === true
 
+  if (!currentUser.isSocial) {
+    const finalPhone = payload.phone !== undefined ? payload.phone : currentUser.phone
+    if (!finalPhone) {
+      throw new AppError('Phone number is required', 400)
+    }
+  }
+
   const updateData = {}
 
   if (payload.name) {
@@ -160,6 +167,14 @@ const updateProfile = async (userId, payload) => {
 
   if (payload.email) {
     updateData.email = payload.email
+  }
+
+  if (payload.phone) {
+    const existing = await require('../../models/User.model').findOne({ phone: payload.phone, _id: { $ne: userId } })
+    if (existing) {
+      throw new AppError('Phone number already in use by another account', 400)
+    }
+    updateData.phone = payload.phone
   }
 
   if (payload.language) {
@@ -318,4 +333,63 @@ const resetPassword = async (resetToken, newPassword) => {
   return { message: 'Password reset successfully' }
 }
 
-module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, getProfile, loginWithPassword, deleteAccount, forgotPassword, verifyResetOtp, resetPassword }
+const googleSignupOrLogin = async (payload) => {
+  const { email, name, avatar, referralCode: providedReferralCode } = payload
+  if (!email) {
+    throw new AppError('Email is required', 400)
+  }
+
+  let user = await require('../../models/User.model').findOne({ email })
+  let isNewUser = false
+
+  if (!user) {
+    isNewUser = true
+    const referralCode = crypto.randomBytes(4).toString('hex').toUpperCase()
+    user = await authRepository.create({
+      email,
+      name,
+      avatar,
+      isSocial: true,
+      profileCompletionState: 'profileCompleted',
+      referralCode,
+      role: 'user'
+    })
+
+    try {
+      await rewardsService.addCoins(user._id, 10, 'signup', 'Sign Up Bonus')
+
+      if (providedReferralCode) {
+        const referrer = await require('../../models/User.model').findOne({ referralCode: providedReferralCode })
+        if (referrer) {
+          await rewardsService.addCoins(referrer._id, 25, 'referral', `Referral Bonus for inviting social user`)
+        }
+      }
+    } catch (e) {
+      logger.error({ err: e }, 'Failed to add signup bonus')
+    }
+
+    const { notificationQueue } = require('../../jobs/queue')
+    notificationQueue.add('signup', { userId: user._id }).catch((err) => logger.error({ err }, 'Failed to queue signup notification'))
+  } else {
+    if (!user.isSocial) {
+      user = await authRepository.updateById(user._id, { isSocial: true })
+    }
+    const { notificationQueue } = require('../../jobs/queue')
+    notificationQueue.add('login', { userId: user._id }).catch((err) => logger.error({ err }, 'Failed to queue login notification'))
+  }
+
+  const jwtPayload = {
+    _id: user._id,
+    phone: user.phone || null,
+    role: user.role,
+    qualificationId: user.qualification?._id || null,
+    examId: user.exam?._id || null,
+    subExamIds: (user.subExams || []).map((s) => s._id)
+  }
+  const accessToken = signAccessToken(jwtPayload)
+  const refreshToken = signRefreshToken({ _id: user._id })
+
+  return { accessToken, refreshToken, user, isNewUser }
+}
+
+module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, getProfile, loginWithPassword, deleteAccount, forgotPassword, verifyResetOtp, resetPassword, googleSignupOrLogin }

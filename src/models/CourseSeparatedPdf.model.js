@@ -1,0 +1,19 @@
+const mongoose = require('mongoose')
+
+const courseSeparatedPdfSchema = new mongoose.Schema({
+  course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+  subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject', index: true }],
+  topics: [{ type: mongoose.Schema.Types.ObjectId, index: true }],
+  chapters: [{ type: mongoose.Schema.Types.ObjectId, index: true }],
+  title: { type: String, required: true, trim: true },
+  description: { type: String, default: '' },
+  pdfFile: { type: String, required: true },
+  image: { type: String, default: '' },
+  sortOrder: { type: Number, default: 0, index: true },
+  status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
+  scheduleAt: { type: Date, default: null },
+  isDeleted: { type: Boolean, default: false, index: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}, { timestamps: true })
+
+module.exports = mongoose.model('CourseSeparatedPdf', courseSeparatedPdfSchema)

@@ -297,7 +297,8 @@ class CourseTestService extends BaseService {
         }
 
         // Fetch the absolute latest attempt for this test and user
-        const attempt = await require('../../models/CourseTestAttempt.model').findOne({ test: testId, user: userId }).sort({ attemptedAt: -1 })
+        const attempt = await require('../../models/CourseTestAttempt.model').findOne({ courseTest: testId, user: userId }).sort({ attemptedAt: -1 })
+
         if (!attempt) {
             throw new AppError('Session not found', 404, 'NOT_FOUND')
         }
@@ -718,7 +719,11 @@ class CourseTestService extends BaseService {
             throw new AppError('Course test not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = await checkAccess(userId, 'course', test.course)
+        const Course = require('../../models/Course.model')
+        const course = await Course.findById(test.course).select('isFree').lean()
+        const isCourseFree = course?.isFree === true
+
+        const hasAccess = isCourseFree || await checkAccess(userId, 'course', test.course)
         if (!hasAccess) throw new AppError('Please purchase this course to access the test', 403, 'FORBIDDEN')
 
         const localizedInstruction =

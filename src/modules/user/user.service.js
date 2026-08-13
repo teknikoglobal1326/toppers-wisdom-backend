@@ -256,11 +256,19 @@ class UserService extends BaseService {
     }
 
     async getNotifications(userId, opts) {
-        return paginate(Notification, { user: userId }, { ...opts, sort: { createdAt: -1 } })
+        return paginate(Notification, { user: userId, isDeleted: { $ne: true } }, { ...opts, sort: { createdAt: -1 } })
+    }
+
+    async getUnreadNotificationCount(userId) {
+        return Notification.countDocuments({ user: userId, isRead: false, isDeleted: { $ne: true } })
     }
 
     async markNotificationRead(userId, notifId) {
         return Notification.findOneAndUpdate({ _id: notifId, user: userId }, { isRead: true })
+    }
+
+    async deleteNotification(userId, notifId) {
+        return Notification.findOneAndUpdate({ _id: notifId, user: userId }, { isDeleted: true })
     }
 
     async updateFcmToken(userId, data) {

@@ -23,4 +23,30 @@ const getAssociatedData  = catchAsync(async (req, res) => {
   sendSuccess(res, await adminCourseService.getAssociatedData(courseId, type))
 })
 
-module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData }
+const uploadPdfForCourse = catchAsync(async (req, res) => {
+  const result = await adminCourseService.uploadPdfForCourse(req.params.id, {
+    ...req.body,
+    createdBy: req.admin._id
+  })
+  sendCreated(res, result, 'PDF uploaded successfully')
+})
+
+const listPdfsForCourse = catchAsync(async (req, res) => {
+  const result = await adminCourseService.listPdfsForCourse(req.params.id, req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
+const getPdfForCourse = catchAsync(async (req, res) => {
+  sendSuccess(res, await adminCourseService.getPdfForCourse(req.params.id, req.params.pdfId))
+})
+
+const updatePdfForCourse = catchAsync(async (req, res) => {
+  sendSuccess(res, await adminCourseService.updatePdfForCourse(req.params.id, req.params.pdfId, req.body))
+})
+
+const deletePdfForCourse = catchAsync(async (req, res) => {
+  await adminCourseService.deletePdfForCourse(req.params.id, req.params.pdfId)
+  sendSuccess(res, null, 'PDF deleted successfully')
+})
+
+module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse }
