@@ -209,10 +209,16 @@ class LiveTestService extends BaseService {
             ]
         }
 
-        const startOfToday = new Date()
+        const istOffset = 5.5 * 60 * 60 * 1000 // GMT+5:30 in ms
+        // const now = new Date()
+
+        const startOfToday = new Date(now.getTime() + istOffset)
         startOfToday.setUTCHours(0, 0, 0, 0)
-        const endOfToday = new Date()
+        startOfToday.setTime(startOfToday.getTime() - istOffset)
+
+        const endOfToday = new Date(now.getTime() + istOffset)
         endOfToday.setUTCHours(23, 59, 59, 999)
+        endOfToday.setTime(endOfToday.getTime() - istOffset)
 
         // Apply type filter if provided
         if (query.type === 'ongoing') {
@@ -238,10 +244,14 @@ class LiveTestService extends BaseService {
 
         if (query.date && query.date !== 'all') {
             const dateStr = query.date
-            const startOfDay = new Date(dateStr)
+            const startOfDay = new Date(new Date(dateStr).getTime() + istOffset)
             startOfDay.setUTCHours(0, 0, 0, 0)
-            const endOfDay = new Date(dateStr)
+            startOfDay.setTime(startOfDay.getTime() - istOffset)
+
+            const endOfDay = new Date(new Date(dateStr).getTime() + istOffset)
             endOfDay.setUTCHours(23, 59, 59, 999)
+            endOfDay.setTime(endOfDay.getTime() - istOffset)
+
             filter.scheduleAt = { $gte: startOfDay, $lte: endOfDay }
         }
 
