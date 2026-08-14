@@ -64,6 +64,14 @@ const normalizeBookPayload = (data = {}) => {
         const parsedSortOrder = Number(payload.sortOrder)
         if (!Number.isNaN(parsedSortOrder)) payload.sortOrder = parsedSortOrder
     }
+    if (payload.mrp !== undefined && payload.mrp !== null && payload.mrp !== '') {
+        const parsedMrp = Number(payload.mrp)
+        if (!Number.isNaN(parsedMrp)) payload.mrp = parsedMrp
+    }
+    if (payload.price !== undefined && payload.price !== null && payload.price !== '') {
+        const parsedPrice = Number(payload.price)
+        if (!Number.isNaN(parsedPrice)) payload.price = parsedPrice
+    }
     return payload
 }
 
