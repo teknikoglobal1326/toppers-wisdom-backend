@@ -269,6 +269,8 @@ class LiveTestService extends BaseService {
                 .sort({ attemptedAt: -1 })
                 .lean()
 
+            const attemptCount = await LiveTestAttempt.countDocuments({ liveTest: id, user: userId })
+
             const resolved = withResolvedSyllabus(item)
             delete resolved.description
             delete resolved.instructions
@@ -289,6 +291,7 @@ class LiveTestService extends BaseService {
                 attemptStatus,
                 latestAttempt: completedAttempt || latestAttempt || null,
                 sessionId: latestAttempt?.sessionId || null,
+                attemptCount
             }
         }))
 
@@ -331,15 +334,15 @@ class LiveTestService extends BaseService {
 
         return {
             data: processedData,
+            ongoingCount,
+            upcomingCount,
+            attemptedCount,
             pagination: {
                 ...liveTestsResult.pagination,
                 ongoingCount,
                 upcomingCount,
                 attemptedCount
-            },
-            ongoingCount,
-            upcomingCount,
-            attemptedCount
+            }
         }
     }
 
