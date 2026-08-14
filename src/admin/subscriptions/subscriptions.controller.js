@@ -4,6 +4,29 @@ const SubscriptionOrder = require('../../models/SubscriptionOrder.model');
 const User = require('../../models/User.model');
 const { uploadFile } = require('../../lib/fileUpload');
 
+const extractObjectIds = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    let list = [];
+    val.forEach(item => {
+      list = list.concat(extractObjectIds(item));
+    });
+    return list;
+  }
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        return extractObjectIds(JSON.parse(trimmed));
+      } catch (e) {
+        // Fall through
+      }
+    }
+    return trimmed.split(',').map(id => id.trim().replace(/^["']|["']$/g, '')).filter(id => id.match(/^[0-9a-fA-F]{24}$/));
+  }
+  return [];
+};
+
 // Create Subscription
 exports.createSubscription = async (req, res, next) => {
   try {
@@ -22,14 +45,12 @@ exports.createSubscription = async (req, res, next) => {
 
     let parsedExamIds = [];
     if (examIds) {
-      if (typeof examIds === 'string') {
-        try { parsedExamIds = JSON.parse(examIds); } catch (e) { parsedExamIds = examIds.split(',').map(id => id.trim()).filter(Boolean); }
-      } else if (Array.isArray(examIds)) {
-        parsedExamIds = examIds;
-      }
-    } else if (examId) {
-      parsedExamIds = [examId];
+      parsedExamIds = parsedExamIds.concat(extractObjectIds(examIds));
     }
+    if (examId) {
+      parsedExamIds = parsedExamIds.concat(extractObjectIds(examId));
+    }
+    parsedExamIds = [...new Set(parsedExamIds)];
 
     if (Array.isArray(tests)) {
       tests = tests.map(t => ({ ...t, moduleType: t.moduleType ? t.moduleType.charAt(0).toUpperCase() + t.moduleType.slice(1) : t.moduleType }));
@@ -57,7 +78,7 @@ exports.createSubscription = async (req, res, next) => {
       boosters: boosters || [],
       materials: materials || [],
       banner,
-      examId: examId || (parsedExamIds.length > 0 ? parsedExamIds[0] : undefined),
+      examId: parsedExamIds.length > 0 ? parsedExamIds[0] : undefined,
       examIds: parsedExamIds,
       createdBy: req.admin._id
     });
@@ -131,14 +152,15 @@ exports.updateSubscription = async (req, res, next) => {
     }
 
     let parsedExamIds;
-    if (examIds !== undefined) {
-      if (typeof examIds === 'string') {
-        try { parsedExamIds = JSON.parse(examIds); } catch (e) { parsedExamIds = examIds.split(',').map(id => id.trim()).filter(Boolean); }
-      } else if (Array.isArray(examIds)) {
-        parsedExamIds = examIds;
+    if (examIds !== undefined || examId !== undefined) {
+      parsedExamIds = [];
+      if (examIds !== undefined) {
+        parsedExamIds = parsedExamIds.concat(extractObjectIds(examIds));
       }
-    } else if (examId !== undefined) {
-      parsedExamIds = [examId];
+      if (examId !== undefined) {
+        parsedExamIds = parsedExamIds.concat(extractObjectIds(examId));
+      }
+      parsedExamIds = [...new Set(parsedExamIds)];
     }
 
     if (Array.isArray(tests)) {
@@ -157,7 +179,7 @@ exports.updateSubscription = async (req, res, next) => {
     subscription.description = description !== undefined ? description : subscription.description;
     subscription.price = price !== undefined ? price : subscription.price;
     subscription.durationDays = durationDays !== undefined ? durationDays : subscription.durationDays;
-    
+
     if (parsedExamIds !== undefined) {
       subscription.examIds = parsedExamIds;
       subscription.examId = parsedExamIds.length > 0 ? parsedExamIds[0] : undefined;

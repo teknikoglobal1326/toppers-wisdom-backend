@@ -33,7 +33,7 @@ const createReportSchema = Joi.object({
 
 const createMcqReportSchema = Joi.object({
   typeId: Joi.string().hex().length(24).required(),
-  type: Joi.string().valid('question', 'test', 'testSeries', 'previousYearPaper', 'previousYearTest').required(),
+  type: Joi.string().valid('question', 'test', 'testSeries', 'previousYearPaper', 'previousYearTest', 'course-test').required(),
   reason: Joi.string().valid('wrong_answer', 'wrong_question', 'wrong_option', 'translation_issue', 'image_issue', 'technical_issue', 'other').required(),
   description: Joi.string().trim().min(2).max(1000),
 })

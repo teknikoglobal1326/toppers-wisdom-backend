@@ -328,14 +328,8 @@ class UserService extends BaseService {
 
         const typeGroups = {}
         result.data.forEach(item => {
-            let modelName = ''
-            if (item.type === 'question') modelName = 'Question'
-            else if (item.type === 'test') modelName = 'CourseTest'
-            else if (item.type === 'testSeries') modelName = 'TestSeriesTest'
-            else if (item.type === 'previousYearPaper') modelName = 'PreviousYearPaperTest'
-            else if (item.type === 'liveTest') modelName = 'LiveTest'
-
-            if (modelName && item.typeId) {
+            const modelName = 'Question'
+            if (item.typeId) {
                 if (!typeGroups[modelName]) typeGroups[modelName] = []
                 typeGroups[modelName].push(item.typeId)
             }
@@ -345,12 +339,7 @@ class UserService extends BaseService {
         await Promise.all(
             Object.keys(typeGroups).map(async modelName => {
                 const Model = mongoose.model(modelName)
-                let selectFields = ''
-                if (modelName === 'Question') {
-                    selectFields = 'en.question.text hi.question.text'
-                } else {
-                    selectFields = 'name title'
-                }
+                const selectFields = 'en hi test status'
                 const docs = await Model.find({ _id: { $in: typeGroups[modelName] } }).select(selectFields).lean()
                 docs.forEach(doc => {
                     fetchedItems[doc._id.toString()] = doc
@@ -358,7 +347,9 @@ class UserService extends BaseService {
             })
         )
 
-        result.data = result.data.map(item => {
+        const plainData = result.data.map(item => typeof item.toObject === 'function' ? item.toObject() : item)
+
+        result.data = plainData.map(item => {
             const doc = fetchedItems[item.typeId?.toString()] || null
             return {
                 ...item,
@@ -366,6 +357,7 @@ class UserService extends BaseService {
             }
         })
 
+        console.log("result=====>", result);
         return result
     }
 
