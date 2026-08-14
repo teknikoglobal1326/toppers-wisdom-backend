@@ -18,6 +18,7 @@ router.use('/live-tests', requirePermission('tests'), require('./live-tests/admi
 router.use('/boosters', requirePermission('boosters'), require('./boosters/admin-booster.routes'))
 router.use('/users', requirePermission('users'), require('./users/admin-user.routes'))
 router.use('/blog', requirePermission('blog'), require('./blog/admin-blog.routes'))
+router.use('/dashboard', require('./dashboard/admin-dashboard.routes'))
 router.use('/analytics', requirePermission('analytics'), require('./analytics/admin-analytics.routes'))
 router.use('/notifications', requirePermission('notifications'), require('./notifications/admin-notification.routes'))
 router.use('/admins', requirePermission('admins'), require('./admins/admin-admins.routes'))
