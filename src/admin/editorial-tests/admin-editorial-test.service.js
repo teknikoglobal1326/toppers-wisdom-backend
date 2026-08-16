@@ -35,14 +35,20 @@ class AdminEditorialTestService extends BaseService {
             page: query.page,
             limit: query.limit,
             sort: { [sortBy]: direction, createdAt: -1 },
-            populate: [{ path: 'subjects', select: 'name' }],
+            populate: [
+                { path: 'subjects', select: 'name' },
+                { path: 'editorial', select: 'title' }
+            ],
         })
     }
 
     async getOne(id) {
         const test = await editorialTestRepository.findOne(
             { _id: id, isDeleted: false },
-            { populate: [{ path: 'subjects', select: 'name' }] }
+            { populate: [
+                { path: 'subjects', select: 'name' },
+                { path: 'editorial', select: 'title' }
+            ] }
         )
         if (!test) throw new AppError('Editorial test not found', 404, 'NOT_FOUND')
         return test

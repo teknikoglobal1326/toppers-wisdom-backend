@@ -10,6 +10,7 @@ const editorialTestSchema = new mongoose.Schema({
   instructions: { type: String, default: "" },
   instructionsNew: { type: String, default: null },
   subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
+  editorial: { type: mongoose.Schema.Types.ObjectId, ref: "Editorial", default: null },
 
   duration: { type: Number, default: 0 }, // Minutes
 
