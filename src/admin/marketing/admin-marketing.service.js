@@ -10,19 +10,42 @@ class AdminMarketingService extends BaseService {
   }
 
   // --- Notification Campaigns ---
-  async listNotifications({ page, limit, isProcessed } = {}) {
+  async listNotifications({ page, limit, isProcessed, search, subtitle, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (isProcessed !== undefined) {
       filter.isProcessed = typeof isProcessed === 'string' ? isProcessed === 'true' : !!isProcessed
     }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { message: { $regex: search, $options: 'i' } }
+      ]
+    }
+
+    if (subtitle) {
+      if (subtitle === "General") {
+        filter.notificationType = { $in: ["General", "marketing"] }
+      } else if (subtitle === "Specific Users") {
+        filter.notificationType = { $nin: ["General", "marketing"] }
+      } else {
+        filter.notificationType = subtitle
+      }
+    }
+
     const pageNum = Math.max(1, Number(page) || 1)
     const limitNum = Math.max(1, Number(limit) || 20)
     const skip = (pageNum - 1) * limitNum
 
+    let sort = { schedule: -1, createdAt: -1 }
+    if (sortOrder) {
+      sort = { title: sortOrder === 'asc' ? 1 : -1, schedule: -1, createdAt: -1 }
+    }
+
     const [total, data] = await Promise.all([
       NotificationCampaign.countDocuments(filter),
       NotificationCampaign.find(filter)
-        .sort({ schedule: -1, createdAt: -1 })
+        .sort(sort)
         .skip(skip)
         .limit(limitNum)
         .lean()

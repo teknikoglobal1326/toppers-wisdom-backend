@@ -44,7 +44,11 @@ const updateAnnouncementSchema = Joi.object({
 const listCampaignQuerySchema = Joi.object({
   isProcessed: Joi.boolean().optional(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20)
+  limit: Joi.number().integer().min(1).max(1000).default(20),
+  search: Joi.string().optional().allow(''),
+  subtitle: Joi.string().optional().allow(''),
+  status: Joi.string().optional().allow(''),
+  sortOrder: Joi.string().optional().allow('')
 })
 
 module.exports = {

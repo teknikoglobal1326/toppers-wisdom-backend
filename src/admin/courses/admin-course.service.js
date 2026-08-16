@@ -75,7 +75,13 @@ class AdminCourseService extends BaseService {
     if (filters.examId) filter.exam = filters.examId;
     if (filters.subExam) filter.subExam = filters.subExam;
     if (filters.subExamId) filter.subExam = filters.subExamId;
-    if (filters.type) filter.type = filters.type;
+    if (filters.type) {
+      if (filters.type === 'paid') {
+        filter.isFree = false;
+      } else {
+        filter.type = filters.type;
+      }
+    }
     if (filters.language) filter.language = filters.language;
     if (filters.qualificationId) filter.qualificationId = filters.qualificationId;
     const titleSearch = (filters.search || filters.title || "").trim();

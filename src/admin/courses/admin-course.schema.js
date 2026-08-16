@@ -81,7 +81,7 @@ const imageUploadSchema = Joi.object({
 
 const listQuerySchema = Joi.object({
   status: Joi.string().valid('draft', 'published', 'archived'),
-  type: Joi.string().valid('recorded', 'live', 'free'),
+  type: Joi.string().valid('recorded', 'live', 'free', 'paid'),
   examId: objectId.label('examId'),
   subExam: objectId.label('subExam'),
   subExamId: objectId.label('subExamId'),
