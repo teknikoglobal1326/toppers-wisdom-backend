@@ -22,9 +22,34 @@ const getUpcomingLiveClasses = catchAsync(async (req, res) => {
   sendSuccess(res, data, 'Upcoming live classes retrieved successfully')
 })
 
+const getTopExamsByStudentCount = catchAsync(async (req, res) => {
+  const data = await dashboardService.getTopExamsByStudentCount()
+  sendSuccess(res, data, 'Top exams (categories) by student count retrieved successfully')
+})
+
+const getCategorizedEnrollments = catchAsync(async (req, res) => {
+  const data = await dashboardService.getCategorizedEnrollments()
+  sendSuccess(res, data, 'Categorized paid enrollment statistics retrieved successfully')
+})
+
+const getDashboardCounts = catchAsync(async (req, res) => {
+  const data = await dashboardService.getDashboardCounts()
+  sendSuccess(res, data, 'Dashboard item counts retrieved successfully')
+})
+
+const getRecentActivities = catchAsync(async (req, res) => {
+  const data = await dashboardService.getRecentActivities()
+  sendSuccess(res, data, 'Recent dashboard activities retrieved successfully')
+})
+
 module.exports = {
   getDashboardStats,
   getEnrollmentStats,
   getRevenueStats,
-  getUpcomingLiveClasses
+  getUpcomingLiveClasses,
+  getTopExamsByStudentCount,
+  getCategorizedEnrollments,
+  getDashboardCounts,
+  getRecentActivities
 }
+

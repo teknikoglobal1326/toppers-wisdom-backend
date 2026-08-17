@@ -5,6 +5,10 @@ const Content = require('../../models/Content.model')
 const Enrollment = require('../../models/Enrollment.model')
 const CourseOrder = require('../../models/CourseOrder.model')
 const SubscriptionOrder = require('../../models/SubscriptionOrder.model')
+const Subscription = require('../../models/Subscription.model')
+const Book = require('../../models/Book.model')
+const PreviousYearPaper = require('../../models/PreviousYearPaper.model')
+const DailyQuiz = require('../../models/DailyQuiz.model')
 const { createLogger } = require('../../config/logger')
 
 const logger = createLogger('admin:dashboard:service')
@@ -224,9 +228,278 @@ const getUpcomingLiveClasses = async () => {
   return result
 }
 
+const getTopExamsByStudentCount = async () => {
+  logger.info('Fetching top 7 exams by student count')
+
+  const topExams = await User.aggregate([
+    {
+      $match: {
+        isDeleted: false,
+        'exam._id': { $ne: null }
+      }
+    },
+    {
+      $group: {
+        _id: '$exam._id',
+        studentCount: { $sum: 1 }
+      }
+    },
+    {
+      $lookup: {
+        from: 'exams',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'examInfo'
+      }
+    },
+    {
+      $unwind: '$examInfo'
+    },
+    {
+      $match: {
+        'examInfo.is_deleted': { $ne: true },
+        'examInfo.status': 'active'
+      }
+    },
+    {
+      $sort: { studentCount: -1 }
+    },
+    {
+      $limit: 7
+    },
+    {
+      $project: {
+        _id: 0,
+        examId: '$_id',
+        examName: '$examInfo.name',
+        studentCount: 1
+      }
+    }
+  ])
+
+  return topExams
+}
+
+const getCategorizedEnrollments = async () => {
+  logger.info('Fetching paid enrollments categorized by Course, Test Series, and Subscription')
+
+  // 1. Fetch paid course orders and paid subscription orders
+  const [paidOrders, paidSubOrders] = await Promise.all([
+    CourseOrder.find({ status: 'paid' }).lean(),
+    SubscriptionOrder.find({ status: 'paid' }).lean()
+  ])
+
+  const coursePurchaseCount = {}
+  const testPurchaseCount = {}
+  const subPurchaseCount = {}
+
+  // Tally CourseOrders
+  for (const order of paidOrders) {
+    for (const item of order.items || []) {
+      if (!item.itemId) continue
+      const itemIdStr = item.itemId.toString()
+      if (item.itemType === 'course') {
+        coursePurchaseCount[itemIdStr] = (coursePurchaseCount[itemIdStr] || 0) + 1
+      } else if (item.itemType === 'test') {
+        testPurchaseCount[itemIdStr] = (testPurchaseCount[itemIdStr] || 0) + 1
+      }
+    }
+  }
+
+  // Tally SubscriptionOrders
+  for (const order of paidSubOrders) {
+    if (!order.subscription) continue
+    const subIdStr = order.subscription.toString()
+    subPurchaseCount[subIdStr] = (subPurchaseCount[subIdStr] || 0) + 1
+  }
+
+  // 2. Resolve items from DB to verify existence and get names
+  const courseIds = Object.keys(coursePurchaseCount)
+  const testSeriesIds = Object.keys(testPurchaseCount)
+  const subIds = Object.keys(subPurchaseCount)
+
+  const [courses, testSeriesList, subscriptions] = await Promise.all([
+    Course.find({ _id: { $in: courseIds } }).select('_id title').lean(),
+    TestSeries.find({ _id: { $in: testSeriesIds } }).select('_id title').lean(),
+    Subscription.find({ _id: { $in: subIds } }).select('_id name').lean()
+  ])
+
+  // Course tally
+  let totalCourseEnrollments = 0
+  let topCourseItem = null
+  for (const c of courses) {
+    const count = coursePurchaseCount[c._id.toString()] || 0
+    totalCourseEnrollments += count
+    if (!topCourseItem || count > topCourseItem.enrollmentCount) {
+      topCourseItem = {
+        id: c._id.toString(),
+        title: c.title,
+        enrollmentCount: count
+      }
+    }
+  }
+
+  // Test Series tally
+  let totalTestSeriesEnrollments = 0
+  let topTestSeriesItem = null
+  for (const ts of testSeriesList) {
+    const count = testPurchaseCount[ts._id.toString()] || 0
+    totalTestSeriesEnrollments += count
+    if (!topTestSeriesItem || count > topTestSeriesItem.enrollmentCount) {
+      topTestSeriesItem = {
+        id: ts._id.toString(),
+        title: ts.title,
+        enrollmentCount: count
+      }
+    }
+  }
+
+  // Subscription tally
+  let totalSubEnrollments = 0
+  let topSubItem = null
+  for (const s of subscriptions) {
+    const count = subPurchaseCount[s._id.toString()] || 0
+    totalSubEnrollments += count
+    if (!topSubItem || count > topSubItem.enrollmentCount) {
+      topSubItem = {
+        id: s._id.toString(),
+        title: s.name,
+        enrollmentCount: count
+      }
+    }
+  }
+
+  const result = [
+    {
+      category: 'Course',
+      enrollmentCount: totalCourseEnrollments,
+      topItem: topCourseItem
+    },
+    {
+      category: 'Subscription',
+      enrollmentCount: totalSubEnrollments,
+      topItem: topSubItem
+    }
+  ]
+
+  if (totalTestSeriesEnrollments > 0) {
+    result.push({
+      category: 'Test Series',
+      enrollmentCount: totalTestSeriesEnrollments,
+      topItem: topTestSeriesItem
+    })
+  }
+
+  // Sort descending by enrollmentCount
+  result.sort((a, b) => b.enrollmentCount - a.enrollmentCount)
+  return result
+}
+
+const getDashboardCounts = async () => {
+  logger.info('Fetching admin dashboard total counts')
+
+  const [totalCourses, totalBooks, totalTestSeries, totalPreviousYearPapers, totalDailyQuizzes] = await Promise.all([
+    Course.countDocuments({ isDeleted: false }),
+    Book.countDocuments({ isDeleted: false }),
+    TestSeries.countDocuments({ isDeleted: false }),
+    PreviousYearPaper.countDocuments({ isDeleted: false }),
+    DailyQuiz.countDocuments({ isDeleted: false })
+  ])
+
+  return {
+    totalCourses,
+    totalBooks,
+    totalTestSeries,
+    totalPreviousYearPapers,
+    totalDailyQuizzes
+  }
+}
+
+const getRecentActivities = async () => {
+  logger.info('Fetching admin dashboard recent activity')
+
+  const [recentCourseOrders, recentSubscriptionOrders, recentEnrollments] = await Promise.all([
+    CourseOrder.find({ status: 'paid',  })
+      .sort({ paidAt: -1 })
+      .limit(5)
+      .populate({ path: 'user', select: 'name' })
+      .lean(),
+    SubscriptionOrder.find({ status: 'paid' })
+      .sort({ paidAt: -1 })
+      .limit(5)
+      .populate({ path: 'user', select: 'name' })
+      .populate({ path: 'subscription', select: 'name' })
+      .lean(),
+    Enrollment.find()
+      .sort({ enrolledAt: -1 })
+      .limit(5)
+      .populate({ path: 'user', select: 'name' })
+      .populate({ path: 'course', select: 'title' })
+      .lean()
+  ])
+
+  const courseActivities = recentCourseOrders.map(order => ({
+    id: order._id,
+    type: 'purchase',
+    user: {
+      id: order.user?._id || null,
+      name: order.user?.name || 'Unknown User',
+    },
+    items: (order.items || []).map(item => ({
+      itemId: item.itemId,
+      itemType: item.itemType,
+      title: item.title || 'Untitled Item'
+    })),
+    amount: order.grandTotal || order.totalAmount || 0,
+    date: order.paidAt || order.createdAt
+  }))
+
+  const subscriptionActivities = recentSubscriptionOrders.map(order => ({
+    id: order._id,
+    type: 'subscription',
+    user: {
+      id: order.user?._id || null,
+      name: order.user?.name || 'Unknown User',
+    },
+    items: [{
+      itemId: order.subscription?._id || null,
+      itemType: 'subscription',
+      title: order.subscription?.name || 'Subscription Package'
+    }],
+    amount: order.amount || 0,
+    date: order.paidAt || order.createdAt
+  }))
+
+  const enrollmentActivities = recentEnrollments.map(enrollment => ({
+    id: enrollment._id,
+    type: 'enrollment',
+    user: {
+      id: enrollment.user?._id || null,
+      name: enrollment.user?.name || 'Unknown User',
+    },
+    items: [{
+      itemId: enrollment.course?._id || null,
+      itemType: 'course',
+      title: enrollment.course?.title || 'Untitled Course'
+    }],
+    amount: 0,
+    date: enrollment.enrolledAt || enrollment.createdAt
+  }))
+
+  const allActivities = [...courseActivities, ...subscriptionActivities, ...enrollmentActivities]
+  allActivities.sort((a, b) => new Date(b.date) - new Date(a.date))
+  
+  return allActivities.slice(0, 5)
+}
+
 module.exports = {
   getDashboardStats,
   getEnrollmentStats,
   getRevenueStats,
-  getUpcomingLiveClasses
+  getUpcomingLiveClasses,
+  getTopExamsByStudentCount,
+  getCategorizedEnrollments,
+  getDashboardCounts,
+  getRecentActivities
 }
+
