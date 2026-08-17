@@ -5,5 +5,9 @@ router.get('/stats', controller.getDashboardStats)
 router.get('/enrollment-stats', controller.getEnrollmentStats)
 router.get('/revenue-stats', controller.getRevenueStats)
 router.get('/upcoming-live-classes', controller.getUpcomingLiveClasses)
+router.get('/top-exams', controller.getTopExamsByStudentCount)
+router.get('/enrollments-by-category', controller.getCategorizedEnrollments)
+router.get('/counts', controller.getDashboardCounts)
+router.get('/recent-activity', controller.getRecentActivities)
 
 module.exports = router
