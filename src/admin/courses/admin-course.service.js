@@ -379,6 +379,155 @@ class AdminCourseService extends BaseService {
     }
     return pdf
   }
+
+  async uploadTestForCourse(courseId, payload) {
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const Course = require('../../models/Course.model')
+    const AppError = require('../../core/AppError')
+
+    const courseObj = await Course.findById(courseId).lean()
+    if (!courseObj) {
+      throw new AppError('Course not found', 404, 'NOT_FOUND')
+    }
+
+    if (!payload.slug && payload.title) {
+      payload.slug = generateSlug(payload.title)
+    }
+
+    const test = await CourseSeparatedTest.create({
+      ...payload,
+      course: courseId
+    })
+
+    return test
+  }
+
+  async listTestsForCourse(courseId, query = {}) {
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const questionRepository = require('../../modules/question/question.repository')
+    const page = Math.max(1, Number(query.page) || 1)
+    const limit = Math.max(1, Number(query.limit) || 20)
+    const skip = (page - 1) * limit
+
+    const filter = { course: courseId, isDeleted: false }
+    if (query.status) filter.status = query.status
+    if (query.search) {
+      filter.$or = [
+        { title: { $regex: query.search, $options: 'i' } },
+        { description: { $regex: query.search, $options: 'i' } }
+      ]
+    }
+
+    const direction = query.order === 'desc' ? -1 : 1
+    const sort = query.sortBy === 'createdAt'
+      ? { createdAt: direction, sortOrder: 1 }
+      : { sortOrder: direction, createdAt: -1 }
+
+    const [total, rawData] = await Promise.all([
+      CourseSeparatedTest.countDocuments(filter),
+      CourseSeparatedTest.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .populate('subjects')
+        .lean()
+    ])
+
+    const counts = await Promise.all(rawData.map((ct) =>
+      questionRepository.count({ test: ct._id, isDeleted: false })
+    ))
+
+    const data = rawData.map((ct, index) => {
+      ct.totalMappedQuestions = counts[index]
+      return ct
+    })
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  }
+
+  async getTestForCourse(courseId, testId) {
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const Subject = require('../../models/Subject.model')
+    const AppError = require('../../core/AppError')
+    const test = await CourseSeparatedTest.findOne({ _id: testId, course: courseId, isDeleted: false }).populate('subjects').lean()
+    if (!test) {
+      throw new AppError('Test not found', 404, 'NOT_FOUND')
+    }
+
+    const subjectIds = test.subjects || []
+    const subjects = await Subject.find({ _id: { $in: subjectIds } }).lean()
+
+    const chapterMap = new Map()
+    const topicMap = new Map()
+
+    subjects.forEach(sub => {
+      (sub.chapters || []).forEach(ch => {
+        chapterMap.set(ch._id.toString(), ch.name)
+        (ch.topics || []).forEach(tp => {
+          topicMap.set(tp._id.toString(), tp.name)
+        })
+      })
+    })
+
+    test.chapters = (test.chapters || []).map(chId => ({
+      _id: chId,
+      name: chapterMap.get(chId.toString()) || ''
+    }))
+
+    test.topics = (test.topics || []).map(tpId => ({
+      _id: tpId,
+      name: topicMap.get(tpId.toString()) || ''
+    }))
+
+    return test
+  }
+
+  async updateTestForCourse(courseId, testId, payload) {
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const AppError = require('../../core/AppError')
+
+    const arrayFields = ['subjects', 'topics', 'chapters']
+    for (const field of arrayFields) {
+      if (payload[field] && typeof payload[field] === 'string') {
+        try { payload[field] = JSON.parse(payload[field]) } catch (e) { }
+      }
+    }
+
+    if (payload.image === '') delete payload.image
+
+    const test = await CourseSeparatedTest.findOneAndUpdate(
+      { _id: testId, course: courseId, isDeleted: false },
+      payload,
+      { new: true }
+    )
+    if (!test) {
+      throw new AppError('Test not found', 404, 'NOT_FOUND')
+    }
+    return test
+  }
+
+  async deleteTestForCourse(courseId, testId) {
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const AppError = require('../../core/AppError')
+    const test = await CourseSeparatedTest.findOneAndUpdate(
+      { _id: testId, course: courseId, isDeleted: false },
+      { isDeleted: true }
+    )
+    if (!test) {
+      throw new AppError('Test not found', 404, 'NOT_FOUND')
+    }
+    return test
+  }
 }
 
 module.exports = new AdminCourseService();
+
+

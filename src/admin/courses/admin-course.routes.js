@@ -11,12 +11,19 @@ const {
     listQuerySchema,
 } = require('./admin-course.schema')
 
-const { uploadPdf } = require('../../middlewares/upload.middleware')
+const { uploadPdf, upload } = require('../../middlewares/upload.middleware')
 const { attachUploadedFiles } = require('../pdfs/admin-pdf.service')
 const { createPdfSchema, updatePdfSchema } = require('../pdfs/admin-pdf.schema')
 
+const { attachUploadedFiles: attachTestUploadedFiles } = require('../course-tests/admin-course-test.service')
+const { createCourseTestSchema, updateCourseTestSchema } = require('../course-tests/admin-course-test.schema')
+
 const uploadPdfFields = uploadPdf.fields([
   { name: 'pdfFile', maxCount: 1 },
+  { name: 'image', maxCount: 1 },
+])
+
+const uploadTestFields = upload.fields([
   { name: 'image', maxCount: 1 },
 ])
 
@@ -57,4 +64,11 @@ router.get('/:id/pdfs/:pdfId', controller.getPdfForCourse)
 router.patch('/:id/pdfs/:pdfId', uploadPdfFields, parseArrays, attachUploadedFiles, validate(updatePdfSchema), controller.updatePdfForCourse)
 router.delete('/:id/pdfs/:pdfId', controller.deletePdfForCourse)
 
+router.post('/:id/tests', uploadTestFields, parseArrays, attachTestUploadedFiles, validate(createCourseTestSchema), controller.uploadTestForCourse)
+router.get('/:id/tests', controller.listTestsForCourse)
+router.get('/:id/tests/:testId', controller.getTestForCourse)
+router.patch('/:id/tests/:testId', uploadTestFields, parseArrays, attachTestUploadedFiles, validate(updateCourseTestSchema), controller.updateTestForCourse)
+router.delete('/:id/tests/:testId', controller.deleteTestForCourse)
+
 module.exports = router
+

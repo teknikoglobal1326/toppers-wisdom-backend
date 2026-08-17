@@ -49,4 +49,30 @@ const deletePdfForCourse = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'PDF deleted successfully')
 })
 
-module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse }
+const uploadTestForCourse = catchAsync(async (req, res) => {
+  const result = await adminCourseService.uploadTestForCourse(req.params.id, {
+    ...req.body,
+    createdBy: req.admin._id
+  })
+  sendCreated(res, result, 'Test uploaded successfully')
+})
+
+const listTestsForCourse = catchAsync(async (req, res) => {
+  const result = await adminCourseService.listTestsForCourse(req.params.id, req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
+const getTestForCourse = catchAsync(async (req, res) => {
+  sendSuccess(res, await adminCourseService.getTestForCourse(req.params.id, req.params.testId))
+})
+
+const updateTestForCourse = catchAsync(async (req, res) => {
+  sendSuccess(res, await adminCourseService.updateTestForCourse(req.params.id, req.params.testId, req.body))
+})
+
+const deleteTestForCourse = catchAsync(async (req, res) => {
+  await adminCourseService.deleteTestForCourse(req.params.id, req.params.testId)
+  sendSuccess(res, null, 'Test deleted successfully')
+})
+
+module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse, uploadTestForCourse, listTestsForCourse, getTestForCourse, updateTestForCourse, deleteTestForCourse }
