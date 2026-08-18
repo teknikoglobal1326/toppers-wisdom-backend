@@ -55,6 +55,34 @@ const normalizePayload = (data = {}) => {
     return payload
 }
 
+const TestSeriesTest = require('../../models/TestSeriesTest.model')
+
+const attachTestCounts = async (docs) => {
+    if (!docs || docs.length === 0) return docs
+
+    const tsIds = docs.map(d => d._id)
+
+    const testCounts = await TestSeriesTest.aggregate([
+        { $match: { testSeries: { $in: tsIds }, isDeleted: false } },
+        { $group: { _id: '$testSeries', count: { $sum: 1 } } }
+    ])
+
+    const countMap = new Map()
+    testCounts.forEach(item => {
+        countMap.set(item._id.toString(), item.count)
+    })
+
+    return docs.map(doc => {
+        const plain = typeof doc.toObject === 'function' ? doc.toObject() : { ...doc }
+        const count = countMap.get(doc._id.toString()) || 0
+        return {
+            ...plain,
+            testCount: count,
+            totalTests: count
+        }
+    })
+}
+
 const list = catchAsync(async (req, res) => {
     const { status, page = 1, limit = 10, q, examId, subExamId } = req.query
     const filter = { isDeleted: false }
@@ -77,7 +105,9 @@ const list = catchAsync(async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
+        .lean()
 
+    const enrichedDocs = await attachTestCounts(docs)
     const total = await TestSeries.countDocuments(filter)
 
     const [globalTotal, globalActive, globalInactive] = await Promise.all([
@@ -86,7 +116,7 @@ const list = catchAsync(async (req, res) => {
         TestSeries.countDocuments({ isDeleted: false, status: 'inactive' }),
     ])
 
-    sendPaginated(res, docs, { 
+    sendPaginated(res, enrichedDocs, { 
         page: Number(page), 
         limit: Number(limit), 
         total,
@@ -101,9 +131,12 @@ const getOne = catchAsync(async (req, res) => {
         .populate('exam')
         .populate('subExams')
         .populate('subjectIds')
+        .lean()
 
     if (!testSeries) throw new AppError('Test series not found', 404, 'NOT_FOUND')
-    sendSuccess(res, testSeries)
+
+    const [enriched] = await attachTestCounts([testSeries])
+    sendSuccess(res, enriched)
 })
 
 const create = catchAsync(async (req, res) => {
