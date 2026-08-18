@@ -226,9 +226,16 @@ const questionSchema = new mongoose.Schema(
 
     test: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CourseTest",
+      refPath: "testModel",
       required: true,
       index: true,
+    },
+
+    testModel: {
+      type: String,
+      required: true,
+      enum: ["CourseTest", "CourseSeparatedTest"],
+      default: "CourseTest",
     },
 
     exam: {

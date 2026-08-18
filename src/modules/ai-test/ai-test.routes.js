@@ -11,5 +11,6 @@ router.post('/generate', validate(generateAiTestSchema), controller.generateAiTe
 router.get('/:id/start-session', controller.startSession)
 router.put('/:id/session/:sessionId/update', validate(updateSessionSchema), controller.updateSession)
 router.get('/:id/session/:sessionId/analytics', controller.getSessionAnalytics)
+router.get('/:id/session/:sessionId/solution', controller.getSessionSolution)
 
 module.exports = router

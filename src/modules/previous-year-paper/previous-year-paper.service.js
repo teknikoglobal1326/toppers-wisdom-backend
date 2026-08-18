@@ -15,11 +15,60 @@ class PreviousYearPaperService extends BaseService {
         this.logger = createLogger('previous-year-paper:service')
     }
 
+    async getSubscribedPaperIds(userId) {
+        const UserSubscription = require('../../models/UserSubscription.model')
+        const Subscription = require('../../models/Subscription.model')
+
+        const activeUserSubs = await UserSubscription.find({
+            user: userId,
+            isActive: true,
+            endDate: { $gte: new Date() }
+        }).select('subscription').lean()
+
+        const activeSubIds = activeUserSubs.map(us => us.subscription.toString())
+        const subscribedPaperIds = new Set()
+
+        if (activeSubIds.length > 0) {
+            const subs = await Subscription.find({
+                _id: { $in: activeSubIds },
+                isActive: true,
+                isDeleted: false,
+                'tests.moduleType': 'PreviousYearPaper'
+            }).select('tests').lean()
+
+            subs.forEach(sub => {
+                if (sub.tests) {
+                    sub.tests.forEach(testItem => {
+                        if (testItem.moduleType === 'PreviousYearPaper' && testItem.moduleId) {
+                            testItem.moduleId.forEach(mId => {
+                                subscribedPaperIds.add(mId.toString())
+                            })
+                        }
+                    })
+                }
+            })
+        }
+        return subscribedPaperIds
+    }
+
+    async checkUserTestAccess(previousYearPaper, test, userId) {
+        if (!test.isPaid) return true
+        if (previousYearPaper && !previousYearPaper.isPaid) return true
+
+        const subscribedPaperIds = await this.getSubscribedPaperIds(userId)
+        if (previousYearPaper && subscribedPaperIds.has(previousYearPaper._id.toString())) return true
+
+        return false
+    }
+
     async listPreviousYearPapers(userId, query = {}) {
-        const user = await User.findById(userId).select('subExams language').lean()
+        const user = await User.findById(userId).select('subExams language exam').lean()
         const subExamIds = (user?.subExams || []).map((item) => item._id)
 
         const filter = { isDeleted: false, status: query.status || 'active' }
+        if (user && user.exam && user.exam._id) {
+            filter.exam = user.exam._id
+        }
         if (query.examId) filter.exam = query.examId
         if (query.subExamId) filter.subExams = query.subExamId
         if (query.subjectId) filter.subjectIds = query.subjectId
@@ -32,16 +81,6 @@ class PreviousYearPaperService extends BaseService {
                 ],
             })
         }
-
-        // if (!query.subExamId && subExamIds.length) {
-        //     clauses.push({
-        //         $or: [
-        //             { subExams: { $exists: false } },
-        //             { subExams: { $size: 0 } },
-        //             { subExams: { $in: subExamIds } },
-        //         ],
-        //     })
-        // }
 
         if (clauses.length === 1) Object.assign(filter, clauses[0])
         if (clauses.length > 1) filter.$and = clauses
@@ -64,14 +103,15 @@ class PreviousYearPaperService extends BaseService {
         // console.log(`Found ${result.data.length} previous year papers`)
 
         const previousYearPaperIds = result.data.map((item) => item._id)
-        const [testCounts, attemptCounts] = await Promise.all([
+        const [testCounts, attemptCounts, subscribedPaperIds] = await Promise.all([
             this.repository.getTestCountsByPreviousYearPaper(previousYearPaperIds),
             this.repository.getAttemptCountsByPreviousYearPaper(userId, previousYearPaperIds),
+            this.getSubscribedPaperIds(userId),
         ])
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
-            const hasAccess = !item.isPaid
+            const hasAccess = !item.isPaid || subscribedPaperIds.has(id)
             return {
                 ...item,
                 description: htmlToPlainText(item.description),
@@ -92,7 +132,8 @@ class PreviousYearPaperService extends BaseService {
             throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !previousYearPaper.isPaid
+        const subscribedPaperIds = await this.getSubscribedPaperIds(userId)
+        const hasAccess = !previousYearPaper.isPaid || subscribedPaperIds.has(previousYearPaper._id.toString())
         const testCounts = await this.repository.getTestCountsByPreviousYearPaper([previousYearPaper._id])
 
         return {
@@ -138,14 +179,17 @@ class PreviousYearPaperService extends BaseService {
         })
 
         const testIds = result.data.map((item) => item._id)
-        const [questionCounts, latestAttempts] = await Promise.all([
+        const [questionCounts, latestAttempts, subscribedPaperIds] = await Promise.all([
             this.repository.getQuestionCountsByTestIds(testIds),
             this.repository.getLatestAttemptsByTestIds(userId, testIds),
+            this.getSubscribedPaperIds(userId),
         ])
+
+        const paperHasAccess = !previousYearPaper.isPaid || subscribedPaperIds.has(previousYearPaperId.toString())
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
-            const hasAccess = !item.isPaid
+            const hasAccess = paperHasAccess || !item.isPaid
             const attemptStats = latestAttempts[id]
 
             return {
@@ -159,7 +203,53 @@ class PreviousYearPaperService extends BaseService {
             }
         })
 
-        return result
+        // Fetch all tests belonging to this previous year paper to compute overall stats
+        const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+        const allPaperTests = await PreviousYearPaperTest.find({
+            previousYearPaper: previousYearPaperId,
+            isDeleted: false
+        }).select('_id').lean()
+        const allPaperTestIds = allPaperTests.map(t => t._id)
+        const totalTests = allPaperTestIds.length
+
+        // Fetch all attempts for these tests
+        const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
+        const allAttempts = await PreviousYearPaperAttempt.find({
+            user: userId,
+            test: { $in: allPaperTestIds }
+        }).select('test score totalMarks correct wrong status').lean()
+
+        const uniqueAttemptedTestIds = new Set(allAttempts.map(att => att.test.toString()))
+        const attemptedCount = uniqueAttemptedTestIds.size
+
+        const bestScore = allAttempts.length > 0 ? Math.max(...allAttempts.map(att => att.score || 0)) : 0
+
+        let totalCorrect = 0
+        let totalWrong = 0
+        for (const att of allAttempts) {
+            if (att.status === 'completed') {
+                totalCorrect += att.correct || 0
+                totalWrong += att.wrong || 0
+            }
+        }
+        const totalAttemptedQs = totalCorrect + totalWrong
+        let accuracy = 0
+        if (totalAttemptedQs > 0) {
+            accuracy = (totalCorrect / totalAttemptedQs) * 100
+            accuracy = Math.round(accuracy * 10) / 10
+        }
+
+        const stats = {
+            totalTests,
+            attemptedCount,
+            bestScore,
+            accuracy
+        }
+
+        return {
+            ...result,
+            stats
+        }
     }
 
     async startTest(testId, userId, language = 'hi') {
@@ -173,7 +263,7 @@ class PreviousYearPaperService extends BaseService {
             throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !test.isPaid
+        const hasAccess = await this.checkUserTestAccess(previousYearPaper, test, userId)
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
         const questions = await this.repository.findQuestionsForTest(testId)
@@ -215,7 +305,7 @@ class PreviousYearPaperService extends BaseService {
             throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !test.isPaid
+        const hasAccess = await this.checkUserTestAccess(previousYearPaper, test, userId)
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
         const questions = await this.repository.findQuestionsForTest(testId)
@@ -271,7 +361,7 @@ class PreviousYearPaperService extends BaseService {
             throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !test.isPaid
+        const hasAccess = await this.checkUserTestAccess(previousYearPaper, test, userId)
         if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
         /* eslint-disable no-console */
@@ -446,16 +536,8 @@ class PreviousYearPaperService extends BaseService {
         const marksPerQuestion = Number(test.marksPerQuestion || 1)
         const negativeMarks = Number(test.negativeMarks || 0)
 
-        // Only process unique logical questions (by order)
-        const processedOrders = new Set()
-
         for (const q of questions) {
-            if (processedOrders.has(q.order)) continue
-            processedOrders.add(q.order)
-
-            // Calculate Marks logic for this logical question first
-            const siblingQuestionIds = questions.filter(sq => sq.order === q.order).map(sq => String(sq._id))
-            const ans = userAnswers.find(a => siblingQuestionIds.includes(String(a.questionId)))
+            const ans = userAnswers.find(a => String(a.questionId) === String(q._id))
 
             let isAttempted = false
             let isCorrect = false
@@ -464,13 +546,10 @@ class PreviousYearPaperService extends BaseService {
             if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
                 isAttempted = true
 
-                // Which specific question ID was answered?
-                const answeredQ = questions.find(sq => String(sq._id) === String(ans.questionId))
                 let correctIndex = -1
-                if (answeredQ) {
-                    if (answeredQ.en?.options) correctIndex = answeredQ.en.options.findIndex(opt => opt.isCorrect)
-                    if (correctIndex === -1 && answeredQ.hi?.options) correctIndex = answeredQ.hi.options.findIndex(opt => opt.isCorrect)
-                }
+                if (q.en?.options) correctIndex = q.en.options.findIndex(opt => opt.isCorrect)
+                if (correctIndex === -1 && q.hi?.options) correctIndex = q.hi.options.findIndex(opt => opt.isCorrect)
+                if (correctIndex === -1 && q.options) correctIndex = q.options.findIndex(opt => opt.isCorrect)
 
                 if (correctIndex !== -1 && ans.selectedOption === correctIndex) {
                     isCorrect = true
@@ -698,19 +777,23 @@ class PreviousYearPaperService extends BaseService {
         if (percentile >= 90) expertComment = "Excellent Work! You have high chances of getting selected.";
         else if (percentile >= 75) expertComment = "Well Done! Good performance.";
 
-        const topicAnalytics = Array.from(topicWise.values()).map(tw => ({
-            id: tw.id,
-            type: tw.type,
-            name: tw.name,
-            totalQuestions: tw.totalQuestions,
-            attempted: tw.attempted,
-            correct: tw.correct,
-            wrong: tw.wrong,
-            skipped: tw.skipped,
-            unattempted: tw.unattempted,
-            accuracy: tw.attempted > 0 ? parseFloat(((tw.correct / tw.attempted) * 100).toFixed(2)) : 0,
-            isWeak: tw.totalQuestions > 0 ? (tw.correct / tw.totalQuestions) < 0.5 : false
-        }))
+        const topicAnalytics = Array.from(topicWise.values()).map(tw => {
+            const isWeak = tw.totalQuestions > 0 ? (tw.correct / tw.totalQuestions) < 0.5 : false;
+            return {
+                id: tw.id,
+                type: tw.type,
+                name: tw.name,
+                totalQuestions: tw.totalQuestions,
+                attempted: tw.attempted,
+                correct: tw.correct,
+                wrong: tw.wrong,
+                skipped: tw.skipped,
+                unattempted: tw.unattempted,
+                accuracy: tw.attempted > 0 ? parseFloat(((tw.correct / tw.attempted) * 100).toFixed(2)) : 0,
+                isWeak,
+                is_week: isWeak
+            };
+        })
 
         return {
             expertComment,
@@ -769,8 +852,8 @@ class PreviousYearPaperService extends BaseService {
 
         const groupedQuestions = {}
         for (const q of questions) {
-            const orderKey = String(q.order)
-            if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
+            const questionKey = String(q._id)
+            if (!groupedQuestions[questionKey]) groupedQuestions[questionKey] = { en: {}, hi: {} }
 
             // Determine available languages
             let langs = []
@@ -794,7 +877,7 @@ class PreviousYearPaperService extends BaseService {
                 const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
                 const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
 
-                groupedQuestions[orderKey][lang] = {
+                groupedQuestions[questionKey][lang] = {
                     _id: q._id,
                     question: { text: htmlToPlainText(questionData.text || ''), image: questionData.image || '' },
                     options: optionsData.map((opt) => ({
@@ -830,6 +913,97 @@ class PreviousYearPaperService extends BaseService {
             page: query.page,
             limit: query.limit,
         })
+    }
+
+    async getTestInstructions(testId, userId) {
+        const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+        const test = await PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).lean()
+        if (!test || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        return {
+            testId: test._id,
+            title: test.title,
+            duration: test.duration,
+            totalQuestions: test.totalQuestions,
+            totalMarks: test.totalMarks,
+            marksPerQuestion: test.marksPerQuestion,
+            negativeMarks: test.negativeMarks,
+            passingMarks: test.passingMarks,
+            instructions: test.instructions,
+            instructionsNew: test.instructionsNew,
+            localizedContent: test.localizedContent || {}
+        }
+    }
+
+    async getOverallUserStats(userId) {
+        const mongoose = require('mongoose')
+        const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+        const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
+
+        const totalTestsCount = await PreviousYearPaperTest.countDocuments({
+            isDeleted: false,
+            status: 'active'
+        })
+
+        // User's first attempts per test
+        const userFirstAttempts = await PreviousYearPaperAttempt.aggregate([
+            { 
+                $match: { 
+                    user: new mongoose.Types.ObjectId(userId), 
+                    status: 'completed'
+                } 
+            },
+            { $sort: { attemptedAt: 1 } },
+            {
+                $group: {
+                    _id: '$test',
+                    accuracy: { $first: '$accuracy' }
+                }
+            }
+        ])
+
+        const attemptedTestCount = userFirstAttempts.length
+        const totalAccuracy = userFirstAttempts.reduce((acc, curr) => acc + (curr.accuracy || 0), 0)
+        const averageAccuracy = attemptedTestCount > 0 ? parseFloat((totalAccuracy / attemptedTestCount).toFixed(2)) : 0
+
+        // Overall ranking in the series based on sum of first attempts
+        const userScores = await PreviousYearPaperAttempt.aggregate([
+            { 
+                $match: { 
+                    status: 'completed'
+                } 
+            },
+            { $sort: { attemptedAt: 1 } },
+            {
+                $group: {
+                    _id: { user: '$user', test: '$test' },
+                    firstScore: { $first: '$score' },
+                    firstTimeTaken: { $first: '$timeTaken' }
+                }
+            },
+            {
+                $group: {
+                    _id: '$_id.user',
+                    totalScore: { $sum: '$firstScore' },
+                    totalTime: { $sum: '$firstTimeTaken' }
+                }
+            },
+            {
+                $sort: { totalScore: -1, totalTime: 1 }
+            }
+        ])
+
+        const rankIndex = userScores.findIndex(item => item._id.toString() === userId.toString())
+        const rank = rankIndex !== -1 ? rankIndex + 1 : (attemptedTestCount > 0 ? userScores.length + 1 : 0)
+
+        return {
+            rank,
+            attemptedCount: attemptedTestCount,
+            totalTests: totalTestsCount,
+            accuracy: averageAccuracy
+        }
     }
 }
 

@@ -11,6 +11,7 @@ const {
 router.get('/', validateQuery(listPreviousYearPapersQuerySchema), controller.listPreviousYearPapers)
 router.get('/attempts', validateQuery(listPreviousYearPaperAttemptsQuerySchema), controller.listMyAttempts)
 router.get('/tests/:testId/start', controller.startTest)
+router.get('/tests/:testId/instructions', controller.getTestInstructions)
 router.post('/tests/:testId/submit', validate(submitPreviousYearPaperTestSchema), controller.submitTest)
 
 //previous year 
@@ -20,6 +21,7 @@ router.get('/pyqp/:testId/session/:sessionId/analytics', controller.getSessionAn
 router.get('/pyqp/:testId/session/:sessionId/solution', controller.getSessionSolution)
 
 
+router.get('/user-stats', controller.getOverallUserStats)
 router.get('/:id/tests', validateQuery(listPreviousYearPaperTestsQuerySchema), controller.listPreviousYearPaperTests)
 router.get('/:id', controller.getPreviousYearPaper)
 

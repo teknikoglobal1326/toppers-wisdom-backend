@@ -31,6 +31,14 @@ class AdminQuestionService extends BaseService {
     const updatedCourseTest = await courseTestRepository.updateById(testId, update)
     if (updatedCourseTest) return
 
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const updatedCourseSeparatedTest = await CourseSeparatedTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      { totalMappedQuestions: count, totalQuestions: count },
+      { new: true }
+    )
+    if (updatedCourseSeparatedTest) return
+
     const updatedSeriesTest = await TestSeriesTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },
       update,

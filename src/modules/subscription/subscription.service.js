@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const Subscription = require('../../models/Subscription.model');
 const mongoose = require('mongoose');
 
@@ -118,14 +119,26 @@ class SubscriptionService {
             receipt: `sub_${Date.now()}`,
         });
 
+        const subscriptionDetails = subscription.toObject();
+        subscriptionDetails.duration = subscription.durationDays;
+        subscriptionDetails.price = subscription.price;
+
+        console.log(`[SubscriptionService] Creating SubscriptionOrder for user: ${userId}, subscription: ${subscription._id}`);
+        console.log(`[SubscriptionService] Supplying fields: duration=${subscription.durationDays}, isActive=${subscription.isActive}, subscriptionDetails=${JSON.stringify(subscriptionDetails)}`);
+
         const order = await SubscriptionOrder.create({
             user: userId,
             subscription: subscription._id,
             amount: subscription.price,
             currency: 'INR',
             razorpayOrderId: rzpOrder.id,
-            status: 'pending'
+            status: 'pending',
+            duration: subscription.durationDays,
+            isActive: subscription.isActive,
+            subscriptionDetails
         });
+
+        console.log(`[SubscriptionService] Created Order ID: ${order._id}. Saved fields: duration=${order.duration}, isActive=${order.isActive}, detailsExists=${!!order.subscriptionDetails}`);
 
         return {
             orderId: order._id,
