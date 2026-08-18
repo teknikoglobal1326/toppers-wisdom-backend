@@ -392,4 +392,60 @@ const googleSignupOrLogin = async (payload) => {
   return { accessToken, refreshToken, user, isNewUser }
 }
 
-module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, getProfile, loginWithPassword, deleteAccount, forgotPassword, verifyResetOtp, resetPassword, googleSignupOrLogin }
+const getStatistics = async (userId) => {
+  const User = require('../../models/User.model')
+  const Enrollment = require('../../models/Enrollment.model')
+  const TestSeriesAttempt = require('../../models/TestSeriesAttempt.model')
+  const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
+  const CourseTestAttempt = require('../../models/CourseTestAttempt.model')
+  const LiveTestAttempt = require('../../models/LiveTestAttempt.model')
+  const AiTestAttempt = require('../../models/AiTestAttempt.model')
+  const DailyQuizAttempt = require('../../models/DailyQuizAttempt.model')
+
+  const [
+    user,
+    enrollments,
+    testSeriesCount,
+    pypCount,
+    courseTestCount,
+    liveTestCount,
+    aiTestCount,
+    quizCount
+  ] = await Promise.all([
+    User.findById(userId).select('watchDuration').lean(),
+    Enrollment.find({ user: userId }).lean(),
+    TestSeriesAttempt.countDocuments({ user: userId, status: 'completed' }),
+    PreviousYearPaperAttempt.countDocuments({ user: userId, status: 'completed' }),
+    CourseTestAttempt.countDocuments({ user: userId, status: 'completed' }),
+    LiveTestAttempt.countDocuments({ user: userId, status: 'completed' }),
+    AiTestAttempt.countDocuments({ user: userId, status: 'completed' }),
+    DailyQuizAttempt.countDocuments({ user: userId, status: 'completed' })
+  ])
+
+  let totalVideosWatched = 0
+  if (enrollments?.length) {
+    enrollments.forEach(e => {
+      if (e.progress?.length) {
+        e.progress.forEach(p => {
+          if (p.completed && p.lessonId) {
+            totalVideosWatched++
+          }
+        })
+      }
+    })
+  }
+
+  const totalDuration = user?.watchDuration || 0
+  const totalTestsAttempted = testSeriesCount + pypCount + courseTestCount + liveTestCount + aiTestCount
+
+  logger.info({ userId }, 'Retrieved user statistics')
+
+  return {
+    totalVideosWatched,
+    totalDuration,
+    totalTestsAttempted,
+    totalQuizzesAttempted: quizCount
+  }
+}
+
+module.exports = { sendOtp, verifyOtpAndLogin, refreshToken, logout, updatePassword, updateProfile, getProfile, loginWithPassword, deleteAccount, forgotPassword, verifyResetOtp, resetPassword, googleSignupOrLogin, getStatistics }

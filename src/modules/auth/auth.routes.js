@@ -19,5 +19,6 @@ router.get('/profile', authMiddleware, controller.getProfile)
 router.put('/update-password', authMiddleware, validate(updatePasswordSchema), controller.updatePassword)
 router.put('/update-profile', authMiddleware, uploadAvatar, parseFormData, validate(updateProfileSchema), controller.updateProfile)
 router.delete('/delete-account', authMiddleware, controller.deleteAccount)
+router.get('/statistics', authMiddleware, controller.getStatistics)
 
 module.exports = router

@@ -73,4 +73,9 @@ const googleSignup = catchAsync(async (req, res) => {
   sendSuccess(res, data, 'Login successful')
 })
 
-module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, getProfile, updateProfile, login, deleteAccount, forgotPassword, verifyResetOtp, resetPassword, googleSignup }
+const getStatistics = catchAsync(async (req, res) => {
+  const data = await authService.getStatistics(req.user._id)
+  sendSuccess(res, data, 'Statistics retrieved successfully')
+})
+
+module.exports = { sendOtp, verifyOtp, refreshToken, logout, updatePassword, getProfile, updateProfile, login, deleteAccount, forgotPassword, verifyResetOtp, resetPassword, googleSignup, getStatistics }
