@@ -44,6 +44,7 @@ const languageQuestionSchema = Joi.object({
 const createQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).required(),
   testId: Joi.string().hex().length(24).optional(),
+  testModel: Joi.string().valid('CourseTest', 'CourseSeparatedTest').default('CourseTest'),
   subjectId: Joi.string().hex().length(24).optional().allow(null, ''),
   chapterId: Joi.string().hex().length(24).optional().allow(null, ''),
   topicId: Joi.string().hex().length(24).optional().allow(null, ''),
@@ -87,6 +88,7 @@ const languageQuestionUpdateSchema = Joi.object({
 const updateQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).optional(),
   testId: Joi.string().hex().length(24).optional(),
+  testModel: Joi.string().valid('CourseTest', 'CourseSeparatedTest').optional(),
   subjectId: Joi.string().hex().length(24).optional().allow(null, ''),
   chapterId: Joi.string().hex().length(24).optional().allow(null, ''),
   topicId: Joi.string().hex().length(24).optional().allow(null, ''),

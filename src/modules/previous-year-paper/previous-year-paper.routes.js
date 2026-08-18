@@ -11,6 +11,7 @@ const {
 router.get('/', validateQuery(listPreviousYearPapersQuerySchema), controller.listPreviousYearPapers)
 router.get('/attempts', validateQuery(listPreviousYearPaperAttemptsQuerySchema), controller.listMyAttempts)
 router.get('/tests/:testId/start', controller.startTest)
+router.get('/tests/:testId/instructions', controller.getTestInstructions)
 router.post('/tests/:testId/submit', validate(submitPreviousYearPaperTestSchema), controller.submitTest)
 
 //previous year 

@@ -68,6 +68,10 @@ const listMyAttempts = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
+const getTestInstructions = catchAsync(async (req, res) => {
+    sendSuccess(res, await previousYearPaperService.getTestInstructions(req.params.testId, req.user._id))
+})
+
 module.exports = {
     listPreviousYearPapers,
     getPreviousYearPaper,
@@ -79,4 +83,5 @@ module.exports = {
     getSessionAnalytics,
     getSessionSolution,
     listMyAttempts,
+    getTestInstructions,
 }

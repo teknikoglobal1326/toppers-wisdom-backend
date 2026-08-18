@@ -179,9 +179,19 @@ class AdminCourseService extends BaseService {
     return courseRepository.listPurchases(query);
   }
 
-  async getAssociatedData(courseId, type) {
+  async getAssociatedData(courseId, type,testId = null) {
     const Course = require('../../models/Course.model')
     const Subject = require('../../models/Subject.model')
+
+    if(testId){
+      const Test = require('../../models/Test.model')
+      const test = await Test.findById(testId).select('subjects').lean()
+      if (!test) {
+        const AppError = require('../../core/AppError')
+        throw new AppError('Test not found', 404)
+      }
+      return test.subjects
+    }
 
     const course = await Course.findById(courseId).select('subjects').lean()
     if (!course) {

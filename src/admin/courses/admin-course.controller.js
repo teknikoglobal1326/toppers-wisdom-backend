@@ -20,7 +20,7 @@ const getAssociatedData = catchAsync(async (req, res) => {
   if (!courseId || !type) {
     return res.status(400).json({ success: false, message: 'courseId and type are required' })
   }
-  sendSuccess(res, await adminCourseService.getAssociatedData(courseId, type))
+  sendSuccess(res, await adminCourseService.getAssociatedData(courseId, type,testId))
 })
 
 const uploadPdfForCourse = catchAsync(async (req, res) => {
@@ -75,4 +75,4 @@ const deleteTestForCourse = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Test deleted successfully')
 })
 
-module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse, uploadTestForCourse, listTestsForCourse, getTestForCourse, updateTestForCourse, deleteTestForCourse }
+module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse, uploadTestForCourse, listTestsForCourse, getTestForCourse, updateTestForCourse, deleteTestForCourse }
