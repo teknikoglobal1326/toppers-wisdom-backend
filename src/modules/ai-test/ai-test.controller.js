@@ -37,6 +37,11 @@ const getSessionAnalytics = catchAsync(async (req, res) => {
   sendSuccess(res, data, 'AI Test session analytics retrieved successfully')
 })
 
+const getSessionSolution = catchAsync(async (req, res) => {
+  const data = await aiTestService.getSessionSolution(req.params.id, req.params.sessionId, req.user._id)
+  sendSuccess(res, data, 'AI Test session solution retrieved successfully')
+})
+
 module.exports = {
   getSubjects,
   getChapters,
@@ -44,5 +49,6 @@ module.exports = {
   generateAiTest,
   startSession,
   updateSession,
-  getSessionAnalytics
+  getSessionAnalytics,
+  getSessionSolution
 }
