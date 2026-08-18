@@ -50,15 +50,173 @@ router.get('/courses', catchAsync(async (req, res) => {
 
 // GET /api/v1/admin/common/subjects
 router.get('/subjects', catchAsync(async (req, res) => {
-  const { examId } = req.query;
+  const { examId, exam, courseId, course, testId, courseTestId, limit, search, q } = req.query;
   const filter = { isDeleted: false, status: 'active' };
 
-  if (examId) {
-    if (examId.includes(',')) {
-      filter.examIds = { $in: examId.split(',') };
-    } else {
-      filter.examIds = examId;
+  const targetTestId = testId || courseTestId;
+  const targetCourseId = courseId || course;
+  const targetExamId = examId || exam;
+
+  let scopedSubjectIds = null;
+
+  if (targetTestId && targetTestId !== 'all') {
+    const CourseTest = require('../../models/CourseTest.model');
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model');
+    let courseTest = await CourseTest.findOne({ _id: targetTestId, isDeleted: false }).lean();
+    if (!courseTest) {
+      courseTest = await CourseSeparatedTest.findOne({ _id: targetTestId, isDeleted: false }).lean();
     }
+    if (courseTest) {
+      if (Array.isArray(courseTest.subjects) && courseTest.subjects.length > 0) {
+        scopedSubjectIds = courseTest.subjects.map(s => typeof s === 'object' ? s._id : s);
+      } else if (courseTest.subject) {
+        scopedSubjectIds = [typeof courseTest.subject === 'object' ? courseTest.subject._id : courseTest.subject];
+      } else if (Array.isArray(courseTest.masterIds) && courseTest.masterIds.length > 0) {
+        scopedSubjectIds = courseTest.masterIds.map(m => typeof m.subjectId === 'object' ? m.subjectId?._id : (m.subjectId || m.subject)).filter(Boolean);
+      } else if (courseTest.course) {
+        const courseDoc = await courseRepository.findById(courseTest.course, { select: 'subjects' });
+        if (courseDoc && Array.isArray(courseDoc.subjects)) {
+          scopedSubjectIds = courseDoc.subjects.map(item => item.subject);
+        }
+      }
+    }
+    scopedSubjectIds = scopedSubjectIds || [];
+  }
+
+  if (!scopedSubjectIds && targetCourseId && targetCourseId !== 'all') {
+    const courseDoc = await courseRepository.findById(targetCourseId, { select: 'subjects' });
+    if (courseDoc && Array.isArray(courseDoc.subjects)) {
+      scopedSubjectIds = courseDoc.subjects.map(item => item.subject);
+    }
+  }
+
+  if (scopedSubjectIds) {
+    filter._id = { $in: scopedSubjectIds };
+  }
+
+  if (targetExamId && targetExamId !== 'all') {
+    if (typeof targetExamId === 'string' && targetExamId.includes(',')) {
+      filter.examIds = { $in: targetExamId.split(',').map(s => s.trim()).filter(Boolean) };
+    } else {
+      filter.examIds = targetExamId;
+    }
+  }
+
+  const searchTerm = (search || q || '').trim();
+  if (searchTerm) {
+    filter.name = { $regex: searchTerm, $options: 'i' };
+  }
+
+  let queryBuilder = Subject.find(filter)
+    .select('_id name sortOrder examIds chapters')
+    .sort({ sortOrder: 1, createdAt: -1 });
+
+  if (limit) {
+    const parsedLimit = parseInt(limit, 10);
+    if (!isNaN(parsedLimit) && parsedLimit > 0) {
+      queryBuilder = queryBuilder.limit(parsedLimit);
+    }
+  }
+
+  const subjects = await queryBuilder.lean();
+  sendSuccess(res, subjects);
+}));
+
+// GET /api/v1/admin/common/subjects/:courseId
+router.get('/subjects/:courseId', catchAsync(async (req, res) => {
+  const { courseId } = req.params;
+
+  let subjectIds = [];
+  const course = await courseRepository.findById(courseId, { select: 'subjects' });
+
+  if (course && Array.isArray(course.subjects)) {
+    subjectIds = course.subjects.map(item => item.subject);
+  } else {
+    // Check if courseId is a CourseTest ID (separate course test)
+    const CourseTest = require('../../models/CourseTest.model');
+    const courseTest = await CourseTest.findOne({ _id: courseId, isDeleted: false }).lean();
+    if (courseTest) {
+      if (Array.isArray(courseTest.subjects) && courseTest.subjects.length > 0) {
+        subjectIds = courseTest.subjects;
+      } else if (courseTest.course) {
+        const parentCourse = await courseRepository.findById(courseTest.course, { select: 'subjects' });
+        if (parentCourse && Array.isArray(parentCourse.subjects)) {
+          subjectIds = parentCourse.subjects.map(item => item.subject);
+        }
+      }
+    }
+  }
+
+  if (!course && subjectIds.length === 0) {
+    return sendError(res, 'Course or Test not found', 404);
+  }
+
+  const subjects = await Subject.find(
+    {
+      _id: { $in: subjectIds },
+      isDeleted: false,
+      status: 'active'
+    }
+  )
+    .select('_id name sortOrder examIds chapters')
+    .sort({ sortOrder: 1, createdAt: -1 })
+    .lean();
+
+  sendSuccess(res, subjects);
+}));
+
+// GET /api/v1/admin/common/course-test-subjects/:testId?
+router.get(['/course-test-subjects', '/course-test-subjects/:testId'], catchAsync(async (req, res) => {
+  const testId = req.params.testId || req.query.testId || req.query.courseTestId;
+  const courseId = req.query.courseId || req.query.course;
+  const CourseTest = require('../../models/CourseTest.model');
+  const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model');
+
+  let subjectIds = [];
+
+  if (testId && testId !== 'all') {
+    let testDoc = await CourseTest.findOne({ _id: testId, isDeleted: false }).lean();
+    if (!testDoc) {
+      testDoc = await CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).lean();
+    }
+    if (testDoc) {
+      if (Array.isArray(testDoc.subjects) && testDoc.subjects.length > 0) {
+        subjectIds = testDoc.subjects.map(s => typeof s === 'object' ? s._id : s);
+      } else if (testDoc.subject) {
+        subjectIds = [typeof testDoc.subject === 'object' ? testDoc.subject._id : testDoc.subject];
+      } else if (Array.isArray(testDoc.masterIds) && testDoc.masterIds.length > 0) {
+        subjectIds = testDoc.masterIds.map(m => typeof m.subjectId === 'object' ? m.subjectId?._id : (m.subjectId || m.subject)).filter(Boolean);
+      } else if (testDoc.course) {
+        const courseDoc = await courseRepository.findById(testDoc.course, { select: 'subjects' });
+        if (courseDoc && Array.isArray(courseDoc.subjects)) {
+          subjectIds = courseDoc.subjects.map(item => item.subject);
+        }
+      }
+    }
+  }
+
+  // If specific testId is passed, strictly return subjects mapped to this test
+  if (testId && testId !== 'all') {
+    if (subjectIds.length === 0) {
+      return sendSuccess(res, []);
+    }
+    const subjects = await Subject.find({ _id: { $in: subjectIds }, isDeleted: false, status: 'active' })
+      .select('_id name sortOrder examIds chapters')
+      .sort({ sortOrder: 1, createdAt: -1 })
+      .lean();
+    return sendSuccess(res, subjects);
+  }
+
+  if (subjectIds.length === 0 && courseId && courseId !== 'all') {
+    const courseDoc = await courseRepository.findById(courseId, { select: 'subjects' });
+    if (courseDoc && Array.isArray(courseDoc.subjects)) {
+      subjectIds = courseDoc.subjects.map(item => item.subject);
+    }
+  }
+
+  const filter = { isDeleted: false, status: 'active' };
+  if (subjectIds.length > 0) {
+    filter._id = { $in: subjectIds };
   }
 
   const subjects = await Subject.find(filter)
@@ -68,34 +226,6 @@ router.get('/subjects', catchAsync(async (req, res) => {
 
   sendSuccess(res, subjects);
 }));
-// GET /api/v1/admin/common/subjects/:courseId
-router.get('/subjects/:courseId', catchAsync(async (req, res) => {
-  const { courseId } = req.params
-
-  const course = await courseRepository.findById(courseId, {
-    select: 'subjects'
-  })
-
-  if (!course) {
-    return sendError(res, 'Course not found', 404)
-  }
-
-  const subjectIds = course.subjects.map(item => item.subject)
-
-  const subjects = await subjectRepository.findAll(
-    {
-      _id: { $in: subjectIds },
-      isDeleted: false,
-      status: 'active'
-    },
-    {
-      sort: { sortOrder: 1, createdAt: -1 },
-      select: '_id name sortOrder'
-    }
-  )
-
-  sendSuccess(res, subjects)
-}))
 
 // GET /api/v1/admin/common/tree/:courseId
 router.get('/tree/:courseId', catchAsync(async (req, res) => {
@@ -134,6 +264,78 @@ router.get('/tree/:courseId', catchAsync(async (req, res) => {
 
   sendSuccess(res, tree)
 }))
+
+// GET /api/v1/admin/common/chapters
+router.get('/chapters', catchAsync(async (req, res) => {
+  const { subjectId, subject, courseId, course, examId, exam, search, q, limit } = req.query;
+  const filter = { isDeleted: false, status: 'active' };
+
+  const targetCourse = courseId || course;
+  if (targetCourse && targetCourse !== 'all') {
+    const courseDoc = await courseRepository.findById(targetCourse, { select: 'subjects' });
+    if (courseDoc && Array.isArray(courseDoc.subjects)) {
+      const subjectIds = courseDoc.subjects.map(item => item.subject);
+      filter._id = { $in: subjectIds };
+    }
+  }
+
+  const targetSubject = subjectId || subject;
+  if (targetSubject && targetSubject !== 'all') {
+    if (typeof targetSubject === 'string' && targetSubject.includes(',')) {
+      const ids = targetSubject.split(',').map(s => s.trim()).filter(Boolean);
+      filter._id = filter._id ? { $in: filter._id.$in.filter(id => ids.includes(String(id))) } : { $in: ids };
+    } else if (Array.isArray(targetSubject)) {
+      filter._id = filter._id ? { $in: filter._id.$in.filter(id => targetSubject.includes(String(id))) } : { $in: targetSubject };
+    } else {
+      filter._id = targetSubject;
+    }
+  }
+
+  const targetExam = examId || exam;
+  if (targetExam && targetExam !== 'all') {
+    if (typeof targetExam === 'string' && targetExam.includes(',')) {
+      filter.examIds = { $in: targetExam.split(',').map(s => s.trim()).filter(Boolean) };
+    } else {
+      filter.examIds = targetExam;
+    }
+  }
+
+  const subjects = await Subject.find(filter)
+    .select('_id name sortOrder examIds chapters')
+    .sort({ sortOrder: 1, createdAt: -1 })
+    .lean();
+
+  let chapters = [];
+  const searchTerm = (search || q || '').trim().toLowerCase();
+
+  subjects.forEach(sub => {
+    (sub.chapters || []).forEach(ch => {
+      if (searchTerm && !(ch.name || '').toLowerCase().includes(searchTerm)) {
+        return;
+      }
+      chapters.push({
+        _id: ch._id,
+        id: ch._id,
+        name: ch.name,
+        title: ch.name,
+        chapterName: ch.name,
+        sortOrder: ch.sortOrder,
+        subjectId: sub._id,
+        subjectName: sub.name,
+        topics: ch.topics || []
+      });
+    });
+  });
+
+  if (limit) {
+    const parsedLimit = parseInt(limit, 10);
+    if (!isNaN(parsedLimit) && parsedLimit > 0) {
+      chapters = chapters.slice(0, parsedLimit);
+    }
+  }
+
+  sendSuccess(res, chapters);
+}));
 
 // GET /api/v1/admin/common/chapters/:courseId
 router.get('/chapters/:courseId', catchAsync(async (req, res) => {
@@ -533,5 +735,54 @@ router.post('/upload-chat-attachment', require('../../middlewares/upload.middlew
 
   sendSuccess(res, { url: fileUrl, filename: req.file.originalname })
 }))
+
+// GET /api/v1/admin/common/subjects-by-daily-quiz/:dailyQuizId
+router.get('/subjectsbydailyquiz/:dailyQuizId', catchAsync(async (req, res) => {
+  const { dailyQuizId } = req.params;
+  const DailyQuiz = require('../../models/DailyQuiz.model');
+
+  const dailyQuiz = await DailyQuiz.findOne({ _id: dailyQuizId, isDeleted: false })
+    .populate('subjectIds')
+    .lean();
+
+  if (!dailyQuiz) {
+    return sendSuccess(res, []);
+  }
+
+  const allowedChapters = new Set((dailyQuiz.chapterIds || []).map(id => id.toString()));
+  const allowedTopics = new Set((dailyQuiz.topicIds || []).map(id => id.toString()));
+
+  const subjects = (dailyQuiz.subjectIds || []).map(sub => {
+    let chapters = sub.chapters || [];
+    if (allowedChapters.size > 0) {
+      chapters = chapters.filter(ch => allowedChapters.has(ch._id.toString()));
+    }
+
+    chapters = chapters.map(ch => {
+      let topics = ch.topics || [];
+      if (allowedTopics.size > 0) {
+        topics = topics.filter(tp => allowedTopics.has(tp._id.toString()));
+      }
+      return {
+        _id: ch._id,
+        chapterName: ch.name,
+        name: ch.name,
+        topics: topics.map(tp => ({
+          _id: tp._id,
+          topicName: tp.name,
+          name: tp.name
+        }))
+      };
+    });
+
+    return {
+      _id: sub._id,
+      name: sub.name,
+      chapters
+    };
+  });
+
+  return sendSuccess(res, subjects);
+}));
 
 module.exports = router

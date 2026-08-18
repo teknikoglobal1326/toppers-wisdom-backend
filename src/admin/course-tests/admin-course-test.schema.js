@@ -1,5 +1,24 @@
 const Joi = require('joi')
 
+const validateTestMarks = (value, helpers) => {
+  const totalQ = Number(value.totalQuestions || 0)
+  const marksPerQ = Number(value.marksPerQuestion || 1)
+  const expectedTotalMarks = totalQ * marksPerQ
+
+  if (value.totalMarks === undefined || value.totalMarks === null || Number(value.totalMarks) === 0) {
+    value.totalMarks = expectedTotalMarks
+  } else if (Number(value.totalMarks) !== expectedTotalMarks) {
+    return helpers.message(`Total marks must be equal to Total Questions * Marks Per Question (${totalQ} * ${marksPerQ} = ${expectedTotalMarks})`)
+  }
+
+  const passing = Number(value.passingMarks || 0)
+  if (passing > Number(value.totalMarks)) {
+    return helpers.message(`Passing marks (${passing}) cannot be greater than Total marks (${value.totalMarks})`)
+  }
+
+  return value
+}
+
 const createCourseTestSchema = Joi.object({
   course: Joi.string().hex().length(24).optional(),
   courseId: Joi.string().hex().length(24).optional(),
@@ -37,7 +56,7 @@ const createCourseTestSchema = Joi.object({
   scheduledEndTime: Joi.date().optional().allow('', null),
   language: Joi.string().valid('hi', 'en', 'both').default('hi'),
   status: Joi.string().valid('draft', 'active', 'inactive').default('draft'),
-})
+}).custom(validateTestMarks)
 
 const updateCourseTestSchema = Joi.object({
   course: Joi.string().hex().length(24).optional(),

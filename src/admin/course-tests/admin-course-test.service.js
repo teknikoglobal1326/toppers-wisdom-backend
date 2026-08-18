@@ -84,7 +84,7 @@ class AdminCourseTestService extends BaseService {
   }
 
   async getOne(id) {
-    const courseTest = await courseTestRepository.findOne(
+    let courseTest = await courseTestRepository.findOne(
       { _id: id, isDeleted: false },
       {
         populate: [
@@ -92,9 +92,16 @@ class AdminCourseTestService extends BaseService {
           { path: 'subjects' },
         ],
       }
-    )
-    if (!courseTest) throw new AppError('Course test not found', 404, 'NOT_FOUND')
-    return courseTest
+    );
+    if (!courseTest) {
+      const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model');
+      courseTest = await CourseSeparatedTest.findOne({ _id: id, isDeleted: false })
+        .populate({ path: 'course', select: 'title slug' })
+        .populate({ path: 'subjects' })
+        .lean();
+    }
+    if (!courseTest) throw new AppError('Course test not found', 404, 'NOT_FOUND');
+    return courseTest;
   }
 
   buildPayload(data = {}) {

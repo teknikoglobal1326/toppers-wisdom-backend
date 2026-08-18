@@ -269,6 +269,7 @@ class AdminCourseService extends BaseService {
 
   async listPdfsForCourse(courseId, query = {}) {
     const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
+    const Subject = require('../../models/Subject.model')
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 20)
     const skip = (page - 1) * limit
@@ -287,15 +288,63 @@ class AdminCourseService extends BaseService {
       ? { createdAt: direction, sortOrder: 1 }
       : { sortOrder: direction, createdAt: -1 }
 
-    const [total, data] = await Promise.all([
+    const [total, rawData] = await Promise.all([
       CourseSeparatedPdf.countDocuments(filter),
       CourseSeparatedPdf.find(filter)
         .sort(sort)
         .skip(skip)
         .limit(limit)
         .populate('subjects')
+        .populate({ path: 'course', select: 'title slug' })
         .lean()
     ])
+
+    // Fetch active subjects to build chapter & topic lookup maps
+    const subjectsList = await Subject.find({ isDeleted: false }).lean()
+
+    const subjectMap = new Map()
+    const chapterMap = new Map()
+    const topicMap = new Map()
+    subjectsList.forEach(sub => {
+      subjectMap.set(sub._id.toString(), sub.name || '')
+      const chapters = sub.chapters || []
+      chapters.forEach(ch => {
+        if (ch && ch._id) chapterMap.set(ch._id.toString(), ch.name || '')
+        const topics = ch && ch.topics ? ch.topics : []
+        topics.forEach(tp => {
+          if (tp && tp._id) topicMap.set(tp._id.toString(), tp.name || '')
+        })
+      })
+    })
+
+    const data = rawData.map((pdf) => {
+      const subjectNames = (pdf.subjects || [])
+        .map(s => typeof s === 'object' ? (s.name || s.title || '') : (subjectMap.get(String(s)) || ''))
+        .filter(Boolean)
+      pdf.subjectName = subjectNames.length > 0 ? subjectNames.join(', ') : '—'
+
+      pdf.chapters = (pdf.chapters || []).map(chId => {
+        const idStr = String(typeof chId === 'object' ? chId._id : chId)
+        return {
+          _id: typeof chId === 'object' ? chId._id : chId,
+          name: typeof chId === 'object' && chId.name ? chId.name : (chapterMap.get(idStr) || '')
+        }
+      })
+      const chapterNames = pdf.chapters.map(c => c.name).filter(Boolean)
+      pdf.chapterName = chapterNames.length > 0 ? chapterNames.join(', ') : '—'
+
+      pdf.topics = (pdf.topics || []).map(tpId => {
+        const idStr = String(typeof tpId === 'object' ? tpId._id : tpId)
+        return {
+          _id: typeof tpId === 'object' ? tpId._id : tpId,
+          name: typeof tpId === 'object' && tpId.name ? tpId.name : (topicMap.get(idStr) || '')
+        }
+      })
+      const topicNames = pdf.topics.map(t => t.name).filter(Boolean)
+      pdf.topicName = topicNames.length > 0 ? topicNames.join(', ') : '—'
+
+      return pdf
+    })
 
     return {
       data,
@@ -312,35 +361,55 @@ class AdminCourseService extends BaseService {
     const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
     const Subject = require('../../models/Subject.model')
     const AppError = require('../../core/AppError')
-    const pdf = await CourseSeparatedPdf.findOne({ _id: pdfId, course: courseId, isDeleted: false }).populate('subjects').lean()
+    const pdf = await CourseSeparatedPdf.findOne({ _id: pdfId, course: courseId, isDeleted: false })
+      .populate('subjects')
+      .populate({ path: 'course', select: 'title slug' })
+      .lean()
     if (!pdf) {
       throw new AppError('PDF not found', 404, 'NOT_FOUND')
     }
 
-    const subjectIds = pdf.subjects || []
-    const subjects = await Subject.find({ _id: { $in: subjectIds } }).lean()
+    const subjectsList = await Subject.find({ isDeleted: false }).lean()
 
+    const subjectMap = new Map()
     const chapterMap = new Map()
     const topicMap = new Map()
-
-    subjects.forEach(sub => {
-      (sub.chapters || []).forEach(ch => {
-        chapterMap.set(ch._id.toString(), ch.name)
-        (ch.topics || []).forEach(tp => {
-          topicMap.set(tp._id.toString(), tp.name)
+    subjectsList.forEach(sub => {
+      subjectMap.set(sub._id.toString(), sub.name || '')
+      const chapters = sub.chapters || []
+      chapters.forEach(ch => {
+        if (ch && ch._id) chapterMap.set(ch._id.toString(), ch.name || '')
+        const topics = ch && ch.topics ? ch.topics : []
+        topics.forEach(tp => {
+          if (tp && tp._id) topicMap.set(tp._id.toString(), tp.name || '')
         })
       })
     })
 
-    pdf.chapters = (pdf.chapters || []).map(chId => ({
-      _id: chId,
-      name: chapterMap.get(chId.toString()) || ''
-    }))
+    const subjectNames = (pdf.subjects || [])
+      .map(s => typeof s === 'object' ? (s.name || s.title || '') : (subjectMap.get(String(s)) || ''))
+      .filter(Boolean)
+    pdf.subjectName = subjectNames.length > 0 ? subjectNames.join(', ') : '—'
 
-    pdf.topics = (pdf.topics || []).map(tpId => ({
-      _id: tpId,
-      name: topicMap.get(tpId.toString()) || ''
-    }))
+    pdf.chapters = (pdf.chapters || []).map(chId => {
+      const idStr = String(typeof chId === 'object' ? chId._id : chId)
+      return {
+        _id: typeof chId === 'object' ? chId._id : chId,
+        name: typeof chId === 'object' && chId.name ? chId.name : (chapterMap.get(idStr) || '')
+      }
+    })
+    const chapterNames = pdf.chapters.map(c => c.name).filter(Boolean)
+    pdf.chapterName = chapterNames.length > 0 ? chapterNames.join(', ') : '—'
+
+    pdf.topics = (pdf.topics || []).map(tpId => {
+      const idStr = String(typeof tpId === 'object' ? tpId._id : tpId)
+      return {
+        _id: typeof tpId === 'object' ? tpId._id : tpId,
+        name: typeof tpId === 'object' && tpId.name ? tpId.name : (topicMap.get(idStr) || '')
+      }
+    })
+    const topicNames = pdf.topics.map(t => t.name).filter(Boolean)
+    pdf.topicName = topicNames.length > 0 ? topicNames.join(', ') : '—'
 
     return pdf
   }
@@ -404,6 +473,7 @@ class AdminCourseService extends BaseService {
 
   async listTestsForCourse(courseId, query = {}) {
     const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const Subject = require('../../models/Subject.model')
     const questionRepository = require('../../modules/question/question.repository')
     const page = Math.max(1, Number(query.page) || 1)
     const limit = Math.max(1, Number(query.limit) || 20)
@@ -430,6 +500,7 @@ class AdminCourseService extends BaseService {
         .skip(skip)
         .limit(limit)
         .populate('subjects')
+        .populate({ path: 'course', select: 'title slug' })
         .lean()
     ])
 
@@ -437,8 +508,52 @@ class AdminCourseService extends BaseService {
       questionRepository.count({ test: ct._id, isDeleted: false })
     ))
 
+    // Fetch all active subjects to build comprehensive chapter & topic maps
+    const subjectsList = await Subject.find({ isDeleted: false }).lean()
+
+    const subjectMap = new Map()
+    const chapterMap = new Map()
+    const topicMap = new Map()
+    subjectsList.forEach(sub => {
+      subjectMap.set(sub._id.toString(), sub.name || '')
+      const chapters = sub.chapters || []
+      chapters.forEach(ch => {
+        if (ch && ch._id) chapterMap.set(ch._id.toString(), ch.name || '')
+        const topics = ch && ch.topics ? ch.topics : []
+        topics.forEach(tp => {
+          if (tp && tp._id) topicMap.set(tp._id.toString(), tp.name || '')
+        })
+      })
+    })
+
     const data = rawData.map((ct, index) => {
       ct.totalMappedQuestions = counts[index]
+
+      const subjectNames = (ct.subjects || [])
+        .map(s => typeof s === 'object' ? (s.name || s.title || '') : (subjectMap.get(String(s)) || ''))
+        .filter(Boolean)
+      ct.subjectName = subjectNames.length > 0 ? subjectNames.join(', ') : '—'
+
+      ct.chapters = (ct.chapters || []).map(chId => {
+        const idStr = String(typeof chId === 'object' ? chId._id : chId)
+        return {
+          _id: typeof chId === 'object' ? chId._id : chId,
+          name: typeof chId === 'object' && chId.name ? chId.name : (chapterMap.get(idStr) || '')
+        }
+      })
+      const chapterNames = ct.chapters.map(c => c.name).filter(Boolean)
+      ct.chapterName = chapterNames.length > 0 ? chapterNames.join(', ') : '—'
+
+      ct.topics = (ct.topics || []).map(tpId => {
+        const idStr = String(typeof tpId === 'object' ? tpId._id : tpId)
+        return {
+          _id: typeof tpId === 'object' ? tpId._id : tpId,
+          name: typeof tpId === 'object' && tpId.name ? tpId.name : (topicMap.get(idStr) || '')
+        }
+      })
+      const topicNames = ct.topics.map(t => t.name).filter(Boolean)
+      ct.topicName = topicNames.length > 0 ? topicNames.join(', ') : '—'
+
       return ct
     })
 
@@ -457,35 +572,50 @@ class AdminCourseService extends BaseService {
     const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
     const Subject = require('../../models/Subject.model')
     const AppError = require('../../core/AppError')
-    const test = await CourseSeparatedTest.findOne({ _id: testId, course: courseId, isDeleted: false }).populate('subjects').lean()
+    const test = await CourseSeparatedTest.findOne({ _id: testId, course: courseId, isDeleted: false })
+      .populate('subjects')
+      .populate({ path: 'course', select: 'title slug' })
+      .lean()
     if (!test) {
       throw new AppError('Test not found', 404, 'NOT_FOUND')
     }
 
-    const subjectIds = test.subjects || []
+    const subjectIds = (test.subjects || []).map(s => typeof s === 'object' ? s._id : s).filter(Boolean)
     const subjects = await Subject.find({ _id: { $in: subjectIds } }).lean()
 
     const chapterMap = new Map()
     const topicMap = new Map()
 
     subjects.forEach(sub => {
-      (sub.chapters || []).forEach(ch => {
-        chapterMap.set(ch._id.toString(), ch.name)
-        (ch.topics || []).forEach(tp => {
-          topicMap.set(tp._id.toString(), tp.name)
-        })
-      })
+      const chapters = sub.chapters || [];
+      chapters.forEach(ch => {
+        if (ch && ch._id) chapterMap.set(ch._id.toString(), ch.name || '');
+        const topics = ch && ch.topics ? ch.topics : [];
+        topics.forEach(tp => {
+          if (tp && tp._id) topicMap.set(tp._id.toString(), tp.name || '');
+        });
+      });
+    });
+
+    test.subjectName = (test.subjects || []).map(s => typeof s === 'object' ? (s.name || s.title) : s).filter(Boolean).join(', ')
+
+    test.chapters = (test.chapters || []).map(chId => {
+      const idStr = String(typeof chId === 'object' ? chId._id : chId)
+      return {
+        _id: typeof chId === 'object' ? chId._id : chId,
+        name: typeof chId === 'object' && chId.name ? chId.name : (chapterMap.get(idStr) || '')
+      }
     })
+    test.chapterName = test.chapters.map(c => c.name).filter(Boolean).join(', ')
 
-    test.chapters = (test.chapters || []).map(chId => ({
-      _id: chId,
-      name: chapterMap.get(chId.toString()) || ''
-    }))
-
-    test.topics = (test.topics || []).map(tpId => ({
-      _id: tpId,
-      name: topicMap.get(tpId.toString()) || ''
-    }))
+    test.topics = (test.topics || []).map(tpId => {
+      const idStr = String(typeof tpId === 'object' ? tpId._id : tpId)
+      return {
+        _id: typeof tpId === 'object' ? tpId._id : tpId,
+        name: typeof tpId === 'object' && tpId.name ? tpId.name : (topicMap.get(idStr) || '')
+      }
+    })
+    test.topicName = test.topics.map(t => t.name).filter(Boolean).join(', ')
 
     return test
   }
