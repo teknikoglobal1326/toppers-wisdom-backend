@@ -586,16 +586,8 @@ class TestSeriesService extends BaseService {
         const marksPerQuestion = Number(test.marksPerQuestion || 1)
         const negativeMarks = Number(test.negativeMarks || 0)
 
-        // Only process unique logical questions (by order)
-        const processedOrders = new Set()
-
         for (const q of questions) {
-            if (processedOrders.has(q.order)) continue
-            processedOrders.add(q.order)
-
-            // Calculate Marks logic for this logical question first
-            const siblingQuestionIds = questions.filter(sq => sq.order === q.order).map(sq => String(sq._id))
-            const ans = userAnswers.find(a => siblingQuestionIds.includes(String(a.questionId)))
+            const ans = userAnswers.find(a => String(a.questionId) === String(q._id))
 
             let isAttempted = false
             let isCorrect = false
@@ -604,13 +596,10 @@ class TestSeriesService extends BaseService {
             if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
                 isAttempted = true
 
-                // Which specific question ID was answered?
-                const answeredQ = questions.find(sq => String(sq._id) === String(ans.questionId))
                 let correctIndex = -1
-                if (answeredQ) {
-                    if (answeredQ.en?.options) correctIndex = answeredQ.en.options.findIndex(opt => opt.isCorrect)
-                    if (correctIndex === -1 && answeredQ.hi?.options) correctIndex = answeredQ.hi.options.findIndex(opt => opt.isCorrect)
-                }
+                if (q.en?.options) correctIndex = q.en.options.findIndex(opt => opt.isCorrect)
+                if (correctIndex === -1 && q.hi?.options) correctIndex = q.hi.options.findIndex(opt => opt.isCorrect)
+                if (correctIndex === -1 && q.options) correctIndex = q.options.findIndex(opt => opt.isCorrect)
 
                 if (correctIndex !== -1 && ans.selectedOption === correctIndex) {
                     isCorrect = true
@@ -838,19 +827,23 @@ class TestSeriesService extends BaseService {
         if (percentile >= 90) expertComment = "Excellent Work! You have high chances of getting selected.";
         else if (percentile >= 75) expertComment = "Well Done! Good performance.";
 
-        const topicAnalytics = Array.from(topicWise.values()).map(tw => ({
-            id: tw.id,
-            type: tw.type,
-            name: tw.name,
-            totalQuestions: tw.totalQuestions,
-            attempted: tw.attempted,
-            correct: tw.correct,
-            wrong: tw.wrong,
-            skipped: tw.skipped,
-            unattempted: tw.unattempted,
-            accuracy: tw.attempted > 0 ? parseFloat(((tw.correct / tw.attempted) * 100).toFixed(2)) : 0,
-            isWeak: tw.totalQuestions > 0 ? (tw.correct / tw.totalQuestions) < 0.5 : false
-        }))
+        const topicAnalytics = Array.from(topicWise.values()).map(tw => {
+            const isWeak = tw.totalQuestions > 0 ? (tw.correct / tw.totalQuestions) < 0.5 : false;
+            return {
+                id: tw.id,
+                type: tw.type,
+                name: tw.name,
+                totalQuestions: tw.totalQuestions,
+                attempted: tw.attempted,
+                correct: tw.correct,
+                wrong: tw.wrong,
+                skipped: tw.skipped,
+                unattempted: tw.unattempted,
+                accuracy: tw.attempted > 0 ? parseFloat(((tw.correct / tw.attempted) * 100).toFixed(2)) : 0,
+                isWeak,
+                is_week: isWeak
+            };
+        })
 
         return {
             expertComment,
@@ -909,8 +902,8 @@ class TestSeriesService extends BaseService {
 
         const groupedQuestions = {}
         for (const q of questions) {
-            const orderKey = String(q.order)
-            if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
+            const questionKey = String(q._id)
+            if (!groupedQuestions[questionKey]) groupedQuestions[questionKey] = { en: {}, hi: {} }
 
             // Determine available languages
             let langs = []
@@ -934,7 +927,7 @@ class TestSeriesService extends BaseService {
                 const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
                 const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
 
-                groupedQuestions[orderKey][lang] = {
+                groupedQuestions[questionKey][lang] = {
                     _id: q._id,
                     question: { text: htmlToPlainText(questionData.text || ''), image: questionData.image || '' },
                     options: optionsData.map((opt) => ({
