@@ -19,6 +19,15 @@ class AdminQuestionService extends BaseService {
       isDeleted: false,
     })
     const update = { totalMappedQuestions: count }
+
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const updatedSeparatedTest = await CourseSeparatedTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      update,
+      { new: true }
+    )
+    if (updatedSeparatedTest) return
+
     const updatedCourseTest = await courseTestRepository.updateById(testId, update)
     if (updatedCourseTest) return
 
@@ -47,7 +56,7 @@ class AdminQuestionService extends BaseService {
     const LiveTest = require('../../models/LiveTest.model')
     const updatedLiveTest = await LiveTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },
-      { totalQuestions: count },
+      { totalQuestions: count, totalMappedQuestions: count },
       { new: true }
     )
     if (updatedLiveTest) return
@@ -55,12 +64,12 @@ class AdminQuestionService extends BaseService {
     const DailyQuiz = require('../../models/DailyQuiz.model')
     await DailyQuiz.findOneAndUpdate(
       { _id: testId, isDeleted: false },
-      { totalQuestions: count },
+      { totalQuestions: count, totalMappedQuestions: count },
       { new: true }
     )
   }
 
-  async listAll({ page, limit, test, status, search, sortOrder } = {}) {
+  async listAll({ page, limit, test, testModel, status, search, sortOrder } = {}) {
     const filter = { isDeleted: false }
 
     if (test) filter.test = test
@@ -153,15 +162,15 @@ class AdminQuestionService extends BaseService {
     const LiveTest = require('../../models/LiveTest.model')
     const DailyQuiz = require('../../models/DailyQuiz.model')
     const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
-    const [courseTest, seriesTest, pypTest, liveTest, dailyQuiz, separatedTest] = await Promise.all([
-      CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
-      TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
-      PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
-      LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id').lean(),
-      DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id').lean(),
-      CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
+    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz] = await Promise.all([
+      CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
+      CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
+      TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
+      PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
+      LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id exam subExams isPerQuestionTime').lean(),
+      DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id isPerQuestionTime').lean(),
     ])
-    return courseTest || seriesTest || pypTest || liveTest || dailyQuiz || separatedTest || null
+    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || null
   }
 
   // Enforce the parent test's per-question-time policy on a question payload:
