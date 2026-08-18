@@ -831,6 +831,28 @@ class PreviousYearPaperService extends BaseService {
             limit: query.limit,
         })
     }
+
+    async getTestInstructions(testId, userId) {
+        const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+        const test = await PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).lean()
+        if (!test || test.status !== 'active') {
+            throw new AppError('Test not found', 404, 'NOT_FOUND')
+        }
+
+        return {
+            testId: test._id,
+            title: test.title,
+            duration: test.duration,
+            totalQuestions: test.totalQuestions,
+            totalMarks: test.totalMarks,
+            marksPerQuestion: test.marksPerQuestion,
+            negativeMarks: test.negativeMarks,
+            passingMarks: test.passingMarks,
+            instructions: test.instructions,
+            instructionsNew: test.instructionsNew,
+            localizedContent: test.localizedContent || {}
+        }
+    }
 }
 
 module.exports = new PreviousYearPaperService()

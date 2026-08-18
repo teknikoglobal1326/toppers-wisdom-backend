@@ -35,7 +35,7 @@ const submitTest = catchAsync(async (req, res) => {
 const startSession = catchAsync(async (req, res) => {
     sendSuccess(
         res,
-        await testSeriesService.startSession(req.params.testId, req.user._id, req.user.language || 'hi'),
+        await testSeriesService.startSession(req.params.testId, req.user._id, req.user.language || 'hi', req.query.sessionId),
         'Session started successfully'
     )
 })

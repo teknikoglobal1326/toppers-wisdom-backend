@@ -224,15 +224,27 @@ class TestSeriesService extends BaseService {
         })
 
         const testIds = result.data.map((item) => item._id)
-        const [questionCounts, latestAttempts] = await Promise.all([
+        const TestSeriesAttempt = require('../../models/TestSeriesAttempt.model')
+        const [questionCounts, latestAttempts, ongoingAttempts] = await Promise.all([
             this.repository.getQuestionCountsByTestIds(testIds),
             this.repository.getLatestAttemptsByTestIds(userId, testIds),
+            TestSeriesAttempt.find({
+                user: userId,
+                test: { $in: testIds },
+                status: { $in: ['started', 'ongoing'] }
+            }).lean()
         ])
+
+        const ongoingMap = new Map()
+        ongoingAttempts.forEach(att => {
+            ongoingMap.set(att.test.toString(), att)
+        })
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
             const hasAccess = seriesHasAccess || !item.isPaid
             const attemptStats = latestAttempts[id]
+            const ongoingSession = ongoingMap.get(id)
 
             return {
                 ...item,
@@ -240,9 +252,15 @@ class TestSeriesService extends BaseService {
                 mappedQuestions: questionCounts[id] || 0,
                 hasAccess,
                 isLocked: !hasAccess,
-                attemptStatus: attemptStats ? 'attempted' : 'not_attempted',
+                attemptStatus: ongoingSession ? 'paused' : (attemptStats ? 'attempted' : 'not_attempted'),
                 latestAttempt: attemptStats || null,
                 attemptCount: attemptStats ? attemptStats.attemptsCount : 0,
+                pausedSession: ongoingSession ? {
+                    sessionId: ongoingSession.sessionId,
+                    status: ongoingSession.status,
+                    timeTaken: ongoingSession.timeTaken,
+                    createdAt: ongoingSession.createdAt,
+                } : null
             }
         })
         console.log("result============>", result);
@@ -381,7 +399,7 @@ class TestSeriesService extends BaseService {
         }
     }
 
-    async startSession(testId, userId, language = 'hi') {
+    async startSession(testId, userId, language = 'hi', existingSessionId = null) {
         const test = await this.repository.getSeriesTestById(testId)
         if (!test || test.isDeleted || test.status !== 'active') {
             throw new AppError('Test not found', 404, 'NOT_FOUND')
@@ -398,22 +416,40 @@ class TestSeriesService extends BaseService {
         const questions = await this.repository.findQuestionsForTest(testId)
         if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
 
-        const sessionId = crypto.randomUUID()
+        let attempt = null
+        let sessionId = existingSessionId
 
-        // Ensure totalMarks is calculated
+        if (sessionId) {
+            attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        } else {
+            // Check if user has an existing ongoing session for this test
+            const TestSeriesAttempt = require('../../models/TestSeriesAttempt.model')
+            attempt = await TestSeriesAttempt.findOne({
+                user: userId,
+                test: testId,
+                status: { $in: ['started', 'ongoing'] }
+            })
+            if (attempt) {
+                sessionId = attempt.sessionId
+            }
+        }
+
         const totalQuestions = new Set(questions.map(q => q.order)).size
         const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
 
-        const attempt = await this.repository.createAttempt({
-            user: userId,
-            testSeries: series._id,
-            test: test._id,
-            sessionId,
-            totalTime: test.duration * 60, // Assuming duration is in minutes
-            totalMarks,
-            status: 'started',
-            answers: []
-        })
+        if (!attempt) {
+            sessionId = sessionId || crypto.randomUUID()
+            attempt = await this.repository.createAttempt({
+                user: userId,
+                testSeries: series._id,
+                test: test._id,
+                sessionId,
+                totalTime: test.duration * 60, // Assuming duration is in minutes
+                totalMarks,
+                status: 'started',
+                answers: []
+            })
+        }
 
         const groupedQuestions = groupQuestionsBySubject(questions)
         return {
@@ -435,6 +471,7 @@ class TestSeriesService extends BaseService {
             },
             hasAccess,
             questionsBySubject: groupedQuestions,
+            answers: attempt.answers || []
         }
     }
 

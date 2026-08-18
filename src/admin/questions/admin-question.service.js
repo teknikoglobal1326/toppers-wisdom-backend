@@ -22,6 +22,14 @@ class AdminQuestionService extends BaseService {
     const updatedCourseTest = await courseTestRepository.updateById(testId, update)
     if (updatedCourseTest) return
 
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const updatedCourseSeparatedTest = await CourseSeparatedTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      { totalMappedQuestions: count, totalQuestions: count },
+      { new: true }
+    )
+    if (updatedCourseSeparatedTest) return
+
     const updatedSeriesTest = await TestSeriesTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },
       update,
@@ -144,14 +152,16 @@ class AdminQuestionService extends BaseService {
     if (!testId) return null
     const LiveTest = require('../../models/LiveTest.model')
     const DailyQuiz = require('../../models/DailyQuiz.model')
-    const [courseTest, seriesTest, pypTest, liveTest, dailyQuiz] = await Promise.all([
+    const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+    const [courseTest, seriesTest, pypTest, liveTest, dailyQuiz, separatedTest] = await Promise.all([
       CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
       TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
       PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
       LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id').lean(),
       DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id').lean(),
+      CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime').lean(),
     ])
-    return courseTest || seriesTest || pypTest || liveTest || dailyQuiz || null
+    return courseTest || seriesTest || pypTest || liveTest || dailyQuiz || separatedTest || null
   }
 
   // Enforce the parent test's per-question-time policy on a question payload:

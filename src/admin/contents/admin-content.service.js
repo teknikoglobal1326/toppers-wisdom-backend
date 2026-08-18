@@ -111,7 +111,9 @@ class AdminContentService extends BaseService {
         const rtmpUid = 666666
         const token = generatePublisherToken(contentObj.agoraChannel, rtmpUid)
         const rtmpServer = "rtmp://rtls-ingress-prod-ap.agoramdn.com/live/"
-        const rtmpStreamKey = `${contentObj.agoraChannel}?token=${token}&uid=${rtmpUid}`
+        const rtmpStreamKey = token
+          ? `${contentObj.agoraChannel}?token=${token}&uid=${rtmpUid}`
+          : contentObj.agoraChannel
 
         contentObj.token = token
         contentObj.rtmpServer = rtmpServer
@@ -222,14 +224,17 @@ class AdminContentService extends BaseService {
     const rtmpUid = 666666
     const token = generatePublisherToken(content.agoraChannel, rtmpUid)
     const rtmpServer = "rtmp://rtls-ingress-prod-ap.agoramdn.com/live/"
-    let rtmpStreamKey = `${content.agoraChannel}?token=${token}&uid=${rtmpUid}`
+    let rtmpStreamKey = token
+      ? `${content.agoraChannel}?token=${token}&uid=${rtmpUid}`
+      : content.agoraChannel
 
     if (appId && customerId && customerCert) {
       const url = `https://api.agora.io/ap/v1/projects/${appId}/rtls/ingress/streamkeys`
       try {
+        console.log('Attempting Agora Media Ingress streamkey generation...');
         const auth = Buffer.from(`${customerId}:${customerCert}`).toString('base64')
         const res = await axios.post(url, {
-          cname: content.agoraChannel,
+          channelName: content.agoraChannel,
           uid: rtmpUid
         }, {
           headers: {
@@ -239,9 +244,11 @@ class AdminContentService extends BaseService {
         })
         if (res.data && res.data.data && res.data.data.streamKey) {
           rtmpStreamKey = res.data.data.streamKey
+          console.log('Agora Media Ingress streamkey generated successfully via REST API:', rtmpStreamKey);
           this.logger.info({ streamKey: rtmpStreamKey }, 'Agora Media Ingress streamkey generated successfully via REST API')
         }
       } catch (err) {
+        console.error('Agora Media Ingress REST API Error:', err.message, err.response?.data || '');
         const errorDetail = {
           message: err.message,
           status: err.response?.status,

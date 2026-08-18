@@ -11,8 +11,12 @@ const APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
  * @param {number} expireTime Expiration time in seconds from now
  */
 const generateToken = (channelName, role, uid = 0, expireTime = 3600) => {
-  if (!APP_ID || !APP_CERTIFICATE) {
-    throw new Error('Agora App ID and Certificate are required in .env');
+  if (!APP_ID) {
+    throw new Error('Agora App ID is required in .env');
+  }
+
+  if (!APP_CERTIFICATE) {
+    return null; // Return null if app certificate is not set (unsecured mode)
   }
 
   const currentTimestamp = Math.floor(Date.now() / 1000);
