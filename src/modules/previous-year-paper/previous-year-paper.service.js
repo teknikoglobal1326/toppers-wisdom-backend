@@ -203,7 +203,53 @@ class PreviousYearPaperService extends BaseService {
             }
         })
 
-        return result
+        // Fetch all tests belonging to this previous year paper to compute overall stats
+        const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+        const allPaperTests = await PreviousYearPaperTest.find({
+            previousYearPaper: previousYearPaperId,
+            isDeleted: false
+        }).select('_id').lean()
+        const allPaperTestIds = allPaperTests.map(t => t._id)
+        const totalTests = allPaperTestIds.length
+
+        // Fetch all attempts for these tests
+        const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
+        const allAttempts = await PreviousYearPaperAttempt.find({
+            user: userId,
+            test: { $in: allPaperTestIds }
+        }).select('test score totalMarks correct wrong status').lean()
+
+        const uniqueAttemptedTestIds = new Set(allAttempts.map(att => att.test.toString()))
+        const attemptedCount = uniqueAttemptedTestIds.size
+
+        const bestScore = allAttempts.length > 0 ? Math.max(...allAttempts.map(att => att.score || 0)) : 0
+
+        let totalCorrect = 0
+        let totalWrong = 0
+        for (const att of allAttempts) {
+            if (att.status === 'completed') {
+                totalCorrect += att.correct || 0
+                totalWrong += att.wrong || 0
+            }
+        }
+        const totalAttemptedQs = totalCorrect + totalWrong
+        let accuracy = 0
+        if (totalAttemptedQs > 0) {
+            accuracy = (totalCorrect / totalAttemptedQs) * 100
+            accuracy = Math.round(accuracy * 10) / 10
+        }
+
+        const stats = {
+            totalTests,
+            attemptedCount,
+            bestScore,
+            accuracy
+        }
+
+        return {
+            ...result,
+            stats
+        }
     }
 
     async startTest(testId, userId, language = 'hi') {

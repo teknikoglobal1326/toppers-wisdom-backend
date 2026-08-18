@@ -13,7 +13,13 @@ const getPreviousYearPaper = catchAsync(async (req, res) => {
 
 const listPreviousYearPaperTests = catchAsync(async (req, res) => {
     const result = await previousYearPaperService.listPreviousYearPaperTests(req.params.id, req.user._id, req.query)
-    sendPaginated(res, result.data, result.pagination)
+    res.status(200).json({
+        success: true,
+        message: 'Success',
+        data: result.data,
+        stats: result.stats,
+        pagination: result.pagination
+    })
 })
 
 const startTest = catchAsync(async (req, res) => {

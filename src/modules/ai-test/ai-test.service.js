@@ -718,6 +718,90 @@ class AiTestService extends BaseService {
       attemptedAt: attempt.attemptedAt,
     }
   }
+
+  async getSessionSolution(testId, sessionId, userId) {
+    this.logger.info({ testId, sessionId, userId }, 'Retrieving solution for AI Test attempt')
+    const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+    if (!attempt) {
+      throw new AppError('Attempt session not found', 404, 'NOT_FOUND')
+    }
+
+    const aiTest = await this.getById(attempt.aiTest)
+    if (!aiTest) {
+      throw new AppError('AI Test not found', 404, 'NOT_FOUND')
+    }
+
+    // Fetch questions to build solutions
+    const query = await this._buildQuestionQuery(aiTest)
+    const totalQuestionsLimit = aiTest.totalQuestions || 10
+    const questions = await QuestionModel.find(query)
+      .limit(Number(totalQuestionsLimit))
+      .populate('subjectId', 'name chapters')
+      .lean()
+
+    const answersByQuestionId = {}
+    for (const ans of (attempt.answers || [])) {
+      if (ans && ans.questionId) {
+        answersByQuestionId[ans.questionId.toString()] = ans
+      }
+    }
+
+    const { htmlToPlainText } = require('../../lib/htmlText')
+
+    const groupedQuestions = {}
+    for (const q of questions) {
+      const orderKey = String(q.order)
+      if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
+
+      let langs = []
+      if (q.en && (q.en.question?.text || q.en.options?.length)) langs.push('en')
+      if (q.hi && (q.hi.question?.text || q.hi.options?.length)) langs.push('hi')
+      if (langs.length === 0) {
+        langs = q.language === 'both' ? ['en', 'hi'] : [q.language || 'en']
+      }
+
+      const userAnswer = answersByQuestionId[q._id.toString()] || null
+
+      for (const lang of langs) {
+        if (lang !== 'en' && lang !== 'hi') continue
+
+        const langObj = q[lang] || {}
+        const questionData = langObj.question || q.question || {}
+        const explanationData = langObj.explanation || q.explanation || {}
+        const optionsData = (langObj.options && langObj.options.length > 0) ? langObj.options : (q.options || [])
+
+        const correctIndex = optionsData.findIndex(opt => opt && opt.isCorrect)
+        const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
+        const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
+
+        groupedQuestions[orderKey][lang] = {
+          _id: q._id,
+          exam: q.exam || null,
+          subExams: q.subExams || [],
+          question: { text: htmlToPlainText(questionData.text || ''), image: questionData.image || '' },
+          options: optionsData.map((opt) => ({
+            text: htmlToPlainText(opt.text || ''),
+            image: opt.image || '',
+            isCorrect: !!opt.isCorrect,
+          })),
+          explanation: { text: htmlToPlainText(explanationData.text || ''), image: explanationData.image || '' },
+          order: q.order,
+          sortOrder: q.sortOrder,
+          perQuestionTime: q.perQuestionTime,
+          userAnswer: userAnswer ? {
+            selectedOption: userAnswer.selectedOption,
+            status: userAnswer.status,
+            timeTaken: userAnswer.timeTaken,
+          } : null,
+          status: userAnswer?.status || 'unattempted',
+          timeTaken: userAnswer?.timeTaken || 0,
+          isCorrect,
+        }
+      }
+    }
+
+    return Object.values(groupedQuestions)
+  }
 }
 
 module.exports = new AiTestService()
