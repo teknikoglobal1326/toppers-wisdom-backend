@@ -381,8 +381,8 @@ class LiveTestService extends BaseService {
             throw new AppError('Live test not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !liveTest.isPaid
-        if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
+        // const hasAccess = !liveTest.isPaid
+        // if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
         const questions = await this.repository.findQuestionsForLiveTest(liveTestId)
         if (!questions.length) throw new AppError('No questions mapped for this live test', 400, 'VALIDATION_ERROR')

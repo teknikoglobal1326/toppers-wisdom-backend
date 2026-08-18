@@ -936,6 +936,75 @@ class PreviousYearPaperService extends BaseService {
             localizedContent: test.localizedContent || {}
         }
     }
+
+    async getOverallUserStats(userId) {
+        const mongoose = require('mongoose')
+        const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+        const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
+
+        const totalTestsCount = await PreviousYearPaperTest.countDocuments({
+            isDeleted: false,
+            status: 'active'
+        })
+
+        // User's first attempts per test
+        const userFirstAttempts = await PreviousYearPaperAttempt.aggregate([
+            { 
+                $match: { 
+                    user: new mongoose.Types.ObjectId(userId), 
+                    status: 'completed'
+                } 
+            },
+            { $sort: { attemptedAt: 1 } },
+            {
+                $group: {
+                    _id: '$test',
+                    accuracy: { $first: '$accuracy' }
+                }
+            }
+        ])
+
+        const attemptedTestCount = userFirstAttempts.length
+        const totalAccuracy = userFirstAttempts.reduce((acc, curr) => acc + (curr.accuracy || 0), 0)
+        const averageAccuracy = attemptedTestCount > 0 ? parseFloat((totalAccuracy / attemptedTestCount).toFixed(2)) : 0
+
+        // Overall ranking in the series based on sum of first attempts
+        const userScores = await PreviousYearPaperAttempt.aggregate([
+            { 
+                $match: { 
+                    status: 'completed'
+                } 
+            },
+            { $sort: { attemptedAt: 1 } },
+            {
+                $group: {
+                    _id: { user: '$user', test: '$test' },
+                    firstScore: { $first: '$score' },
+                    firstTimeTaken: { $first: '$timeTaken' }
+                }
+            },
+            {
+                $group: {
+                    _id: '$_id.user',
+                    totalScore: { $sum: '$firstScore' },
+                    totalTime: { $sum: '$firstTimeTaken' }
+                }
+            },
+            {
+                $sort: { totalScore: -1, totalTime: 1 }
+            }
+        ])
+
+        const rankIndex = userScores.findIndex(item => item._id.toString() === userId.toString())
+        const rank = rankIndex !== -1 ? rankIndex + 1 : (attemptedTestCount > 0 ? userScores.length + 1 : 0)
+
+        return {
+            rank,
+            attemptedCount: attemptedTestCount,
+            totalTests: totalTestsCount,
+            accuracy: averageAccuracy
+        }
+    }
 }
 
 module.exports = new PreviousYearPaperService()
