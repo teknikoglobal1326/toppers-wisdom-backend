@@ -72,6 +72,10 @@ const getTestInstructions = catchAsync(async (req, res) => {
     sendSuccess(res, await previousYearPaperService.getTestInstructions(req.params.testId, req.user._id))
 })
 
+const getOverallUserStats = catchAsync(async (req, res) => {
+    sendSuccess(res, await previousYearPaperService.getOverallUserStats(req.user._id))
+})
+
 module.exports = {
     listPreviousYearPapers,
     getPreviousYearPaper,
@@ -84,4 +88,5 @@ module.exports = {
     getSessionSolution,
     listMyAttempts,
     getTestInstructions,
+    getOverallUserStats,
 }
