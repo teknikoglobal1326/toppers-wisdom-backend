@@ -35,6 +35,7 @@ const userSchema = new mongoose.Schema({
     reportedAt: { type: Date, default: Date.now },
   }],
   watchDuration: { type: Number, default: 0 },
+  status:        { type: String, enum: ['active', 'blocked', 'inactive'], default: 'active', index: true },
   isDeleted:     { type: Boolean, default: false, index: true },
   deletedAt:     { type: Date },
   walletBalance: { type: Number, default: 0 },
