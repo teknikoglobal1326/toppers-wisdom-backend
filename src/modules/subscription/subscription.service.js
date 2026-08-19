@@ -192,6 +192,17 @@ class SubscriptionService {
             isActive: true
         });
 
+        try {
+            const { notificationQueue } = require('../../jobs/queue');
+            await notificationQueue.add('subscription-success', {
+                userId,
+                orderId: order._id,
+                amount: order.amount
+            });
+        } catch (err) {
+            console.error('Failed to queue subscription success notification:', err);
+        }
+
         return { success: true, userSubscription: userSub };
     }
 }

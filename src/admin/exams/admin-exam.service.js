@@ -17,7 +17,7 @@ class AdminExamService extends BaseService {
   }
 
   async listAll({ status, language, sortOrder, page, limit, search, qualification } = {}) {
-    const filter = { is_deleted: false }
+    const filter = { }
     if (status) filter.status = status
     if (search) filter.name = new RegExp(search, 'i')
     if (qualification) filter.qualification = qualification
@@ -28,9 +28,9 @@ class AdminExamService extends BaseService {
     const result = await this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: { path: "qualification", select: "name" } })
 
     const [globalTotal, globalActive, globalInactive] = await Promise.all([
-      this.repository.count({ is_deleted: false }),
-      this.repository.count({ is_deleted: false, status: 'active' }),
-      this.repository.count({ is_deleted: false, status: 'inactive' }),
+      this.repository.count({}),
+      this.repository.count({ status: 'active' }),
+      this.repository.count({ status: 'inactive' }),
     ])
 
     result.pagination.globalTotal = globalTotal
