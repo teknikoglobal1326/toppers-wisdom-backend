@@ -13,13 +13,12 @@ const getPreviousYearPaper = catchAsync(async (req, res) => {
 
 const listPreviousYearPaperTests = catchAsync(async (req, res) => {
     const result = await previousYearPaperService.listPreviousYearPaperTests(req.params.id, req.user._id, req.query)
-    res.status(200).json({
-        success: true,
-        message: 'Success',
-        data: result.data,
-        stats: result.stats,
-        pagination: result.pagination
-    })
+    sendPaginated(res, result.data, result.pagination)
+})
+
+const getPreviousYearPaperStats = catchAsync(async (req, res) => {
+    const stats = await previousYearPaperService.getPreviousYearPaperStats(req.params.id, req.user._id)
+    sendSuccess(res, stats, 'Stats retrieved successfully')
 })
 
 const startTest = catchAsync(async (req, res) => {
@@ -86,6 +85,7 @@ module.exports = {
     listPreviousYearPapers,
     getPreviousYearPaper,
     listPreviousYearPaperTests,
+    getPreviousYearPaperStats,
     startTest,
     submitTest,
     startSession,
