@@ -349,4 +349,159 @@ const getUserAttempts = catchAsync(async (req, res) => {
   sendPaginated(res, formattedData, r.pagination)
 })
 
-module.exports = { listAll, getOne, updateUser, getUserOrders, getUserAttempts, getUserEnrollments }
+
+const allocateSubscription = catchAsync(async (req, res) => {
+  const userId = req.params.id
+  const { subscriptionId, durationDays, startDate, endDate } = req.body
+
+  const Subscription = require('../../models/Subscription.model')
+  const UserSubscription = require('../../models/UserSubscription.model')
+
+  const sub = await Subscription.findById(subscriptionId)
+  if (!sub) {
+    return res.status(404).json({ success: false, message: 'Subscription plan not found' })
+  }
+
+  const start = startDate ? new Date(startDate) : new Date()
+  let end = endDate ? new Date(endDate) : null
+  if (!end) {
+    const days = durationDays || sub.durationDays || 30
+    end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000)
+  }
+
+  // Deactivate any previous active subscription for this user
+  await UserSubscription.updateMany({ user: userId, isActive: true }, { isActive: false })
+
+  const userSub = await UserSubscription.create({
+    user: userId,
+    subscription: subscriptionId,
+    startDate: start,
+    endDate: end,
+    isActive: true
+  })
+
+  sendSuccess(res, userSub, 'Subscription allocated successfully')
+})
+
+const updateSubscriptionExpiry = catchAsync(async (req, res) => {
+  const userId = req.params.id
+  const { userSubscriptionId, daysToAdd, newEndDate, isActive } = req.body
+  const UserSubscription = require('../../models/UserSubscription.model')
+
+  let activeSub = null
+  if (userSubscriptionId) {
+    activeSub = await UserSubscription.findOne({ _id: userSubscriptionId, user: userId })
+  }
+  if (!activeSub) {
+    activeSub = await UserSubscription.findOne({ user: userId }).sort({ createdAt: -1 })
+  }
+  if (!activeSub) {
+    return res.status(404).json({ success: false, message: 'No subscription record found for this user' })
+  }
+
+  if (daysToAdd !== undefined && daysToAdd !== null) {
+    const currentEnd = activeSub.endDate ? new Date(activeSub.endDate).getTime() : Date.now()
+    activeSub.endDate = new Date(currentEnd + Number(daysToAdd) * 24 * 60 * 60 * 1000)
+  } else if (newEndDate) {
+    activeSub.endDate = new Date(newEndDate)
+  }
+
+  if (isActive !== undefined) {
+    activeSub.isActive = isActive
+  }
+
+  await activeSub.save()
+  sendSuccess(res, activeSub, 'Subscription expiry updated successfully')
+})
+
+const revokeSubscription = catchAsync(async (req, res) => {
+  const userId = req.params.id
+  const { userSubscriptionId } = req.body || {}
+  const UserSubscription = require('../../models/UserSubscription.model')
+
+  if (userSubscriptionId) {
+    await UserSubscription.findByIdAndUpdate(userSubscriptionId, { isActive: false })
+  } else {
+    await UserSubscription.updateMany({ user: userId }, { isActive: false })
+  }
+  sendSuccess(res, null, 'Subscription revoked successfully')
+})
+
+const allocateCourse = catchAsync(async (req, res) => {
+  const userId = req.params.id
+  const { courseId, durationDays, startDate, expiresAt } = req.body
+
+  const Course = require('../../models/Course.model')
+  const Enrollment = require('../../models/Enrollment.model')
+
+  const course = await Course.findById(courseId)
+  if (!course) {
+    return res.status(404).json({ success: false, message: 'Course not found' })
+  }
+
+  const enrolledAt = startDate ? new Date(startDate) : new Date()
+  let expiry = expiresAt ? new Date(expiresAt) : null
+  if (!expiry && durationDays) {
+    expiry = new Date(enrolledAt.getTime() + Number(durationDays) * 24 * 60 * 60 * 1000)
+  } else if (!expiry && !course.isLifetime) {
+    const months = course.validityInMonths || 12
+    expiry = new Date(enrolledAt.getTime() + months * 30 * 24 * 60 * 60 * 1000)
+  }
+
+  const enrollment = await Enrollment.findOneAndUpdate(
+    { user: userId, course: courseId },
+    {
+      enrolledAt,
+      expiresAt: expiry,
+      progressPercent: 0
+    },
+    { upsert: true, new: true }
+  )
+
+  sendSuccess(res, enrollment, 'Course allocated successfully to user')
+})
+
+const updateCourseExpiry = catchAsync(async (req, res) => {
+  const { id: userId, courseId } = req.params
+  const { daysToAdd, newExpiresAt } = req.body
+  const Enrollment = require('../../models/Enrollment.model')
+
+  const enrollment = await Enrollment.findOne({ user: userId, course: courseId })
+  if (!enrollment) {
+    return res.status(404).json({ success: false, message: 'Enrollment not found' })
+  }
+
+  if (daysToAdd !== undefined && daysToAdd !== null) {
+    const currentEnd = enrollment.expiresAt ? new Date(enrollment.expiresAt).getTime() : Date.now()
+    enrollment.expiresAt = new Date(currentEnd + Number(daysToAdd) * 24 * 60 * 60 * 1000)
+  } else if (newExpiresAt) {
+    enrollment.expiresAt = new Date(newExpiresAt)
+  }
+
+  await enrollment.save()
+  sendSuccess(res, enrollment, 'Course expiry updated successfully')
+})
+
+const removeCourseEnrollment = catchAsync(async (req, res) => {
+  const { id: userId, courseId } = req.params
+  const Enrollment = require('../../models/Enrollment.model')
+
+  await Enrollment.findOneAndDelete({ user: userId, course: courseId })
+  sendSuccess(res, null, 'Course enrollment removed successfully')
+})
+
+module.exports = {
+  listAll,
+  getOne,
+  updateUser,
+  getUserOrders,
+  getUserAttempts,
+  getUserEnrollments,
+  allocateSubscription,
+  updateSubscriptionExpiry,
+  revokeSubscription,
+  allocateCourse,
+  updateCourseExpiry,
+  removeCourseEnrollment
+}
+
