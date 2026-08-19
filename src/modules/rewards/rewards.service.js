@@ -87,44 +87,105 @@ class RewardsService {
     return d;
   }
 
+  getYesterday() {
+    const d = this.getMidnight();
+    d.setDate(d.getDate() - 1);
+    return d;
+  }
+
   async logActivity(userId, activityType) {
-    const validActivities = ['mock_test', 'pyp_paper', 'pyp_dictionary', 'ai_test'];
+    const validActivities = ['test-series-test', 'pyp_paper', 'pyp_dictionary', 'ai_test'];
     if (!validActivities.includes(activityType)) return;
 
     const today = this.getMidnight();
+    const yesterday = this.getYesterday();
+
     let activity = await DailyActivity.findOne({ user: userId, date: today });
-    
+    let isFirstActivityToday = false;
+
     if (!activity) {
-      activity = new DailyActivity({ user: userId, date: today, missions: {} });
+      activity = new DailyActivity({
+        user: userId,
+        date: today,
+        missions: {
+          'test-series-test': false,
+          pyp_paper: false,
+          pyp_dictionary: false,
+          ai_test: false
+        },
+        coinsEarned: 0
+      });
+      isFirstActivityToday = true;
+    } else {
+      const completedBefore = ['test-series-test', 'pyp_paper', 'pyp_dictionary', 'ai_test'].some(
+        key => activity.missions[key] === true
+      );
+      if (!completedBefore) {
+        isFirstActivityToday = true;
+      }
     }
 
     // Mark mission as completed
     activity.missions[activityType] = true;
     activity.streakMaintained = true;
     activity.streakSource = activityType;
-    await activity.save();
+
+    // Award coins
+    if (isFirstActivityToday) {
+      if (activity.coinsEarned < 1) {
+        const coinsToAdd = 1 - activity.coinsEarned;
+        activity.coinsEarned = 1;
+        await this.addCoins(userId, coinsToAdd, 'daily_streak', 'Completed first daily activity');
+      }
+    }
 
     // Count unique missions completed today
-    const completedCount = ['mock_test', 'pyp_paper', 'pyp_dictionary', 'ai_test'].reduce(
+    const completedCount = ['test-series-test', 'pyp_paper', 'pyp_dictionary', 'ai_test'].reduce(
       (count, key) => (activity.missions[key] === true ? count + 1 : count),
       0
     );
 
+    // If all 4 missions are completed today, award the 1.5 coin total
+    if (completedCount === 4) {
+      if (activity.coinsEarned < 1.5) {
+        const coinsToAdd = 1.5 - activity.coinsEarned;
+        activity.coinsEarned = 1.5;
+        await this.addCoins(userId, coinsToAdd, 'daily_streak', 'Completed all daily activities');
+      }
+    }
+
+    await activity.save();
+
+    // Manage daily consecutive streak
     let streak = await Streak.findOne({ user: userId });
     if (!streak) {
-      streak = new Streak({ user: userId });
+      streak = new Streak({ user: userId, currentStreak: 0, longestStreak: 0 });
     }
 
-    streak.currentStreak = completedCount;
+    if (isFirstActivityToday) {
+      if (streak.lastActivityDate) {
+        const lastActMidnight = this.getMidnight(streak.lastActivityDate);
+        if (lastActMidnight.getTime() === yesterday.getTime()) {
+          // Continued yesterday's streak
+          streak.currentStreak += 1;
+        } else if (lastActMidnight.getTime() === today.getTime()) {
+          // Already counted today, do nothing
+        } else {
+          // Streak broken
+          streak.currentStreak = 1;
+        }
+      } else {
+        // First ever activity
+        streak.currentStreak = 1;
+      }
 
-    if (streak.currentStreak > streak.longestStreak) {
-      streak.longestStreak = streak.currentStreak;
+      streak.lastActivityDate = new Date();
+      if (streak.currentStreak > streak.longestStreak) {
+        streak.longestStreak = streak.currentStreak;
+      }
+      streak.tier = 1;
+      await streak.save();
     }
-
-    streak.lastActivityDate = new Date();
-    streak.tier = 1;
-
-    await streak.save();
 
     return { streakMaintained: true };
   }
@@ -136,11 +197,12 @@ class RewardsService {
         user: userId,
         date: today,
         missions: {
-          mock_test: false,
+          'test-series-test': false,
           pyp_paper: false,
           pyp_dictionary: false,
           ai_test: false
-        }
+        },
+        coinsEarned: 0
       });
       await activity.save();
     }
@@ -152,25 +214,108 @@ class RewardsService {
     const activity = await this.getTodayActivity(userId, today);
     const streak = await Streak.findOne({ user: userId });
 
-    // Streak count is purely the count of completed missions today.
-    const completedCount = ['mock_test', 'pyp_paper', 'pyp_dictionary', 'ai_test'].reduce(
-      (count, key) => (activity.missions[key] === true ? count + 1 : count),
-      0
-    );
-
     const missions = {
-      mock_test: activity.missions.mock_test,
-      pyp_paper: activity.missions.pyp_paper,
-      pyp_dictionary: activity.missions.pyp_dictionary,
-      ai_test: activity.missions.ai_test
+      'test-series-test': activity.missions ? activity.missions['test-series-test'] : false,
+      pyp_paper: activity.missions ? activity.missions.pyp_paper : false,
+      pyp_dictionary: activity.missions ? activity.missions.pyp_dictionary : false,
+      ai_test: activity.missions ? activity.missions.ai_test : false
     };
 
+    // Calculate current month's total earned coins
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const walletHistoryCredits = await WalletHistory.find({
+      user: userId,
+      transactionType: 'credit',
+      createdAt: { $gte: startOfMonth }
+    }).select('amount').lean();
+    const currentMonthTotalEarnedCoins = walletHistoryCredits.reduce((sum, item) => sum + (item.amount || 0), 0);
+
     return {
-      currentStreak: completedCount,
+      currentStreak: streak ? streak.currentStreak : 0,
+      longestStreak: streak ? streak.longestStreak : 0,
       tier: streak ? streak.tier : 1,
+      currentTier: streak ? streak.tier : 1,
       todayMissions: missions,
       streakMaintainedToday: activity.streakMaintained,
-      streakSource: activity.streakSource
+      streakSource: activity.streakSource,
+      coinsEarnedToday: activity.coinsEarned || 0,
+      currentMonthTotalEarnedCoins
+    };
+  }
+
+  async getCalendarHistory(userId, year, month) {
+    const now = new Date();
+    const targetYear = year !== undefined ? Number(year) : now.getFullYear();
+    const targetMonth = month !== undefined ? Number(month) - 1 : now.getMonth();
+
+    const start = new Date(targetYear, targetMonth, 1);
+    const end = new Date(targetYear, targetMonth + 1, 1);
+
+    const activities = await DailyActivity.find({
+      user: userId,
+      date: { $gte: start, $lt: end }
+    }).sort({ date: 1 }).lean();
+
+    const currentMonthCalendar = activities.map(act => ({
+      date: act.date,
+      missions: {
+        'test-series-test': act.missions ? act.missions['test-series-test'] : false,
+        pyp_paper: act.missions ? act.missions.pyp_paper : false,
+        pyp_dictionary: act.missions ? act.missions.pyp_dictionary : false,
+        ai_test: act.missions ? act.missions.ai_test : false
+      },
+      streakMaintained: act.streakMaintained,
+      coinsEarned: act.coinsEarned || 0
+    }));
+
+    const streak = await Streak.findOne({ user: userId });
+    const activeStreak = {
+      currentStreak: streak ? streak.currentStreak : 0,
+      longestStreak: streak ? streak.longestStreak : 0,
+      tier: streak ? streak.tier : 1
+    };
+
+    const last6MonthsStreak = [];
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    for (let i = 0; i < 6; i++) {
+      const mDate = new Date();
+      mDate.setMonth(now.getMonth() - i);
+      const mYear = mDate.getFullYear();
+      const mMonth = mDate.getMonth();
+
+      const mStart = new Date(mYear, mMonth, 1);
+      const mEnd = new Date(mYear, mMonth + 1, 1);
+
+      const count = await DailyActivity.countDocuments({
+        user: userId,
+        streakMaintained: true,
+        date: { $gte: mStart, $lt: mEnd }
+      });
+
+      const monthActivities = await DailyActivity.find({
+        user: userId,
+        date: { $gte: mStart, $lt: mEnd }
+      }).select('coinsEarned').lean();
+      const earnCoin = monthActivities.reduce((sum, act) => sum + (act.coinsEarned || 0), 0);
+
+      last6MonthsStreak.push({
+        monthName: monthNames[mMonth],
+        monthValue: mMonth + 1,
+        year: mYear,
+        streakCount: count,
+        earnCoin
+      });
+    }
+
+    return {
+      currentMonthCalendar,
+      activeStreak,
+      last6MonthsStreak
     };
   }
 }

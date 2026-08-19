@@ -44,4 +44,14 @@ exports.getTodayStreak = async (req, res, next) => {
   }
 };
 
+exports.getCalendarHistory = async (req, res, next) => {
+  try {
+    const { year, month } = req.query;
+    const data = await rewardsService.getCalendarHistory(req.user._id, year, month);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 

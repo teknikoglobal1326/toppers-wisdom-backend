@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const McqReportSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    type: { type: String, enum: ['question', 'test', 'testSeries', 'previousYearPaper', 'previousYearTest', 'course-test'], required: true, index: true },
+    type: { type: String, enum: ['question', 'test', 'testSeries', 'previousYearPaper', 'previousYearTest', 'course-test', 'ai_test', 'live_test', 'quiz'], required: true, index: true },
     typeId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
     reason: { type: String, enum: ['wrong_answer', 'wrong_question', 'wrong_option', 'translation_issue', 'image_issue', 'technical_issue', 'other'], required: true },
     description: { type: String, trim: true, maxlength: 1000 },

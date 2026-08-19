@@ -10,6 +10,6 @@ router.get('/wallet/history', rewardsController.getWalletHistory);
 router.get('/wallet/summary', rewardsController.getWalletSummary);
 
 router.get('/streak/today', rewardsController.getTodayStreak);
-
+router.get('/streak/calendar', rewardsController.getCalendarHistory);
 
 module.exports = router;

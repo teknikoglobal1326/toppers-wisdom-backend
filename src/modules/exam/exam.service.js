@@ -27,6 +27,26 @@ class ExamService extends BaseService {
         .map(({ examId, ...rest }) => rest),
     }))
   }
+
+  async listAllActive() {
+    const exams = await examRepository.findAll(
+      { status: 'active', is_deleted: false },
+      { sort: { sortOrder: 1 }, select: '_id name image sortOrder' },
+    )
+
+    const examIds = exams.map((exam) => exam._id)
+    const subExams = await subExamRepository.findAll(
+      { examId: { $in: examIds }, status: 'active', is_deleted: false },
+      { sort: { createdAt: -1 }, select: '_id name examId' },
+    )
+
+    return exams.map((exam) => ({
+      ...exam,
+      subExams: subExams
+        .filter((subExam) => String(subExam.examId) === String(exam._id))
+        .map(({ examId, ...rest }) => rest),
+    }))
+  }
 }
 
 module.exports = new ExamService()
