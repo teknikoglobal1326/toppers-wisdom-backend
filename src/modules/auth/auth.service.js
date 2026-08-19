@@ -350,7 +350,7 @@ const googleSignupOrLogin = async (payload) => {
       name,
       avatar,
       isSocial: true,
-      profileCompletionState: 'profileCompleted',
+      profileCompletionState: 'createProfile',
       referralCode,
       role: 'user'
     })
@@ -371,9 +371,18 @@ const googleSignupOrLogin = async (payload) => {
     const { notificationQueue } = require('../../jobs/queue')
     notificationQueue.add('signup', { userId: user._id }).catch((err) => logger.error({ err }, 'Failed to queue signup notification'))
   } else {
+    const updateData = {}
     if (!user.isSocial) {
-      user = await authRepository.updateById(user._id, { isSocial: true })
+      updateData.isSocial = true
     }
+    if (user.profileComplete) {
+      updateData.profileCompletionState = 'profileCompleted'
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      user = await authRepository.updateById(user._id, updateData)
+    }
+
     const { notificationQueue } = require('../../jobs/queue')
     notificationQueue.add('login', { userId: user._id }).catch((err) => logger.error({ err }, 'Failed to queue login notification'))
   }
