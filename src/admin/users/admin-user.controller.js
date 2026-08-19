@@ -41,7 +41,7 @@ class AdminUserService extends BaseService {
     return this.getAll(filter, {
       page:   filters.page,
       limit:  filters.limit,
-      select: 'name phone qualification exam subExams profileCompletionState profileComplete createdAt',
+      select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status',
     })
   }
 
@@ -77,10 +77,10 @@ class AdminUserService extends BaseService {
         .populate({
           path: 'subscription',
           populate: [
-            { path: 'examId', select: 'name' },
-            { path: 'examIds', select: 'name' },
-            { path: 'tests.moduleId', select: 'title' },
-            { path: 'boosters.moduleId', select: 'title' }
+            { path: 'examId', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' },
+            { path: 'examIds', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' },
+            { path: 'tests.moduleId', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' },
+            { path: 'boosters.moduleId', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' }
           ]
         })
         .lean(),
@@ -172,8 +172,8 @@ const getUserAttempts = catchAsync(async (req, res) => {
       populateOpt = {
         path: 'liveTest',
         populate: [
-          { path: 'examId', select: 'name' },
-          { path: 'subExamIds', select: 'name' }
+          { path: 'examId', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' },
+          { path: 'subExamIds', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' }
         ]
       }
       break
@@ -183,8 +183,8 @@ const getUserAttempts = catchAsync(async (req, res) => {
         {
           path: 'previousYearPaper',
           populate: [
-            { path: 'exam', select: 'name' },
-            { path: 'subExams', select: 'name' }
+            { path: 'exam', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' },
+            { path: 'subExams', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' }
           ]
         },
         { path: 'test' }
@@ -195,8 +195,8 @@ const getUserAttempts = catchAsync(async (req, res) => {
       populateOpt = {
         path: 'quiz',
         populate: [
-          { path: 'exam', select: 'name' },
-          { path: 'subExams', select: 'name' }
+          { path: 'exam', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' },
+          { path: 'subExams', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' }
         ]
       }
       break
@@ -206,8 +206,8 @@ const getUserAttempts = catchAsync(async (req, res) => {
         {
           path: 'testSeries',
           populate: [
-            { path: 'exam', select: 'name' },
-            { path: 'subExams', select: 'name' }
+            { path: 'exam', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' },
+            { path: 'subExams', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' }
           ]
         },
         { path: 'test' }
@@ -226,7 +226,7 @@ const getUserAttempts = catchAsync(async (req, res) => {
       populateOpt = {
         path: 'test',
         populate: [
-          { path: 'subExam', select: 'name' }
+          { path: 'subExam', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' }
         ]
       }
       break
