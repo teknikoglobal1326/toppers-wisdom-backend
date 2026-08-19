@@ -34,22 +34,21 @@ class TestSeriesService extends BaseService {
         if (directPurchase) return true
 
         const UserSubscription = require('../../models/UserSubscription.model')
-        const Subscription = require('../../models/Subscription.model')
+        const SubscriptionOrder = require('../../models/SubscriptionOrder.model')
 
         const activeUserSubs = await UserSubscription.find({
             user: userId,
             isActive: true,
             endDate: { $gte: new Date() }
-        }).select('subscription').lean()
+        }).select('order').lean()
 
-        const activeSubIds = activeUserSubs.map(us => us.subscription.toString())
+        const activeOrderIds = activeUserSubs.map(us => us.order).filter(Boolean)
 
-        if (activeSubIds.length > 0) {
-            const count = await Subscription.countDocuments({
-                _id: { $in: activeSubIds },
+        if (activeOrderIds.length > 0) {
+            const count = await SubscriptionOrder.countDocuments({
+                _id: { $in: activeOrderIds },
                 isActive: true,
-                isDeleted: false,
-                'tests': {
+                'subscriptionDetails.tests': {
                     $elemMatch: {
                         moduleType: 'TestSeries',
                         moduleId: series._id
@@ -104,7 +103,7 @@ class TestSeriesService extends BaseService {
         const seriesIds = result.data.map((item) => item._id)
 
         const UserSubscription = require('../../models/UserSubscription.model')
-        const Subscription = require('../../models/Subscription.model')
+        const SubscriptionOrder = require('../../models/SubscriptionOrder.model')
         const CourseOrder = require('../../models/CourseOrder.model')
 
         const [directOrders, activeUserSubs] = await Promise.all([
@@ -117,7 +116,7 @@ class TestSeriesService extends BaseService {
                 user: userId,
                 isActive: true,
                 endDate: { $gte: new Date() }
-            }).select('subscription').lean()
+            }).select('order').lean()
         ])
 
         const accessedSeriesIds = new Set()
@@ -129,17 +128,17 @@ class TestSeriesService extends BaseService {
             }
         }
 
-        const activeSubIds = activeUserSubs.map(us => us.subscription.toString())
+        const activeOrderIds = activeUserSubs.map(us => us.order).filter(Boolean)
 
-        if (activeSubIds.length > 0) {
-            const subscriptions = await Subscription.find({
-                _id: { $in: activeSubIds },
-                isActive: true,
-                isDeleted: false
-            }).select('tests').lean()
+        if (activeOrderIds.length > 0) {
+            const orders = await SubscriptionOrder.find({
+                _id: { $in: activeOrderIds },
+                isActive: true
+            }).select('subscriptionDetails.tests').lean()
 
-            for (const sub of subscriptions) {
-                for (const testItem of sub.tests || []) {
+            for (const order of orders) {
+                const details = order.subscriptionDetails || {}
+                for (const testItem of details.tests || []) {
                     if (testItem.moduleType === 'TestSeries') {
                         for (const mid of testItem.moduleId || []) {
                             accessedSeriesIds.add(mid.toString())

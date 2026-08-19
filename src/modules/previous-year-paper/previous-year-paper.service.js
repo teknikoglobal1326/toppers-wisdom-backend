@@ -17,28 +17,27 @@ class PreviousYearPaperService extends BaseService {
 
     async getSubscribedPaperIds(userId) {
         const UserSubscription = require('../../models/UserSubscription.model')
-        const Subscription = require('../../models/Subscription.model')
+        const SubscriptionOrder = require('../../models/SubscriptionOrder.model')
 
         const activeUserSubs = await UserSubscription.find({
             user: userId,
             isActive: true,
             endDate: { $gte: new Date() }
-        }).select('subscription').lean()
+        }).select('order').lean()
 
-        const activeSubIds = activeUserSubs.map(us => us.subscription.toString())
+        const activeOrderIds = activeUserSubs.map(us => us.order).filter(Boolean)
         const subscribedPaperIds = new Set()
 
-        if (activeSubIds.length > 0) {
-            const subs = await Subscription.find({
-                _id: { $in: activeSubIds },
-                isActive: true,
-                isDeleted: false,
-                'tests.moduleType': 'PreviousYearPaper'
-            }).select('tests').lean()
+        if (activeOrderIds.length > 0) {
+            const orders = await SubscriptionOrder.find({
+                _id: { $in: activeOrderIds },
+                isActive: true
+            }).select('subscriptionDetails.tests').lean()
 
-            subs.forEach(sub => {
-                if (sub.tests) {
-                    sub.tests.forEach(testItem => {
+            orders.forEach(order => {
+                const details = order.subscriptionDetails || {}
+                if (details.tests) {
+                    details.tests.forEach(testItem => {
                         if (testItem.moduleType === 'PreviousYearPaper' && testItem.moduleId) {
                             testItem.moduleId.forEach(mId => {
                                 subscribedPaperIds.add(mId.toString())
@@ -203,6 +202,15 @@ class PreviousYearPaperService extends BaseService {
             }
         })
 
+        return result
+    }
+
+    async getPreviousYearPaperStats(previousYearPaperId, userId) {
+        const previousYearPaper = await this.repository.getPreviousYearPaperById(previousYearPaperId)
+        if (!previousYearPaper || previousYearPaper.isDeleted || previousYearPaper.status !== 'active') {
+            throw new AppError('Previous year paper not found', 404, 'NOT_FOUND')
+        }
+
         // Fetch all tests belonging to this previous year paper to compute overall stats
         const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
         const allPaperTests = await PreviousYearPaperTest.find({
@@ -239,18 +247,14 @@ class PreviousYearPaperService extends BaseService {
             accuracy = Math.round(accuracy * 10) / 10
         }
 
-        const stats = {
+        return {
             totalTests,
             attemptedCount,
             bestScore,
             accuracy
         }
-
-        return {
-            ...result,
-            stats
-        }
     }
+
 
     async startTest(testId, userId, language = 'hi') {
         const test = await this.repository.getPreviousYearPaperTestById(testId)

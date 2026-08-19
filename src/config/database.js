@@ -20,6 +20,22 @@ const connectDB = async () => {
   } catch (err) {
     logger.error({ err }, 'Error migrating sortOrder defaults')
   }
+
+  try {
+    const User = require('../models/User.model')
+    // Clean up any users where phone is null or empty string to prevent unique index violation
+    await User.updateMany({ phone: null }, { $unset: { phone: "" } })
+    await User.updateMany({ phone: "" }, { $unset: { phone: "" } })
+    
+    // Drop the phone index if it exists, so Mongoose can recreate it with sparse: true
+    const indexes = await User.collection.indexes()
+    if (indexes.some(idx => idx.name === 'phone_1')) {
+      await User.collection.dropIndex('phone_1')
+      logger.info('Dropped existing phone_1 index for rebuilding')
+    }
+  } catch (err) {
+    logger.error({ err }, 'Error migrating phone index')
+  }
 }
 
 mongoose.connection.on('error',        (err) => logger.error({ err }, 'MongoDB error'))
