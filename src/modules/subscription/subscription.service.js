@@ -86,7 +86,7 @@ class SubscriptionService {
 
 
         const subscriptions = await Subscription.find(filter)
-            .select('name description price durationDays tests boosters banner')
+            .select('name description price durationDays tests boosters banner isPremium')
             .lean();
 
         return subscriptions.map(sub => ({
@@ -95,6 +95,7 @@ class SubscriptionService {
             description: sub.description,
             price: sub.price,
             durationDays: sub.durationDays,
+            isPremium: Boolean(sub.isPremium),
             image: sub.banner || null
         }));
     }

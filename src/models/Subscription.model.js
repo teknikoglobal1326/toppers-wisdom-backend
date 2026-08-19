@@ -44,6 +44,7 @@ const subscriptionSchema = new mongoose.Schema({
   examIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam', index: true }],
 
   isActive: { type: Boolean, default: true, index: true },
+  isPremium: { type: Boolean, default: false, index: true },
   isDeleted: { type: Boolean, default: false, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' }
 }, { timestamps: true });

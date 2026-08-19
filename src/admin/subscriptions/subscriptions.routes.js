@@ -8,6 +8,8 @@ router.get('/', subscriptionsController.getAllSubscriptions);
 router.get('/history', subscriptionsController.getSubscriptionHistory);
 router.get('/:id', subscriptionsController.getSubscriptionById);
 router.put('/:id', upload.single('banner'), subscriptionsController.updateSubscription);
+router.patch('/:id/toggle-premium', subscriptionsController.togglePremium);
+router.patch('/:id', upload.single('banner'), subscriptionsController.updateSubscription);
 router.delete('/:id', subscriptionsController.deleteSubscription);
 
 module.exports = router;
