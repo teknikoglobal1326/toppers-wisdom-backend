@@ -176,8 +176,8 @@ class DailyQuizService extends BaseService {
             throw new AppError('Daily quiz not found', 404, 'NOT_FOUND')
         }
 
-        const hasAccess = !quiz.isPaid
-        if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
+        // const hasAccess = !quiz.isPaid
+        // if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
         const questions = await this.repository.findQuestionsForQuiz(quizId)
         if (!questions.length) throw new AppError('No questions mapped for this quiz', 400, 'VALIDATION_ERROR')

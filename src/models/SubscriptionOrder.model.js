@@ -16,30 +16,4 @@ const subscriptionOrderSchema = new mongoose.Schema({
   paidAt:            Date,
 }, { timestamps: true })
 
-subscriptionOrderSchema.pre('save', async function (next) {
-  if (this.isNew) {
-    if (!this.duration || !this.subscriptionDetails) {
-      try {
-        const Subscription = mongoose.model('Subscription');
-        const subscription = await Subscription.findById(this.subscription);
-        if (subscription) {
-          if (!this.duration) {
-            this.duration = subscription.durationDays;
-          }
-          this.isActive = subscription.isActive !== undefined ? subscription.isActive : true;
-          if (!this.subscriptionDetails) {
-            const details = subscription.toObject();
-            details.duration = subscription.durationDays;
-            details.price = subscription.price;
-            this.subscriptionDetails = details;
-          }
-        } 
-      } catch (err) {
-        return next(err);
-      }
-    }
-  }
-  next();
-});
-
 module.exports = mongoose.model('SubscriptionOrder', subscriptionOrderSchema)

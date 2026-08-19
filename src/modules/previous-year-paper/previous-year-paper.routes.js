@@ -23,6 +23,7 @@ router.get('/pyqp/:testId/session/:sessionId/solution', controller.getSessionSol
 
 router.get('/user-stats', controller.getOverallUserStats)
 router.get('/:id/tests', validateQuery(listPreviousYearPaperTestsQuerySchema), controller.listPreviousYearPaperTests)
+router.get('/:id/stats', controller.getPreviousYearPaperStats)
 router.get('/:id', controller.getPreviousYearPaper)
 
 module.exports = router
