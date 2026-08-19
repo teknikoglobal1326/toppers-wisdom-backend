@@ -30,7 +30,7 @@ const extractObjectIds = (val) => {
 // Create Subscription
 exports.createSubscription = async (req, res, next) => {
   try {
-    const { name, description, price, durationDays, isActive, examId, examIds } = req.body;
+    const { name, description, price, durationDays, isActive, isPremium, examId, examIds } = req.body;
     let { banner, tests, boosters, materials } = req.body;
 
     if (typeof tests === 'string') {
@@ -80,6 +80,7 @@ exports.createSubscription = async (req, res, next) => {
       banner,
       examId: parsedExamIds.length > 0 ? parsedExamIds[0] : undefined,
       examIds: parsedExamIds,
+      isPremium: isPremium !== undefined ? Boolean(isPremium) : false,
       createdBy: req.admin._id
     });
 
@@ -138,7 +139,7 @@ exports.getSubscriptionById = async (req, res, next) => {
 // Update Subscription
 exports.updateSubscription = async (req, res, next) => {
   try {
-    const { name, description, price, durationDays, isActive, examId, examIds } = req.body;
+    const { name, description, price, durationDays, isActive, isPremium, examId, examIds } = req.body;
     let { banner, tests, boosters, materials } = req.body;
 
     if (typeof tests === 'string') {
@@ -191,6 +192,7 @@ exports.updateSubscription = async (req, res, next) => {
     if (boosters) subscription.boosters = boosters;
     if (materials) subscription.materials = materials;
     if (isActive !== undefined) subscription.isActive = isActive;
+    if (isPremium !== undefined) subscription.isPremium = Boolean(isPremium);
 
     if (req.file) {
       const ext = req.file.originalname.split('.').pop().toLowerCase();
@@ -304,3 +306,98 @@ exports.getSubscriptionHistory = async (req, res, next) => {
   }
 };
 
+
+
+// Toggle Subscription Premium (Topper Pass) Status with Exam-based Exclusivity
+exports.togglePremium = async (req, res, next) => {
+  try {
+    const subscription = await Subscription.findOne({ _id: req.params.id, isDeleted: false });
+    if (!subscription) {
+      return res.status(404).json({ success: false, message: 'Subscription not found' });
+    }
+
+    const nextState = req.body.isPremium !== undefined ? Boolean(req.body.isPremium) : !subscription.isPremium;
+
+    // Collect all exam IDs mapped to this subscription
+    let targetExamIds = [];
+    if (subscription.examId) {
+      targetExamIds.push(subscription.examId.toString());
+    }
+    if (Array.isArray(subscription.examIds)) {
+      subscription.examIds.forEach(ex => {
+        const idStr = (typeof ex === 'object' && ex._id) ? ex._id.toString() : ex.toString();
+        if (idStr.match(/^[0-9a-fA-F]{24}$/)) {
+          targetExamIds.push(idStr);
+        }
+      });
+    }
+    targetExamIds = [...new Set(targetExamIds)];
+
+    if (nextState) {
+      // 1. Deactivate isPremium for all plans of OTHER exams
+      if (targetExamIds.length > 0) {
+        await Subscription.updateMany(
+          {
+            isDeleted: false,
+            $nor: [
+              { examId: { $in: targetExamIds } },
+              { examIds: { $in: targetExamIds } }
+            ]
+          },
+          { isPremium: false }
+        );
+
+        // 2. Activate isPremium for ALL plans belonging to this exam
+        await Subscription.updateMany(
+          {
+            isDeleted: false,
+            $or: [
+              { examId: { $in: targetExamIds } },
+              { examIds: { $in: targetExamIds } },
+              { _id: subscription._id }
+            ]
+          },
+          { isPremium: true }
+        );
+      } else {
+        // If plan has no mapped exam, turn off other plans and activate this one
+        await Subscription.updateMany(
+          { isDeleted: false, _id: { $ne: subscription._id } },
+          { isPremium: false }
+        );
+        subscription.isPremium = true;
+        await subscription.save();
+      }
+    } else {
+      // If toggled OFF, deactivate isPremium for all plans of this exam
+      if (targetExamIds.length > 0) {
+        await Subscription.updateMany(
+          {
+            isDeleted: false,
+            $or: [
+              { examId: { $in: targetExamIds } },
+              { examIds: { $in: targetExamIds } },
+              { _id: subscription._id }
+            ]
+          },
+          { isPremium: false }
+        );
+      } else {
+        subscription.isPremium = false;
+        await subscription.save();
+      }
+    }
+
+    const updatedSub = await Subscription.findById(subscription._id);
+
+    res.status(200).json({
+      success: true,
+      message: nextState
+        ? 'Topper Pass activated for all plans of this exam (and deactivated for other exams)!'
+        : 'Topper Pass deactivated for plans of this exam.',
+      data: updatedSub
+    });
+  } catch (error) {
+    next(error);
+  }
+};
