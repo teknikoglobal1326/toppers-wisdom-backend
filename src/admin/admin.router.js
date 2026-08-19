@@ -6,6 +6,7 @@ router.use(auditLogger)
 
 router.use('/cms', require('./cms/admin-cms.routes'))
 router.use('/app-version', require('./app-version/admin-app-version.routes'))
+router.use('/platform-settings', require('./platform-settings/admin-platform-settings.routes'))
 
 router.use('/courses', requirePermission('courses'), require('./courses/admin-course.routes'))
 router.use('/tests', requirePermission('tests'), require('./tests/admin-test.routes'))

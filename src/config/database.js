@@ -36,6 +36,33 @@ const connectDB = async () => {
   } catch (err) {
     logger.error({ err }, 'Error migrating phone index')
   }
+
+  try {
+    const PlateFormSetting = require('../models/PlateFormSetting.model')
+    const count = await PlateFormSetting.countDocuments()
+    if (count === 0) {
+      await PlateFormSetting.create({
+        siteName: 'Toppers Wisdom',
+        siteLogo: '/uploads/logo.png',
+        supportEmail: 'support@topperswisdom.com',
+        supportPhone: '+91-9999999999',
+        supportWhatsapp: '+91-9999999999',
+        officeAddress: 'New Delhi, India',
+        platformFee: 0,
+        gst: 0,
+        appVersion: '1.0.0',
+        razorpayKeyId: config.RAZORPAY_KEY_ID || '',
+        razorpaySecretKey: config.RAZORPAY_KEY_SECRET || '',
+        instagramUrl: 'https://instagram.com/topperswisdom',
+        facebookUrl: 'https://facebook.com/topperswisdom',
+        youtubeUrl: 'https://youtube.com/topperswisdom',
+        telegramUrl: 'https://t.me/topperswisdom'
+      })
+      logger.info('Default PlateFormSetting seeded successfully')
+    }
+  } catch (err) {
+    logger.error({ err }, 'Error seeding default PlateFormSetting')
+  }
 }
 
 mongoose.connection.on('error',        (err) => logger.error({ err }, 'MongoDB error'))
