@@ -5,6 +5,7 @@ const courseTestRepository = require('../../modules/course-test/course-test.repo
 const CourseTest = require('../../models/CourseTest.model')
 const TestSeriesTest = require('../../models/TestSeriesTest.model')
 const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model')
+const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 
@@ -20,6 +21,12 @@ class AdminQuestionService extends BaseService {
     })
     const update = { totalMappedQuestions: count }
 
+    const updatedSeparatedTest = await CourseSeparatedTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      update,
+      { new: true }
+    )
+    if (updatedSeparatedTest) return
     // const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
     // const updatedSeparatedTest = await CourseSeparatedTest.findOneAndUpdate(
     //   { _id: testId, isDeleted: false },
@@ -31,6 +38,7 @@ class AdminQuestionService extends BaseService {
     const updatedCourseTest = await courseTestRepository.updateById(testId, update)
     if (updatedCourseTest) return
 
+    
     // const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
     const updatedCourseSeparatedTest = await CourseSeparatedTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },

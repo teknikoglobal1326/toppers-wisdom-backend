@@ -538,7 +538,7 @@ class TestSeriesService extends BaseService {
 
         if (status === 'completed') {
             try {
-                await rewardsService.logActivity(userId, 'mock_test');
+                await rewardsService.logActivity(userId, 'test-series-test');
             } catch (err) {
                 this.logger.error({ err, userId, testId }, 'Error auto-logging streak activity in updateSession');
             }
@@ -993,6 +993,56 @@ class TestSeriesService extends BaseService {
         const ongoingSessions = await this.repository.getOngoingSessions(userId)
         const completedSessions = await this.repository.getCompletedSessions(userId)
 
+        // Fetch Previous Year Paper attempts
+        const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
+        
+        const pypOngoing = await PreviousYearPaperAttempt.find({ user: userId, status: 'started' })
+            .select('sessionId previousYearPaper test status score totalMarks timeTaken createdAt')
+            .populate('previousYearPaper', 'title thumbnail')
+            .populate('test', 'title totalQuestions duration')
+            .sort({ createdAt: -1 })
+            .lean()
+
+        const pypCompleted = await PreviousYearPaperAttempt.find({ user: userId, status: 'completed' })
+            .select('sessionId previousYearPaper test status score totalMarks timeTaken accuracy correct wrong skipped unattempted attemptedAt')
+            .populate('previousYearPaper', 'title thumbnail')
+            .populate('test', 'title totalQuestions duration passingMarks')
+            .sort({ attemptedAt: -1 })
+            .lean()
+
+        // Map types
+        const testSeriesOngoing = (ongoingSessions || []).map(item => ({
+            ...item,
+            type: 'test-series',
+            testType: 'test-series'
+        }))
+
+        const pypOngoingMapped = (pypOngoing || []).map(item => ({
+            ...item,
+            type: 'previous-year-paper',
+            testType: 'previous-year-paper'
+        }))
+
+        const testSeriesCompleted = (completedSessions || []).map(item => ({
+            ...item,
+            type: 'test-series',
+            testType: 'test-series'
+        }))
+
+        const pypCompletedMapped = (pypCompleted || []).map(item => ({
+            ...item,
+            type: 'previous-year-paper',
+            testType: 'previous-year-paper'
+        }))
+
+        const mergedOngoing = [...testSeriesOngoing, ...pypOngoingMapped].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        )
+
+        const mergedCompleted = [...testSeriesCompleted, ...pypCompletedMapped].sort(
+            (a, b) => new Date(b.attemptedAt || b.createdAt) - new Date(a.attemptedAt || a.createdAt)
+        )
+
         return {
             totalAccessibleTests,
             totalAttemptedTests: stats.totalAttemptedTests,
@@ -1002,8 +1052,8 @@ class TestSeriesService extends BaseService {
             overallRank,
             totalAspirants,
             topPercentile,
-            ongoingSessions,
-            completedSessions
+            ongoingSessions: mergedOngoing,
+            completedSessions: mergedCompleted
         }
     }
 }

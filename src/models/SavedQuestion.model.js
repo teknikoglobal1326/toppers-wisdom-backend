@@ -15,7 +15,7 @@ const savedQuestionSchema = new mongoose.Schema({
   },
   testType: {
     type: String,
-    enum: ['course-test', 'test-series', 'previous-year-paper', 'live-test', 'quiz'],
+    enum: ['course-test', 'test-series', 'previous-year-paper', 'live-test', 'live_test', 'quiz', 'ai_test'],
     required: false,
   },
   testId: {

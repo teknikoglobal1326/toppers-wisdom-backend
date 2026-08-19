@@ -72,7 +72,7 @@ class TestService extends BaseService {
 
     try {
       if (test.type === 'mock') {
-        await rewardsService.logActivity(userId, 'mock_test');
+        await rewardsService.logActivity(userId, 'test-series-test');
       } else if (test.type === 'ai_generated') {
         await rewardsService.logActivity(userId, 'ai_test');
       } else if (test.type === 'pyp') {

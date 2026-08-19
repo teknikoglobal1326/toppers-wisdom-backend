@@ -374,6 +374,12 @@ class AiTestService extends BaseService {
 
     if (status === 'completed') {
       attempt.attemptedAt = new Date()
+      try {
+        const rewardsService = require('../rewards/rewards.service')
+        await rewardsService.logActivity(userId, 'ai_test')
+      } catch (err) {
+        this.logger.error({ err }, 'Failed to log daily activity for ai_test')
+      }
     }
 
     await attempt.save()
