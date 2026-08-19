@@ -46,6 +46,14 @@ class AdminQuestionService extends BaseService {
     )
     if (updatedSeriesTest) return
 
+    const MathTest = require('../../models/MathTest.model')
+    const updatedMathTest = await MathTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      update,
+      { new: true }
+    )
+    if (updatedMathTest) return
+
     const updatedPyp = await PreviousYearPaperTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },
       update,
@@ -162,15 +170,17 @@ class AdminQuestionService extends BaseService {
     const LiveTest = require('../../models/LiveTest.model')
     const DailyQuiz = require('../../models/DailyQuiz.model')
     const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
-    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz] = await Promise.all([
+    const MathTest = require('../../models/MathTest.model')
+    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz, mathTest] = await Promise.all([
       CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
       CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
       TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
       PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
       LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id exam subExams isPerQuestionTime').lean(),
       DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id isPerQuestionTime').lean(),
+      MathTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
     ])
-    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || null
+    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || mathTest || null
   }
 
   // Enforce the parent test's per-question-time policy on a question payload:

@@ -8,5 +8,6 @@ router.get('/check', controller.checkSubscriptions);
 router.post('/purchase', controller.purchaseSubscription);
 router.post('/verify', controller.verifyPayment);
 router.get('/history', controller.getPurchaseHistory);
+router.get('/orders', controller.getSubscriptionOrders);
 
 module.exports = router;

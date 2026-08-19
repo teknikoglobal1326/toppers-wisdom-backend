@@ -55,7 +55,7 @@ new Worker('notification', async (job) => {
     let totalSent = 0
 
     while (hasMore) {
-      const batchUsers = await User.find({ fcmToken: { $ne: null, $exists: true } })
+      const batchUsers = await User.find({ fcmToken: { $ne: null, $exists: true }, isDeleted: false })
         .select('_id fcmToken')
         .skip(skip)
         .limit(batchSize)
@@ -135,7 +135,7 @@ new Worker('notification', async (job) => {
     let totalSent = 0
 
     while (hasMore) {
-      const batchUsers = await User.find({ fcmToken: { $ne: null, $exists: true } })
+      const batchUsers = await User.find({ fcmToken: { $ne: null, $exists: true }, isDeleted: false })
         .select('_id fcmToken')
         .skip(skip)
         .limit(batchSize)
@@ -202,6 +202,10 @@ new Worker('notification', async (job) => {
     title = 'Course Purchased!'
     body = 'Congratulations! Your payment for the course was successful.'
     data = { ...data, type: 'payment_success', orderId: job.data.orderId ? String(job.data.orderId) : '' }
+  } else if (name === 'subscription-success') {
+    title = 'Subscription Activated!'
+    body = 'Congratulations! Your subscription purchase was successful.'
+    data = { ...data, type: 'subscription_success', orderId: job.data.orderId ? String(job.data.orderId) : '' }
   } else if (name === 'signup') {
     title = 'Welcome to Toppers Wisdom!'
     body = 'Thank you for signing up. Start your learning journey today!'

@@ -1,6 +1,9 @@
 const catchAsync = require('../../core/catchAsync');
 const { sendSuccess } = require('../../core/response');
 const subscriptionService = require('./subscription.service');
+const { paginate } = require('../../core/paginate');
+const UserSubscription = require('../../models/UserSubscription.model');
+const SubscriptionOrder = require('../../models/SubscriptionOrder.model');
 
 const checkSubscriptions = catchAsync(async (req, res) => {
     const { type, id } = req.query;
@@ -21,8 +24,6 @@ const verifyPayment = catchAsync(async (req, res) => {
 });
 
 const getPurchaseHistory = catchAsync(async (req, res) => {
-    const { paginate } = require('../../core/paginate');
-    const UserSubscription = require('../../models/UserSubscription.model');
     const filter = { user: req.user._id };
     const paginated = await paginate(UserSubscription, filter, {
         page: req.query.page,
@@ -33,4 +34,15 @@ const getPurchaseHistory = catchAsync(async (req, res) => {
     sendSuccess(res, paginated, 'Purchase history retrieved successfully');
 });
 
-module.exports = { checkSubscriptions, purchaseSubscription, verifyPayment, getPurchaseHistory };
+const getSubscriptionOrders = catchAsync(async (req, res) => {
+    const filter = { user: req.user._id };
+    const paginated = await paginate(SubscriptionOrder, filter, {
+        page: req.query.page,
+        limit: req.query.limit,
+        sort: { createdAt: -1 },
+        populate: { path: 'subscription', select: 'name description price durationDays' }
+    });
+    sendSuccess(res, paginated, 'Subscription orders retrieved successfully');
+});
+
+module.exports = { checkSubscriptions, purchaseSubscription, verifyPayment, getPurchaseHistory, getSubscriptionOrders };

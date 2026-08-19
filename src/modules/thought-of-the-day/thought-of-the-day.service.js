@@ -50,7 +50,7 @@ class ThoughtOfTheDayService extends BaseService {
           ]
         }
       },
-      { $sort: { createdAt: -1 } },
+      { $sort: { sortOrder: 1, createdAt: -1 } },
       {
         $facet: {
           metadata: [{ $count: 'total' }],

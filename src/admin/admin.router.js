@@ -11,6 +11,8 @@ router.use('/courses', requirePermission('courses'), require('./courses/admin-co
 router.use('/tests', requirePermission('tests'), require('./tests/admin-test.routes'))
 router.use('/test-series', requirePermission('tests'), require('./test-series/admin-test-series.routes'))
 router.use('/test-series-tests', requirePermission('tests'), require('./test-series-tests/admin-test-series-test.routes'))
+router.use('/math', requirePermission('tests'), require('./math/admin-math.routes'))
+router.use('/math-tests', requirePermission('tests'), require('./math-tests/admin-math-test.routes'))
 router.use('/previous-year-papers', requirePermission('tests'), require('./previous-year-papers/admin-previous-year-paper.routes'))
 router.use('/previous-year-paper-tests', requirePermission('tests'), require('./previous-year-paper-tests/admin-previous-year-paper-test.routes'))
 router.use('/daily-quizzes', requirePermission('tests'), require('./daily-quizzes/admin-daily-quiz.routes'))

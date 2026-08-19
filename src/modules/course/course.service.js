@@ -11,6 +11,11 @@ const Test = require('../../models/Test.model')
 const CourseTest = require('../../models/CourseTest.model')
 const Topic = require('../../models/Topic.model')
 const Subject = require('../../models/Subject.model')
+const UserSubscription = require('../../models/UserSubscription.model')
+const Enrollment = require('../../models/Enrollment.model')
+const CourseTestAttempt = require('../../models/CourseTestAttempt.model')
+const CourseSeparatedPdf = require('../../models/CourseSeparatedPdf.model')
+const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
 const paymentService = require('../payment/payment.service')
 const { generateSubscriberToken } = require('../../lib/agora')
 
@@ -336,7 +341,6 @@ class CourseService extends BaseService {
     // Fetch allowed materials via active subscription plans
     const allowedMaterialIds = new Set();
     if (!hasAccess && userId) {
-      const UserSubscription = require('../../models/UserSubscription.model');
       const userSubs = await UserSubscription.find({
         user: userId,
         isActive: true,
@@ -351,13 +355,11 @@ class CourseService extends BaseService {
     }
 
     // Fetch user progress for content / pdf
-    const Enrollment = require('../../models/Enrollment.model');
     const enrollment = userId ? await Enrollment.findOne({ user: userId, course: courseId }).lean() : null;
     const progressList = enrollment?.progress || [];
     const progressMap = new Map(progressList.map(p => [p.lessonId.toString(), p]));
 
     // Fetch user attempts for tests
-    const CourseTestAttempt = require('../../models/CourseTestAttempt.model');
     const attempts = userId ? await CourseTestAttempt.find({ user: userId, course: courseId }).lean() : [];
     const testAttemptsMap = new Map();
     const latestAttemptMap = new Map();
@@ -413,7 +415,7 @@ class CourseService extends BaseService {
     if (!subject) throw new AppError('Subject not found', 404, 'NOT_FOUND');
 
     const chapterIds = (subject.chapters || []).map(c => c._id.toString());
-    const [pdfs, contents, courseTests, separatedPdfs] = await Promise.all([
+    const [pdfs, contents, courseTests, separatedPdfs, separatedTests] = await Promise.all([
       Pdf.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
         .select('title description pdfFile image topics chapters scheduledStartTime scheduledEndTime')
         .lean(),
@@ -423,15 +425,18 @@ class CourseService extends BaseService {
       CourseTest.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
         .select('title slug description image duration isPerQuestionTime totalQuestion scheduledStartTime scheduledEndTime totalMarks difficulty topics chapters')
         .lean(),
-      require('../../models/CourseSeparatedPdf.model').find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
+      CourseSeparatedPdf.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
         .select('title description pdfFile image topics chapters scheduledStartTime scheduledEndTime')
+        .lean(),
+      CourseSeparatedTest.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
+        .select('title slug description image duration isPerQuestionTime totalQuestions totalMappedQuestions scheduledStartTime scheduledEndTime totalMarks difficulty topics chapters')
         .lean()
     ]);
 
     const syllabus = {
       content: [],
       pdf: separatedPdfs.map(p => mapAccess({ ...p, materialType: 'pdf' })),
-      test: []
+      test: separatedTests.map(t => mapAccess({ ...t, materialType: 'test' }))
     };
 
     const chapters = subject.chapters || [];
