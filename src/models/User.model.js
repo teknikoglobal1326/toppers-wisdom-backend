@@ -41,6 +41,7 @@ const userSchema = new mongoose.Schema({
   walletBalance: { type: Number, default: 0 },
   totalCoinsEarned: { type: Number, default: 0 },
   referralCode:  { type: String, unique: true, sparse: true, index: true },
+  referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true })
 
 module.exports = mongoose.model('User', userSchema)

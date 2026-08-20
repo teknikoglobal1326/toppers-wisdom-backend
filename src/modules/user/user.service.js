@@ -40,8 +40,44 @@ class UserService extends BaseService {
 
     async updateProfile(userId, data) {
         this.logger.info({ userId, fields: Object.keys(data) }, 'Updating profile')
-        // inherited: this.update() checks existence then calls updateById
-        return this.update(userId, data)
+
+        const User = require('../../models/User.model')
+        const user = await User.findById(userId)
+        if (!user) throw new AppError('User not found', 404)
+
+        if (data.referralCode) {
+            if (user.referredBy) {
+                throw new AppError('Referral code already applied', 400, 'VALIDATION_ERROR')
+            }
+
+            const referrer = await User.findOne({ referralCode: data.referralCode, isDeleted: false })
+            if (!referrer) {
+                throw new AppError('Invalid referral code', 400, 'VALIDATION_ERROR')
+            }
+            if (referrer._id.toString() === userId.toString()) {
+                throw new AppError('You cannot refer yourself', 400, 'VALIDATION_ERROR')
+            }
+
+            user.referredBy = referrer._id
+            
+            const rewardsService = require('../rewards/rewards.service')
+            try {
+                // Add 25 coins to the referrer
+                await rewardsService.addCoins(referrer._id, 25, 'referral', `Referral Bonus for inviting user`);
+                // Add 25 coins to the referred user (customer)
+                await rewardsService.addCoins(userId, 25, 'referral', `Referral Bonus for using referral code`);
+            } catch (err) {
+                this.logger.error({ err }, 'Failed to award referral coins')
+            }
+        }
+
+        if (data.name !== undefined) user.name = data.name
+        if (data.email !== undefined) user.email = data.email
+        if (data.language !== undefined) user.language = data.language
+        if (data.avatar !== undefined) user.avatar = data.avatar
+
+        await user.save()
+        return user
     }
 
     async setupProfile(userId, data) {

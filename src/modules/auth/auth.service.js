@@ -206,7 +206,7 @@ const updateProfile = async (userId, payload) => {
     // Mark onboarding as complete when name + qualification are present along with avatar or language
     if (payload.name && payload.qualification && (payload.avatar || payload.language)) {
       updateData.profileCompletionState = 'onboardingCompleted'
-      updateData.profileComplete = true
+      updateData.profileComplete = false
     }
 
     // Mark profile as fully complete when exam and subExams are set
@@ -350,7 +350,7 @@ const googleSignupOrLogin = async (payload) => {
       name,
       avatar,
       isSocial: true,
-      profileCompletionState: 'createProfile',
+      profileCompletionState: 'passwordCreated',
       referralCode,
       role: 'user'
     })

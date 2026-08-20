@@ -32,4 +32,12 @@ const setEditorialBookmarkSchema = Joi.object({
   isBookmarked: Joi.boolean().default(true),
 })
 
-module.exports = { listEditorialQuerySchema, setEditorialLikeSchema, setEditorialReadSchema, setEditorialBookmarkSchema }
+const submitEditorialTestSchema = Joi.object({
+  answers: Joi.array().items(Joi.object({
+    questionId: Joi.string().hex().length(24).required(),
+    selectedOption: Joi.number().integer().min(0).max(3).allow(null),
+  })).required(),
+  timeTaken: Joi.number().min(0).required(),
+})
+
+module.exports = { listEditorialQuerySchema, setEditorialLikeSchema, setEditorialReadSchema, setEditorialBookmarkSchema, submitEditorialTestSchema }
