@@ -265,8 +265,8 @@ router.get('/tree/:courseId', catchAsync(async (req, res) => {
   sendSuccess(res, tree)
 }))
 
-// GET /api/v1/admin/common/chapters
-router.get('/chapters', catchAsync(async (req, res) => {
+// GET /api/v1/admin/common/chapters or /all-chapters
+router.get(['/chapters', '/all-chapters'], catchAsync(async (req, res) => {
   const { subjectId, subject, courseId, course, examId, exam, search, q, limit } = req.query;
   const filter = { isDeleted: false, status: 'active' };
 
@@ -405,6 +405,63 @@ router.get('/topics/:chapterId', catchAsync(async (req, res) => {
   });
 })
 );
+
+// GET /api/v1/admin/common/all-topics or /topics
+router.get(['/all-topics', '/topics-list'], catchAsync(async (req, res) => {
+  const { chapterId, chapter, subjectId, subject, search, q, limit } = req.query;
+  const filter = { isDeleted: false, status: 'active' };
+
+  const targetSubject = subjectId || subject;
+  if (targetSubject && targetSubject !== 'all') {
+    if (typeof targetSubject === 'string' && targetSubject.includes(',')) {
+      const ids = targetSubject.split(',').map(s => s.trim()).filter(Boolean);
+      filter._id = { $in: ids };
+    } else if (Array.isArray(targetSubject)) {
+      filter._id = { $in: targetSubject };
+    } else {
+      filter._id = targetSubject;
+    }
+  }
+
+  const subjects = await Subject.find(filter).select('_id name chapters').lean();
+  let topics = [];
+  const targetChapter = chapterId || chapter;
+  const searchTerm = (search || q || '').trim().toLowerCase();
+
+  subjects.forEach(sub => {
+    (sub.chapters || []).forEach(ch => {
+      if (targetChapter && targetChapter !== 'all' && String(ch._id) !== String(targetChapter)) {
+        return;
+      }
+      (ch.topics || []).forEach(tp => {
+        if (searchTerm && !(tp.name || '').toLowerCase().includes(searchTerm)) {
+          return;
+        }
+        topics.push({
+          _id: tp._id,
+          id: tp._id,
+          name: tp.name,
+          title: tp.name,
+          topicName: tp.name,
+          sortOrder: tp.sortOrder,
+          chapterId: ch._id,
+          chapterName: ch.name,
+          subjectId: sub._id,
+          subjectName: sub.name,
+        });
+      });
+    });
+  });
+
+  if (limit) {
+    const parsedLimit = parseInt(limit, 10);
+    if (!isNaN(parsedLimit) && parsedLimit > 0) {
+      topics = topics.slice(0, parsedLimit);
+    }
+  }
+
+  sendSuccess(res, topics);
+}));
 
 // GET /api/v1/admin/common/subscriptions
 router.get('/subscriptions', catchAsync(async (req, res) => {
