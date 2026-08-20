@@ -2,6 +2,7 @@ const BaseService = require('../../core/BaseService')
 const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
+const DailyQuizAttempt = require('../../models/DailyQuizAttempt.model')
 const crypto = require('crypto')
 const { groupQuestionsByLanguage, groupQuestionsBySubject, scoreAnswers } = require('../../lib/testQuestions')
 const { htmlToPlainText } = require('../../lib/htmlText')
@@ -113,8 +114,10 @@ class DailyQuizService extends BaseService {
             ]
         })
 
+        console.log("quizzesResult=======>",quizzesResult);
+        console.log("filter",filter);
         const Question = require('../../models/Question.model')
-        const DailyQuizAttempt = require('../../models/DailyQuizAttempt.model')
+        
 
         const processedData = await Promise.all(quizzesResult.data.map(async (item) => {
             const id = item._id.toString()
@@ -164,9 +167,11 @@ class DailyQuizService extends BaseService {
             marksPerQuestion: quiz.marksPerQuestion,
             negativeMarks: quiz.negativeMarks,
             passingMarks: quiz.passingMarks,
+            isPerQuestionTime: false,
             instructions: quiz.instructions,
             instructionsNew: quiz.instructionsNew,
-            localizedContent: quiz.localizedContent
+            localizedContent: quiz.localizedContent,
+            series: null
         }
     }
 

@@ -1,5 +1,5 @@
 const catchAsync = require('../../core/catchAsync');
-const { sendSuccess } = require('../../core/response');
+const { sendSuccess, sendPaginated } = require('../../core/response');
 const subscriptionService = require('./subscription.service');
 const { paginate } = require('../../core/paginate');
 const UserSubscription = require('../../models/UserSubscription.model');
@@ -31,7 +31,19 @@ const getPurchaseHistory = catchAsync(async (req, res) => {
         sort: { createdAt: -1 },
         populate: { path: 'subscription', select: 'name description price durationDays' }
     });
-    sendSuccess(res, paginated, 'Purchase history retrieved successfully');
+    
+    const mapped = paginated.data.map(sub => {
+        const subObj = sub.toObject ? sub.toObject() : sub;
+        const now = new Date();
+        const end = new Date(subObj.endDate);
+        const remainingDays = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+        return {
+            ...subObj,
+            remainingDays
+        };
+    });
+
+    sendPaginated(res, mapped, paginated.pagination, 'Purchase history retrieved successfully');
 });
 
 const getSubscriptionOrders = catchAsync(async (req, res) => {
@@ -42,7 +54,21 @@ const getSubscriptionOrders = catchAsync(async (req, res) => {
         sort: { createdAt: -1 },
         populate: { path: 'subscription', select: 'name description price durationDays' }
     });
-    sendSuccess(res, paginated, 'Subscription orders retrieved successfully');
+
+    const ordersWithRemaining = paginated.data.map(order => {
+        const orderObj = order.toObject ? order.toObject() : order;
+        const now = new Date();
+        const paidAtTime = orderObj.paidAt ? new Date(orderObj.paidAt).getTime() : 0;
+        const durationDays = orderObj.duration || 0;
+        const endTime = paidAtTime + (durationDays * 24 * 60 * 60 * 1000);
+        const remainingDays = orderObj.status === 'paid' ? Math.max(0, Math.ceil((endTime - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+        return {
+            ...orderObj,
+            remainingDays
+        };
+    });
+
+    sendPaginated(res, ordersWithRemaining, paginated.pagination, 'Subscription orders retrieved successfully');
 });
 
 module.exports = { checkSubscriptions, purchaseSubscription, verifyPayment, getPurchaseHistory, getSubscriptionOrders };

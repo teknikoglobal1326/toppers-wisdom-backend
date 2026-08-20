@@ -10,7 +10,7 @@ const logger = createLogger('home:service')
 
 const getHome = async (examId, userId) => {
   logger.info({ examId, userId }, 'Fetching home data')
-
+  console.log("userId",userId);
   let purchasedCourseIds = []
   if (userId) {
     const CourseOrder = require('../../models/CourseOrder.model')

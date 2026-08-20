@@ -1,10 +1,10 @@
 const catchAsync = require('../../core/catchAsync')
-const { sendSuccess } = require('../../core/response')
+const { sendSuccess, sendPaginated } = require('../../core/response')
 const mathService = require('./math.service')
 
 const listSeries = catchAsync(async (req, res) => {
     const result = await mathService.listSeries(req.user?._id, req.query)
-    sendSuccess(res, result, 'Math series packages retrieved successfully')
+    sendPaginated(res, result.data, result.pagination, 'Math series packages retrieved successfully')
 })
 
 const getSeries = catchAsync(async (req, res) => {
@@ -14,7 +14,7 @@ const getSeries = catchAsync(async (req, res) => {
 
 const listSeriesTests = catchAsync(async (req, res) => {
     const result = await mathService.listSeriesTests(req.params.id, req.user?._id, req.query)
-    sendSuccess(res, result, 'Math series tests retrieved successfully')
+    sendPaginated(res, result.data, result.pagination, 'Math series tests retrieved successfully')
 })
 
 const getTestInstructions = catchAsync(async (req, res) => {
