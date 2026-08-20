@@ -58,5 +58,7 @@ router.use('/wrapper-packages', requirePermission('courses'), require('./wrapper
 router.use('/tw-posts', requirePermission('tw-posts'), require('./tw-posts/admin-tw-post.routes'))
 router.use('/thought-of-the-day', requirePermission('thought-of-the-day'), require('./thought-of-the-day/admin-thought-of-the-day.routes'))
 router.use('/streaks', requirePermission('users'), require('./streaks/admin-streak.routes'))
+router.use('/faculties', requirePermission('faculties'), require('./faculties/admin-faculty.routes'))
+router.use('/faculty', requirePermission('faculties'), require('./faculties/admin-faculty.routes'))
 
 module.exports = router

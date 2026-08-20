@@ -1,56 +1,53 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose')
+
+const localizedBlock = {
+  title: { type: String, trim: true, default: null },
+  description: { type: String, default: null },
+  instructions: { type: String, default: null },
+}
 
 const editorialTestSchema = new mongoose.Schema({
-  title: { type: String, trim: true },
-  slug: { type: String, unique: true, lowercase: true, trim: true },
-  thumbnailImage: { type: String, default: "" },
-
-  description: { type: String, default: "" },
-
-  instructions: { type: String, default: "" },
-  instructionsNew: { type: String, default: null },
-  subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
-  editorial: { type: mongoose.Schema.Types.ObjectId, ref: "Editorial", default: null },
-
-  duration: { type: Number, default: 0 }, // Minutes
-
-  totalQuestions: { type: Number, default: 0 },      // Total questions in test
-  mappedQuestions: { type: Number, default: 0 },     // Questions added/mapped
-  totalMarks: { type: Number, default: 0 },          // Total marks
-  passingMarks: { type: Number, default: 0 },        // Passing marks
-
+  editorial: { type: mongoose.Schema.Types.ObjectId, ref: 'Editorial', default: null, index: true },
+  subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
+  subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
+  chapterIds: [{ type: mongoose.Schema.Types.ObjectId }],
+  topicIds: [{ type: mongoose.Schema.Types.ObjectId }],
+  title: { type: String, required: true, trim: true },
+  slug: { type: String, lowercase: true, trim: true },
+  thumbnailImage: { type: String, default: null },
+  thumbnail: { type: String, default: null },
+  description: { type: String, default: null },
+  duration: { type: Number, required: true, min: 0, default: 0 },
+  isPerQuestionTime: { type: Boolean, default: true },
+  totalQuestions: { type: Number, required: true, min: 0, default: 0 },
+  mappedQuestions: { type: Number, default: 0, min: 0 },
+  totalMappedQuestions: { type: Number, default: 0, min: 0 },
+  totalMarks: { type: Number, required: true, min: 0, default: 0 },
+  marksPerQuestion: { type: Number, required: true, min: 0, default: 1 },
   isNegativeMarking: { type: Boolean, default: false },
-  negativeMarks: { type: Number, default: 0 },       // Per wrong answer
-
-  marksPerQuestion: { type: Number, default: 1 },
-
-  status: {
-    type: String,
-    enum: ["draft", "published", "inactive"],
-    default: "draft",
-    index: true
+  negativeMarks: { type: Number, required: true, min: 0, default: 0 },
+  passingMarks: { type: Number, required: true, min: 0, default: 0 },
+  instructions: { type: String, default: null },
+  instructionsNew: { type: String, default: null },
+  isPaid: { type: Boolean, default: false, index: true },
+  isFree: { type: Boolean, default: true, index: true },
+  status: { type: String, enum: ['active', 'inactive', 'draft', 'published'], default: 'active', index: true },
+  languages: {
+    type: [{ type: String, enum: ['en', 'hi'] }],
+    default: ['en'],
+    validate: [(v) => Array.isArray(v) && v.length >= 1, 'At least one language is required'],
   },
-
-  isFree: { type: Boolean, default: true },
-
+  localizedContent: {
+    en: { type: localizedBlock, default: {} },
+    hi: { type: localizedBlock, default: null },
+  },
+  scheduleAt: { type: Date, default: null },
   sortOrder: { type: Number, default: 0 },
-
   totalAttempts: { type: Number, default: 0 },
-
   totalViews: { type: Number, default: 0 },
+  isDeleted: { type: Boolean, default: false, index: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
+}, { timestamps: true })
 
-  isDeleted: { type: Boolean, default: false },
-
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin"
-  },
-
-  updatedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin"
-  }
-
-}, { timestamps: true });
-
-module.exports = mongoose.model("EditorialTest", editorialTestSchema);
+module.exports = mongoose.model('EditorialTest', editorialTestSchema)
