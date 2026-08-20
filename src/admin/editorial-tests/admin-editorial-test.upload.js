@@ -9,39 +9,19 @@ const uploadEditorialTestMedia = upload.fields([
 
 const parseFormData = async (req, _res, next) => {
   try {
-    if (typeof req.body.subjects === 'string') {
-      try {
-        const parsed = JSON.parse(req.body.subjects)
-        if (Array.isArray(parsed)) req.body.subjects = parsed
-      } catch (_) {
-        // Leave as-is for Joi validation.
-      }
-    }
-
-    if (typeof req.body.subjectIds === 'string') {
-      try {
-        const parsed = JSON.parse(req.body.subjectIds)
-        if (Array.isArray(parsed)) req.body.subjectIds = parsed
-      } catch (_) {
-        // Leave as-is
-      }
-    }
-
-    if (typeof req.body.chapterIds === 'string') {
-      try {
-        const parsed = JSON.parse(req.body.chapterIds)
-        if (Array.isArray(parsed)) req.body.chapterIds = parsed
-      } catch (_) {
-        // Leave as-is
-      }
-    }
-
-    if (typeof req.body.topicIds === 'string') {
-      try {
-        const parsed = JSON.parse(req.body.topicIds)
-        if (Array.isArray(parsed)) req.body.topicIds = parsed
-      } catch (_) {
-        // Leave as-is
+    const arrayKeys = ['exam', 'examIds', 'subExam', 'subexamIds', 'subjects', 'subjectIds', 'chapterIds', 'topicIds']
+    for (const key of arrayKeys) {
+      if (typeof req.body[key] === 'string') {
+        try {
+          const parsed = JSON.parse(req.body[key])
+          req.body[key] = Array.isArray(parsed) ? parsed.filter(Boolean) : [parsed].filter(Boolean)
+        } catch (_) {
+          if (req.body[key] && req.body[key] !== '[]' && req.body[key] !== 'null') {
+            req.body[key] = [req.body[key]].filter(Boolean)
+          } else {
+            req.body[key] = []
+          }
+        }
       }
     }
 

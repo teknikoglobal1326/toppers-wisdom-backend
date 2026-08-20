@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
-const objectId = Joi.string().hex().length(24)
+const objectId = Joi.string().hex().length(24).allow('', null)
 const STATUS_VALUES = ['active', 'inactive', 'draft', 'published']
 
 const localizedBlock = Joi.object({
@@ -45,8 +45,12 @@ const requireSomeTitle = (value, helpers) => {
 }
 
 const createEditorialTestSchema = Joi.object({
-  editorial: objectId.allow('', null).optional(),
-  editorialId: objectId.allow('', null).optional(),
+  editorial: objectId,
+  editorialId: objectId,
+  exam: Joi.array().items(objectId).single().default([]),
+  examIds: Joi.array().items(objectId).single().default([]),
+  subExam: Joi.array().items(objectId).single().default([]),
+  subexamIds: Joi.array().items(objectId).single().default([]),
   subjects: Joi.array().items(objectId).single().default([]),
   subjectIds: Joi.array().items(objectId).single().default([]),
   chapterIds: Joi.array().items(objectId).single().default([]),
@@ -55,12 +59,16 @@ const createEditorialTestSchema = Joi.object({
 }).custom(requireSomeTitle)
 
 const updateEditorialTestSchema = Joi.object({
-  editorial: objectId.allow('', null).optional(),
-  editorialId: objectId.allow('', null).optional(),
-  subjects: Joi.array().items(objectId).single().optional(),
-  subjectIds: Joi.array().items(objectId).single().optional(),
-  chapterIds: Joi.array().items(objectId).single().optional(),
-  topicIds: Joi.array().items(objectId).single().optional(),
+  editorial: objectId,
+  editorialId: objectId,
+  exam: Joi.array().items(objectId).single(),
+  examIds: Joi.array().items(objectId).single(),
+  subExam: Joi.array().items(objectId).single(),
+  subexamIds: Joi.array().items(objectId).single(),
+  subjects: Joi.array().items(objectId).single(),
+  subjectIds: Joi.array().items(objectId).single(),
+  chapterIds: Joi.array().items(objectId).single(),
+  topicIds: Joi.array().items(objectId).single(),
   title: Joi.string().trim().optional().allow(null, ''),
   slug: Joi.string().trim().lowercase().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
