@@ -7,12 +7,24 @@ class AdminGrammarService extends BaseService {
     super(grammarRepository, 'admin:grammar')
   }
 
-  buildFilter({ status, title, topicName, search, examId, exam } = {}) {
+  buildFilter({ status, title, topicName, search, examId, exam, categoryId } = {}) {
     const filter = { isDeleted: false }
 
     if (status) filter.status = status
     if (title) filter.title = { $regex: title, $options: 'i' }
     if (topicName) filter.topicName = { $regex: topicName, $options: 'i' }
+
+    if (categoryId) {
+      if (Array.isArray(categoryId)) {
+        filter.categoryId = { $in: categoryId }
+      } else if (typeof categoryId === 'string') {
+        if (categoryId.includes(',')) {
+          filter.categoryId = { $in: categoryId.split(',').map(s => s.trim()) }
+        } else {
+          filter.categoryId = categoryId
+        }
+      }
+    }
 
     const targetExam = examId || exam
     if (targetExam) {
@@ -100,7 +112,8 @@ class AdminGrammarService extends BaseService {
       sort: { [sortBy]: direction, createdAt: -1 },
       populate: [
         { path: 'exam', select: 'name' },
-        { path: 'subjectIds', select: 'name' }
+        { path: 'subjectIds', select: 'name' },
+        { path: 'categoryId', select: 'name' }
       ]
     })
 
@@ -120,13 +133,12 @@ class AdminGrammarService extends BaseService {
     let grammar = await grammarRepository.findOne({ _id: id, isDeleted: false })
     if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
 
-    // Populate exam and subjectIds
-    if (grammar.populate) {
-      grammar = await grammarRepository.model.findById(id)
-        .populate('exam', 'name')
-        .populate('subjectIds', 'name')
-        .lean()
-    }
+    // Populate exam, subjectIds, and categoryId
+    grammar = await grammarRepository.model.findById(id)
+      .populate('exam', 'name')
+      .populate('subjectIds', 'name')
+      .populate('categoryId')
+      .lean()
 
     if (!topicSortOrder) return grammar
 

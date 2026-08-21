@@ -1,5 +1,7 @@
 const Joi = require('joi')
 
+const objectId = Joi.string().hex().length(24)
+
 const chapterSchema = Joi.object({
   chapterName: Joi.string().trim().required(),
   content: Joi.string().allow('', null),
@@ -16,6 +18,7 @@ const createGrammarSchema = Joi.object({
   status: Joi.string().valid('active', 'inactive').default('active'),
   exam: Joi.array().items(Joi.string()).default([]),
   subjectIds: Joi.array().items(Joi.string()).default([]),
+  categoryId: objectId.optional().allow(null, ''),
 })
 
 const updateGrammarSchema = Joi.object({
@@ -26,6 +29,7 @@ const updateGrammarSchema = Joi.object({
   status: Joi.string().valid('active', 'inactive'),
   exam: Joi.array().items(Joi.string()),
   subjectIds: Joi.array().items(Joi.string()),
+  categoryId: objectId.optional().allow(null, ''),
 }).min(1)
 
 const listGrammarQuerySchema = Joi.object({
@@ -33,6 +37,7 @@ const listGrammarQuerySchema = Joi.object({
   title: Joi.string().trim().max(200),
   topicName: Joi.string().trim().max(200),
   search: Joi.string().trim().max(200),
+  categoryId: objectId.optional(),
   sortBy: Joi.string().valid('sortOrder', 'title', 'topicName', 'status', 'createdAt', 'updatedAt').default('sortOrder'),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
   topicSortOrder: Joi.string().valid('asc', 'desc'),

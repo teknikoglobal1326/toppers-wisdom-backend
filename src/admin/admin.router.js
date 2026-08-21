@@ -35,6 +35,7 @@ router.use('/subjects', requirePermission('subjects'), require('./subjects/admin
 router.use('/banners', requirePermission('banners'), require('./banners/admin-banner.routes'))
 router.use('/topics', requirePermission('topics'), require('./topics/admin-topic.routes'))
 router.use('/grammars', requirePermission('grammars'), require('./grammars/admin-grammar.routes'))
+router.use('/grammar-categories', requirePermission('grammars'), require('./grammar-categories/admin-grammar-category.routes'))
 router.use('/faqs', requirePermission('faqs'), require('./faqs/admin-faq.routes'))
 router.use('/pdfs', requirePermission('pdfs'), require('./pdfs/admin-pdf.routes'))
 router.use('/contents', requirePermission('pdfs'), require('./contents/admin-content.routes'))

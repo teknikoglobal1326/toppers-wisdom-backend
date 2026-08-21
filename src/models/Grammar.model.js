@@ -16,6 +16,7 @@ const grammarSchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
   exam: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam', index: true }],
   subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
+  categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'GrammarCategory', index: true },
   isDeleted: { type: Boolean, default: false, index: true }
 }, { timestamps: true })
 
