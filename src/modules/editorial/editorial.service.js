@@ -542,13 +542,13 @@ class EditorialService extends BaseService {
     const hasAccess = await this.checkTestAccess(test, userId)
     if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
-    const EditorialQuestion = require('../../models/EditorialQuestion.model')
-    const questions = await EditorialQuestion.find({
+    const Question = require('../../models/Question.model')
+    const questions = await Question.find({
       test: testId,
       isDeleted: false,
       status: 'active',
     })
-      .select('en hi sortOrder subject')
+      .select('en hi sortOrder subjectId')
       .sort({ sortOrder: 1, createdAt: 1 })
       .lean()
 
@@ -559,7 +559,7 @@ class EditorialService extends BaseService {
     const mappedQuestions = questions.map((q, idx) => ({
       ...q,
       order: idx + 1,
-      subjectId: q.subject
+      subjectId: q.subjectId || q.subject
     }))
 
     const groupedQuestions = groupQuestionsBySubject(mappedQuestions)
@@ -594,8 +594,8 @@ class EditorialService extends BaseService {
     const hasAccess = await this.checkTestAccess(test, userId)
     if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
-    const EditorialQuestion = require('../../models/EditorialQuestion.model')
-    const questions = await EditorialQuestion.find({
+    const Question = require('../../models/Question.model')
+    const questions = await Question.find({
       test: testId,
       isDeleted: false,
       status: 'active',
@@ -660,8 +660,8 @@ class EditorialService extends BaseService {
     const hasAccess = await this.checkTestAccess(test, userId)
     if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
 
-    const EditorialQuestion = require('../../models/EditorialQuestion.model')
-    const questions = await EditorialQuestion.find({
+    const Question = require('../../models/Question.model')
+    const questions = await Question.find({
       test: testId,
       isDeleted: false,
       status: 'active',
@@ -710,7 +710,7 @@ class EditorialService extends BaseService {
     const mappedQuestions = questions.map((q, idx) => ({
       ...q,
       order: idx + 1,
-      subjectId: q.subject
+      subjectId: q.subjectId || q.subject
     }))
 
     const { groupQuestionsBySubject } = require('../../lib/testQuestions')
@@ -751,8 +751,8 @@ class EditorialService extends BaseService {
     if (!attempt) throw new AppError('Attempt session not found', 404)
     if (attempt.status === 'completed') throw new AppError('Test already completed', 400)
 
-    const EditorialQuestion = require('../../models/EditorialQuestion.model')
-    const questions = await EditorialQuestion.find({
+    const Question = require('../../models/Question.model')
+    const questions = await Question.find({
       test: testId,
       isDeleted: false,
       status: 'active',
@@ -862,9 +862,9 @@ class EditorialService extends BaseService {
     const attempt = await EditorialTestAttempt.findOne({ sessionId, user: userId })
     if (!attempt) throw new AppError('Attempt session not found', 404)
 
-    const EditorialQuestion = require('../../models/EditorialQuestion.model')
-    const questions = await EditorialQuestion.find({ test: testId, isDeleted: false, status: 'active' })
-      .select('en hi sortOrder subject correctOption explanation')
+    const Question = require('../../models/Question.model')
+    const questions = await Question.find({ test: testId, isDeleted: false, status: 'active' })
+      .select('en hi sortOrder subjectId correctOption explanation')
       .sort({ sortOrder: 1, createdAt: 1 })
       .lean()
 
@@ -875,7 +875,7 @@ class EditorialService extends BaseService {
       return {
         ...q,
         order: idx + 1,
-        subjectId: q.subject,
+        subjectId: q.subjectId || q.subject,
         userSelectedOption: userAns ? userAns.selectedOption : null,
         userStatus: userAns ? userAns.status : 'unattempted',
         timeTaken: userAns ? userAns.timeTaken : 0,
