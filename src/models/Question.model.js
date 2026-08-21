@@ -234,7 +234,7 @@ const questionSchema = new mongoose.Schema(
     testModel: {
       type: String,
       required: true,
-      enum: ["CourseTest", "CourseSeparatedTest"],
+      enum: ["CourseTest", "CourseSeparatedTest", "EditorialTest"],
       default: "CourseTest",
     },
 
@@ -272,7 +272,7 @@ const questionSchema = new mongoose.Schema(
 
     order: {
       type: Number,
-      required: true,
+      default: 1,
       index: true,
     },
 
@@ -324,7 +324,11 @@ const questionSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+    },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
     },
   },
   {
