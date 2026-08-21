@@ -1155,33 +1155,7 @@ async function parseExcelFile(fileBuffer, metadata) {
     let activeChapterId = metadata.chapterId || metadata.chapter;
     let activeTopicId = metadata.topicId || metadata.topic;
 
-    // If subject is still not found, try to locate the subject using the chapter name
-    if (!subjectDoc) {
-        let potentialChapterName = activeChapterId;
-        if (!potentialChapterName && rows.length > 0) {
-            const firstRow = rows[0];
-            const possibleChapterKeys = ["chapter", "chapterid", "chaptername"];
-            for (const k of Object.keys(firstRow)) {
-                if (possibleChapterKeys.includes(k.toLowerCase().replace(/[\s_-]+/g, ""))) {
-                    potentialChapterName = firstRow[k];
-                    break;
-                }
-            }
-        }
-        if (potentialChapterName && !String(potentialChapterName).match(/^[0-9a-fA-F]{24}$/)) {
-            const cleanChName = String(potentialChapterName).trim();
-            const escapedChName = cleanChName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-            const query = {
-                "chapters.name": { $regex: new RegExp("^" + escapedChName + "$", "i") },
-                isDeleted: false
-            };
-            if (metadata.exam) query.examIds = metadata.exam;
-            subjectDoc = await Subject.findOne(query);
-            if (subjectDoc) {
-                activeSubjectId = subjectDoc._id.toString();
-            }
-        }
-    }
+
 
     if (subjectDoc) {
         if (activeChapterId && !String(activeChapterId).match(/^[0-9a-fA-F]{24}$/)) {
