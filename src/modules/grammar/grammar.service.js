@@ -112,7 +112,10 @@ class GrammarService extends BaseService {
       sort: { [sortBy]: direction, createdAt: -1 },
     })
 
-    const data = await this.attachChapterLikeState(result.data, userId, query.topicSortOrder, query.listType || 'all')
+    const data = result.data.map((item) => ({
+      _id: item._id,
+      topicName: item.topicName,
+    }))
     return { ...result, data }
   }
 

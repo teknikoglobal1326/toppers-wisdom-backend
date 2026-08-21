@@ -723,7 +723,8 @@ class AiTestService extends BaseService {
         skipped: attempt.skipped,
         unattempted: attempt.unattempted,
         totalQuestions: totalQuestionsLimit,
-        timeSpent: attempt.timeTaken ? parseFloat((attempt.timeTaken / 60).toFixed(2)) : 0
+        duration: aiTest.duration,
+        timeSpent: attempt.timeTaken ? `${parseFloat((attempt.timeTaken / 60).toFixed(2))} min` : '0 min'
       },
       sectionWisePerformance,
       topicAnalytics,

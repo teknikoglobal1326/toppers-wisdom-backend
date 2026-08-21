@@ -285,6 +285,27 @@ class CourseService extends BaseService {
     if (course.isDeleted) throw new AppError('Course not found', 404, 'NOT_FOUND')
     const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId)
 
+    if (userId && !course.isFree && !hasAccess) {
+      const Lead = require('../../models/Lead.model')
+      const hasLead = await Lead.exists({
+        user: userId,
+        purposeType: 'course',
+        subType: 'course',
+        visitType: 'detail',
+        itemId: courseId,
+        isDeleted: false
+      })
+      if (!hasLead) {
+        await Lead.create({
+          user: userId,
+          purposeType: 'course',
+          subType: 'course',
+          visitType: 'detail',
+          itemId: courseId
+        })
+      }
+    }
+
     if (!hasAccess && course.lessons) {
       course.lessons = course.lessons.map((l) =>
         l.isPreview ? l : { ...l, videoKey: undefined, pdfKey: undefined }
@@ -594,6 +615,29 @@ class CourseService extends BaseService {
         gstAmount: 0,
         grandTotal: 0,
         isFree: true
+      }
+    }
+
+    if (userId && !course.isFree) {
+      const Lead = require('../../models/Lead.model')
+      await Lead.deleteMany({ user: userId, itemId: courseId, visitType: 'detail', purposeType: 'course' })
+
+      const hasCheckoutLead = await Lead.exists({
+        user: userId,
+        purposeType: 'course',
+        subType: 'course',
+        visitType: 'checkout',
+        itemId: courseId,
+        isDeleted: false
+      })
+      if (!hasCheckoutLead) {
+        await Lead.create({
+          user: userId,
+          purposeType: 'course',
+          subType: 'course',
+          visitType: 'checkout',
+          itemId: courseId
+        })
       }
     }
 

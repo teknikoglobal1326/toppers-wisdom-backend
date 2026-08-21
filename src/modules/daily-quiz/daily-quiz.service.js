@@ -583,7 +583,8 @@ const sectionWise = new Map()
                 skipped: attempt.skipped,
                 unattempted: attempt.unattempted,
                 totalQuestions: quiz.totalQuestions,
-                timeSpent: attempt.timeTaken ? parseFloat((attempt.timeTaken / 60).toFixed(2)) : 0
+                duration: quiz.duration,
+                timeSpent: attempt.timeTaken ? `${parseFloat((attempt.timeTaken / 60).toFixed(2))} min` : '0 min'
             },
             sectionWisePerformance,
             topicAnalytics,

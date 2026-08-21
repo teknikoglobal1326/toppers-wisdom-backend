@@ -586,6 +586,7 @@ class CourseTestService extends BaseService {
                 skipped: attempt.skipped,
                 unattempted: attempt.unattempted,
                 totalQuestions: test.totalQuestions,
+                duration: test.duration,
                 timeSpent: timeTakenSeconds ? `${timeTakenSeconds} sec` : '0 sec'
             },
             sectionWisePerformance,

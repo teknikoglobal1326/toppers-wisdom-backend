@@ -809,7 +809,8 @@ class PreviousYearPaperService extends BaseService {
                 percentile,
                 attempted: attempt.correct + attempt.wrong,
                 totalQuestions: test.totalQuestions,
-                timeSpent: attempt.timeTaken ? parseFloat((attempt.timeTaken / 60).toFixed(2)) : 0
+                duration: test.duration,
+                timeSpent: attempt.timeTaken ? `${parseFloat((attempt.timeTaken / 60).toFixed(2))} min` : '0 min'
             },
             sectionWisePerformance,
             topicAnalytics,
