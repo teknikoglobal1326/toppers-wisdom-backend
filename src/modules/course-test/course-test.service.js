@@ -583,6 +583,8 @@ class CourseTestService extends BaseService {
                 accuracy: attempt.accuracy,
                 percentile,
                 attempted: attempt.correct + attempt.wrong,
+                skipped: attempt.skipped,
+                unattempted: attempt.unattempted,
                 totalQuestions: test.totalQuestions,
                 timeSpent: timeTakenSeconds ? `${timeTakenSeconds} sec` : '0 sec'
             },
@@ -716,6 +718,10 @@ class CourseTestService extends BaseService {
         const course = await Course.findById(test.course).select('isFree').lean()
         const isCourseFree = course?.isFree === true
 
+        console.log("DEBUG ACCESS CHECK IN SERVICE ===>", { userId, testCourse: test.course, isCourseFree, typeOfCourse: typeof test.course });
+
+        console.log("userId",userId);
+        console.log("test.course",test.course);
         const hasAccess = isCourseFree || await checkAccess(userId, 'course', test.course)
         if (!hasAccess) throw new AppError('Please purchase this course to access the test', 403, 'FORBIDDEN')
 

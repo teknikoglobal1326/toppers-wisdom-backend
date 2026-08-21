@@ -34,14 +34,14 @@ const createReportSchema = Joi.object({
 
 const createMcqReportSchema = Joi.object({
   typeId: Joi.string().hex().length(24).required(),
-  type: Joi.string().valid('question', 'test', 'testSeries', 'previousYearPaper', 'previousYearTest', 'course-test', 'ai_test', 'live_test', 'quiz', 'math').required(),
+  type: Joi.string().valid('question', 'test', 'testSeries', 'previousYearPaper', 'previousYearTest', 'course-test', 'ai_test', 'live_test', 'quiz', 'math', 'editorial').required(),
   reason: Joi.string().valid('wrong_answer', 'wrong_question', 'wrong_option', 'translation_issue', 'image_issue', 'technical_issue', 'other').required(),
   description: Joi.string().trim().min(2).max(1000),
 })
 
 const saveQuestionSchema = Joi.object({
   questionId: Joi.string().hex().length(24).required(),
-  testType: Joi.string().valid('course-test', 'test-series', 'previous-year-paper', 'live-test', 'live_test', 'quiz', 'ai_test', 'math').optional(),
+  testType: Joi.string().valid('course-test', 'test-series', 'previous-year-paper', 'live-test', 'live_test', 'quiz', 'ai_test', 'math', 'editorial').optional(),
   testId: Joi.string().hex().length(24).optional(),
 })
 

@@ -39,7 +39,7 @@ const getActivePlan = catchAsync(async (req, res) => {
 })
 
 const getTopics = catchAsync(async (req, res) => {
-  sendSuccess(res, await editorialService.getTopics(), 'Active topics retrieved successfully')
+  sendSuccess(res, await editorialService.getTopics(req.query), 'Active topics retrieved successfully')
 })
 
 const listTests = catchAsync(async (req, res) => {

@@ -84,8 +84,19 @@ const verifyOtpAndLogin = async (phone, otp, providedReferralCode) => {
 
         if (providedReferralCode) {
           const referrer = await require('../../models/User.model').findOne({ referralCode: providedReferralCode });
-          if (referrer) {
+          if (referrer && referrer._id.toString() !== user._id.toString()) {
             await rewardsService.addCoins(referrer._id, 25, 'referral', `Referral Bonus for inviting ${user.phone}`);
+            await rewardsService.addCoins(user._id, 25, 'referral', `Referral Bonus for using referral code`);
+
+            user = await authRepository.updateById(user._id, { referredBy: referrer._id });
+
+            await require('../../models/ReferralHistory.model').create({
+                referrer: referrer._id,
+                referredUser: user._id,
+                referralCode: providedReferralCode,
+                referrerCoinsAwarded: 25,
+                referredCoinsAwarded: 25,
+            });
           }
         }
       } catch (e) {
@@ -360,8 +371,19 @@ const googleSignupOrLogin = async (payload) => {
 
       if (providedReferralCode) {
         const referrer = await require('../../models/User.model').findOne({ referralCode: providedReferralCode })
-        if (referrer) {
+        if (referrer && referrer._id.toString() !== user._id.toString()) {
           await rewardsService.addCoins(referrer._id, 25, 'referral', `Referral Bonus for inviting social user`)
+          await rewardsService.addCoins(user._id, 25, 'referral', `Referral Bonus for using referral code`)
+
+          user = await authRepository.updateById(user._id, { referredBy: referrer._id })
+
+          await require('../../models/ReferralHistory.model').create({
+              referrer: referrer._id,
+              referredUser: user._id,
+              referralCode: providedReferralCode,
+              referrerCoinsAwarded: 25,
+              referredCoinsAwarded: 25,
+          })
         }
       }
     } catch (e) {
