@@ -30,10 +30,17 @@ const remove = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Editorial vocabulary deleted successfully')
 })
 
+const importVocabularies = catchAsync(async (req, res) => {
+  const adminId = req.admin?._id || req.user?._id || req.user?.id
+  const result = await adminEditorialVocabularyService.importVocabularies(req.body, adminId)
+  sendCreated(res, result, 'Vocabularies imported successfully')
+})
+
 module.exports = {
   list,
   getOne,
   create,
   update,
-  remove
+  remove,
+  importVocabularies
 }

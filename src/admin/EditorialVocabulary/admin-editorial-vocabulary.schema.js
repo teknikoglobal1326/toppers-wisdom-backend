@@ -3,10 +3,9 @@ const Joi = require('joi')
 const objectId = Joi.string().hex().length(24)
 
 const createVocabSchema = Joi.object({
-  editorailTest: objectId.required().messages({
-    'any.required': 'Editorial Test ID is required',
-    'string.hex': 'Editorial Test ID must be a valid hex string',
-    'string.length': 'Editorial Test ID must be 24 characters long'
+  editorailTest: Joi.array().items(objectId).min(1).required().messages({
+    'any.required': 'Editorial Test is required',
+    'array.min': 'At least one Editorial Test ID must be provided'
   }),
   title: Joi.string().trim().required().messages({
     'any.required': 'Title is required',
@@ -34,7 +33,7 @@ const createVocabSchema = Joi.object({
 })
 
 const updateVocabSchema = Joi.object({
-  editorailTest: objectId.optional(),
+  editorailTest: Joi.array().items(objectId).min(1).optional(),
   title: Joi.string().trim().optional(),
   word: Joi.string().trim().optional(),
   pronunciation: Joi.string().trim().optional().allow(''),
@@ -52,8 +51,9 @@ const updateVocabSchema = Joi.object({
 }).min(1)
 
 const listVocabQuerySchema = Joi.object({
-  editorailTest: objectId.optional(),
-  editorialTest: objectId.optional(),
+  editorailTest: Joi.alternatives().try(Joi.array().items(objectId), objectId).optional(),
+  editorialTest: Joi.alternatives().try(Joi.array().items(objectId), objectId).optional(),
+  testId: Joi.alternatives().try(Joi.array().items(objectId), objectId).optional(),
   status: Joi.string().valid('draft', 'active', 'inactive').optional(),
   search: Joi.string().trim().max(200).optional(),
   sortBy: Joi.string().valid('sortOrder', 'createdAt', 'publishDate', 'word', 'title').optional().default('sortOrder'),
@@ -62,8 +62,21 @@ const listVocabQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).optional().default(10)
 }).unknown(true)
 
+const importVocabSchema = Joi.object({
+  vocabularyIds: Joi.array().items(objectId).min(1).required().messages({
+    'any.required': 'Source vocabulary IDs are required',
+    'array.min': 'Select at least one vocabulary to import'
+  }),
+  editorailTest: Joi.array().items(objectId).min(1).required().messages({
+    'any.required': 'Target Editorial Test is required',
+    'array.min': 'Must specify at least one target Editorial Test'
+  }),
+  publishDate: Joi.date().optional()
+})
+
 module.exports = {
   createVocabSchema,
   updateVocabSchema,
-  listVocabQuerySchema
+  listVocabQuerySchema,
+  importVocabSchema
 }

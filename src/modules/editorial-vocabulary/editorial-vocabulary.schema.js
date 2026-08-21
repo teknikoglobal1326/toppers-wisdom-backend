@@ -3,9 +3,9 @@ const Joi = require('joi')
 const objectId = Joi.string().hex().length(24)
 
 const listVocabQuerySchema = Joi.object({
-  editorailTest: objectId.optional(),
-  editorialTest: objectId.optional(),
-  testId: objectId.optional(),
+  editorailTest: Joi.alternatives().try(Joi.array().items(objectId), objectId).optional(),
+  editorialTest: Joi.alternatives().try(Joi.array().items(objectId), objectId).optional(),
+  testId: Joi.alternatives().try(Joi.array().items(objectId), objectId).optional(),
   search: Joi.string().trim().max(200).optional(),
   sortBy: Joi.string().valid('sortOrder', 'createdAt', 'publishDate', 'word', 'title').optional().default('sortOrder'),
   sortOrder: Joi.string().valid('asc', 'desc').optional().default('asc'),
