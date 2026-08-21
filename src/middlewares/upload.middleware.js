@@ -5,6 +5,7 @@ const AppError = require('../core/AppError')
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm']
 const ALLOWED_PDF_MIME = ['application/pdf']
+const ALLOWED_AUDIO_MIME = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a', 'audio/x-wav', 'audio/webm']
 const ALLOWED_BULK_MIME = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword',
@@ -71,6 +72,7 @@ const uploadVideoImage = multer({
       ...ALLOWED_IMAGE_MIME,
       ...ALLOWED_VIDEO_MIME,
       ...ALLOWED_PDF_MIME,
+      ...ALLOWED_AUDIO_MIME,
     ];
 
     if (allowed.includes(file.mimetype)) {
@@ -79,7 +81,7 @@ const uploadVideoImage = multer({
 
     cb(
       new AppError(
-        'Only video, image and PDF files are allowed',
+        'Only video, audio, image and PDF files are allowed',
         400,
         'INVALID_FILE_TYPE'
       )

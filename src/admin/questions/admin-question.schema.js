@@ -45,9 +45,21 @@ const createQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).required(),
   testId: Joi.string().hex().length(24).optional(),
   testModel: Joi.string().valid('CourseTest', 'CourseSeparatedTest').default('CourseTest'),
-  subjectId: Joi.string().hex().length(24).optional().allow(null, ''),
-  chapterId: Joi.string().hex().length(24).optional().allow(null, ''),
-  topicId: Joi.string().hex().length(24).optional().allow(null, ''),
+  subjectId: Joi.string().hex().length(24).required().messages({
+    'any.required': 'Subject is required',
+    'string.empty': 'Subject cannot be empty',
+    'string.length': 'Subject ID must be a 24-character hex string'
+  }),
+  chapterId: Joi.string().hex().length(24).required().messages({
+    'any.required': 'Chapter is required',
+    'string.empty': 'Chapter cannot be empty',
+    'string.length': 'Chapter ID must be a 24-character hex string'
+  }),
+  topicId: Joi.string().hex().length(24).required().messages({
+    'any.required': 'Topic is required',
+    'string.empty': 'Topic cannot be empty',
+    'string.length': 'Topic ID must be a 24-character hex string'
+  }),
   en: languageQuestionSchema.required(),
   hi: languageQuestionSchema.required(),
   order: Joi.number().integer().min(1).optional(),
@@ -89,9 +101,18 @@ const updateQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).optional(),
   testId: Joi.string().hex().length(24).optional(),
   testModel: Joi.string().valid('CourseTest', 'CourseSeparatedTest').optional(),
-  subjectId: Joi.string().hex().length(24).optional().allow(null, ''),
-  chapterId: Joi.string().hex().length(24).optional().allow(null, ''),
-  topicId: Joi.string().hex().length(24).optional().allow(null, ''),
+  subjectId: Joi.string().hex().length(24).optional().messages({
+    'string.empty': 'Subject cannot be empty',
+    'string.length': 'Subject ID must be a 24-character hex string'
+  }),
+  chapterId: Joi.string().hex().length(24).optional().messages({
+    'string.empty': 'Chapter cannot be empty',
+    'string.length': 'Chapter ID must be a 24-character hex string'
+  }),
+  topicId: Joi.string().hex().length(24).optional().messages({
+    'string.empty': 'Topic cannot be empty',
+    'string.length': 'Topic ID must be a 24-character hex string'
+  }),
   en: languageQuestionUpdateSchema.optional(),
   hi: languageQuestionUpdateSchema.optional(),
   order: Joi.number().integer().min(1).optional(),

@@ -49,6 +49,7 @@ router.use('/editorials', requirePermission('editorial'), require('./editorials/
 router.use('/editorial-tests', requirePermission('editorial'), require('./editorial-tests/admin-editorial-test.routes'))
 router.use('/editorial-questions', requirePermission('editorial'), require('./editorial-questions/admin-editorial-question.routes'))
 router.use('/editorial-topics', requirePermission('editorial'), require('./editorial-topics/admin-editorial-topic.routes'))
+router.use('/editorial-vocabularies', requirePermission('editorial'), require('./EditorialVocabulary/admin-editorial-vocabulary.routes'))
 
 router.use('/subscriptions', requirePermission('subscriptions'), require('./subscriptions/subscriptions.routes'))
 router.use('/offers', requirePermission('offers'), require('./offers/admin-offer.routes'))

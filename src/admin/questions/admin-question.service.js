@@ -228,8 +228,35 @@ class AdminQuestionService extends BaseService {
     return max + 1
   }
 
+  async validateSyllabus(subjectId, chapterId, topicId) {
+    if (!subjectId) {
+      throw new AppError('Subject is missing or invalid.', 400, 'VALIDATION_ERROR')
+    }
+    const Subject = require('../../models/Subject.model')
+    const subjectDoc = await Subject.findOne({ _id: subjectId, isDeleted: false })
+    if (!subjectDoc) {
+      throw new AppError('Subject could not be resolved/found in database.', 400, 'VALIDATION_ERROR')
+    }
+    if (!chapterId) {
+      throw new AppError('Chapter is missing or invalid.', 400, 'VALIDATION_ERROR')
+    }
+    const chapter = subjectDoc.chapters.find(c => c._id.toString() === chapterId.toString())
+    if (!chapter) {
+      throw new AppError('Chapter could not be resolved/found under the selected subject.', 400, 'VALIDATION_ERROR')
+    }
+    if (!topicId) {
+      throw new AppError('Topic is missing or invalid.', 400, 'VALIDATION_ERROR')
+    }
+    const topic = chapter.topics.find(t => t._id.toString() === topicId.toString())
+    if (!topic) {
+      throw new AppError('Topic could not be resolved/found under the selected chapter.', 400, 'VALIDATION_ERROR')
+    }
+  }
+
   async createQuestion(data) {
     const payload = this.buildPayload(data)
+    await this.validateSyllabus(payload.subjectId, payload.chapterId, payload.topicId)
+
     if (payload.order === undefined || payload.order === null) {
       payload.order = await this.nextOrder(payload.test)
     }
@@ -252,6 +279,14 @@ class AdminQuestionService extends BaseService {
 
     const payload = this.buildPayload(data)
     await this.applyPerQuestionTime(payload, question)
+
+    const subjectId = payload.subjectId !== undefined ? payload.subjectId : question.subjectId
+    const chapterId = payload.chapterId !== undefined ? payload.chapterId : question.chapterId
+    const topicId = payload.topicId !== undefined ? payload.topicId : question.topicId
+
+    if (payload.subjectId !== undefined || payload.chapterId !== undefined || payload.topicId !== undefined) {
+      await this.validateSyllabus(subjectId, chapterId, topicId)
+    }
 
     const testId = payload.test || question.test
     const parentTest = await this.resolveParentTest(testId)
@@ -337,19 +372,7 @@ class AdminQuestionService extends BaseService {
     let activeChapterId = metadata.chapterId || metadata.chapter
     let activeTopicId = metadata.topicId || metadata.topic
 
-    // If subject is still not found, try to locate the subject using the chapter name
-    if (!subjectDoc && activeChapterId && !String(activeChapterId).match(/^[0-9a-fA-F]{24}$/)) {
-      const cleanChName = String(activeChapterId).trim()
-      const query = {
-        "chapters.name": { $regex: new RegExp("^" + cleanChName + "$", "i") },
-        isDeleted: false
-      };
-      if (metadata.exam) query.examIds = metadata.exam;
-      subjectDoc = await Subject.findOne(query)
-      if (subjectDoc) {
-        activeSubjectId = subjectDoc._id.toString()
-      }
-    }
+
 
     if (subjectDoc) {
       if (activeChapterId && !String(activeChapterId).match(/^[0-9a-fA-F]{24}$/)) {
@@ -410,7 +433,7 @@ class AdminQuestionService extends BaseService {
     }
 
     const { createQuestionSchema } = require('./admin-question.schema')
-    let startOrder = await this.nextOrder(metadata.test)
+    const startOrder = await this.nextOrder(metadata.test)
 
     const cleanTextAndImageFields = (langObj) => {
       if (!langObj) return
@@ -449,9 +472,25 @@ class AdminQuestionService extends BaseService {
     }
 
     const createdQuestions = []
-    for (const qPayload of questionsData) {
+    const validatedPayloads = []
+    let currentOrder = startOrder
+
+    // Pass 1: Resolve and Validate all questions
+    for (let index = 0; index < questionsData.length; index++) {
+      const qPayload = questionsData[index]
       qPayload.createdBy = adminId ? adminId.toString() : undefined
-      qPayload.order = startOrder++
+      qPayload.order = currentOrder++
+
+      // Enforce strict presence checks before resolution to prevent auto-inference of missing fields
+      if (!qPayload.subjectId || String(qPayload.subjectId).trim() === '') {
+        throw new AppError(`Row ${index + 1}: Subject is missing.`, 400, 'VALIDATION_ERROR')
+      }
+      if (!qPayload.chapterId || String(qPayload.chapterId).trim() === '') {
+        throw new AppError(`Row ${index + 1}: Chapter is missing.`, 400, 'VALIDATION_ERROR')
+      }
+      if (!qPayload.topicId || String(qPayload.topicId).trim() === '') {
+        throw new AppError(`Row ${index + 1}: Topic is missing.`, 400, 'VALIDATION_ERROR')
+      }
 
       // Resolve subject, chapter, and topic for individual question payload
       let qSubjectDoc = null;
@@ -477,18 +516,7 @@ class AdminQuestionService extends BaseService {
       let qChapterId = qPayload.chapterId;
       let qTopicId = qPayload.topicId;
 
-      if (!qSubjectDoc && qChapterId && !qChapterId.toString().match(/^[0-9a-fA-F]{24}$/)) {
-        const cleanChName = String(qChapterId).trim();
-        const query = {
-          "chapters.name": { $regex: new RegExp("^" + cleanChName + "$", "i") },
-          isDeleted: false
-        };
-        if (metadata.exam) query.examIds = metadata.exam;
-        qSubjectDoc = await Subject.findOne(query);
-        if (qSubjectDoc) {
-          qSubjectId = qSubjectDoc._id.toString();
-        }
-      }
+
 
       if (qSubjectDoc) {
         if (qChapterId && !qChapterId.toString().match(/^[0-9a-fA-F]{24}$/)) {
@@ -518,9 +546,20 @@ class AdminQuestionService extends BaseService {
         }
       }
 
-      qPayload.subjectId = qSubjectId || null;
-      qPayload.chapterId = qChapterId || null;
-      qPayload.topicId = qTopicId || null;
+      // Enforce strict syllabus mapping validation
+      if (!qSubjectId) {
+        throw new AppError(`Row ${index + 1}: Subject is missing or could not be mapped/resolved correctly.`, 400, 'VALIDATION_ERROR')
+      }
+      if (!qChapterId) {
+        throw new AppError(`Row ${index + 1}: Chapter is missing or could not be mapped/resolved correctly.`, 400, 'VALIDATION_ERROR')
+      }
+      if (!qTopicId) {
+        throw new AppError(`Row ${index + 1}: Topic is missing or could not be mapped/resolved correctly.`, 400, 'VALIDATION_ERROR')
+      }
+
+      qPayload.subjectId = qSubjectId;
+      qPayload.chapterId = qChapterId;
+      qPayload.topicId = qTopicId;
       qPayload.exam = metadata.exam || null;
       qPayload.subExams = metadata.subExams || [];
 
@@ -531,10 +570,15 @@ class AdminQuestionService extends BaseService {
       // Validate using Joi schema
       const { error, value } = createQuestionSchema.validate(qPayload)
       if (error) {
-        throw new AppError(`Validation failed for parsed question: ${error.message}`, 400, 'VALIDATION_ERROR')
+        throw new AppError(`Row ${index + 1}: Validation failed - ${error.message}`, 400, 'VALIDATION_ERROR')
       }
 
       await this.applyPerQuestionTime(value)
+      validatedPayloads.push(value)
+    }
+
+    // Pass 2: Save validated questions to database
+    for (const value of validatedPayloads) {
       const created = await questionRepository.createSingle(value)
       createdQuestions.push(created)
     }
