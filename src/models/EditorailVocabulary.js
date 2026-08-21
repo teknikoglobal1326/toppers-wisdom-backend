@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const EditorialVocabularySchema = new mongoose.Schema({
-  editorailTest: { type: String, ref: "EditorialTest", required: true, index: true },
+  editorailTest: [{ type: mongoose.Schema.Types.ObjectId, ref: "EditorialTest", index: true }],
   title: { type: String, required: true, trim: true },
   word: { type: String, required: true, trim: true },
   pronunciation: { type: String, default: "" },

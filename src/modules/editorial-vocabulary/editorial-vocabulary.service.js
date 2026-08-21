@@ -11,7 +11,10 @@ class EditorialVocabularyService extends BaseService {
     const filter = { isDeleted: false, status: 'active' }
 
     const targetTest = editorailTest || editorialTest || testId
-    if (targetTest) filter.editorailTest = targetTest
+    if (targetTest) {
+      const testsArr = Array.isArray(targetTest) ? targetTest : String(targetTest).split(',').map(t => t.trim())
+      filter.editorailTest = { $in: testsArr }
+    }
 
     if (search) {
       const rx = new RegExp(search, 'i')

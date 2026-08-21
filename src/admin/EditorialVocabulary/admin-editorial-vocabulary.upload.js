@@ -10,7 +10,7 @@ const uploadVocabularyMedia = uploadVideoImage.fields([
 
 const parseFormData = async (req, _res, next) => {
   try {
-    const arrayKeys = ['usages', 'synonyms', 'antonyms']
+    const arrayKeys = ['usages', 'synonyms', 'antonyms', 'editorailTest', 'editorialTest', 'testId']
     for (const key of arrayKeys) {
       if (typeof req.body[key] === 'string') {
         try {
@@ -18,7 +18,11 @@ const parseFormData = async (req, _res, next) => {
           req.body[key] = Array.isArray(parsed) ? parsed.filter(Boolean) : [parsed].filter(Boolean)
         } catch (_) {
           if (req.body[key] && req.body[key] !== '[]' && req.body[key] !== 'null') {
-            req.body[key] = [req.body[key]].filter(Boolean)
+            if (req.body[key].includes(',')) {
+              req.body[key] = req.body[key].split(',').map(s => s.trim()).filter(Boolean)
+            } else {
+              req.body[key] = [req.body[key]].filter(Boolean)
+            }
           } else {
             req.body[key] = []
           }
