@@ -7,6 +7,9 @@ const uploadEditorialMedia = uploadVideoImage.fields([
   { name: 'bannerImage', maxCount: 1 },
   { name: 'video', maxCount: 1 },
   { name: 'videoUrl', maxCount: 1 },
+  { name: 'audio', maxCount: 1 },
+  { name: 'audioUrl', maxCount: 1 },
+  { name: 'audioFile', maxCount: 1 },
 ])
 
 const parseFormData = async (req, _res, next) => {
@@ -45,6 +48,12 @@ const parseFormData = async (req, _res, next) => {
     if (videoFile) {
       const ext = path.extname(videoFile.originalname) || '.mp4'
       req.body.videoUrl = await uploadFile(videoFile.buffer, `video-${Date.now()}${ext}`, folder, videoFile.mimetype)
+    }
+
+    const audioFile = req.files?.audio?.[0] || req.files?.audioUrl?.[0] || req.files?.audioFile?.[0]
+    if (audioFile) {
+      const ext = path.extname(audioFile.originalname) || '.mp3'
+      req.body.audioUrl = await uploadFile(audioFile.buffer, `audio-${Date.now()}${ext}`, folder, audioFile.mimetype)
     }
 
     next()

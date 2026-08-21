@@ -4,6 +4,7 @@ const AppError = require('../core/AppError')
 
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm']
+const ALLOWED_AUDIO_MIME = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/m4a', 'audio/x-m4a', 'audio/mp4', 'audio/webm']
 const ALLOWED_PDF_MIME = ['application/pdf']
 const ALLOWED_AUDIO_MIME = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a', 'audio/x-wav', 'audio/webm']
 const ALLOWED_BULK_MIME = [
@@ -71,11 +72,15 @@ const uploadVideoImage = multer({
     const allowed = [
       ...ALLOWED_IMAGE_MIME,
       ...ALLOWED_VIDEO_MIME,
+      ...ALLOWED_AUDIO_MIME,
       ...ALLOWED_PDF_MIME,
       ...ALLOWED_AUDIO_MIME,
     ];
 
-    if (allowed.includes(file.mimetype)) {
+    const ext = path.extname(file.originalname).toLowerCase()
+    const allowedAudioExts = ['.mp3', '.wav', '.ogg', '.aac', '.m4a']
+
+    if (allowed.includes(file.mimetype) || allowedAudioExts.includes(ext)) {
       return cb(null, true);
     }
 
