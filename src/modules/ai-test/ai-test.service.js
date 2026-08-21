@@ -309,6 +309,7 @@ class AiTestService extends BaseService {
   }
 
   async updateSession(testId, sessionId, userId, payload = {}) {
+    console.log("AI Test updateSession payload:", payload)
     this.logger.info({ testId, sessionId, userId }, 'Updating attempt session for AI Test')
     const aiTest = await this.getById(testId)
     if (!aiTest || aiTest.isDeleted) {
@@ -357,9 +358,14 @@ class AiTestService extends BaseService {
     const { score, correct, wrong, skipped, unattempted, totalQuestions } = scoreAnswers(questions, updatedAnswers, mockTestObj)
     const totalMarks = questions.reduce((acc, q) => acc + (q.marks || 1), 0)
     const accuracy = totalQuestions > 0 ? parseFloat(((correct / totalQuestions) * 100).toFixed(2)) : 0
-    const timeTaken = updatedAnswers.reduce((acc, ans) => acc + (ans.timeTaken || 0), 0)
-
     const status = payload.status || 'ongoing'
+    let timeTaken = payload.timeTaken !== undefined ? payload.timeTaken : updatedAnswers.reduce((acc, ans) => acc + (ans.timeTaken || 0), 0)
+    if (timeTaken === 0 && status === 'completed') {
+      const elapsed = Math.round((new Date() - new Date(attempt.createdAt)) / 1000)
+      if (elapsed > 0) {
+        timeTaken = elapsed
+      }
+    }
 
     attempt.answers = updatedAnswers
     attempt.score = score
@@ -388,14 +394,14 @@ class AiTestService extends BaseService {
       attemptId: attempt._id,
       sessionId,
       status,
-      score,
+      score: 0,
       accuracy,
       timeTaken,
       correct,
       wrong,
       skipped,
       unattempted,
-      totalQuestions,
+      totalQuestions: 0,
     }
   }
 
@@ -638,8 +644,8 @@ class AiTestService extends BaseService {
 
     const sectionWisePerformance = Array.from(sectionWise.values()).map(sec => ({
       subject: sec.subject,
-      score: sec.score,
-      totalMarks: sec.totalMarks,
+      score: 0,
+      totalMarks: 0,
       attempted: sec.attempted,
       totalQuestions: sec.totalQuestions,
       correct: sec.correct,
@@ -651,8 +657,8 @@ class AiTestService extends BaseService {
         const hasRealTopics = Array.from(chap.topics.values()).some(t => t.topic._id !== null)
         return {
           chapter: chap.chapter,
-          score: chap.score,
-          totalMarks: chap.totalMarks,
+          score: 0,
+          totalMarks: 0,
           attempted: chap.attempted,
           totalQuestions: chap.totalQuestions,
           correct: chap.correct,
@@ -660,11 +666,11 @@ class AiTestService extends BaseService {
           skipped: chap.skipped,
           unattempted: chap.unattempted,
           ...(hasRealTopics ? {} : { isWeak: chap.totalQuestions > 0 ? (chap.correct / chap.totalQuestions) < 0.5 : false }),
-          percentage: chap.totalMarks > 0 ? parseFloat(((Math.max(0, chap.score) / chap.totalMarks) * 100).toFixed(2)) : 0,
+          percentage: 0,
           topics: Array.from(chap.topics.values()).map(top => ({
             topic: top.topic,
-            score: top.score,
-            totalMarks: top.totalMarks,
+            score: 0,
+            totalMarks: 0,
             attempted: top.attempted,
             totalQuestions: top.totalQuestions,
             correct: top.correct,
@@ -672,7 +678,7 @@ class AiTestService extends BaseService {
             skipped: top.skipped,
             unattempted: top.unattempted,
             isWeak: top.totalQuestions > 0 ? (top.correct / top.totalQuestions) < 0.5 : false,
-            percentage: top.totalMarks > 0 ? parseFloat(((Math.max(0, top.score) / top.totalMarks) * 100).toFixed(2)) : 0
+            percentage: 0
           }))
         }
       })
@@ -700,18 +706,22 @@ class AiTestService extends BaseService {
     if (percentile >= 90) expertComment = "Excellent Work! You have high chances of getting selected."
     else if (percentile >= 75) expertComment = "Well Done! Good performance."
 
+    console.log("AI Test Analysis - attempt.timeTaken (seconds):", attempt.timeTaken)
+
     return {
       attemptId: attempt._id,
       sessionId: attempt.sessionId,
       status: attempt.status,
       expertComment,
       overallPerformance: {
-        score: attempt.score,
-        totalMarks: attempt.totalMarks,
+        score: 0,
+        totalMarks: 0,
         rank,
         percentile,
         accuracy: attempt.accuracy,
         attempted: attempt.correct + attempt.wrong,
+        skipped: attempt.skipped,
+        unattempted: attempt.unattempted,
         totalQuestions: totalQuestionsLimit,
         timeSpent: attempt.timeTaken ? parseFloat((attempt.timeTaken / 60).toFixed(2)) : 0
       },
@@ -755,9 +765,9 @@ class AiTestService extends BaseService {
     const { htmlToPlainText } = require('../../lib/htmlText')
 
     const groupedQuestions = {}
-    for (const q of questions) {
-      const orderKey = String(q.order)
-      if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
+    questions.forEach((q, idx) => {
+      const key = q._id.toString()
+      if (!groupedQuestions[key]) groupedQuestions[key] = { en: {}, hi: {} }
 
       let langs = []
       if (q.en && (q.en.question?.text || q.en.options?.length)) langs.push('en')
@@ -780,7 +790,7 @@ class AiTestService extends BaseService {
         const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
         const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
 
-        groupedQuestions[orderKey][lang] = {
+        groupedQuestions[key][lang] = {
           _id: q._id,
           exam: q.exam || null,
           subExams: q.subExams || [],
@@ -791,8 +801,8 @@ class AiTestService extends BaseService {
             isCorrect: !!opt.isCorrect,
           })),
           explanation: { text: htmlToPlainText(explanationData.text || ''), image: explanationData.image || '' },
-          order: q.order,
-          sortOrder: q.sortOrder,
+          order: q.order || (idx + 1),
+          sortOrder: q.sortOrder || (idx + 1),
           perQuestionTime: q.perQuestionTime,
           userAnswer: userAnswer ? {
             selectedOption: userAnswer.selectedOption,
@@ -804,7 +814,7 @@ class AiTestService extends BaseService {
           isCorrect,
         }
       }
-    }
+    })
 
     return Object.values(groupedQuestions)
   }

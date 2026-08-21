@@ -25,6 +25,7 @@ const updateSessionSchema = Joi.object({
     timeTaken: Joi.number().min(0),
   })),
   status: Joi.string().valid('ongoing', 'completed', 'abandoned'),
+  timeTaken: Joi.number().min(0).optional(),
 }).or('answer', 'answers', 'status')
 
 module.exports = {

@@ -580,6 +580,8 @@ const sectionWise = new Map()
                 accuracy: attempt.accuracy,
                 percentile,
                 attempted: attempt.correct + attempt.wrong,
+                skipped: attempt.skipped,
+                unattempted: attempt.unattempted,
                 totalQuestions: quiz.totalQuestions,
                 timeSpent: attempt.timeTaken ? parseFloat((attempt.timeTaken / 60).toFixed(2)) : 0
             },
