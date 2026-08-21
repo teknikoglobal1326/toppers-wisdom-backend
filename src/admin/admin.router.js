@@ -46,6 +46,8 @@ router.use('/shorts', requirePermission('shorts'), require('./shorts/admin-short
 router.use('/short-categories', requirePermission('shorts'), require('./short-categories/admin-short-category.routes'))
 router.use('/qualifications', requirePermission('qualifications'), require('./qualifications/admin-qualification.routes'))
 router.use('/vocabulary', requirePermission('vocabulary'), require('./vocabulary/admin-vocabulary.routes'))
+router.use('/coupons', requirePermission('coupons'), require('./coupons/admin-coupon.routes'))
+router.use('/lead-generate', requirePermission('analytics'), require('./lead-generate/admin-lead-generate.routes'))
 router.use('/editorials', requirePermission('editorial'), require('./editorials/admin-editorial.routes'))
 router.use('/editorial-tests', requirePermission('editorial'), require('./editorial-tests/admin-editorial-test.routes'))
 router.use('/editorial-questions', requirePermission('editorial'), require('./editorial-questions/admin-editorial-question.routes'))

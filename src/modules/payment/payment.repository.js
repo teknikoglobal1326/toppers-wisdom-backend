@@ -13,6 +13,11 @@ class PaymentRepository extends BaseRepository {
 
   async createEnrollmentsForOrder(userId, courseItems) {
     if (!courseItems.length) return []
+
+    const Lead = require('../../models/Lead.model')
+    const courseIds = courseItems.map((item) => item.itemId)
+    await Lead.deleteMany({ user: userId, itemId: { $in: courseIds }, visitType: 'checkout', purposeType: 'course' })
+
     const docs = courseItems.map((item) => {
       const doc = { user: userId, course: item.itemId }
       if (!item.isLifetime && item.validityInMonths) {

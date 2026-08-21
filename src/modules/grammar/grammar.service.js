@@ -117,7 +117,10 @@ class GrammarService extends BaseService {
       ]
     })
 
-    const data = await this.attachChapterLikeState(result.data, userId, query.topicSortOrder, query.listType || 'all')
+    const data = result.data.map((item) => ({
+      _id: item._id,
+      topicName: item.topicName,
+    }))
     return { ...result, data }
   }
 
