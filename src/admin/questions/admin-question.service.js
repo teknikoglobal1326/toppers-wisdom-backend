@@ -78,9 +78,17 @@ class AdminQuestionService extends BaseService {
     if (updatedLiveTest) return
 
     const DailyQuiz = require('../../models/DailyQuiz.model')
-    await DailyQuiz.findOneAndUpdate(
+    const updatedDailyQuiz = await DailyQuiz.findOneAndUpdate(
       { _id: testId, isDeleted: false },
       { totalQuestions: count, totalMappedQuestions: count },
+      { new: true }
+    )
+    if (updatedDailyQuiz) return
+
+    const EditorialTest = require('../../models/EditorialTest.model')
+    await EditorialTest.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      { totalQuestions: count, totalMappedQuestions: count, mappedQuestions: count },
       { new: true }
     )
   }

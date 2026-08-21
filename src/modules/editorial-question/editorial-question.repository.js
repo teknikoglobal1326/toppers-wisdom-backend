@@ -1,9 +1,9 @@
 const BaseRepository = require('../../core/BaseRepository')
-const EditorialQuestion = require('../../models/EditorialQuestion.model')
+const Question = require('../../models/Question.model')
 
 class EditorialQuestionRepository extends BaseRepository {
     constructor() {
-        super(EditorialQuestion, 'editorial-question')
+        super(Question, 'editorial-question')
     }
 }
 

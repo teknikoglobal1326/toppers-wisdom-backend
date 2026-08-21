@@ -1,4 +1,4 @@
-const path = require('path')
+﻿const path = require('path')
 const { upload } = require('../../middlewares/upload.middleware')
 const { uploadFile } = require('../../lib/fileUpload')
 
@@ -34,7 +34,8 @@ const ensureLocalized = (value = {}) => ({
 
 const parseFormData = async (req, _res, next) => {
     try {
-        const folder = `editorial-questions/${req.params.id ?? `new-${Date.now()}`}`
+        const paramId = req.params && req.params.id ? req.params.id : 'new-' + Date.now()
+        const folder = 'editorial-questions/' + paramId
 
         req.body.question = ensureLocalized(parseJsonIfNeeded(req.body.question, {}))
         req.body.explanation = ensureLocalized(parseJsonIfNeeded(req.body.explanation, {}))
@@ -43,11 +44,14 @@ const parseFormData = async (req, _res, next) => {
         while (req.body.options.length < 4) req.body.options.push({})
         req.body.options = req.body.options.slice(0, 4).map((opt) => ensureLocalized(opt))
 
+        if (typeof req.body.en === 'string') req.body.en = parseJsonIfNeeded(req.body.en, null)
+        if (typeof req.body.hi === 'string') req.body.hi = parseJsonIfNeeded(req.body.hi, null)
+
         const uploadOne = async (field, filename, setValue) => {
-            if (!req.files?.[field]?.[0]) return
+            if (!req.files || !req.files[field] || !req.files[field][0]) return
             const file = req.files[field][0]
             const ext = path.extname(file.originalname) || '.jpg'
-            const image = await uploadFile(file.buffer, `${filename}-${Date.now()}${ext}`, folder, file.mimetype)
+            const image = await uploadFile(file.buffer, filename + '-' + Date.now() + ext, folder, file.mimetype)
             setValue(image)
         }
 
@@ -57,10 +61,34 @@ const parseFormData = async (req, _res, next) => {
         await uploadOne('explanation_hi_image', 'explanation-hi', (image) => { req.body.explanation.hi.image = image })
 
         for (let index = 0; index < 4; index += 1) {
-            const enField = `option_${index}_en_image`
-            const hiField = `option_${index}_hi_image`
-            await uploadOne(enField, `option-${index}-en`, (image) => { req.body.options[index].en.image = image })
-            await uploadOne(hiField, `option-${index}-hi`, (image) => { req.body.options[index].hi.image = image })
+            const enField = 'option_' + index + '_en_image'
+            const hiField = 'option_' + index + '_hi_image'
+            await uploadOne(enField, 'option-' + index + '-en', (image) => { req.body.options[index].en.image = image })
+            await uploadOne(hiField, 'option-' + index + '-hi', (image) => { req.body.options[index].hi.image = image })
+        }
+
+        const correctOptIdx = Number(req.body.correctOption || 0)
+        if (!req.body.en || typeof req.body.en !== 'object') {
+            req.body.en = {
+                question: req.body.question && req.body.question.en ? req.body.question.en : { text: '', image: '' },
+                explanation: req.body.explanation && req.body.explanation.en ? req.body.explanation.en : { text: '', image: '' },
+                options: req.body.options.slice(0, 4).map((opt, idx) => ({
+                    text: opt && opt.en ? opt.en.text || '' : '',
+                    image: opt && opt.en ? opt.en.image || '' : '',
+                    isCorrect: idx === correctOptIdx,
+                })),
+            }
+        }
+        if (!req.body.hi || typeof req.body.hi !== 'object') {
+            req.body.hi = {
+                question: req.body.question && req.body.question.hi ? req.body.question.hi : { text: '', image: '' },
+                explanation: req.body.explanation && req.body.explanation.hi ? req.body.explanation.hi : { text: '', image: '' },
+                options: req.body.options.slice(0, 4).map((opt, idx) => ({
+                    text: opt && opt.hi ? opt.hi.text || '' : '',
+                    image: opt && opt.hi ? opt.hi.image || '' : '',
+                    isCorrect: idx === correctOptIdx,
+                })),
+            }
         }
 
         next()

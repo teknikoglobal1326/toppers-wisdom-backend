@@ -598,7 +598,7 @@ class EditorialService extends BaseService {
     const mappedQuestions = questions.map((q, idx) => ({
       ...q,
       order: idx + 1,
-      subjectId: q.subjectId
+      subjectId: q.subjectId || q.subject
     }))
 
     const groupedQuestions = groupQuestionsBySubject(mappedQuestions)
@@ -750,7 +750,7 @@ class EditorialService extends BaseService {
     const mappedQuestions = questions.map((q, idx) => ({
       ...q,
       order: idx + 1,
-      subjectId: q.subjectId
+      subjectId: q.subjectId || q.subject
     }))
 
     const { groupQuestionsBySubject } = require('../../lib/testQuestions')
@@ -922,8 +922,7 @@ class EditorialService extends BaseService {
       return {
         ...q,
         order: idx + 1,
-        subjectId: q.subjectId,
-        correctOption,
+        subjectId: q.subjectId || q.subject,
         userSelectedOption: userAns ? userAns.selectedOption : null,
         userStatus: userAns ? userAns.status : 'unattempted',
         timeTaken: userAns ? userAns.timeTaken : 0,
