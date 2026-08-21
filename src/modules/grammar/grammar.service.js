@@ -9,12 +9,14 @@ class GrammarService extends BaseService {
     super(grammarRepository, 'grammar')
   }
 
-  buildFilter({ status, title, topicName, search } = {}) {
+  buildFilter({ status, title, topicName, search, categoryId } = {}) {
     const filter = { isDeleted: false }
 
     if (status) filter.status = status
     if (title) filter.title = { $regex: title, $options: 'i' }
     if (topicName) filter.topicName = { $regex: topicName, $options: 'i' }
+
+    if (categoryId) filter.categoryId = categoryId
 
     if (search) {
       filter.$or = [
@@ -110,6 +112,9 @@ class GrammarService extends BaseService {
       page: query.page,
       limit: query.limit,
       sort: { [sortBy]: direction, createdAt: -1 },
+      populate: [
+        { path: 'categoryId', select: 'name' }
+      ]
     })
 
     const data = await this.attachChapterLikeState(result.data, userId, query.topicSortOrder, query.listType || 'all')
@@ -117,7 +122,12 @@ class GrammarService extends BaseService {
   }
 
   async getOne(id, topicSortOrder = 'asc', userId) {
-    const grammar = await grammarRepository.findOne({ _id: id, isDeleted: false, status: 'active' })
+    const grammar = await grammarRepository.findOne(
+      { _id: id, isDeleted: false, status: 'active' },
+      { populate: [
+        { path: 'categoryId' }
+      ] }
+    )
     if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
 
     const [withState] = await this.attachChapterLikeState([grammar], userId, topicSortOrder, 'all')

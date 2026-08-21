@@ -1,11 +1,14 @@
 const Joi = require('joi')
 
+const objectId = Joi.string().hex().length(24)
+
 const listGrammarQuerySchema = Joi.object({
   status: Joi.string().valid('active', 'inactive').default('active'),
   listType: Joi.string().valid('all', 'read', 'bookmarked', 'unread').default('all'),
   title: Joi.string().trim().max(200),
   topicName: Joi.string().trim().max(200),
   search: Joi.string().trim().max(200),
+  categoryId: objectId.optional(),
   sortBy: Joi.string().valid('sortOrder', 'title', 'topicName', 'status', 'createdAt', 'updatedAt').default('sortOrder'),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
   topicSortOrder: Joi.string().valid('asc', 'desc').default('asc'),
