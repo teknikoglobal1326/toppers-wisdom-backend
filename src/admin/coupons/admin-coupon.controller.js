@@ -13,17 +13,17 @@ const getOne = catchAsync(async (req, res) => {
 })
 
 const create = catchAsync(async (req, res) => {
-  const coupon = await adminCouponService.createCoupon(req.body, req.user._id)
+  const coupon = await adminCouponService.createCoupon(req.body, req.admin._id)
   sendCreated(res, coupon, 'Coupon created successfully')
 })
 
 const update = catchAsync(async (req, res) => {
-  const coupon = await adminCouponService.updateCoupon(req.params.id, req.body, req.user._id)
+  const coupon = await adminCouponService.updateCoupon(req.params.id, req.body, req.admin._id)
   sendSuccess(res, coupon, 'Coupon updated successfully')
 })
 
 const remove = catchAsync(async (req, res) => {
-  await adminCouponService.softDelete(req.params.id, req.user._id)
+  await adminCouponService.softDelete(req.params.id, req.admin._id)
   sendSuccess(res, null, 'Coupon deleted successfully')
 })
 
