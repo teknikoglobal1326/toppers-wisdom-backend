@@ -553,7 +553,7 @@ router.get('/vocabularies', catchAsync(async (req, res) => {
 
   const vocabularies = await vocabularyRepository.findAll(
     filter,
-    { sort: { title: 1 }, select: 'title _id' }
+    { sort: { createdAt: -1, title: 1 }, select: 'title _id word shortDescription definition meaning createdAt' }
   )
   sendSuccess(res, vocabularies)
 }))
@@ -986,6 +986,15 @@ router.get('/question-reports', catchAsync(async (req, res) => {
       totalPages: Math.ceil(total / parsedLimit)
     }
   })
+}))
+
+// GET /api/v1/admin/common/grammar-categories
+router.get('/grammar-categories', catchAsync(async (req, res) => {
+  const GrammarCategory = require('../../models/GrammarCategory.model')
+  const categories = await GrammarCategory.find(
+    { isDeleted: false, status: 'active' }
+  ).sort({ sortOrder: 1, name: 1 }).select('_id name').lean()
+  sendSuccess(res, categories)
 }))
 
 module.exports = router
