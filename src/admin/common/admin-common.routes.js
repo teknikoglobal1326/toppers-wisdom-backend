@@ -902,13 +902,35 @@ router.get('/question-reports', catchAsync(async (req, res) => {
     .lean()
 
   // Dynamic batch population for matching document details based on report type
+  const allTypeIds = reports.map(r => r.typeId).filter(Boolean)
+  const Question = require('../../models/Question.model')
+  const questions = await Question.find({ _id: { $in: allTypeIds } }).select('_id en hi').lean()
+  const questionMap = new Map(questions.map(q => [q._id.toString(), q]))
+
   const typeGroups = {}
   for (const report of reports) {
     if (report.typeId) {
-      if (!typeGroups[report.type]) {
-        typeGroups[report.type] = []
+      const typeIdStr = report.typeId.toString()
+      if (questionMap.has(typeIdStr)) {
+        // Found as a Question document
+        const qDoc = questionMap.get(typeIdStr)
+        const stripHtml = (html) => html ? html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() : ''
+        const qText = qDoc.en?.question?.text || qDoc.hi?.question?.text || ''
+        const questionName = stripHtml(qText) || 'Question'
+        // report.questionName = questionName
+        report.typeId = {
+          _id: qDoc._id,
+          en: qDoc.en,
+          hi: qDoc.hi,
+          // questionName
+        }
+      } else {
+        // Group by report type to query appropriate model
+        if (!typeGroups[report.type]) {
+          typeGroups[report.type] = []
+        }
+        typeGroups[report.type].push(report)
       }
-      typeGroups[report.type].push(report)
     }
   }
 
@@ -935,7 +957,16 @@ router.get('/question-reports', catchAsync(async (req, res) => {
           const docs = await TargetModel.find({ _id: { $in: ids } }).lean()
           const docMap = new Map(docs.map(d => [d._id.toString(), d]))
           for (const report of groupReports) {
-            report.typeId = docMap.get(report.typeId.toString()) || null
+            const doc = docMap.get(report.typeId.toString()) || null
+            if (doc) {
+              const stripHtml = (html) => html ? html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() : ''
+              const qText = doc.questionText || doc.en?.question?.text || doc.hi?.question?.text || ''
+              if (qText) {
+                doc.questionName = stripHtml(qText)
+                report.questionName = doc.questionName
+              }
+            }
+            report.typeId = doc
           }
         }
       } catch (_) {

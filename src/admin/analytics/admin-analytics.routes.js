@@ -10,5 +10,7 @@ router.get('/course-enrollments/:courseId', validateQuery(analyticsListQuerySche
 router.get('/test-attempts/:testId/leaderboard', validateQuery(analyticsListQuerySchema),controller.testLeaderboard)
 router.get('/previous-year-paper-test-attempts/:testId/leaderboard', validateQuery(analyticsListQuerySchema), controller.previousYearPaperTestLeaderboard)
 router.get('/course-test-attempts/:testId/leaderboard', validateQuery(analyticsListQuerySchema), controller.courseTestLeaderboard)
+router.get('/daily-quiz-attempts/:testId/leaderboard', validateQuery(analyticsListQuerySchema), controller.dailyQuizLeaderboard)
+router.get('/live-test-attempts/:testId/leaderboard', validateQuery(analyticsListQuerySchema), controller.liveTestLeaderboard)
 
 module.exports = router

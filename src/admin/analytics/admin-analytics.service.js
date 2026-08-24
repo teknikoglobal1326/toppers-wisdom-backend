@@ -9,6 +9,10 @@ const PreviousYearPaperTest = require('../../models/PreviousYearPaperTest.model'
 const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
 const CourseTest = require('../../models/CourseTest.model')
 const CourseTestAttempt = require('../../models/CourseTestAttempt.model')
+const DailyQuiz = require('../../models/DailyQuiz.model')
+const DailyQuizAttempt = require('../../models/DailyQuizAttempt.model')
+const LiveTest = require('../../models/LiveTest.model')
+const LiveTestAttempt = require('../../models/LiveTestAttempt.model')
 const Question = require('../../models/Question.model')
 const Subject = require('../../models/Subject.model')
 const { createLogger } = require('../../config/logger')
@@ -22,8 +26,32 @@ const enrichAttemptsWithAnalytics = async (attempts, testId) => {
   // 1. Fetch questions for this test
   const questions = await Question.find({ test: testId, isDeleted: false }).lean()
 
+  // Find parent test to resolve fallback subjects
+  const [courseTest, seriesTest, pypTest, liveTest, dailyQuiz] = await Promise.all([
+    CourseTest.findById(testId).lean(),
+    TestSeriesTest.findById(testId).lean(),
+    PreviousYearPaperTest.findById(testId).lean(),
+    LiveTest.findById(testId).lean(),
+    DailyQuiz.findById(testId).lean()
+  ])
+  const parentTest = courseTest || seriesTest || pypTest || liveTest || dailyQuiz
+
+  let fallbackSubjectId = null
+  let fallbackChapterId = null
+  let fallbackTopicId = null
+
+  if (parentTest) {
+    const parentSubjects = parentTest.subjects || parentTest.subjectIds || []
+    const parentChapters = parentTest.chapters || parentTest.chapterIds || []
+    const parentTopics = parentTest.topics || parentTest.topicIds || []
+
+    if (parentSubjects.length > 0) fallbackSubjectId = parentSubjects[0]
+    if (parentChapters.length > 0) fallbackChapterId = parentChapters[0]
+    if (parentTopics.length > 0) fallbackTopicId = parentTopics[0]
+  }
+
   // 2. Fetch subject names and their embedded chapters/topics
-  const subjectIds = [...new Set(questions.map(q => q.subjectId?.toString()).filter(Boolean))]
+  const subjectIds = [...new Set(questions.map(q => (q.subjectId || fallbackSubjectId)?.toString()).filter(Boolean))]
   const subjectsList = await Subject.find({ _id: { $in: subjectIds } }).lean()
 
   // Build lookup maps
@@ -60,10 +88,14 @@ const enrichAttemptsWithAnalytics = async (attempts, testId) => {
       correctOptionIndex = q.hi.options.findIndex(o => o.isCorrect)
     }
 
+    const sId = q.subjectId || fallbackSubjectId
+    const cId = q.chapterId || fallbackChapterId
+    const tId = q.topicId || fallbackTopicId
+
     questionDetails[qId] = {
-      subjectId: q.subjectId ? q.subjectId.toString() : null,
-      chapterId: q.chapterId ? q.chapterId.toString() : null,
-      topicId: q.topicId ? q.topicId.toString() : null,
+      subjectId: sId ? sId.toString() : null,
+      chapterId: cId ? cId.toString() : null,
+      topicId: tId ? tId.toString() : null,
       correctOptionIndex
     }
   }
@@ -1072,6 +1104,300 @@ const courseTestLeaderboard = async (testId, filters = {}) => {
   )
 }
 
+const dailyQuizLeaderboard = async (testId, filters = {}) => {
+  const test = await DailyQuiz.findOne({
+    _id: testId
+  })
+  .select('_id title totalMarks duration status')
+  .lean()
+
+  if (!test) {
+    throw new AppError('Quiz not found', 404)
+  }
+
+  const { page, limit, skip } = buildPagination(filters.page, filters.limit)
+  const fromRank = filters.fromRank ? Number(filters.fromRank) : null
+  const toRank = filters.toRank ? Number(filters.toRank) : null
+  const fromScore = filters.fromScore !== undefined ? Number(filters.fromScore) : null
+  const toScore = filters.toScore !== undefined ? Number(filters.toScore) : null
+
+  const pipeline = [
+    {
+      $match: {
+        quiz: test._id,
+        status: 'completed'
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    {
+      $unwind: '$user'
+    },
+    {
+      $match: {
+        'user.role': 'user',
+        'user.isDeleted': { $ne: true }
+      }
+    },
+    {
+      $sort: {
+        attemptedAt: 1
+      }
+    },
+    {
+      $group: {
+        _id: '$user._id',
+        score: { $first: '$score' },
+        totalMarks: { $first: '$totalMarks' },
+        accuracy: { $first: '$accuracy' },
+        timeTaken: { $first: '$timeTaken' },
+        correct: { $first: '$correct' },
+        wrong: { $first: '$wrong' },
+        skipped: { $first: '$skipped' },
+        unattempted: { $first: '$unattempted' },
+        answers: { $first: '$answers' },
+        user: { $first: '$user' }
+      }
+    }
+  ]
+
+  if (fromScore !== null || toScore !== null) {
+    const scoreMatch = {}
+    if (fromScore !== null) scoreMatch.$gte = fromScore
+    if (toScore !== null) scoreMatch.$lte = toScore
+    pipeline.push({ $match: { score: scoreMatch } })
+  }
+
+  pipeline.push(
+    {
+      $setWindowFields: {
+        sortBy: { score: -1 },
+        output: {
+          rank: { $rank: {} }
+        }
+      }
+    }
+  )
+
+  if (fromRank && toRank) {
+    pipeline.push({
+      $match: {
+        rank: {
+          $gte: fromRank,
+          $lte: toRank
+        }
+      }
+    })
+  }
+
+  pipeline.push({
+    $facet: {
+      data: [
+        { $sort: { rank: 1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $project: {
+            _id: 0,
+            rank: 1,
+            score: 1,
+            totalMarks: 1,
+            accuracy: 1,
+            timeTaken: 1,
+            correct: 1,
+            wrong: 1,
+            skipped: 1,
+            unattempted: 1,
+            answers: 1,
+            user: {
+              _id: '$user._id',
+              name: '$user.name',
+              email: '$user.email',
+              phone: '$user.phone',
+            }
+          }
+        }
+      ],
+      summary: [
+        { $count: 'totalUsers' }
+      ]
+    }
+  })
+
+  const [result] = await DailyQuizAttempt.aggregate(pipeline)
+  const totalUsers = result?.summary?.[0]?.totalUsers || 0
+
+  const enrichedData = await enrichAttemptsWithAnalytics(result?.data || [], test._id)
+
+  return buildPaginatedResult(
+    enrichedData,
+    totalUsers,
+    page,
+    limit,
+    {
+      test,
+      totalUsers,
+      rankRange: {
+        fromRank,
+        toRank
+      }
+    }
+  )
+}
+
+const liveTestLeaderboard = async (testId, filters = {}) => {
+  const test = await LiveTest.findOne({
+    _id: testId
+  })
+  .select('_id title totalMarks duration status')
+  .lean()
+
+  if (!test) {
+    throw new AppError('Live test not found', 404)
+  }
+
+  const { page, limit, skip } = buildPagination(filters.page, filters.limit)
+  const fromRank = filters.fromRank ? Number(filters.fromRank) : null
+  const toRank = filters.toRank ? Number(filters.toRank) : null
+  const fromScore = filters.fromScore !== undefined ? Number(filters.fromScore) : null
+  const toScore = filters.toScore !== undefined ? Number(filters.toScore) : null
+
+  const pipeline = [
+    {
+      $match: {
+        liveTest: test._id,
+        status: 'completed'
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    {
+      $unwind: '$user'
+    },
+    {
+      $match: {
+        'user.role': 'user',
+        'user.isDeleted': { $ne: true }
+      }
+    },
+    {
+      $sort: {
+        attemptedAt: 1
+      }
+    },
+    {
+      $group: {
+        _id: '$user._id',
+        score: { $first: '$score' },
+        totalMarks: { $first: '$totalMarks' },
+        accuracy: { $first: '$accuracy' },
+        timeTaken: { $first: '$timeTaken' },
+        correct: { $first: '$correct' },
+        wrong: { $first: '$wrong' },
+        skipped: { $first: '$skipped' },
+        unattempted: { $first: '$unattempted' },
+        answers: { $first: '$answers' },
+        user: { $first: '$user' }
+      }
+    }
+  ]
+
+  if (fromScore !== null || toScore !== null) {
+    const scoreMatch = {}
+    if (fromScore !== null) scoreMatch.$gte = fromScore
+    if (toScore !== null) scoreMatch.$lte = toScore
+    pipeline.push({ $match: { score: scoreMatch } })
+  }
+
+  pipeline.push(
+    {
+      $setWindowFields: {
+        sortBy: { score: -1 },
+        output: {
+          rank: { $rank: {} }
+        }
+      }
+    }
+  )
+
+  if (fromRank && toRank) {
+    pipeline.push({
+      $match: {
+        rank: {
+          $gte: fromRank,
+          $lte: toRank
+        }
+      }
+    })
+  }
+
+  pipeline.push({
+    $facet: {
+      data: [
+        { $sort: { rank: 1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $project: {
+            _id: 0,
+            rank: 1,
+            score: 1,
+            totalMarks: 1,
+            accuracy: 1,
+            timeTaken: 1,
+            correct: 1,
+            wrong: 1,
+            skipped: 1,
+            unattempted: 1,
+            answers: 1,
+            user: {
+              _id: '$user._id',
+              name: '$user.name',
+              email: '$user.email',
+              phone: '$user.phone',
+            }
+          }
+        }
+      ],
+      summary: [
+        { $count: 'totalUsers' }
+      ]
+    }
+  })
+
+  const [result] = await LiveTestAttempt.aggregate(pipeline)
+  const totalUsers = result?.summary?.[0]?.totalUsers || 0
+
+  const enrichedData = await enrichAttemptsWithAnalytics(result?.data || [], test._id)
+
+  return buildPaginatedResult(
+    enrichedData,
+    totalUsers,
+    page,
+    limit,
+    {
+      test,
+      totalUsers,
+      rankRange: {
+        fromRank,
+        toRank
+      }
+    }
+  )
+}
+
 module.exports = { 
   overview, 
   revenue, 
@@ -1079,5 +1405,7 @@ module.exports = {
   courseEnrollments,  
   testLeaderboard, 
   previousYearPaperTestLeaderboard,
-  courseTestLeaderboard
+  courseTestLeaderboard,
+  dailyQuizLeaderboard,
+  liveTestLeaderboard
 }
