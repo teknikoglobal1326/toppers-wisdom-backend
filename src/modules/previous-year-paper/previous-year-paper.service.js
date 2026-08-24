@@ -7,6 +7,8 @@ const crypto = require('crypto')
 const { htmlToPlainText } = require('../../lib/htmlText')
 const previousYearPaperRepository = require('./previous-year-paper.repository')
 const rewardsService = require('../rewards/rewards.service')
+const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
+
 
 
 class PreviousYearPaperService extends BaseService {
@@ -178,27 +180,44 @@ class PreviousYearPaperService extends BaseService {
         })
 
         const testIds = result.data.map((item) => item._id)
-        const [questionCounts, latestAttempts, subscribedPaperIds] = await Promise.all([
+        const [questionCounts, latestAttempts, ongoingAttempts, subscribedPaperIds] = await Promise.all([
             this.repository.getQuestionCountsByTestIds(testIds),
             this.repository.getLatestAttemptsByTestIds(userId, testIds),
+            PreviousYearPaperAttempt.find({
+                user: userId,
+                test: { $in: testIds },
+                status: { $in: ['started', 'ongoing'] }
+            }).lean(),
             this.getSubscribedPaperIds(userId),
         ])
 
         const paperHasAccess = !previousYearPaper.isPaid || subscribedPaperIds.has(previousYearPaperId.toString())
 
+        const ongoingMap = new Map()
+        ongoingAttempts.forEach(att => {
+            ongoingMap.set(att.test.toString(), att)
+        })
+
         result.data = result.data.map((item) => {
             const id = item._id.toString()
             const hasAccess = paperHasAccess || !item.isPaid
             const attemptStats = latestAttempts[id]
-
+            const ongoingSession = ongoingMap.get(id)
+            console.log("ongoingSession========>",ongoingSession);
             return {
                 ...item,
                 description: htmlToPlainText(item.description),
                 mappedQuestions: questionCounts[id] || 0,
                 hasAccess,
                 isLocked: !hasAccess,
-                attemptStatus: attemptStats ? 'attempted' : 'not_attempted',
+                attemptStatus: ongoingSession ? 'paused' : (attemptStats ? 'attempted' : 'not_attempted'),
                 latestAttempt: attemptStats || null,
+                pausedSession: ongoingSession ? {
+                    sessionId: ongoingSession.sessionId,
+                    status: ongoingSession.status,
+                    timeTaken: ongoingSession.timeTaken,
+                    createdAt: ongoingSession.createdAt,
+                } : null
             }
         })
 
@@ -433,6 +452,7 @@ class PreviousYearPaperService extends BaseService {
     }
 
     async updateSession(testId, sessionId, userId, payload = {}) {
+        console.log("payload====================>",payload);
         const test = await this.repository.getPreviousYearPaperTestById(testId)
         if (!test || test.isDeleted || test.status !== 'active') {
             throw new AppError('Test not found', 404, 'NOT_FOUND')
