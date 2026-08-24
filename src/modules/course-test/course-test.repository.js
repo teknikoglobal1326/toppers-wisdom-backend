@@ -11,9 +11,16 @@ class CourseTestRepository extends BaseRepository {
     }
 
     async getCourseTestById(testId) {
-        return CourseTest.findOne({ _id: testId, isDeleted: false })
+        let test = await CourseTest.findOne({ _id: testId, isDeleted: false })
             .select('course topic chapter title slug description instruction instructionsNew localizedContent image duration isPerQuestionTime totalQuestions totalMappedQuestions totalMarks passingMarks marksPerQuestion negativeMarks maxAttempts difficulty language status isDeleted')
             .lean()
+        if (!test) {
+            const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
+            test = await CourseSeparatedTest.findOne({ _id: testId, isDeleted: false })
+                .select('course topic chapter title slug description instruction instructionsNew localizedContent image duration isPerQuestionTime totalQuestions totalMappedQuestions totalMarks passingMarks marksPerQuestion negativeMarks maxAttempts difficulty language status isDeleted')
+                .lean()
+        }
+        return test
     }
 
     async findQuestionsForTest(testId) {

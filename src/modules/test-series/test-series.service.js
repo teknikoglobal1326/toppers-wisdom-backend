@@ -853,8 +853,11 @@ class TestSeriesService extends BaseService {
                 accuracy: attempt.accuracy,
                 percentile,
                 attempted: attempt.correct + attempt.wrong,
+                skipped: attempt.skipped,
+                unattempted: attempt.unattempted,
                 totalQuestions: test.totalQuestions,
-                timeSpent: attempt.timeTaken ? parseFloat((attempt.timeTaken / 60).toFixed(2)) : 0
+                duration: test.duration,
+                timeSpent: attempt.timeTaken ? `${parseFloat((attempt.timeTaken / 60).toFixed(2))} min` : '0 min'
             },
             sectionWisePerformance,
             topicAnalytics,

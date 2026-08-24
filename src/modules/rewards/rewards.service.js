@@ -231,8 +231,21 @@ class RewardsService {
     }).select('amount').lean();
     const currentMonthTotalEarnedCoins = walletHistoryCredits.reduce((sum, item) => sum + (item.amount || 0), 0);
 
+    let currentStreakCount = streak ? streak.currentStreak : 0;
+    if (streak && !activity.streakMaintained) {
+      if (streak.lastActivityDate) {
+        const lastActMidnight = this.getMidnight(streak.lastActivityDate);
+        const yesterday = this.getYesterday();
+        if (lastActMidnight.getTime() < yesterday.getTime()) {
+          currentStreakCount = 0;
+        }
+      } else {
+        currentStreakCount = 0;
+      }
+    }
+
     return {
-      currentStreak: streak ? streak.currentStreak : 0,
+      currentStreak: currentStreakCount,
       longestStreak: streak ? streak.longestStreak : 0,
       tier: streak ? streak.tier : 1,
       currentTier: streak ? streak.tier : 1,
@@ -270,8 +283,27 @@ class RewardsService {
     }));
 
     const streak = await Streak.findOne({ user: userId });
+    
+    let currentStreakCount = streak ? streak.currentStreak : 0;
+    if (streak) {
+      const today = this.getMidnight();
+      const todayActivity = await DailyActivity.findOne({ user: userId, date: today });
+      const streakMaintained = todayActivity ? todayActivity.streakMaintained : false;
+      if (!streakMaintained) {
+        if (streak.lastActivityDate) {
+          const lastActMidnight = this.getMidnight(streak.lastActivityDate);
+          const yesterday = this.getYesterday();
+          if (lastActMidnight.getTime() < yesterday.getTime()) {
+            currentStreakCount = 0;
+          }
+        } else {
+          currentStreakCount = 0;
+        }
+      }
+    }
+
     const activeStreak = {
-      currentStreak: streak ? streak.currentStreak : 0,
+      currentStreak: currentStreakCount,
       longestStreak: streak ? streak.longestStreak : 0,
       tier: streak ? streak.tier : 1
     };

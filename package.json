@@ -4,7 +4,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon -r ./src/dns-fix.js src/server.js",
+    "dev": "nodemon -r ./src/dns-fix.js",
     "seed": "node src/seeds/seed.js",
     "create:admin": "node src/seeds/create-superadmin.js",
     "lint": "eslint src/**/*.js"

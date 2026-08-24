@@ -61,11 +61,21 @@ class UserService extends BaseService {
             user.referredBy = referrer._id
             
             const rewardsService = require('../rewards/rewards.service')
+            const ReferralHistory = require('../../models/ReferralHistory.model')
             try {
                 // Add 25 coins to the referrer
                 await rewardsService.addCoins(referrer._id, 25, 'referral', `Referral Bonus for inviting user`);
                 // Add 25 coins to the referred user (customer)
                 await rewardsService.addCoins(userId, 25, 'referral', `Referral Bonus for using referral code`);
+
+                // Create referral history record
+                await ReferralHistory.create({
+                    referrer: referrer._id,
+                    referredUser: userId,
+                    referralCode: data.referralCode,
+                    referrerCoinsAwarded: 25,
+                    referredCoinsAwarded: 25,
+                })
             } catch (err) {
                 this.logger.error({ err }, 'Failed to award referral coins')
             }

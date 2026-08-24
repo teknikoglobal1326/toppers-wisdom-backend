@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const catchAsync = require('../../core/catchAsync')
-const { sendSuccess, sendError } = require('../../core/response')
+const { sendSuccess, sendError, sendPaginated } = require('../../core/response')
 const qualificationService = require('../../modules/qualification/qualification.service')
 const courseRepository = require('../../modules/course/course.repository')
 const topicRepository = require('../../modules/topic/topic.repository')
@@ -22,6 +22,15 @@ router.get('/editorial-topics', catchAsync(async (req, res) => {
     { isDeleted: false, status: 'active' }
   ).sort({ sortOrder: 1, name: 1 }).select('_id name').lean()
   sendSuccess(res, topics)
+}))
+
+// GET /api/v1/admin/common/editorial-tests
+router.get('/editorial-tests', catchAsync(async (req, res) => {
+  const EditorialTest = require('../../models/EditorialTest.model')
+  const tests = await EditorialTest.find(
+    { isDeleted: false }
+  ).sort({ sortOrder: 1, title: 1 }).select('_id title').lean()
+  sendSuccess(res, tests)
 }))
 
 // GET /api/v1/admin/common/short-categories
@@ -544,7 +553,7 @@ router.get('/vocabularies', catchAsync(async (req, res) => {
 
   const vocabularies = await vocabularyRepository.findAll(
     filter,
-    { sort: { title: 1 }, select: 'title _id' }
+    { sort: { createdAt: -1, title: 1 }, select: 'title _id word shortDescription definition meaning createdAt' }
   )
   sendSuccess(res, vocabularies)
 }))
@@ -841,5 +850,151 @@ router.get('/subjectsbydailyquiz/:dailyQuizId', catchAsync(async (req, res) => {
 
   return sendSuccess(res, subjects);
 }));
+
+// GET /api/v1/admin/common/question-reports
+router.get('/question-reports', catchAsync(async (req, res) => {
+  const McqReport = require('../../models/UserMcqReport')
+  const User = require('../../models/User.model')
+
+  const { status, reason, type, search, page = 1, limit = 10 } = req.query
+  const parsedPage = parseInt(page, 10) || 1
+  const parsedLimit = parseInt(limit, 10) || 10
+  const skip = (parsedPage - 1) * parsedLimit
+
+  const filter = {}
+
+  if (type) {
+    filter.type = type
+  }
+
+  if (status) {
+    filter.status = status
+  }
+
+  if (reason) {
+    filter.reason = reason
+  }
+
+  if (search) {
+    // Search matching users by name, phone, or email
+    const users = await User.find({
+      $or: [
+        { name: new RegExp(search, 'i') },
+        { phone: new RegExp(search, 'i') },
+        { email: new RegExp(search, 'i') }
+      ]
+    }).select('_id').lean()
+    const userIds = users.map(u => u._id)
+
+    filter.$or = [
+      { user: { $in: userIds } },
+      { description: new RegExp(search, 'i') },
+      { reason: new RegExp(search, 'i') }
+    ]
+  }
+
+  const total = await McqReport.countDocuments(filter)
+  const reports = await McqReport.find(filter)
+    .populate('user', 'name phone email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parsedLimit)
+    .lean()
+
+  // Dynamic batch population for matching document details based on report type
+  const typeGroups = {}
+  for (const report of reports) {
+    if (report.typeId) {
+      if (!typeGroups[report.type]) {
+        typeGroups[report.type] = []
+      }
+      typeGroups[report.type].push(report)
+    }
+  }
+
+  const typeModels = {
+    question: { modelPath: '../../models/Question.model' },
+    test: { modelPath: '../../models/Test.model' },
+    testSeries: { modelPath: '../../models/TestSeries.model' },
+    previousYearPaper: { modelPath: '../../models/PreviousYearPaper.model' },
+    previousYearTest: { modelPath: '../../models/PreviousYearPaperTest.model' },
+    'course-test': { modelPath: '../../models/CourseTest.model' },
+    ai_test: { modelPath: '../../models/AiTest.model' },
+    live_test: { modelPath: '../../models/LiveTest.model' },
+    quiz: { modelPath: '../../models/DailyQuiz.model' },
+    math: { modelPath: '../../models/MathTest.model' }
+  }
+
+  for (const [typeKey, groupReports] of Object.entries(typeGroups)) {
+    const config = typeModels[typeKey]
+    if (config) {
+      try {
+        const TargetModel = require(config.modelPath)
+        const ids = groupReports.map(r => r.typeId)
+        if (ids.length > 0) {
+          const docs = await TargetModel.find({ _id: { $in: ids } }).lean()
+          const docMap = new Map(docs.map(d => [d._id.toString(), d]))
+          for (const report of groupReports) {
+            report.typeId = docMap.get(report.typeId.toString()) || null
+          }
+        }
+      } catch (_) {
+        // Fallback if model cannot be imported or file not found
+      }
+    }
+  }
+
+  // Aggregate counts of reports grouped by type under the same status / search filters (excluding type filter itself)
+  const statsFilter = { ...filter }
+  delete statsFilter.type
+
+  const stats = await McqReport.aggregate([
+    { $match: statsFilter },
+    { $group: { _id: '$type', count: { $sum: 1 } } }
+  ])
+
+  const counts = {
+    question: 0,
+    test: 0,
+    testSeries: 0,
+    previousYearPaper: 0,
+    previousYearTest: 0,
+    'course-test': 0,
+    ai_test: 0,
+    live_test: 0,
+    quiz: 0,
+    math: 0
+  }
+
+  for (const stat of stats) {
+    if (stat._id in counts) {
+      counts[stat._id] = stat.count
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Success',
+    data: {
+      reports,
+      counts
+    },
+    pagination: {
+      total,
+      page: parsedPage,
+      limit: parsedLimit,
+      totalPages: Math.ceil(total / parsedLimit)
+    }
+  })
+}))
+
+// GET /api/v1/admin/common/grammar-categories
+router.get('/grammar-categories', catchAsync(async (req, res) => {
+  const GrammarCategory = require('../../models/GrammarCategory.model')
+  const categories = await GrammarCategory.find(
+    { isDeleted: false, status: 'active' }
+  ).sort({ sortOrder: 1, name: 1 }).select('_id name').lean()
+  sendSuccess(res, categories)
+}))
 
 module.exports = router
