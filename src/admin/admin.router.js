@@ -18,6 +18,7 @@ router.use('/previous-year-papers', requirePermission('tests'), require('./previ
 router.use('/previous-year-paper-tests', requirePermission('tests'), require('./previous-year-paper-tests/admin-previous-year-paper-test.routes'))
 router.use('/daily-quizzes', requirePermission('tests'), require('./daily-quizzes/admin-daily-quiz.routes'))
 router.use('/live-tests', requirePermission('tests'), require('./live-tests/admin-live-test.routes'))
+router.use('/ai-tests', requirePermission('tests'), require('./ai-tests/admin-ai-test.routes'))
 router.use('/boosters', requirePermission('boosters'), require('./boosters/admin-booster.routes'))
 router.use('/users', requirePermission('users'), require('./users/admin-user.routes'))
 router.use('/blog', requirePermission('blog'), require('./blog/admin-blog.routes'))
