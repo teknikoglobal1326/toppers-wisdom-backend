@@ -346,6 +346,7 @@ const bulkCreate = catchAsync(async (req, res) => {
           normalizedRow.isPaid = String(value).trim().toLowerCase() === "true" || String(value).trim() === "1"
         }
         else if (cleanKey === "status") normalizedRow.status = value
+        else if (cleanKey === "sortorder") normalizedRow.sortOrder = value !== "" ? Number(value) : undefined
         else if (cleanKey === "scheduleat" || cleanKey === "scheduledat") normalizedRow.scheduleAt = value
         else if (cleanKey === "language") normalizedRow.language = value
         else if (cleanKey === "subjects" || cleanKey === "subject") normalizedRow.subjects = value
@@ -433,6 +434,7 @@ const bulkCreate = catchAsync(async (req, res) => {
         passingMarks: normalizedRow.passingMarks !== undefined ? normalizedRow.passingMarks : 4,
         isPaid: normalizedRow.isPaid !== undefined ? normalizedRow.isPaid : false,
         status: normalizedRow.status || common.status || "active",
+        sortOrder: normalizedRow.sortOrder !== undefined ? normalizedRow.sortOrder : (common.sortOrder !== undefined ? Number(common.sortOrder) : 0),
         language: normalizedRow.language || common.language || "en",
         scheduleAt: normalizedRow.scheduleAt || null,
       }

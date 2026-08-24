@@ -29,6 +29,7 @@ const previousYearPaperTestSchema = new mongoose.Schema({
     instructions: { type: String, default: null },
     instructionsNew: { type: String, default: null },
     isPaid: { type: Boolean, default: false, index: true },
+    sortOrder: { type: Number, default: 0, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
     // Languages this test is authored in. ['en'] | ['hi'] | ['en','hi'].
     // Drives which language question forms the admin fills and which language(s)

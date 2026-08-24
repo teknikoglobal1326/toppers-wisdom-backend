@@ -21,7 +21,7 @@ const attachCampaignImage = async (req, res, next) => {
 }
 
 // --- Notification Campaigns ---
-router.get('/notifications', validateQuery(listCampaignQuerySchema), controller.listSentNotifications)
+router.get('/notifications', validateQuery(listCampaignQuerySchema), controller.listNotifications)
 router.get('/notifications/scheduled', validateQuery(listCampaignQuerySchema), controller.listScheduledNotifications)
 router.get('/notifications/:id', controller.getNotification)
 router.post('/notifications', upload.single('image'), attachCampaignImage, validate(createNotificationSchema), controller.createNotification)

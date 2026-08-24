@@ -10,6 +10,7 @@ const editorialSchema = new mongoose.Schema({
   shortDescription: { type: String, default: "" },
   description: { type: String, default: "" },
   videoUrl: { type: String, default: "" },
+  audioUrl: { type: String, default: "" },
   editorialTest: { type: mongoose.Schema.Types.ObjectId, ref: "EditorialTest", default: null },
   editorialTopic: { type: mongoose.Schema.Types.ObjectId, ref: "EditorialTopic", default: null, index: true },
   isFree: { type: Boolean, default: true },

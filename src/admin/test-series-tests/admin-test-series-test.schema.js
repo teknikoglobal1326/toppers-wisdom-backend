@@ -29,6 +29,7 @@ const baseSchema = {
     passingMarks: Joi.number().min(0).required(),
     thumbnail: Joi.string().optional().allow(null, ''),
     isPaid: Joi.boolean().optional().default(false),
+    sortOrder: Joi.number().integer().min(0).optional().default(0),
     status: Joi.string().valid('active', 'inactive').optional().default('active'),
     languages: Joi.array().items(Joi.string().valid('en', 'hi')).min(1).unique().optional(),
     language: Joi.string().valid('en', 'hi').optional(), // legacy scalar, mapped to languages in controller
@@ -70,6 +71,7 @@ const updateTestSeriesTestSchema = Joi.object({
     passingMarks: Joi.number().min(0),
     thumbnail: Joi.string().optional().allow(null, ''),
     isPaid: Joi.boolean().optional(),
+    sortOrder: Joi.number().integer().min(0).optional(),
     status: Joi.string().valid('active', 'inactive').optional(),
     languages: Joi.array().items(Joi.string().valid('en', 'hi')).min(1).unique().optional(),
     language: Joi.string().valid('en', 'hi').optional(),
@@ -96,6 +98,7 @@ const bulkCreateTestSeriesTestSchema = Joi.array().items(
     negativeMarks: Joi.number().min(0).default(0),
     passingMarks: Joi.number().min(0).required(),
     isPaid: Joi.boolean().default(false),
+    sortOrder: Joi.number().min(0).default(0),
     status: Joi.string().valid('active', 'inactive').default('active'),
     scheduleAt: Joi.date().optional().allow(null, ''),
   })

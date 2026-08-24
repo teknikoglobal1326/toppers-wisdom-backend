@@ -5,6 +5,7 @@ const createLiveTestSeriesSchema = Joi.object({
     description: Joi.string().optional().allow(null, ''),
     thumbnail: Joi.string().optional().allow(null, ''),
     isPaid: Joi.boolean().optional().default(false),
+    sortOrder: Joi.number().integer().min(0).optional().default(0),
     status: Joi.string().valid('active', 'inactive').optional().default('active'),
 })
 
@@ -13,6 +14,7 @@ const updateLiveTestSeriesSchema = Joi.object({
     description: Joi.string().optional().allow(null, ''),
     thumbnail: Joi.string().optional().allow(null, ''),
     isPaid: Joi.boolean().optional(),
+    sortOrder: Joi.number().integer().min(0).optional(),
     status: Joi.string().valid('active', 'inactive').optional(),
 }).min(1)
 

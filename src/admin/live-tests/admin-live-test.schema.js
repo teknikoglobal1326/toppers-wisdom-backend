@@ -23,6 +23,7 @@ const createLiveTestSchema = Joi.object({
     endDateTime: Joi.date().greater(Joi.ref('startDateTime')).required(),
     scheduleAt: Joi.date().optional().allow(null, ''),
     isPaid: Joi.boolean().optional().default(false),
+    sortOrder: Joi.number().integer().min(0).optional().default(0),
     status: Joi.string().valid('active', 'inactive').optional().default('active'),
     language: Joi.string().valid('en', 'hi', 'both').optional().default('en'),
 })
@@ -48,6 +49,7 @@ const updateLiveTestSchema = Joi.object({
     endDateTime: Joi.date(),
     scheduleAt: Joi.date().optional().allow(null, ''),
     isPaid: Joi.boolean().optional(),
+    sortOrder: Joi.number().integer().min(0).optional(),
     status: Joi.string().valid('active', 'inactive').optional(),
     language: Joi.string().valid('en', 'hi', 'both').optional(),
 }).min(1)
