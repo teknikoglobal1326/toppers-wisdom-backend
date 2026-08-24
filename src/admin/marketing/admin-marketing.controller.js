@@ -3,6 +3,11 @@ const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response
 const adminMarketingService = require('./admin-marketing.service')
 
 // --- Notification Campaigns ---
+const listNotifications = catchAsync(async (req, res) => {
+  const result = await adminMarketingService.listNotifications(req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
 const listSentNotifications = catchAsync(async (req, res) => {
   const result = await adminMarketingService.listNotifications({ ...req.query, isProcessed: true })
   sendPaginated(res, result.data, result.pagination)
@@ -72,6 +77,7 @@ const resendAnnouncement = catchAsync(async (req, res) => {
 })
 
 module.exports = {
+  listNotifications,
   listSentNotifications,
   listScheduledNotifications,
   getNotification,

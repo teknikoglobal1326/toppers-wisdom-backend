@@ -10,40 +10,51 @@ class AdminMarketingService extends BaseService {
   }
 
   // --- Notification Campaigns ---
-  async listNotifications({ page, limit, isProcessed, search, subtitle, sortOrder } = {}) {
+  async listNotifications({ page, limit, isProcessed, search, subtitle, sortOrder, status } = {}) {
     const filter = { isDeleted: false }
-    if (isProcessed !== undefined) {
+
+    if (status === 'Sent') {
+      filter.isProcessed = true
+    } else if (status === 'Scheduled') {
+      filter.isProcessed = false
+    } else if (isProcessed !== undefined && isProcessed !== null && isProcessed !== '') {
       filter.isProcessed = typeof isProcessed === 'string' ? isProcessed === 'true' : !!isProcessed
     }
 
-    if (search) {
+    if (search && search.trim()) {
+      const regex = new RegExp(search.trim(), 'i')
       filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { message: { $regex: search, $options: 'i' } }
+        { title: regex },
+        { message: regex }
       ]
     }
 
-    if (subtitle) {
-      if (subtitle === "General") {
+    if (subtitle && subtitle.trim()) {
+      const sub = subtitle.trim()
+      if (sub === "General") {
         filter.notificationType = { $in: ["General", "marketing"] }
-      } else if (subtitle === "Specific Users") {
+      } else if (sub === "Specific Users") {
         filter.notificationType = { $nin: ["General", "marketing"] }
       } else {
-        filter.notificationType = subtitle
+        filter.notificationType = sub
       }
     }
 
     const pageNum = Math.max(1, Number(page) || 1)
-    const limitNum = Math.max(1, Number(limit) || 20)
+    const limitNum = Math.max(1, Number(limit) || 10)
     const skip = (pageNum - 1) * limitNum
 
     let sort = { schedule: -1, createdAt: -1 }
-    if (sortOrder) {
-      sort = { title: sortOrder === 'asc' ? 1 : -1, schedule: -1, createdAt: -1 }
+    if (sortOrder === 'asc') {
+      sort = { title: 1, createdAt: -1 }
+    } else if (sortOrder === 'desc') {
+      sort = { title: -1, createdAt: -1 }
     }
 
-    const [total, data] = await Promise.all([
+    const [total, sentCount, scheduledCount, data] = await Promise.all([
       NotificationCampaign.countDocuments(filter),
+      NotificationCampaign.countDocuments({ isDeleted: false, isProcessed: true }),
+      NotificationCampaign.countDocuments({ isDeleted: false, isProcessed: false }),
       NotificationCampaign.find(filter)
         .sort(sort)
         .skip(skip)
@@ -57,7 +68,9 @@ class AdminMarketingService extends BaseService {
         total,
         page: pageNum,
         limit: limitNum,
-        totalPages: Math.ceil(total / limitNum)
+        totalPages: Math.ceil(total / limitNum),
+        sentCount,
+        scheduledCount
       }
     }
   }
