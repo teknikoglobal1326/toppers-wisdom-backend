@@ -1,5 +1,5 @@
 const catchAsync = require('../../core/catchAsync')
-const { sendSuccess } = require('../../core/response')
+const { sendSuccess, sendPaginated } = require('../../core/response')
 const aiTestService = require('./ai-test.service')
 
 const getSubjects = catchAsync(async (req, res) => {
@@ -42,6 +42,11 @@ const getSessionSolution = catchAsync(async (req, res) => {
   sendSuccess(res, data, 'AI Test session solution retrieved successfully')
 })
 
+const getMyAiTests = catchAsync(async (req, res) => {
+  const data = await aiTestService.getMyAiTests(req.user._id, req.query)
+  sendPaginated(res, data.data, data.pagination, 'AI Tests retrieved successfully')
+})
+
 module.exports = {
   getSubjects,
   getChapters,
@@ -50,5 +55,6 @@ module.exports = {
   startSession,
   updateSession,
   getSessionAnalytics,
-  getSessionSolution
+  getSessionSolution,
+  getMyAiTests
 }

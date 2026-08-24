@@ -819,6 +819,50 @@ class AiTestService extends BaseService {
 
     return Object.values(groupedQuestions)
   }
+
+  async getMyAiTests(userId, query = {}) {
+    const filter = { user: userId, isDeleted: false }
+    const result = await this.getAll(filter, {
+      page: query.page,
+      limit: query.limit,
+      sort: { createdAt: -1 },
+      populate: [{ path: 'subjects', select: 'name chapters' }]
+    })
+
+    const data = result.data.map(test => {
+      const testDoc = typeof test.toObject === 'function' ? test.toObject() : test
+
+      const chapterNames = []
+      const topicNames = []
+
+      const selectChapters = (testDoc.chapters || []).map(String)
+      const selectTopics = (testDoc.topics || []).map(String)
+
+      ;(testDoc.subjects || []).forEach(subj => {
+        ;(subj.chapters || []).forEach(chap => {
+          if (selectChapters.includes(String(chap._id))) {
+            chapterNames.push({ _id: chap._id, name: chap.name })
+          }
+          ;(chap.topics || []).forEach(topic => {
+            if (selectTopics.includes(String(topic._id))) {
+              topicNames.push({ _id: topic._id, name: topic.name })
+            }
+          })
+        })
+      })
+
+      const cleanSubjects = (testDoc.subjects || []).map(s => ({ _id: s._id, name: s.name }))
+
+      return {
+        ...testDoc,
+        subjects: cleanSubjects,
+        chapters: chapterNames,
+        topics: topicNames
+      }
+    })
+
+    return { data, pagination: result.pagination }
+  }
 }
 
 module.exports = new AiTestService()

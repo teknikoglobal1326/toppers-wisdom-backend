@@ -88,6 +88,11 @@ const getSessionSolution = catchAsync(async (req, res) => {
   sendSuccess(res, result, 'Editorial test session solutions retrieved successfully')
 })
 
+const getEditorialVocabulary = catchAsync(async (req, res) => {
+  const result = await editorialService.getEditorialVocabulary(req.params.id, req.query)
+  sendPaginated(res, result.data, result.pagination, 'Editorial vocabulary retrieved successfully')
+})
+
 module.exports = {
   list,
   getOne,
@@ -106,5 +111,6 @@ module.exports = {
   startSession,
   updateSession,
   getSessionAnalytics,
-  getSessionSolution
+  getSessionSolution,
+  getEditorialVocabulary
 }

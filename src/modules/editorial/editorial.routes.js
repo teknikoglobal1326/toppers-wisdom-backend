@@ -8,6 +8,7 @@ const {
   setEditorialBookmarkSchema,
   submitEditorialTestSchema
 } = require('./editorial.schema')
+const { listVocabQuerySchema } = require('../editorial-vocabulary/editorial-vocabulary.schema')
 
 router.get('/purchase-status', controller.getPurchaseStatus)
 router.post('/purchase', controller.purchaseSection)
@@ -28,6 +29,7 @@ router.patch('/bookmark/:id', validate(setEditorialBookmarkSchema), controller.s
 router.patch('/:id/like', validate(setEditorialLikeSchema), controller.setLike)
 router.get('/topics', controller.getTopics)
 router.get('/:id/tests', controller.getEditorialTests)
+router.get('/:id/vocabulary', validateQuery(listVocabQuerySchema), controller.getEditorialVocabulary)
 router.get('/:id', controller.getOne)
 
 module.exports = router

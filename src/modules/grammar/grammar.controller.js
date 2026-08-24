@@ -4,11 +4,12 @@ const grammarService = require('./grammar.service')
 
 const list = catchAsync(async (req, res) => {
   const result = await grammarService.listAll(req.query, req.user?._id)
-  sendPaginated(res, result.data, result.pagination)
+  sendSuccess(res, result, 'Grammar categories retrieved successfully')
 })
 
-const getOne = catchAsync(async (req, res) => {
-  sendSuccess(res, await grammarService.getOne(req.params.id, req.query.topicSortOrder, req.user?._id))
+const getByCategory = catchAsync(async (req, res) => {
+  const result = await grammarService.getByCategory(req.params.categoryId, req.query, req.user?._id)
+  sendPaginated(res, result.data, result.pagination, 'Grammar list retrieved successfully')
 })
 
 const setChapterRead = catchAsync(async (req, res) => {
@@ -35,4 +36,4 @@ const setChapterLike = catchAsync(async (req, res) => {
   )
 })
 
-module.exports = { list, getOne, setChapterRead, setChapterBookmark, setChapterLike }
+module.exports = { list, getByCategory, setChapterRead, setChapterBookmark, setChapterLike }

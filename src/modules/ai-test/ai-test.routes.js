@@ -7,6 +7,7 @@ router.get('/subjects', controller.getSubjects)
 router.get('/subjects/chapters/:subjectId', controller.getChapters)
 router.get('/subject/topics/:subjectId/:chapterId', controller.getTopics)
 router.post('/generate', validate(generateAiTestSchema), controller.generateAiTest)
+router.get('/', controller.getMyAiTests)
 
 router.get('/:id/start-session', controller.startSession)
 router.put('/:id/session/:sessionId/update', validate(updateSessionSchema), controller.updateSession)

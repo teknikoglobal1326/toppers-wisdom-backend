@@ -6,6 +6,7 @@ const UserEditorialLike = require('../../models/EditorialLike.model')
 const EditorialPurchase = require('../../models/EditorialPurchase.model')
 const Course = require('../../models/Course.model')
 const EditorialTopic = require('../../models/EditorialTopic.model')
+const editorialVocabularyService = require('../editorial-vocabulary/editorial-vocabulary.service')
 
 class EditorialService extends BaseService {
   constructor() {
@@ -517,6 +518,22 @@ class EditorialService extends BaseService {
     })
 
     return result
+  }
+
+  async getEditorialVocabulary(editorialId, query = {}) {
+    const editorial = await editorialRepository.findOne({ _id: editorialId, isDeleted: false })
+    if (!editorial) {
+      throw new AppError('Editorial not found', 404, 'NOT_FOUND')
+    }
+
+    if (!editorial.editorialTest) {
+      return { data: [], pagination: { totalResults: 0, limit: Number(query.limit) || 10, page: Number(query.page) || 1, totalPages: 0 } }
+    }
+
+    return editorialVocabularyService.listAll({
+      ...query,
+      editorialTest: editorialId
+    })
   }
 
   async checkTestAccess(test, userId) {
