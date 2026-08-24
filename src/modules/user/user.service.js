@@ -25,6 +25,8 @@ const { paginate } = require('../../core/paginate')
 const { createLogger } = require('../../config/logger')
 // const McqReport = require('../../models/UserMcqReport.model')
 const McqReport = require("../../models/UserMcqReport")
+const Subscription = require('../../models/Subscription.model')
+
 
 class UserService extends BaseService {
     constructor() {
@@ -36,6 +38,24 @@ class UserService extends BaseService {
         this.logger.info({ userId }, 'Fetching profile')
         // inherited: this.getById() calls findByIdOrFail -> throws 404 automatically
         return this.getById(userId)
+    }
+
+    async getPremiumPlan(user) {
+        const examId = user?.examId
+        console.log("🚀 ~ examId:", examId)
+        if (!examId) {
+            return null
+        }
+
+        return Subscription.findOne({
+            isPremium: true,
+            isActive: true,
+            isDeleted: false,
+            $or: [
+                { examId: examId },
+                { examIds: examId }
+            ]
+        }).select('name price durationDays').lean()
     }
 
     async updateProfile(userId, data) {

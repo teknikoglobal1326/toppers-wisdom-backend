@@ -258,9 +258,14 @@ class RewardsService {
   }
 
   async getCalendarHistory(userId, year, month) {
+    const today = this.getMidnight();
     const now = new Date();
     const targetYear = year !== undefined ? Number(year) : now.getFullYear();
     const targetMonth = month !== undefined ? Number(month) - 1 : now.getMonth();
+
+    if (targetYear === today.getFullYear() && targetMonth === today.getMonth()) {
+      await this.getTodayActivity(userId, today);
+    }
 
     const start = new Date(targetYear, targetMonth, 1);
     const end = new Date(targetYear, targetMonth + 1, 1);
@@ -270,17 +275,21 @@ class RewardsService {
       date: { $gte: start, $lt: end }
     }).sort({ date: 1 }).lean();
 
-    const currentMonthCalendar = activities.map(act => ({
-      date: act.date,
-      missions: {
-        'test-series-test': act.missions ? act.missions['test-series-test'] : false,
-        pyp_paper: act.missions ? act.missions.pyp_paper : false,
-        pyp_dictionary: act.missions ? act.missions.pyp_dictionary : false,
-        ai_test: act.missions ? act.missions.ai_test : false
-      },
-      streakMaintained: act.streakMaintained,
-      coinsEarned: act.coinsEarned || 0
-    }));
+    const currentMonthCalendar = activities.map(act => {
+      const localDate = new Date(act.date);
+      const utcMidnight = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate()));
+      return {
+        date: utcMidnight,
+        missions: {
+          'test-series-test': act.missions ? act.missions['test-series-test'] : false,
+          pyp_paper: act.missions ? act.missions.pyp_paper : false,
+          pyp_dictionary: act.missions ? act.missions.pyp_dictionary : false,
+          ai_test: act.missions ? act.missions.ai_test : false
+        },
+        streakMaintained: act.streakMaintained,
+        coinsEarned: act.coinsEarned || 0
+      };
+    });
 
     const streak = await Streak.findOne({ user: userId });
     

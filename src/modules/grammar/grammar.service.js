@@ -3,6 +3,9 @@ const AppError = require('../../core/AppError')
 const grammarRepository = require('./grammar.repository')
 const Grammar = require('../../models/Grammar.model')
 const UserGrammarChapterLike = require('../../models/GrammarChapterLike.model')
+const GrammarCategory = require('../../models/GrammarCategory.model')
+const { paginate } = require('../../core/paginate')
+
 
 class GrammarService extends BaseService {
   constructor() {
@@ -104,37 +107,30 @@ class GrammarService extends BaseService {
   }
 
   async listAll(query = {}, userId) {
-    const filter = this.buildFilter(query)
+    const filter = { isDeleted: false, status: 'active' }
     const direction = query.sortOrder === 'desc' ? -1 : 1
     const sortBy = query.sortBy || 'sortOrder'
+
+    return GrammarCategory.find(filter)
+      .sort({ [sortBy]: direction, createdAt: -1 })
+      .select('_id name')
+      .lean()
+  }
+
+  async getByCategory(categoryId, query = {}, userId) {
+    const filter = { categoryId, isDeleted: false, status: 'active' }
+    const direction = query.sortOrder === 'desc' ? -1 : 1
+    const sortBy = query.sortBy || 'sortOrder'
+    const topicSortOrder = query.topicSortOrder || 'asc'
 
     const result = await this.getAll(filter, {
       page: query.page,
       limit: query.limit,
-      sort: { [sortBy]: direction, createdAt: -1 },
-      populate: [
-        { path: 'categoryId', select: 'name' }
-      ]
+      sort: { [sortBy]: direction, createdAt: -1 }
     })
 
-    const data = result.data.map((item) => ({
-      _id: item._id,
-      topicName: item.topicName,
-    }))
+    const data = await this.attachChapterLikeState(result.data, userId, topicSortOrder, 'all')
     return { ...result, data }
-  }
-
-  async getOne(id, topicSortOrder = 'asc', userId) {
-    const grammar = await grammarRepository.findOne(
-      { _id: id, isDeleted: false, status: 'active' },
-      { populate: [
-        { path: 'categoryId' }
-      ] }
-    )
-    if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
-
-    const [withState] = await this.attachChapterLikeState([grammar], userId, topicSortOrder, 'all')
-    return withState
   }
 
   async setChapterLike(grammarId, chapterId, userId, isLiked = true) {
