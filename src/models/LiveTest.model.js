@@ -28,6 +28,7 @@ const liveTestSchema = new mongoose.Schema({
     startDateTime: { type: Date, required: true },
     endDateTime: { type: Date, required: true },
     isPaid: { type: Boolean, default: false, index: true },
+    sortOrder: { type: Number, default: 0, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
     language: { type: String, enum: ['en', 'hi'], default: 'en' },
     localizedContent: {

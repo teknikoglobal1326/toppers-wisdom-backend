@@ -5,6 +5,7 @@ const liveTestSeriesSchema = new mongoose.Schema({
     description: { type: String, default: null },
     thumbnail: { type: String, default: null },
     isPaid: { type: Boolean, default: false, index: true },
+    sortOrder: { type: Number, default: 0, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
     isDeleted: { type: Boolean, default: false, index: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
