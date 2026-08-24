@@ -36,4 +36,22 @@ const courseTestLeaderboard = catchAsync(async (req, res) => {
   sendSuccess(res, await analyticsService.courseTestLeaderboard(req.params.testId, req.query), 'Course test leaderboard fetched')
 })
 
-module.exports = { overview, revenue, users, courseEnrollments, testLeaderboard, previousYearPaperTestLeaderboard, courseTestLeaderboard }
+const dailyQuizLeaderboard = catchAsync(async (req, res) => {
+  sendSuccess(res, await analyticsService.dailyQuizLeaderboard(req.params.testId, req.query), 'Daily quiz leaderboard fetched')
+})
+
+const liveTestLeaderboard = catchAsync(async (req, res) => {
+  sendSuccess(res, await analyticsService.liveTestLeaderboard(req.params.testId, req.query), 'Live test leaderboard fetched')
+})
+
+module.exports = { 
+  overview, 
+  revenue, 
+  users, 
+  courseEnrollments, 
+  testLeaderboard, 
+  previousYearPaperTestLeaderboard, 
+  courseTestLeaderboard,
+  dailyQuizLeaderboard,
+  liveTestLeaderboard
+}
