@@ -863,7 +863,8 @@ class PreviousYearPaperService extends BaseService {
             isDeleted: false,
             status: 'active',
         })
-            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime en hi')
+            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime en hi subjectId')
+            .populate('subjectId', 'name')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
 
@@ -875,10 +876,24 @@ class PreviousYearPaperService extends BaseService {
             }
         }
 
-        const groupedQuestions = {}
+        const subjectMap = new Map()
         for (const q of questions) {
+            const subjectId = q.subjectId?._id ? String(q.subjectId._id) : (q.subjectId ? String(q.subjectId) : 'uncategorized')
+            const subjectName = q.subjectId?.name || 'Uncategorized'
+
+            if (!subjectMap.has(subjectId)) {
+                subjectMap.set(subjectId, {
+                    subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
+                    questions: {}
+                })
+            }
+
+            const group = subjectMap.get(subjectId)
             const questionKey = String(q._id)
-            if (!groupedQuestions[questionKey]) groupedQuestions[questionKey] = { en: {}, hi: {} }
+
+            if (!group.questions[questionKey]) {
+                group.questions[questionKey] = { en: {}, hi: {} }
+            }
 
             // Determine available languages
             let langs = []
@@ -902,7 +917,7 @@ class PreviousYearPaperService extends BaseService {
                 const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
                 const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
 
-                groupedQuestions[questionKey][lang] = {
+                group.questions[questionKey][lang] = {
                     _id: q._id,
                     question: { text: htmlToPlainText(questionData.text || ''), image: questionData.image || '' },
                     options: optionsData.map((opt) => ({
@@ -926,7 +941,10 @@ class PreviousYearPaperService extends BaseService {
             }
         }
 
-        return Object.values(groupedQuestions)
+        return Array.from(subjectMap.values()).map((subj) => ({
+            subject: subj.subject,
+            questions: Object.values(subj.questions)
+        }))
     }
 
     async listMyAttempts(userId, query = {}) {
