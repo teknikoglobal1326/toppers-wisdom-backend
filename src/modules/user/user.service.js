@@ -26,6 +26,8 @@ const { createLogger } = require('../../config/logger')
 // const McqReport = require('../../models/UserMcqReport.model')
 const McqReport = require("../../models/UserMcqReport")
 const Subscription = require('../../models/Subscription.model')
+const User = require('../../models/User.model')
+const calendarExamRepository = require('../calendar-exam/calendar-exam.repository')
 
 
 class UserService extends BaseService {
@@ -519,6 +521,41 @@ class UserService extends BaseService {
                 sort: { createdAt: -1 }
             }
         )
+    }
+
+    async getExamCalendar(userId) {
+        this.logger.info({ userId }, 'Fetching exam calendar')
+        const user = await User.findById(userId).select('exam subExam subExams').lean()
+        if (!user) throw new AppError('User not found', 404)
+
+        const filter = { isDeleted: false, status: 'active' }
+        const orConditions = []
+
+        if (user.exam && user.exam._id) {
+            orConditions.push({ exams: user.exam._id })
+        }
+        if (user.subExam && user.subExam._id) {
+            orConditions.push({ subExams: user.subExam._id })
+        }
+        if (user.subExams && user.subExams.length > 0) {
+            const subExamIds = user.subExams.map(se => se._id)
+            orConditions.push({ subExams: { $in: subExamIds } })
+        }
+
+        if (orConditions.length > 0) {
+            filter.$or = orConditions
+        } else {
+            return []
+        }
+
+        return calendarExamRepository.findAll(filter, {
+            select: 'title image publishDate exams subExams',
+            sort: { sortOrder: 1, publishDate: -1 },
+            populate: [
+                { path: 'exams', select: 'name' },
+                { path: 'subExams', select: 'name' }
+            ]
+        })
     }
 
     async sendTestNotification(userId, data = {}) {

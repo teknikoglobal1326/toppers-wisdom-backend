@@ -79,4 +79,9 @@ const getPremiumPlan = catchAsync(async (req, res) => {
   sendSuccess(res, plan, 'Premium subscription plan retrieved successfully')
 })
 
-module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification, getPremiumPlan }
+const getExamCalendar = catchAsync(async (req, res) => {
+  const calendar = await userService.getExamCalendar(req.user._id)
+  sendSuccess(res, calendar, 'Exam calendar retrieved successfully')
+})
+
+module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification, getPremiumPlan, getExamCalendar }
