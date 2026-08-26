@@ -17,6 +17,7 @@ const speedMathAttemptSchema = new mongoose.Schema({
   questionsPerMinute: { type: Number, default: 0 },
   correct: { type: Number, default: 0 },
   incorrect: { type: Number, default: 0 },
+  skipped: { type: Number, default: 0 },
   status: { type: String, enum: ['started', 'completed'], default: 'started' }
 }, { timestamps: true })
 

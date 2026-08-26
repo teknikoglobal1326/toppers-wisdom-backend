@@ -1,0 +1,263 @@
+{
+  "info": {
+    "name": "Toppers Wisdom - Dictionary Module",
+    "description": "Postman collection for the Dictionary/Vocabulary module containing both App (Student) and Admin endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "App Side (Student)",
+      "item": [
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Category Hub Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/categories/one-word-sub/hub",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "categories", "one-word-sub", "hub"]
+            }
+          }
+        },
+        {
+          "name": "Get Category Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/categories/one-word-sub/groups?sub=exam",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "categories", "one-word-sub", "groups"],
+              "query": [
+                { "key": "sub", "value": "exam" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Words List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/categories/one-word-sub/words?sub=alpha&group=A&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "categories", "one-word-sub", "words"],
+              "query": [
+                { "key": "sub", "value": "alpha" },
+                { "key": "group", "value": "A" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Words",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/search?q=abandon",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "search"],
+              "query": [
+                { "key": "q", "value": "abandon" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Word by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/words/w_12345",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "words", "w_12345"]
+            }
+          }
+        },
+        {
+          "name": "Get Practice MCQs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/categories/one-word-sub/practice/mcq?sub=mixed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "categories", "one-word-sub", "practice", "mcq"],
+              "query": [
+                { "key": "sub", "value": "mixed" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Flashcard Progress Attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"wordId\": \"w_12345\",\n  \"selfRating\": 4\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/progress/flashcard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "progress", "flashcard"]
+            }
+          }
+        },
+        {
+          "name": "MCQ Progress Attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"q_67890\",\n  \"selectedOption\": \"Abandonment\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/progress/mcq-attempt",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "progress", "mcq-attempt"]
+            }
+          }
+        },
+        {
+          "name": "Get Due Items (Spaced Repetition)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/progress/me/due",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "progress", "me", "due"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Side (Review Queue)",
+      "item": [
+        {
+          "name": "Upload Raw Sheet (Multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/ingest/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "ingest", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Get Review Queue",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/ingest/review-queue?type=word",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "ingest", "review-queue"],
+              "query": [
+                { "key": "type", "value": "word" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Staged Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": {\n    \"word\": \"Abandonment\",\n    \"en\": \"The act of giving something up completely\",\n    \"hi\": \"परित्याग\",\n    \"hook\": \"Devanagari mnemonic ending in danda ।\",\n    \"note\": \"Concept line ending in danda ।\",\n    \"cat\": \"one-word-sub\",\n    \"exams\": [\"SSC CHSL 2020 Tier-I\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/ingest/some_staging_id/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "ingest", "some_staging_id", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Staged Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dictionary/ingest/some_staging_id/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "dictionary", "ingest", "some_staging_id", "reject"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "YOUR_STUDENT_JWT_HERE" },
+    { "key": "adminToken", "value": "YOUR_ADMIN_JWT_HERE" }
+  ]
+}
