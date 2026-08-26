@@ -797,7 +797,7 @@ router.post('/upload-chat-attachment', require('../../middlewares/upload.middlew
   const ext = path.extname(req.file.originalname).toLowerCase()
   const filename = `chat-${Date.now()}${ext}`
   const folder = 'chat'
-  const fileUrl = await uploadFile(req.file.buffer, filename, folder, req.file.mimetype)
+  const fileUrl = await uploadFile(req.file, filename, folder, req.file.mimetype)
 
   sendSuccess(res, { url: fileUrl, filename: req.file.originalname })
 }))

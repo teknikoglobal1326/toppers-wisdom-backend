@@ -589,13 +589,13 @@ adminContentService.attachUploadedFiles = async (req, _res, next) => {
     if (req.files?.video?.[0]) {
       const file = req.files.video[0]
       const ext = path.extname(file.originalname) || '.mp4'
-      req.body.video = await uploadFile(file.buffer, `video${ext}`, folder, file.mimetype)
+      req.body.video = await uploadFile(file, `video${ext}`, folder, file.mimetype)
     }
 
     if (req.files?.image?.[0]) {
       const file = req.files.image[0]
       const ext = path.extname(file.originalname) || '.jpg'
-      req.body.image = await uploadFile(file.buffer, `image${ext}`, folder, file.mimetype)
+      req.body.image = await uploadFile(file, `image${ext}`, folder, file.mimetype)
     }
 
     next()

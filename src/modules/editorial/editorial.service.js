@@ -494,7 +494,7 @@ class EditorialService extends BaseService {
   async listTests(query = {}) {
     const { paginate } = require('../../core/paginate')
     const EditorialTest = require('../../models/EditorialTest.model')
-    
+
     const filter = { isDeleted: false, status: 'published' }
     if (query.editorialId) filter.editorial = query.editorialId
     if (query.subjectId) filter.subjects = query.subjectId
@@ -520,21 +520,26 @@ class EditorialService extends BaseService {
     return result
   }
 
-  async getEditorialVocabulary(editorialId, query = {}) {
-    const editorial = await editorialRepository.findOne({ _id: editorialId, isDeleted: false })
-    if (!editorial) {
-      throw new AppError('Editorial not found', 404, 'NOT_FOUND')
-    }
+  async getEditorialVocabulary(id, query = {}) {
+  const editorial = await editorialRepository.findOne({
+    _id: id,
+    isDeleted: false
+  })
 
-    if (!editorial.editorialTest) {
-      return { data: [], pagination: { totalResults: 0, limit: Number(query.limit) || 10, page: Number(query.page) || 1, totalPages: 0 } }
-    }
-
-    return editorialVocabularyService.listAll({
-      ...query,
-      editorialTest: editorialId
-    })
+  if (!editorial) {
+    throw new AppError(
+      'Editorial not found',
+      404,
+      'NOT_FOUND'
+    )
   }
+
+  return editorialVocabularyService.listAll({
+    ...query,
+    editorialTest: id
+  })
+}
+
 
   async checkTestAccess(test, userId) {
     if (test.isFree) return true
@@ -930,10 +935,10 @@ class EditorialService extends BaseService {
 
     const solvedQuestions = questions.map((q, idx) => {
       const userAns = userAnswersMap.get(q._id.toString())
-      const correctOptionIndex = (q.en?.options || []).findIndex(o => o.isCorrect) !== -1 
-        ? (q.en?.options || []).findIndex(o => o.isCorrect) 
+      const correctOptionIndex = (q.en?.options || []).findIndex(o => o.isCorrect) !== -1
+        ? (q.en?.options || []).findIndex(o => o.isCorrect)
         : (q.hi?.options || []).findIndex(o => o.isCorrect)
-      
+
       const correctOption = correctOptionIndex !== -1 ? correctOptionIndex : 0
 
       return {

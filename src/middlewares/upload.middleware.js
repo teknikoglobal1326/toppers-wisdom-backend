@@ -3,7 +3,7 @@ const path = require('path')
 const AppError = require('../core/AppError')
 
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm']
+const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-matroska', 'video/mkv']
 const ALLOWED_AUDIO_MIME = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac', 'audio/m4a', 'audio/x-m4a', 'audio/mp4', 'audio/webm']
 const ALLOWED_PDF_MIME = ['application/pdf']
 // const ALLOWED_AUDIO_MIME = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a', 'audio/x-wav', 'audio/webm']
@@ -39,11 +39,12 @@ const uploadBulk = multer({
 })
 
 const uploadVideo = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 },
+  dest: require('os').tmpdir(),
+  limits: { fileSize: 2500 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    if (ALLOWED_VIDEO_MIME.includes(file.mimetype)) return cb(null, true)
-    cb(new AppError('Only MP4, MOV, AVI and WEBM videos are allowed', 400, 'INVALID_FILE_TYPE'))
+    const ext = path.extname(file.originalname).toLowerCase()
+    if (ALLOWED_VIDEO_MIME.includes(file.mimetype) || ext === '.mkv') return cb(null, true)
+    cb(new AppError('Only MP4, MOV, AVI, WEBM and MKV videos are allowed', 400, 'INVALID_FILE_TYPE'))
   },
 })
 
@@ -66,21 +67,20 @@ const uploadPdf = multer({
 
 
 const uploadVideoImage = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 200 * 1024 * 1024 },
+  dest: require('os').tmpdir(),
+  limits: { fileSize: 2500 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = [
       ...ALLOWED_IMAGE_MIME,
       ...ALLOWED_VIDEO_MIME,
       ...ALLOWED_AUDIO_MIME,
       ...ALLOWED_PDF_MIME,
-      ...ALLOWED_AUDIO_MIME,
     ];
 
     const ext = path.extname(file.originalname).toLowerCase()
     const allowedAudioExts = ['.mp3', '.wav', '.ogg', '.aac', '.m4a']
 
-    if (allowed.includes(file.mimetype) || allowedAudioExts.includes(ext)) {
+    if (allowed.includes(file.mimetype) || allowedAudioExts.includes(ext) || ext === '.mkv') {
       return cb(null, true);
     }
 
@@ -98,11 +98,12 @@ const uploadVideoImage = multer({
 // Accepts both image and video fields in a single multipart request (used by shorts)
 const uploadShort = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 },
+  limits: { fileSize: 2500 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase()
     const allowed = [...ALLOWED_IMAGE_MIME, ...ALLOWED_VIDEO_MIME]
-    if (allowed.includes(file.mimetype)) return cb(null, true)
-    cb(new AppError('Invalid file type. Use JPEG/PNG/WEBP for thumbnail and MP4/MOV/AVI/WEBM for video', 400, 'INVALID_FILE_TYPE'))
+    if (allowed.includes(file.mimetype) || ext === '.mkv') return cb(null, true)
+    cb(new AppError('Invalid file type. Use JPEG/PNG/WEBP for thumbnail and MP4/MOV/AVI/WEBM/MKV for video', 400, 'INVALID_FILE_TYPE'))
   },
 })
 

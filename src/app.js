@@ -20,8 +20,8 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads
 app.use(helmet())
 app.use(cors({ origin: config.ALLOWED_ORIGINS.split(','), credentials: true }))
 app.use(compression())
-app.use(express.json({ limit: '500mb' }))
-app.use(express.urlencoded({ limit: '500mb', extended: true }))
+app.use(express.json({ limit: '2.5gb' }))
+app.use(express.urlencoded({ limit: '2.5gb', extended: true }))
 app.use(pinoHttp({
   logger: rootLogger,
   customLogLevel: (_req, res) => res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',

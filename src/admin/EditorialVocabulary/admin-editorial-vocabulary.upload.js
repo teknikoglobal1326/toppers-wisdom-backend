@@ -35,19 +35,19 @@ const parseFormData = async (req, _res, next) => {
     if (req.files?.thumbnail?.[0]) {
       const file = req.files.thumbnail[0]
       const ext = path.extname(file.originalname) || '.jpg'
-      req.body.thumbnail = await uploadFile(file.buffer, `thumbnail-${Date.now()}${ext}`, folder, file.mimetype)
+      req.body.thumbnail = await uploadFile(file, `thumbnail-${Date.now()}${ext}`, folder, file.mimetype)
     }
 
     if (req.files?.bannerImage?.[0]) {
       const file = req.files.bannerImage[0]
       const ext = path.extname(file.originalname) || '.jpg'
-      req.body.bannerImage = await uploadFile(file.buffer, `banner-${Date.now()}${ext}`, folder, file.mimetype)
+      req.body.bannerImage = await uploadFile(file, `banner-${Date.now()}${ext}`, folder, file.mimetype)
     }
 
     if (req.files?.audio?.[0]) {
       const file = req.files.audio[0]
       const ext = path.extname(file.originalname) || '.mp3'
-      req.body.audio = await uploadFile(file.buffer, `audio-${Date.now()}${ext}`, folder, file.mimetype)
+      req.body.audio = await uploadFile(file, `audio-${Date.now()}${ext}`, folder, file.mimetype)
     }
 
     next()
