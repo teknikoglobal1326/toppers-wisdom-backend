@@ -35,25 +35,25 @@ const parseFormData = async (req, _res, next) => {
     if (req.files?.thumbnail?.[0]) {
       const file = req.files.thumbnail[0]
       const ext = path.extname(file.originalname) || '.jpg'
-      req.body.thumbnail = await uploadFile(file.buffer, `thumbnail-${Date.now()}${ext}`, folder, file.mimetype)
+      req.body.thumbnail = await uploadFile(file, `thumbnail-${Date.now()}${ext}`, folder, file.mimetype)
     }
 
     if (req.files?.bannerImage?.[0]) {
       const file = req.files.bannerImage[0]
       const ext = path.extname(file.originalname) || '.jpg'
-      req.body.bannerImage = await uploadFile(file.buffer, `banner-${Date.now()}${ext}`, folder, file.mimetype)
+      req.body.bannerImage = await uploadFile(file, `banner-${Date.now()}${ext}`, folder, file.mimetype)
     }
 
     const videoFile = req.files?.video?.[0] || req.files?.videoUrl?.[0]
     if (videoFile) {
       const ext = path.extname(videoFile.originalname) || '.mp4'
-      req.body.videoUrl = await uploadFile(videoFile.buffer, `video-${Date.now()}${ext}`, folder, videoFile.mimetype)
+      req.body.videoUrl = await uploadFile(videoFile, `video-${Date.now()}${ext}`, folder, videoFile.mimetype)
     }
 
     const audioFile = req.files?.audio?.[0] || req.files?.audioUrl?.[0] || req.files?.audioFile?.[0]
     if (audioFile) {
       const ext = path.extname(audioFile.originalname) || '.mp3'
-      req.body.audioUrl = await uploadFile(audioFile.buffer, `audio-${Date.now()}${ext}`, folder, audioFile.mimetype)
+      req.body.audioUrl = await uploadFile(audioFile, `audio-${Date.now()}${ext}`, folder, audioFile.mimetype)
     }
 
     next()
