@@ -57,22 +57,23 @@ function hasBorrowSubtraction(a, b) {
 
 class TestConfigurationValidator {
   static validate(config) {
-    let { questionCount, difficulty, operations } = config
+    let { questionCount, difficulty, operations, rangeMin, rangeMax } = config
     
     difficulty = difficulty ? difficulty.toLowerCase() : 'easy'
     
-    let rangeMin, rangeMax
-    if (difficulty === 'easy') {
-      rangeMin = 1
-      rangeMax = 250
-    } else if (difficulty === 'medium') {
-      rangeMin = 250
-      rangeMax = 999
-    } else if (difficulty === 'hard') {
-      rangeMin = 999
-      rangeMax = 5000
-    } else {
-      throw new AppError('difficulty must be one of: easy, medium, hard', 400)
+    if (rangeMin === undefined || rangeMax === undefined) {
+      if (difficulty === 'easy') {
+        rangeMin = 1
+        rangeMax = 250
+      } else if (difficulty === 'medium') {
+        rangeMin = 250
+        rangeMax = 999
+      } else if (difficulty === 'hard') {
+        rangeMin = 999
+        rangeMax = 5000
+      } else {
+        throw new AppError('difficulty must be one of: easy, medium, hard', 400)
+      }
     }
 
     if (!questionCount || isNaN(questionCount) || Number(questionCount) < 1 || Number(questionCount) > 100) {
@@ -111,7 +112,6 @@ class DifficultyRuleEngine {
         op2 = Math.floor(Math.random() * (Math.min(rangeMax, config.maxOperand) - rangeMin + 1)) + rangeMin
         
         const sum = op1 + op2
-        if (sum > rangeMax) continue
 
         const hasCarry = hasCarryAddition(op1, op2)
         if (difficulty === 'easy' && hasCarry) continue
@@ -151,7 +151,6 @@ class DifficultyRuleEngine {
         }
 
         const prod = op1 * op2
-        if (prod > rangeMax || prod < rangeMin) continue
         return [op1, op2]
       }
 
@@ -169,7 +168,6 @@ class DifficultyRuleEngine {
         }
 
         const dividend = divisor * quotient
-        if (dividend > rangeMax || dividend < rangeMin) continue
         return [dividend, divisor]
       }
 
@@ -186,8 +184,7 @@ class DifficultyRuleEngine {
           base = (Math.floor(Math.random() * 20) + 1) * 100
         }
         
-        const ans = (percent * base) / 100
-        if (ans > rangeMax || ans < rangeMin || (percent * base) % 100 !== 0) continue
+        if ((percent * base) % 100 !== 0) continue
         return [percent, base]
       }
     }
@@ -341,7 +338,6 @@ class QuestionValidator {
 
     const values = q.options.map(o => o.value)
     if (new Set(values).size !== 4) return false
-    if (q.correctAnswer < rangeMin || q.correctAnswer > rangeMax) return false
     
     if (q.operation === 'division') {
       if (q.operands[0] % q.operands[1] !== 0) return false
@@ -569,6 +565,7 @@ class SpeedMathTestService extends BaseService {
 
     let correct = 0
     let incorrect = 0
+    let skipped = 0
     let totalTimeTaken = 0
 
     // Ensure all questions are scored
@@ -582,7 +579,7 @@ class SpeedMathTestService extends BaseService {
           incorrect++
         }
       } else {
-        incorrect++
+        skipped++
       }
     }
 
@@ -599,6 +596,7 @@ class SpeedMathTestService extends BaseService {
 
     attempt.correct = correct
     attempt.incorrect = incorrect
+    attempt.skipped = skipped
     attempt.score = accuracy
     attempt.accuracy = accuracy
     attempt.timeTaken = totalTimeTaken
@@ -616,9 +614,26 @@ class SpeedMathTestService extends BaseService {
     const attempt = await SpeedMathAttempt.findOne({ user: userId, test: testId, status: 'completed' }).lean()
     if (!attempt) throw new AppError('No completed attempt found. Please submit the test first.', 404)
 
+    let correctCount = 0;
+    let incorrectCount = 0;
+    let skippedCount = 0;
+
     // Build rich details mapping questions with answers, explanations, and correctness status
     const details = test.questions.map(q => {
       const studentAns = attempt.answers.find(ans => ans.questionId === q.questionId)
+      
+      let isCorrect = false;
+      let isSkipped = true;
+
+      if (studentAns) {
+        isSkipped = false;
+        isCorrect = studentAns.isCorrect;
+        if (isCorrect) correctCount++;
+        else incorrectCount++;
+      } else {
+        skippedCount++;
+      }
+
       return {
         questionId: q.questionId,
         questionNumber: q.questionNumber,
@@ -632,9 +647,14 @@ class SpeedMathTestService extends BaseService {
         studentAnswer: studentAns ? studentAns.studentAnswer : null,
         selectedOptionId: studentAns ? studentAns.selectedOptionId : null,
         timeTaken: studentAns ? studentAns.timeTaken : 0,
-        isCorrect: studentAns ? studentAns.isCorrect : false
+        isCorrect,
+        isSkipped
       }
     })
+
+    attempt.correct = correctCount;
+    attempt.incorrect = incorrectCount;
+    attempt.skipped = skippedCount;
 
     return {
       testId: test._id,
