@@ -24,6 +24,7 @@ const listFaculties = catchAsync(async (req, res) => {
     .populate('subexamId', 'name')
     .populate('subjectId', 'name')
     .populate('courseId', 'title')
+    .select('name facultyName designation totalExperience specialization skills')
     .lean()
 
   sendSuccess(res, faculties)
