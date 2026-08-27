@@ -104,20 +104,27 @@ class PreviousYearPaperService extends BaseService {
         // console.log(`Found ${result.data.length} previous year papers`)
 
         const previousYearPaperIds = result.data.map((item) => item._id)
-        const [testCounts, attemptCounts, subscribedPaperIds] = await Promise.all([
+        const [testStats, attemptStats, subscribedPaperIds] = await Promise.all([
             this.repository.getTestCountsByPreviousYearPaper(previousYearPaperIds),
-            this.repository.getAttemptCountsByPreviousYearPaper(userId, previousYearPaperIds),
+            this.repository.getAttemptStatsByPreviousYearPaper(userId, previousYearPaperIds),
             this.getSubscribedPaperIds(userId),
         ])
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
             const hasAccess = !item.isPaid || subscribedPaperIds.has(id)
+            const tStats = testStats[id] || { total: 0, free: 0 }
+            const aStats = attemptStats[id] || { totalAttempts: 0, attemptedTestsCount: 0, avgScore: 0, avgAccuracy: 0 }
+
             return {
                 ...item,
                 description: htmlToPlainText(item.description),
-                totalTests: testCounts[id] || 0,
-                totalAttempts: attemptCounts[id] || 0,
+                totalTests: tStats.total,
+                totalFreeTests: tStats.free,
+                totalAttempts: aStats.totalAttempts,
+                attemptedTestsCount: aStats.attemptedTestsCount,
+                avgScore: Number(aStats.avgScore.toFixed(2)),
+                avgAccuracy: Number(aStats.avgAccuracy.toFixed(2)),
                 hasAccess,
                 isLocked: !hasAccess,
             }
@@ -135,12 +142,21 @@ class PreviousYearPaperService extends BaseService {
 
         const subscribedPaperIds = await this.getSubscribedPaperIds(userId)
         const hasAccess = !previousYearPaper.isPaid || subscribedPaperIds.has(previousYearPaper._id.toString())
-        const testCounts = await this.repository.getTestCountsByPreviousYearPaper([previousYearPaper._id])
+        const testStats = await this.repository.getTestCountsByPreviousYearPaper([previousYearPaper._id])
+        const attemptStats = await this.repository.getAttemptStatsByPreviousYearPaper(userId, [previousYearPaper._id])
+
+        const tStats = testStats[previousYearPaper._id.toString()] || { total: 0, free: 0 }
+        const aStats = attemptStats[previousYearPaper._id.toString()] || { totalAttempts: 0, attemptedTestsCount: 0, avgScore: 0, avgAccuracy: 0 }
 
         return {
             ...previousYearPaper,
             description: htmlToPlainText(previousYearPaper.description),
-            totalTests: testCounts[previousYearPaper._id.toString()] || 0,
+            totalTests: tStats.total,
+            totalFreeTests: tStats.free,
+            totalAttempts: aStats.totalAttempts,
+            attemptedTestsCount: aStats.attemptedTestsCount,
+            avgScore: Number(aStats.avgScore.toFixed(2)),
+            avgAccuracy: Number(aStats.avgAccuracy.toFixed(2)),
             hasAccess,
             isLocked: !hasAccess,
         }

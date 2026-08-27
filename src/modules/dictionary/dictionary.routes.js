@@ -34,6 +34,7 @@ router.use('/ingest', adminAuthMiddleware);
 
 router.post('/ingest/upload', upload.single('file'), dictionaryController.uploadIngestDocument);
 router.get('/ingest/review-queue', dictionaryController.getReviewQueue);
+router.post('/ingest/bulk-approve', dictionaryController.bulkApproveIngestItems);
 router.post('/ingest/:id/approve', dictionaryController.approveIngestItem);
 router.post('/ingest/:id/reject', dictionaryController.rejectIngestItem);
 

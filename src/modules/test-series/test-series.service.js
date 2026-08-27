@@ -150,19 +150,26 @@ class TestSeriesService extends BaseService {
             }
         }
 
-        const [testCounts, attemptCounts] = await Promise.all([
+        const [testStats, attemptStats] = await Promise.all([
             this.repository.getTestCountsBySeries(seriesIds),
-            this.repository.getAttemptCountsBySeries(userId, seriesIds),
+            this.repository.getAttemptStatsBySeries(userId, seriesIds),
         ])
 
         result.data = result.data.map((item) => {
             const id = item._id.toString()
             const hasAccess = !item.isPaid || accessedSeriesIds.has(id)
+            const tStats = testStats[id] || { total: 0, free: 0 }
+            const aStats = attemptStats[id] || { totalAttempts: 0, attemptedTestsCount: 0, avgScore: 0, avgAccuracy: 0 }
+
             return {
                 ...item,
                 description: htmlToPlainText(item.description),
-                totalTests: testCounts[id] || 0,
-                totalAttempts: attemptCounts[id] || 0,
+                totalTests: tStats.total,
+                totalFreeTests: tStats.free,
+                totalAttempts: aStats.totalAttempts,
+                attemptedTestsCount: aStats.attemptedTestsCount,
+                avgScore: Number(aStats.avgScore.toFixed(2)),
+                avgAccuracy: Number(aStats.avgAccuracy.toFixed(2)),
                 hasAccess,
                 isLocked: !hasAccess,
             }
@@ -178,12 +185,21 @@ class TestSeriesService extends BaseService {
         }
 
         const hasAccess = await this.checkUserAccess(series, null, userId)
-        const testCounts = await this.repository.getTestCountsBySeries([series._id])
+        const testStats = await this.repository.getTestCountsBySeries([series._id])
+        const attemptStats = await this.repository.getAttemptStatsBySeries(userId, [series._id])
+        
+        const tStats = testStats[series._id.toString()] || { total: 0, free: 0 }
+        const aStats = attemptStats[series._id.toString()] || { totalAttempts: 0, attemptedTestsCount: 0, avgScore: 0, avgAccuracy: 0 }
 
         return {
             ...series,
             description: htmlToPlainText(series.description),
-            totalTests: testCounts[series._id.toString()] || 0,
+            totalTests: tStats.total,
+            totalFreeTests: tStats.free,
+            totalAttempts: aStats.totalAttempts,
+            attemptedTestsCount: aStats.attemptedTestsCount,
+            avgScore: Number(aStats.avgScore.toFixed(2)),
+            avgAccuracy: Number(aStats.avgAccuracy.toFixed(2)),
             hasAccess,
             isLocked: !hasAccess,
         }

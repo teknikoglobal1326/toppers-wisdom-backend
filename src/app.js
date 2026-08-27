@@ -58,6 +58,7 @@ app.use('/api/v1/previous-year-papers', authMiddleware, require('./modules/previ
 app.use('/api/v1/daily-quizzes', authMiddleware, require('./modules/daily-quiz/daily-quiz.routes'))
 app.use('/api/v1/progress', authMiddleware, require('./modules/progress/progress.routes'))
 app.use('/api/v1/student/analytics', authMiddleware, require('./modules/student-analytics/student-analytics.routes'))
+app.use('/api/v1/faculty', authMiddleware, require('./modules/faculty/faculty.routes'))
 app.use('/api/v1/payments', require('./modules/payment/payment.routes'))
 app.use('/api/v1/subscriptions', require('./modules/subscription/subscription.routes'))
 app.use('/api/v1/platform-settings', require('./modules/platform-setting/platform-setting.routes'))

@@ -156,26 +156,48 @@ class TestSeriesRepository extends BaseRepository {
 
         const rows = await TestSeriesTest.aggregate([
             { $match: { isDeleted: false, status: 'active', testSeries: { $in: seriesIds } } },
-            { $group: { _id: '$testSeries', count: { $sum: 1 } } },
+            { 
+                $group: { 
+                    _id: '$testSeries', 
+                    totalCount: { $sum: 1 },
+                    freeCount: { $sum: { $cond: [{ $eq: ['$isPaid', false] }, 1, 0] } }
+                } 
+            },
         ])
 
         return rows.reduce((acc, row) => {
-            acc[row._id.toString()] = row.count
+            acc[row._id.toString()] = {
+                total: row.totalCount,
+                free: row.freeCount
+            }
             return acc
         }, {})
     }
 
-    async getAttemptCountsBySeries(userId, seriesIds = []) {
+    async getAttemptStatsBySeries(userId, seriesIds = []) {
         if (!seriesIds.length) return {}
         const userObjectId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
 
         const rows = await TestSeriesAttempt.aggregate([
-            { $match: { user: userObjectId, testSeries: { $in: seriesIds } } },
-            { $group: { _id: '$testSeries', count: { $sum: 1 } } },
+            { $match: { user: userObjectId, testSeries: { $in: seriesIds }, status: 'completed' } },
+            { 
+                $group: { 
+                    _id: '$testSeries', 
+                    totalAttempts: { $sum: 1 },
+                    uniqueTestsAttempted: { $addToSet: '$test' },
+                    avgScore: { $avg: '$score' },
+                    avgAccuracy: { $avg: '$accuracy' }
+                } 
+            },
         ])
 
         return rows.reduce((acc, row) => {
-            acc[row._id.toString()] = row.count
+            acc[row._id.toString()] = {
+                totalAttempts: row.totalAttempts,
+                attemptedTestsCount: row.uniqueTestsAttempted.length,
+                avgScore: row.avgScore || 0,
+                avgAccuracy: row.avgAccuracy || 0
+            }
             return acc
         }, {})
     }

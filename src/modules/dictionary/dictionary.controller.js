@@ -123,6 +123,21 @@ const approveIngestItem = async (req, res, next) => {
   }
 };
 
+const bulkApproveIngestItems = async (req, res, next) => {
+  try {
+    const { approvals } = req.body;
+    if (!Array.isArray(approvals)) {
+      return res.status(400).json({ success: false, message: 'approvals must be an array' });
+    }
+    const reviewerId = req.admin?._id || req.member?._id || req.user?.id;
+
+    const result = await dictionaryService.bulkApproveIngestItems(approvals, reviewerId);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const rejectIngestItem = async (req, res, next) => {
   try {
     const rejectedItem = await dictionaryService.rejectIngestItem(req.params.id);
@@ -161,6 +176,7 @@ module.exports = {
   getDueItems,
   getReviewQueue,
   approveIngestItem,
+  bulkApproveIngestItems,
   rejectIngestItem,
   uploadIngestDocument
 };

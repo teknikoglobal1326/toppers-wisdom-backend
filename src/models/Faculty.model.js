@@ -3,6 +3,9 @@ const mongoose = require('mongoose')
 const facultySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   designation: { type: String, trim: true, default: '' },
+  totalExperience: { type: String, trim: true, default: '' },
+  specialization: { type: String, trim: true, default: '' },
+  skills: { type: [String], default: [] },
   subject: { type: String, trim: true, default: '' },
   subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null, index: true },
   bio: { type: String, trim: true, default: '' },

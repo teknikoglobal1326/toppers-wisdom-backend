@@ -243,7 +243,7 @@ const approveIngestItem = async (ingestId, updatedPayload) => {
   if (!ingestItem) throw new Error('Ingest item not found');
   if (ingestItem.status !== 'pending') throw new Error('Item is not pending');
 
-  const payloadToSave = updatedPayload || ingestItem.payload;
+  const payloadToSave = { ...ingestItem.payload, ...(updatedPayload || {}) };
   let savedEntity = null;
 
   if (ingestItem.type === 'word') {
@@ -278,12 +278,87 @@ const rejectIngestItem = async (ingestId) => {
   return ingestItem;
 };
 
+const bulkApproveIngestItems = async (approvals) => {
+  const results = { successful: [], failed: [] };
+  
+  for (const item of approvals) {
+    try {
+      const id = typeof item === 'string' ? item : item.id;
+      const payload = typeof item === 'object' && item.payload ? item.payload : null;
+      
+      await approveIngestItem(id, payload);
+      results.successful.push({ id, status: 'success' });
+    } catch (error) {
+      results.failed.push({ 
+        id: typeof item === 'string' ? item : item.id, 
+        error: error.message 
+      });
+    }
+  }
+  
+  return results;
+};
+
+
 // ----------------------------------------------------------------------
 // AI Extraction Service Integration
 // ----------------------------------------------------------------------
+const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const redis = require('../../config/redis');
+
+// Set a daily limit for OpenAI calls to control costs before falling back to Gemini
+const OPENAI_DAILY_LIMIT = 500;
+
+const invokeLLMWithFailover = async (textContext, prompt) => {
+  const fullPrompt = `${prompt}\n\nDOCUMENT TEXT:\n${textContext}`;
+  const dateStr = new Date().toISOString().split('T')[0];
+  const countKey = `ai:openai:count:${dateStr}`;
+  const failKey = `ai:openai:fails:${dateStr}`;
+
+  // 1. Check if we've exceeded the daily limit for OpenAI
+  const currentCount = parseInt(await redis.get(countKey) || '0', 10);
+  
+  if (currentCount < OPENAI_DAILY_LIMIT) {
+    try {
+      console.log(`Attempting AI extraction via OpenAI... (Daily Usage: ${currentCount + 1}/${OPENAI_DAILY_LIMIT})`);
+      
+      // Increment the attempt count
+      await redis.incr(countKey);
+      // Optional: Set expiry to 24h if it's a new key
+      if (currentCount === 0) await redis.expire(countKey, 86400);
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: fullPrompt }],
+        response_format: { type: 'json_object' },
+      });
+      return response.choices[0].message.content;
+    } catch (error) {
+      console.error('OpenAI extraction failed, logging fail count and falling over to Gemini...', error.message);
+      
+      // Increment fail count
+      const fails = await redis.incr(failKey);
+      if (fails === 1) await redis.expire(failKey, 86400);
+    }
+  } else {
+    console.log(`OpenAI daily limit (${OPENAI_DAILY_LIMIT}) reached. Skipping directly to Gemini...`);
+  }
+  
+  // Secondary: Google Gemini (gemini-1.5-flash)
+  console.log('Attempting AI extraction via Gemini...');
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const result = await model.generateContent({
+    contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+    generationConfig: { responseMimeType: 'application/json' },
+  });
+  return result.response.text();
+};
 
 const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
-  // 1. Exact Prompt Sent to AI
+  
   const aiPrompt = `
     You are an expert OCR and NLP assistant. Extract all vocabulary words and multiple-choice questions from the provided document.
     Categorize each item strictly into one of these 8 categories: 'one-word-sub', 'idioms-phrases', 'synonyms', 'antonyms', 'spellings', 'phrasal-verbs', 'homonyms', 'proverbs'.
@@ -297,6 +372,7 @@ const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
     - hook: a mnemonic in Devanagari ending strictly with a danda (।)
     - note: a concept line ending strictly with a danda (।)
     - theme: a suggested 1-2 word theme
+    - cat: the assigned category
     - exams: array of exams mentioned
     
     For QUESTIONS, draft the following fields:
@@ -304,6 +380,7 @@ const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
     - opts: array of exactly 4 string options
     - ans: the correct option (exact string match to one of opts)
     - expl: explanation for the answer
+    - cat: the assigned category
     - exams: array of exams mentioned
 
     Return ONLY a valid JSON object matching this schema:
@@ -313,68 +390,57 @@ const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
     }
   `;
 
-  // 2. Simulated AI Call
-  // const aiResponseString = await invokeLLM(fileBuffer, aiPrompt);
+  const textContext = fileBuffer.toString('utf-8');
   
-  // 3. Fallback / Malformed JSON Handling
-  let extractedData;
-  try {
-    // extractedData = JSON.parse(aiResponseString);
-    extractedData = { 
-      words: [
-        {
-          word: "Abandonment",
-          en: "The act of giving something up completely",
-          hi: "परित्याग",
-          usage: ["The abandonment of the project caused outrage."],
-          daily: ["Her abandonment of her responsibilities was shocking."],
-          hook: "A mnemonic in Devanagari ending in danda ।",
-          note: "Concept line ending in danda ।",
-          theme: "Surrender",
-          cat: "one-word-sub",
-          exams: ["SSC CHSL 2020 Tier-I"]
-        }
-      ], 
-      questions: [
-        {
-          q: "Select the word which means the same as the group of words given. A person who abandons his religion",
-          opts: ["Apostate", "Prostate", "Profane", "Agnostic"],
-          ans: "Apostate",
-          expl: "An apostate is someone who forsakes his religion or principles.",
-          exams: ["SSC CGL 2019"],
-          cat: "one-word-sub"
-        },
-        {
-          q: "Select the most appropriate synonym of the given word: ABUNDANT",
-          opts: ["Plentiful", "Scarce", "Sufficient", "Meagre"],
-          ans: "Plentiful",
-          expl: "Abundant means existing or available in large quantities; plentiful.",
-          exams: ["SSC CHSL 2021"],
-          cat: "synonyms"
-        },
-        {
-          q: "Select the most appropriate idiom for the given situation: To cross swords",
-          opts: ["To fight or argue", "To defend someone", "To kill someone", "To cross a road safely"],
-          ans: "To fight or argue",
-          expl: "'To cross swords' means to have an argument or a dispute with someone.",
-          exams: ["SSC CGL 2020"],
-          cat: "idioms-phrases"
-        }
-      ] 
-    }; // Mock parsed data
-  } catch (error) {
-    // If malformed, we flag it in a system error log or retry.
-    // We do NOT stage broken JSON into the DictionaryIngest collection.
-    console.error(`AI Extraction failed parsing for ${fileName}:`, error);
-    return; // Exit job
+  const paragraphs = textContext.split(/\n\s*\n/);
+  const chunks = [];
+  let currentChunk = "";
+  for (const p of paragraphs) {
+    if (currentChunk.length + p.length > 2500 && currentChunk.length > 0) {
+      chunks.push(currentChunk);
+      currentChunk = p;
+    } else {
+      currentChunk += (currentChunk ? "\n\n" : "") + p;
+    }
+  }
+  if (currentChunk) chunks.push(currentChunk);
+
+  let allWords = [];
+  let allQuestions = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    console.log(`Processing chunk ${i + 1}/${chunks.length}...`);
+    try {
+      const aiResponseString = await invokeLLMWithFailover(chunks[i], aiPrompt);
+      const extractedData = JSON.parse(aiResponseString);
+      if (extractedData.words) allWords = allWords.concat(extractedData.words);
+      if (extractedData.questions) allQuestions = allQuestions.concat(extractedData.questions);
+    } catch (error) {
+      console.error(`AI Extraction failed for chunk ${i + 1} of ${fileName}:`, error);
+    }
   }
 
-  // 4. Staging to Review Queue
+  const wordTexts = allWords.map(w => w.word).filter(Boolean);
+  const existingWords = await DictionaryWord.find({ word: { $in: wordTexts } }).select('word').lean();
+  const existingIngestWords = await DictionaryIngest.find({ type: 'word', 'payload.word': { $in: wordTexts } }).select('payload.word').lean();
+  const duplicateWordSet = new Set([
+    ...existingWords.map(w => w.word.toLowerCase()),
+    ...existingIngestWords.map(w => w.payload.word.toLowerCase())
+  ]);
+
+  const questionTexts = allQuestions.map(q => q.q).filter(Boolean);
+  const existingQuestions = await DictionaryQuestion.find({ q: { $in: questionTexts } }).select('q').lean();
+  const existingIngestQuestions = await DictionaryIngest.find({ type: 'question', 'payload.q': { $in: questionTexts } }).select('payload.q').lean();
+  const duplicateQuestionSet = new Set([
+    ...existingQuestions.map(q => q.q.toLowerCase()),
+    ...existingIngestQuestions.map(q => q.payload.q.toLowerCase())
+  ]);
+
   const stagingPromises = [];
 
-  for (const w of extractedData.words || []) {
-    // Pre-validation to avoid staging unfixable garbage
-    if (!w.word || !w.en) continue;
+  for (const w of allWords) {
+    if (!w.word || !w.en || !w.cat) continue;
+    if (duplicateWordSet.has(w.word.toLowerCase())) continue;
 
     stagingPromises.push(new DictionaryIngest({
       type: 'word',
@@ -383,10 +449,12 @@ const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
       aiDraftedFields: ['en', 'hi', 'usage', 'daily', 'hook', 'note', 'theme'],
       submittedBy: uploaderId
     }).save());
+    duplicateWordSet.add(w.word.toLowerCase());
   }
 
-  for (const q of extractedData.questions || []) {
-    if (!q.q || !q.opts || !q.ans) continue;
+  for (const q of allQuestions) {
+    if (!q.q || !q.opts || !q.ans || !q.cat) continue;
+    if (duplicateQuestionSet.has(q.q.toLowerCase())) continue;
 
     stagingPromises.push(new DictionaryIngest({
       type: 'question',
@@ -395,15 +463,14 @@ const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
       aiDraftedFields: ['expl'],
       submittedBy: uploaderId
     }).save());
+    duplicateQuestionSet.add(q.q.toLowerCase());
   }
 
   const results = await Promise.allSettled(stagingPromises);
   results.forEach((r, idx) => {
-    if (r.status === 'rejected') {
-      console.error(`Failed to stage item ${idx}:`, r.reason);
-    }
+    if (r.status === 'rejected') console.error(`Failed to stage item ${idx}:`, r.reason);
   });
-  console.log(`Successfully staged ${results.filter(r => r.status === 'fulfilled').length} items`);
+  console.log(`Successfully staged ${results.filter(r => r.status === 'fulfilled').length} non-duplicate items from ${fileName}`);
 };
 
 const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
@@ -430,6 +497,7 @@ module.exports = {
   getDueItems,
   getReviewQueue,
   approveIngestItem,
+  bulkApproveIngestItems,
   rejectIngestItem,
   uploadIngestDocument
 };

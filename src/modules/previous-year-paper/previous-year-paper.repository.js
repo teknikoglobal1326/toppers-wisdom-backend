@@ -48,25 +48,47 @@ class PreviousYearPaperRepository extends BaseRepository {
 
         const rows = await PreviousYearPaperTest.aggregate([
             { $match: { isDeleted: false, status: 'active', previousYearPaper: { $in: previousYearPaperIds } } },
-            { $group: { _id: '$previousYearPaper', count: { $sum: 1 } } },
+            { 
+                $group: { 
+                    _id: '$previousYearPaper', 
+                    totalCount: { $sum: 1 },
+                    freeCount: { $sum: { $cond: [{ $eq: ['$isPaid', false] }, 1, 0] } }
+                } 
+            },
         ])
 
         return rows.reduce((acc, row) => {
-            acc[row._id.toString()] = row.count
+            acc[row._id.toString()] = {
+                total: row.totalCount,
+                free: row.freeCount
+            }
             return acc
         }, {})
     }
 
-    async getAttemptCountsByPreviousYearPaper(userId, previousYearPaperIds = []) {
+    async getAttemptStatsByPreviousYearPaper(userId, previousYearPaperIds = []) {
         if (!previousYearPaperIds.length) return {}
 
         const rows = await PreviousYearPaperAttempt.aggregate([
-            { $match: { user: userId, previousYearPaper: { $in: previousYearPaperIds } } },
-            { $group: { _id: '$previousYearPaper', count: { $sum: 1 } } },
+            { $match: { user: userId, previousYearPaper: { $in: previousYearPaperIds }, status: 'completed' } },
+            { 
+                $group: { 
+                    _id: '$previousYearPaper', 
+                    totalAttempts: { $sum: 1 },
+                    uniqueTestsAttempted: { $addToSet: '$test' },
+                    avgScore: { $avg: '$score' },
+                    avgAccuracy: { $avg: '$accuracy' }
+                } 
+            },
         ])
 
         return rows.reduce((acc, row) => {
-            acc[row._id.toString()] = row.count
+            acc[row._id.toString()] = {
+                totalAttempts: row.totalAttempts,
+                attemptedTestsCount: row.uniqueTestsAttempted.length,
+                avgScore: row.avgScore || 0,
+                avgAccuracy: row.avgAccuracy || 0
+            }
             return acc
         }, {})
     }

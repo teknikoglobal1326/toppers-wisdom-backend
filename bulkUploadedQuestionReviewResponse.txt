@@ -1,0 +1,3181 @@
+{
+    "success": true,
+    "data": [
+        {
+            "_id": "6a8fe8b2d2e604e16ac977a8",
+            "type": "word",
+            "payload": {
+                "word": "Bibliophile",
+                "en": "A person who loves or collects books",
+                "hi": "पुस्तक प्रेमी, किताबों का शौकीन व्यक्ति",
+                "usage": [
+                    "The retired professor was a true bibliophile, with nearly ten thousand books in his personal library.",
+                    "As a bibliophile, she spent every weekend browsing secondhand bookstores for rare editions."
+                ],
+                "daily": [
+                    "My roommate is such a bibliophile that his entire room is stacked with books.",
+                    "I'm not a huge bibliophile, but I do love a good mystery novel."
+                ],
+                "hook": "Biblio sounds like Bible (a book), और phile यानी प्यार करने वाला। तो Bibliophile यानी किताबों से प्यार करने वाला।",
+                "note": "Words ending in \"-phile\" always denote a lover or enthusiast of something, as in \"audiophile\" or \"cinephile\"।",
+                "theme": "Reading",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2019",
+                    "SSC CHSL"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.920Z",
+            "updatedAt": "2026-08-27T07:35:14.920Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977a9",
+            "type": "word",
+            "payload": {
+                "word": "Ephemeral",
+                "en": "Lasting for a very short time",
+                "hi": "क्षणभंगुर, अल्पकालिक",
+                "usage": [
+                    "The beauty of cherry blossoms is ephemeral, lasting only a week or two each spring.",
+                    "Fame in the entertainment industry can often be ephemeral and short-lived."
+                ],
+                "daily": [
+                    "That trend on social media was so ephemeral, everyone forgot about it in a day.",
+                    "Our happiness that evening felt ephemeral, gone by the next morning."
+                ],
+                "hook": "Ephemeral में 'epheme' सुनने में 'a day' जैसा लगता है (ग्रीक mayfly एक दिन जीता है), यानी एक दिन जितना छोटा समय।",
+                "note": "Ephemeral is a synonym for transient, fleeting, and momentary, and is the antonym of permanent or everlasting।",
+                "theme": "Time",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2020",
+                    "Bank PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ae",
+            "type": "word",
+            "payload": {
+                "word": "A stitch in time saves nine",
+                "en": "Fixing a small problem now prevents it from becoming a bigger problem later",
+                "hi": "समय रहते सुधार करना, बाद में बड़ी परेशानी से बचाता है",
+                "usage": [
+                    "The engineer insisted on regular maintenance, reminding the team that a stitch in time saves nine.",
+                    "Doctors often say a stitch in time saves nine when recommending early treatment for minor ailments."
+                ],
+                "daily": [
+                    "Fix that leaky tap now, a stitch in time saves nine.",
+                    "I should have serviced my car earlier, a stitch in time really does save nine."
+                ],
+                "hook": "कपड़े में एक छोटा सा सिलाई (stitch) अभी कर लो, वरना बाद में नौ (nine) टांके लगाने पड़ेंगे, यानी समय पर काम करो।",
+                "note": "This proverb is typically used in advisory or cautionary contexts, urging timely action to avoid larger consequences later।",
+                "theme": "Wisdom",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2016",
+                    "NDA"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b1",
+            "type": "word",
+            "payload": {
+                "word": "Candid",
+                "en": "Truthful and straightforward; frank",
+                "hi": "स्पष्टवादी, सच्चा",
+                "usage": [
+                    "The journalist appreciated the minister's candid response to a difficult question.",
+                    "In a candid interview, the actor spoke openly about his struggles with fame."
+                ],
+                "daily": [
+                    "Be candid with me, do you actually like this haircut?",
+                    "She gave a candid opinion about the food, saying it was too salty."
+                ],
+                "hook": "\"Candid\" सुनने में \"Can did\" जैसा लगता है, यानी जो व्यक्ति सीधे बता सके कि उसने क्या किया (can did), वो स्पष्टवादी है।",
+                "note": "Candid is a synonym for frank, honest, and forthright, often used specifically to describe unrehearsed or spontaneous honesty।",
+                "theme": "Honesty",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2021",
+                    "RBI Grade B"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ab",
+            "type": "word",
+            "payload": {
+                "word": "Accommodate",
+                "en": "To provide lodging or space for someone; to adapt to fit needs",
+                "hi": "समायोजित करना, ठहराने की व्यवस्था करना",
+                "usage": [
+                    "The hotel was able to accommodate all fifty delegates for the conference.",
+                    "The teacher tried to accommodate the needs of every student in her diverse classroom."
+                ],
+                "daily": [
+                    "Can you accommodate one more guest at the dinner table tonight?",
+                    "My schedule is flexible, so I can easily accommodate a change in plans."
+                ],
+                "hook": "याद रखें 'Accommodate' में double C और double M होता है, 'Ac-com-mo-date', यानी दो कमरे (double C, double M) एडजस्ट करने के लिए।",
+                "note": "Accommodate is one of the most commonly misspelled English words; remember it has two Cs and two Ms, unlike many similar words with single letters।",
+                "theme": "Hospitality",
+                "cat": "spellings",
+                "exams": [
+                    "SSC CGL 2018",
+                    "Railways NTPC"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977af",
+            "type": "word",
+            "payload": {
+                "word": "Philanthropist",
+                "en": "A person who seeks to promote the welfare of others through generous donations",
+                "hi": "परोपकारी, दानवीर व्यक्ति",
+                "usage": [
+                    "The billionaire philanthropist donated millions to build schools in rural areas.",
+                    "As a philanthropist, she funded numerous scholarships for underprivileged students."
+                ],
+                "daily": [
+                    "That local philanthropist just opened a free clinic in our neighborhood.",
+                    "He wants to become a philanthropist once he makes his fortune."
+                ],
+                "hook": "Phil यानी प्यार और \"anthropos\" यानी मनुष्य (ग्रीक में), तो Philanthropist यानी मनुष्यों से प्यार करने वाला दानी इंसान।",
+                "note": "Do not confuse Philanthropist (lover of mankind, generous giver) with Misanthrope (hater of mankind), as they are near-opposites।",
+                "theme": "Charity",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2022",
+                    "IBPS Clerk"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b0",
+            "type": "word",
+            "payload": {
+                "word": "Once in a blue moon",
+                "en": "Something that happens very rarely",
+                "hi": "कभी-कभार, बहुत कम होने वाला",
+                "usage": [
+                    "He visits his hometown once in a blue moon due to his hectic work schedule.",
+                    "Once in a blue moon, the entire family manages to gather together for dinner."
+                ],
+                "daily": [
+                    "I eat junk food once in a blue moon, so don't worry.",
+                    "We only get snow here once in a blue moon."
+                ],
+                "hook": "चाँद कभी नीला (blue) नहीं दिखता, यह एक दुर्लभ खगोलीय घटना है, इसलिए यह मुहावरा किसी दुर्लभ घटना के लिए प्रयोग होता है।",
+                "note": "This idiom functions as an adverbial phrase of frequency and is typically placed at the beginning or end of a sentence।",
+                "theme": "Frequency",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CHSL 2019",
+                    "Bank PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ad",
+            "type": "word",
+            "payload": {
+                "word": "Bear / Bare",
+                "en": "Bear - to carry or endure; a large mammal. Bare - uncovered or empty",
+                "hi": "Bear - सहन करना या भालू; Bare - नंगा या खाली",
+                "usage": [
+                    "It was hard to bear the news of the factory closure.",
+                    "The room was completely bare except for a single wooden chair."
+                ],
+                "daily": [
+                    "I can't bear this heat anymore, it's unbearable!",
+                    "He walked across the bare floor in his bare feet."
+                ],
+                "hook": "Bear में ea है जैसे भालू (animal) में ताकत होती है सहन (bear) करने की; Bare में are है जैसे कुछ खाली पड़ा are (है) वहाँ।",
+                "note": "Homonyms sound identical but differ in spelling and meaning; always check context to determine whether 'bear' refers to enduring or the animal।",
+                "theme": "Wordplay",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2017",
+                    "CDS"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ac",
+            "type": "word",
+            "payload": {
+                "word": "Look up to",
+                "en": "To admire or respect someone",
+                "hi": "किसी का सम्मान या आदर करना",
+                "usage": [
+                    "Young athletes often look up to seasoned champions as role models.",
+                    "She has always looked up to her elder sister for guidance and support."
+                ],
+                "daily": [
+                    "I really look up to my coach; he taught me everything I know.",
+                    "Kids look up to their parents more than they realize."
+                ],
+                "hook": "Look up यानी ऊपर देखना, और जिसे हम ऊपर उठाकर देखते हैं उसे respect करते हैं, इसलिए look up to का मतलब है आदर करना।",
+                "note": "This phrasal verb is inseparable, meaning the object always follows 'to' and cannot be placed between 'look' and 'up'।",
+                "theme": "Respect",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CHSL 2020",
+                    "Bank Clerk"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977aa",
+            "type": "word",
+            "payload": {
+                "word": "Frugal",
+                "en": "Careful with money; avoiding waste",
+                "hi": "मितव्ययी, किफ़ायती",
+                "usage": [
+                    "Despite his large fortune, the businessman led a remarkably frugal lifestyle.",
+                    "Being frugal during her college years helped her save enough to start a business later."
+                ],
+                "daily": [
+                    "My grandmother is so frugal that she reuses tea bags twice.",
+                    "We're trying to be more frugal this month after all that holiday spending."
+                ],
+                "hook": "Frugal सुनने में 'फ्रूट गल' जैसा लगता है, यानी सिर्फ फल खाकर गुज़ारा करने वाला किफ़ायती इंसान।",
+                "note": "Frugal is the antonym of extravagant or lavish, and should not be confused with 'stingy,' which carries a negative connotation of miserliness।",
+                "theme": "Money",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CHSL 2022",
+                    "NDA"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.921Z",
+            "updatedAt": "2026-08-27T07:35:14.921Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b4",
+            "type": "word",
+            "payload": {
+                "word": "Carry out",
+                "en": "To perform or execute a task",
+                "hi": "कार्यान्वित करना, अंजाम देना",
+                "usage": [
+                    "The soldiers were ordered to carry out the mission at dawn.",
+                    "The research team plans to carry out extensive field trials next month."
+                ],
+                "daily": [
+                    "Can you carry out this small task for me before lunch?",
+                    "They carried out the plan exactly as discussed."
+                ],
+                "hook": "Carry out यानी किसी काम को अपने साथ carry (ले जाना) करके बाहर out तक पूरा करना, यानी अंजाम तक पहुंचाना।",
+                "note": "\"Carry out\" is a separable phrasal verb, meaning the object can appear either after the verb phrase or between \"carry\" and \"out\"।",
+                "theme": "Action",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CGL 2020",
+                    "IBPS SO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.922Z",
+            "updatedAt": "2026-08-27T07:35:14.922Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b5",
+            "type": "word",
+            "payload": {
+                "word": "Peace",
+                "en": "a state of tranquility or absence of conflict",
+                "hi": "शांति",
+                "usage": [
+                    "After decades of war, the two nations finally signed a peace treaty.",
+                    "I just want some peace and quiet after a long day."
+                ],
+                "daily": [
+                    "I just want some peace and quiet after a long day.",
+                    "Can I have a piece of that pizza?"
+                ],
+                "hook": "Peace में ea है जैसे earth यानी पूरी दुनिया में शांति।",
+                "note": "Remember the rule 'a piece of pie' to recall that piece relates to a portion।",
+                "theme": "Wordplay",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2019",
+                    "CHSL"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.922Z",
+            "updatedAt": "2026-08-27T07:35:14.922Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b2",
+            "type": "word",
+            "payload": {
+                "word": "Optimist",
+                "en": "A person who has a positive outlook and expects good outcomes",
+                "hi": "आशावादी व्यक्ति",
+                "usage": [
+                    "Despite the setbacks, she remained an optimist, believing things would improve.",
+                    "An optimist sees opportunity in every difficulty, while others see only obstacles."
+                ],
+                "daily": [
+                    "My friend is such an optimist, he always says things will work out.",
+                    "Being an optimist doesn't mean ignoring problems, it means expecting solutions."
+                ],
+                "hook": "Optimist में Optim यानी optimum या best, यानी हमेशा सबसे अच्छा सोचने वाला व्यक्ति।",
+                "note": "Optimist is the direct antonym of Pessimist; remember the mnemonic \"Optimist sees the glass half full, Pessimist sees it half empty\"।",
+                "theme": "Attitude",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CGL 2018",
+                    "CDS"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.922Z",
+            "updatedAt": "2026-08-27T07:35:14.922Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b3",
+            "type": "word",
+            "payload": {
+                "word": "Occurrence",
+                "en": "An incident or event that happens",
+                "hi": "घटना, वाकया",
+                "usage": [
+                    "The sudden power outage was a rare occurrence in the well-maintained facility.",
+                    "Traffic jams are a daily occurrence on this busy stretch of highway."
+                ],
+                "daily": [
+                    "That kind of mistake is a common occurrence when you're just starting out.",
+                    "A minor earthquake is not an unusual occurrence in that region."
+                ],
+                "hook": "Occurrence में double C और double R है, याद रखें \"Occurring Repeatedly Requires\" दो-दो अक्षर।",
+                "note": "Occurrence is frequently misspelled by omitting one of the double consonants; always double-check both the \"cc\" and \"rr\" when writing it।",
+                "theme": "Events",
+                "cat": "spellings",
+                "exams": [
+                    "SSC CHSL 2018",
+                    "Railways"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.922Z",
+            "updatedAt": "2026-08-27T07:35:14.922Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b6",
+            "type": "word",
+            "payload": {
+                "word": "Piece",
+                "en": "a part or portion of something",
+                "hi": "टुकड़ा",
+                "usage": [
+                    "She gave him a piece of cake after dinner.",
+                    "Can I have a piece of that pizza?"
+                ],
+                "daily": [
+                    "I just want some peace and quiet after a long day.",
+                    "Can I have a piece of that pizza?"
+                ],
+                "hook": "Piece में ie है जैसे item, यानी किसी चीज़ का एक हिस्सा।",
+                "note": "Remember the rule 'a piece of pie' to recall that piece relates to a portion।",
+                "theme": "Wordplay",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2019",
+                    "CHSL"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.922Z",
+            "updatedAt": "2026-08-27T07:35:14.922Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c8",
+            "type": "word",
+            "payload": {
+                "word": "Where there is a will, there is a way",
+                "en": "If someone is determined enough, they will find a way to achieve their goal",
+                "hi": "जहाँ चाह वहाँ राह",
+                "usage": [
+                    "Despite losing both legs, the athlete proved that where there is a will, there is a way.",
+                    "She had no formal education, but where there is a will, there is a way, and she built a successful business."
+                ],
+                "daily": [
+                    "I know it's tough, but where there is a will, there is a way.",
+                    "He learned to code in six months, proving where there is a will, there is a way."
+                ],
+                "hook": "अगर मन में इच्छा (will) मज़बूत है, तो रास्ता (way) खुद ब खुद मिल जाता है, चाहे कितनी भी बाधाएं हों।",
+                "note": "This proverb is often used to inspire perseverance and determination in the face of obstacles or challenges।",
+                "theme": "Determination",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2016",
+                    "NDA"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977bb",
+            "type": "word",
+            "payload": {
+                "word": "Benevolent",
+                "en": "Kind, generous, and caring towards others",
+                "hi": "दयालु, परोपकारी",
+                "usage": [
+                    "The benevolent king built hospitals and schools for the poorest citizens.",
+                    "Her benevolent nature made her beloved by everyone in the community."
+                ],
+                "daily": [
+                    "My neighbor is so benevolent, she always shares her homemade food with us.",
+                    "The benevolent stranger paid for our meal without saying a word."
+                ],
+                "hook": "Bene यानी अच्छा (जैसे 'benefit') और volent यानी चाहना, तो Benevolent यानी दूसरों का अच्छा चाहने वाला।",
+                "note": "Benevolent is the antonym of Malevolent, which means having a desire to cause harm to others; both share the Latin root 'velle' meaning 'to wish'।",
+                "theme": "Kindness",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CGL 2022",
+                    "CDS"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b8",
+            "type": "word",
+            "payload": {
+                "word": "Misanthrope",
+                "en": "A person who dislikes or distrusts humankind",
+                "hi": "मानव द्वेषी, लोगों से नफरत करने वाला व्यक्ति",
+                "usage": [
+                    "The old misanthrope refused to attend any social gatherings in the village.",
+                    "Critics called the author a misanthrope after his novel painted humanity in a dark light."
+                ],
+                "daily": [
+                    "Don't call me a misanthrope, I just prefer staying home on weekends.",
+                    "He's turned into a bit of a misanthrope since the incident."
+                ],
+                "hook": "Mis यानी गलत/नफरत और anthropos यानी मनुष्य, तो Misanthrope यानी मनुष्यों से नफरत करने वाला।",
+                "note": "Misanthrope is the direct opposite of Philanthropist; both share the Greek root 'anthropos' meaning 'human'।",
+                "theme": "Character",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2020",
+                    "NDA"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977bf",
+            "type": "word",
+            "payload": {
+                "word": "Barking dogs seldom bite",
+                "en": "People who make loud threats rarely act on them",
+                "hi": "जो भौंकते हैं वो कम ही काटते हैं, यानी धमकाने वाले शायद ही नुकसान पहुंचाते हैं",
+                "usage": [
+                    "Don't worry about his angry threats, barking dogs seldom bite.",
+                    "The politician made bold promises during the debate, but barking dogs seldom bite."
+                ],
+                "daily": [
+                    "He's always shouting about quitting his job, but barking dogs seldom bite.",
+                    "My boss threatens to fire people all the time, though barking dogs seldom bite."
+                ],
+                "hook": "सोचो एक कुत्ता जो सिर्फ भौंकता (barks) है लेकिन कभी काटता (bite) नहीं, यानी सिर्फ धमकी देना, असली कार्रवाई नहीं।",
+                "note": "This proverb is often used to reassure someone that a loud threat is unlikely to be followed by real harmful action।",
+                "theme": "Wisdom",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2015",
+                    "NDA"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977cf",
+            "type": "word",
+            "payload": {
+                "word": "Right / Write",
+                "en": "Right - correct or a legal entitlement. Write - to form letters or words on a surface",
+                "hi": "Right - सही या अधिकार; Write - लिखना",
+                "usage": [
+                    "Every citizen has the right to freedom of speech.",
+                    "Please write your name clearly at the top of the form."
+                ],
+                "daily": [
+                    "You're right, I forgot to bring my umbrella.",
+                    "I need to write a letter to my grandmother this weekend."
+                ],
+                "hook": "'Right' में 'gh' है जैसे 'light,' दोनों सही रास्ता दिखाते हैं; 'Write' में 'w' silent है, सोचो कलम पकड़ने का इशारा (wave) करके लिखना।",
+                "note": "Remember that 'Write' always relates to the act of composing text, while 'Right' can mean correct, direction, or a legal entitlement depending on context।",
+                "theme": "Wordplay",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2020",
+                    "CHSL"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ba",
+            "type": "word",
+            "payload": {
+                "word": "Meticulous",
+                "en": "Showing great attention to detail; very careful and precise",
+                "hi": "सूक्ष्म, बारीकी से काम करने वाला",
+                "usage": [
+                    "The auditor was meticulous in reviewing every single financial record.",
+                    "Her meticulous planning ensured that the wedding went off without a hitch."
+                ],
+                "daily": [
+                    "He's so meticulous about his desk, everything has to be perfectly aligned.",
+                    "I need to be more meticulous when checking my homework for errors."
+                ],
+                "hook": "Meticulous सुनने में मेटी क्यूलस जैसा लगता है, सोचो किसी मेट्रो सिस्टम की तरह हर चीज़ बारीकी से सही जगह पर रखी हो।",
+                "note": "Meticulous is a synonym for careful, thorough, and precise, but unlike 'careful,' it specifically implies extreme attention to minute details।",
+                "theme": "Diligence",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2019",
+                    "RBI Grade B"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c6",
+            "type": "word",
+            "payload": {
+                "word": "Bring about",
+                "en": "To cause something to happen",
+                "hi": "घटित करना, कारण बनना",
+                "usage": [
+                    "The new policy is expected to bring about significant changes in the education sector.",
+                    "His hard work and dedication brought about remarkable improvement in the company's sales."
+                ],
+                "daily": [
+                    "This small change could bring about a huge difference in your health.",
+                    "The argument brought about a permanent rift between the two friends."
+                ],
+                "hook": "\"Bring about\" यानी किसी चीज़ को \"bring\" यानी लाना ताकि वह \"about\" यानी अस्तित्व में आए, यानी कारण बनना।",
+                "note": "\"Bring about\" is typically used with abstract nouns like \"change,\" \"improvement,\" or \"result\" and is a separable phrasal verb।",
+                "theme": "Change",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CGL 2021",
+                    "Bank Clerk"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c0",
+            "type": "word",
+            "payload": {
+                "word": "Loquacious",
+                "en": "Tending to talk a great deal; very talkative",
+                "hi": "बातूनी, बहुत बोलने वाला",
+                "usage": [
+                    "The loquacious host kept the guests entertained with endless stories all evening.",
+                    "Her loquacious nature made her the perfect candidate for the role of spokesperson."
+                ],
+                "daily": [
+                    "My uncle is so loquacious that family dinners can last for hours.",
+                    "She became loquacious after a couple of cups of coffee."
+                ],
+                "hook": "\"Loquacious\" सुनने में \"low-quack-ious\" जैसा लगता है, सोचो बत्तख (duck) की तरह लगातार \"quack quack\" करते रहना, यानी बहुत बोलना।",
+                "note": "Loquacious is a synonym for talkative, garrulous, and voluble, and is the antonym of taciturn or reticent।",
+                "theme": "Personality",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2021",
+                    "IBPS PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977be",
+            "type": "word",
+            "payload": {
+                "word": "Flower / Flour",
+                "en": "Flower - the colorful reproductive part of a plant. Flour - a powder made from grinding grain, used in baking",
+                "hi": "Flower - फूल; Flour - आटा",
+                "usage": [
+                    "The garden was full of vibrant flowers blooming in the spring sunshine.",
+                    "She needed two cups of flour to bake the bread."
+                ],
+                "daily": [
+                    "These flowers smell amazing, where did you buy them?",
+                    "We ran out of flour, so I can't make rotis today."
+                ],
+                "hook": "\"Flower\" में \"ow\" है जैसे \"wow\", सुंदर फूल देखकर वाह निकलती है; \"Flour\" में \"ou\" है जैसे \"dough\" यानी आटा।",
+                "note": "Though pronounced identically, flower and flour belong to entirely different categories, botany and cooking, so context is essential to differentiate them।",
+                "theme": "Wordplay",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2018",
+                    "CHSL"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977cb",
+            "type": "word",
+            "payload": {
+                "word": "Pragmatic",
+                "en": "Dealing with things sensibly and realistically",
+                "hi": "व्यावहारिक, यथार्थवादी",
+                "usage": [
+                    "The new manager took a pragmatic approach to solving the staffing crisis.",
+                    "Rather than dreaming big, she preferred pragmatic solutions that could be implemented immediately."
+                ],
+                "daily": [
+                    "Let's be pragmatic about this, we can't afford a big vacation this year.",
+                    "He's always so pragmatic when it comes to making decisions."
+                ],
+                "hook": "Pragmatic सुनने में practical magic जैसा लगता है, यानी असली दुनिया में काम आने वाला व्यावहारिक तरीका।",
+                "note": "Pragmatic is a synonym for practical, realistic, and sensible, and is often contrasted with idealistic or theoretical approaches।",
+                "theme": "Decision-Making",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2020",
+                    "RBI Grade B"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ca",
+            "type": "word",
+            "payload": {
+                "word": "Beat around the bush",
+                "en": "To avoid talking directly about the main topic",
+                "hi": "इधर-उधर की बातें करना, सीधे मुद्दे पर न आना",
+                "usage": [
+                    "Stop beating around the bush and tell me what really happened at the meeting.",
+                    "The manager beat around the bush instead of directly addressing the layoffs."
+                ],
+                "daily": [
+                    "Just ask her out already, quit beating around the bush!",
+                    "He kept beating around the bush when I asked about the missing money."
+                ],
+                "hook": "पुराने समय में शिकारी झाड़ियों (bush) के चारों ओर (around) पीटते थे पक्षियों को डराने के लिए, बिना सीधे अंदर जाए, इसलिए यह मुहावरा टालमटोल के लिए प्रयोग होता है।",
+                "note": "This idiom is often used in a critical or impatient tone when someone avoids giving a direct answer।",
+                "theme": "Communication",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CHSL 2020",
+                    "Bank PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c2",
+            "type": "word",
+            "payload": {
+                "word": "Add fuel to the fire",
+                "en": "To make a bad situation worse",
+                "hi": "आग में घी डालना, स्थिति को और बिगाड़ना",
+                "usage": [
+                    "His sarcastic comment only added fuel to the fire during the heated argument.",
+                    "Raising taxes during a recession would add fuel to the fire of public discontent."
+                ],
+                "daily": [
+                    "Don't add fuel to the fire by bringing up old fights.",
+                    "Her constant complaining just added fuel to the fire at the office."
+                ],
+                "hook": "जैसे आग में ईंधन (fuel) डालने से आग और भड़क जाती है, वैसे ही किसी झगड़े में कुछ कहने से वह और बिगड़ जाता है।",
+                "note": "This idiom is used to describe actions or words that intensify an already tense or negative situation।",
+                "theme": "Conflict",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CGL 2018",
+                    "IBPS PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c3",
+            "type": "word",
+            "payload": {
+                "word": "Austere",
+                "en": "Severe or strict in manner; simple and plain without luxury",
+                "hi": "कठोर, सादा, तपस्वी",
+                "usage": [
+                    "The monk led an austere life, owning nothing but a robe and a bowl.",
+                    "The government introduced austere economic measures to reduce the national debt."
+                ],
+                "daily": [
+                    "His apartment looks so austere, just a bed and a chair.",
+                    "We had to live pretty austere lives during those tough financial years."
+                ],
+                "hook": "\"Austere\" सुनने में \"a story\" जैसा लगता है, सोचो एक तपस्वी की कहानी जिसने सादा जीवन अपनाया।",
+                "note": "Austere is a synonym for stern, ascetic, and spartan, often describing both a person's manner and a lifestyle devoid of comfort।",
+                "theme": "Lifestyle",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2020",
+                    "RBI Grade B"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ce",
+            "type": "word",
+            "payload": {
+                "word": "Come across",
+                "en": "To find or meet something/someone by chance",
+                "hi": "अचानक मिल जाना, संयोगवश सामने आना",
+                "usage": [
+                    "While cleaning the attic, she came across old photographs from her childhood.",
+                    "I came across an interesting article about climate change this morning."
+                ],
+                "daily": [
+                    "I came across my old school friend at the mall yesterday.",
+                    "Did you come across my phone charger while cleaning the room?"
+                ],
+                "hook": "Come across यानी अचानक किसी चीज़ के 'across' यानी आर-पार से 'come' यानी गुजरते हुए मिल जाना।",
+                "note": "Come across is an inseparable phrasal verb, meaning the object always follows the entire phrase and cannot be inserted between the two words।",
+                "theme": "Discovery",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CGL 2019",
+                    "IBPS Clerk"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977cd",
+            "type": "word",
+            "payload": {
+                "word": "Definitely",
+                "en": "Without doubt; certainly",
+                "hi": "निश्चित रूप से",
+                "usage": [
+                    "The manager confirmed that the project would definitely be completed by Friday.",
+                    "She is definitely the most qualified candidate for this position."
+                ],
+                "daily": [
+                    "I'll definitely come to your party this weekend.",
+                    "That was definitely the best meal I've had in months."
+                ],
+                "hook": "Definitely में finite शब्द छुपा है (de-FINITE-ly), याद रखें इसे finite के साथ स्पेल करें, ना कि definately।",
+                "note": "Definitely is one of the most commonly misspelled words in English; remembering the hidden word finite helps avoid the common error of writing definately।",
+                "theme": "Certainty",
+                "cat": "spellings",
+                "exams": [
+                    "SSC CGL 2018",
+                    "Railways"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977bd",
+            "type": "word",
+            "payload": {
+                "word": "Give up",
+                "en": "To stop trying; to surrender or quit",
+                "hi": "हार मान लेना, छोड़ देना",
+                "usage": [
+                    "Despite numerous failures, the scientist refused to give up on his research.",
+                    "The team had to give up the match after the storm made the field unplayable."
+                ],
+                "daily": [
+                    "Don't give up on your dreams just because things got tough.",
+                    "I almost gave up on finding my keys until I checked my jacket pocket."
+                ],
+                "hook": "\"Give up\" यानी अपनी कोशिश \"up\" यानी ऊपर उठाकर हवा में \"give\" यानी दे देना, यानी हार मान लेना।",
+                "note": "\"Give up\" can function as both a transitive phrasal verb (give up smoking) and an intransitive one (he gave up), depending on context।",
+                "theme": "Perseverance",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CHSL 2020",
+                    "Bank Clerk"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c5",
+            "type": "word",
+            "payload": {
+                "word": "Embarrass",
+                "en": "To cause someone to feel awkward or ashamed",
+                "hi": "शर्मिंदा करना",
+                "usage": [
+                    "The manager did not want to embarrass the intern in front of the entire office.",
+                    "Tripping on stage in front of everyone would embarrass anyone."
+                ],
+                "daily": [
+                    "Please don't embarrass me by singing loudly in public.",
+                    "I felt so embarrassed when I forgot her name."
+                ],
+                "hook": "\"Embarrass\" में double R और double S है, याद रखें \"Really Red Suddenly Shy\" यानी double R, double S।",
+                "note": "Embarrass is commonly misspelled with a single R or single S; always remember it has two R's and two S's।",
+                "theme": "Emotions",
+                "cat": "spellings",
+                "exams": [
+                    "SSC CGL 2017",
+                    "Railways NTPC"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977cc",
+            "type": "word",
+            "payload": {
+                "word": "Timid",
+                "en": "Lacking courage or confidence; easily frightened",
+                "hi": "डरपोक, संकोची",
+                "usage": [
+                    "The timid new employee hesitated to voice her opinion during the meeting.",
+                    "Despite being timid as a child, he grew into a confident public speaker."
+                ],
+                "daily": [
+                    "Don't be so timid, just ask the teacher your question.",
+                    "The timid puppy hid behind the sofa whenever guests arrived."
+                ],
+                "hook": "Timid सुनने में time hid जैसा लगता है, सोचो कोई डर के मारे छुप (hid) गया और समय (time) बर्बाद कर दिया।",
+                "note": "Timid is the antonym of Bold or Audacious; it typically describes a lack of confidence rather than a lack of physical strength।",
+                "theme": "Personality",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CGL 2019",
+                    "CDS"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c9",
+            "type": "word",
+            "payload": {
+                "word": "Connoisseur",
+                "en": "A person with expert knowledge or refined taste in a particular field",
+                "hi": "पारखी, विशेषज्ञ",
+                "usage": [
+                    "As a connoisseur of fine wine, he could identify the vintage just by its aroma.",
+                    "The art connoisseur immediately recognized the painting as a forgery."
+                ],
+                "daily": [
+                    "My dad is a total connoisseur when it comes to street food.",
+                    "She's becoming a bit of a coffee connoisseur these days."
+                ],
+                "hook": "\"Connoisseur\" सुनने में \"conn-a-sir\" जैसा लगता है, सोचो एक \"sir\" जो हर चीज़ को गहराई से जानता (knows) है।",
+                "note": "Connoisseur is often followed by 'of,' as in 'connoisseur of art' or 'connoisseur of music,' indicating the specific area of expertise।",
+                "theme": "Expertise",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2022",
+                    "IBPS PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977bc",
+            "type": "word",
+            "payload": {
+                "word": "Necessary",
+                "en": "Required to be done or achieved; essential",
+                "hi": "आवश्यक, ज़रूरी",
+                "usage": [
+                    "It is necessary to submit the application form before the deadline.",
+                    "The doctor said surgery was necessary to fully treat the condition."
+                ],
+                "daily": [
+                    "Is it really necessary to wake up this early on a Sunday?",
+                    "Bring only the necessary items for the trip, we're traveling light."
+                ],
+                "hook": "Necessary में एक C और दो S हैं, याद रखें \"One Collar, Two Sleeves\" यानी one C, two S's।",
+                "note": "Necessary is a frequently misspelled word; the common error is doubling the C instead of the S, so remember \"one C, two S's\"।",
+                "theme": "Daily Life",
+                "cat": "spellings",
+                "exams": [
+                    "SSC CGL 2018",
+                    "Railways NTPC"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d0",
+            "type": "word",
+            "payload": {
+                "word": "Look before you leap",
+                "en": "Consider the consequences carefully before taking action",
+                "hi": "सोच समझकर कदम उठाना चाहिए",
+                "usage": [
+                    "Before investing all your savings in the stock market, remember to look before you leap.",
+                    "He quit his job without a backup plan, forgetting to look before he leaped."
+                ],
+                "daily": [
+                    "Look before you leap, don't just sign the contract without reading it.",
+                    "She always looks before she leaps, which is why she rarely makes mistakes."
+                ],
+                "hook": "कूदने (leap) से पहले नीचे देख (look) लो, वरना गिरने का खतरा है, यानी सोच-समझकर फैसला लो।",
+                "note": "This proverb is commonly used as a caution against hasty or impulsive decisions in both personal and professional contexts।",
+                "theme": "Caution",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2017",
+                    "NDA"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c7",
+            "type": "word",
+            "payload": {
+                "word": "Sea / See",
+                "en": "Sea - a large body of saltwater. See - to perceive with the eyes",
+                "hi": "Sea - समुद्र; See - देखना",
+                "usage": [
+                    "The fishermen sailed across the sea in search of a good catch.",
+                    "I can see the mountains clearly from my window this morning."
+                ],
+                "daily": [
+                    "We're planning a trip to the sea this summer.",
+                    "Did you see that amazing sunset yesterday?"
+                ],
+                "hook": "\"Sea\" में \"ea\" है जैसे \"wave\" में पानी की लहर; \"See\" में double E है जैसे दो आंखें (eyes) जिनसे हम देखते (see) हैं।",
+                "note": "A useful trick to distinguish these homonyms is that \"See\" has two E's, resembling two eyes used for seeing।",
+                "theme": "Wordplay",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2019",
+                    "CHSL"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b7",
+            "type": "word",
+            "payload": {
+                "word": "Actions speak louder than words",
+                "en": "What a person does is more meaningful than what they say",
+                "hi": "कथनी से करनी बड़ी होती है",
+                "usage": [
+                    "He promised to help many times, but actions speak louder than words, and he never showed up.",
+                    "The CEO's decision to take a pay cut proved that actions speak louder than words."
+                ],
+                "daily": [
+                    "Stop just talking about exercising, actions speak louder than words, go to the gym!",
+                    "She didn't say sorry, but she helped clean up, and actions speak louder than words."
+                ],
+                "hook": "शब्द (words) हवा में उड़ जाते हैं, लेकिन काम (actions) की आवाज़ हमेशा तेज़ (louder) सुनाई देती है।",
+                "note": "This proverb is commonly used to emphasize the importance of demonstrable behavior over verbal promises or claims।",
+                "theme": "Wisdom",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2017",
+                    "Bank PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c4",
+            "type": "word",
+            "payload": {
+                "word": "Verbose",
+                "en": "Using more words than necessary; wordy",
+                "hi": "शब्दाडंबरपूर्ण, अनावश्यक रूप से लंबा",
+                "usage": [
+                    "The professor's verbose explanation confused students who wanted a simple answer.",
+                    "Editors often cut verbose passages to make the writing more concise."
+                ],
+                "daily": [
+                    "His emails are always so verbose, I wish he'd just get to the point.",
+                    "That report was way too verbose for a quick update."
+                ],
+                "hook": "\"Verbose\" में \"verb\" है जैसे बहुत सारे शब्द (verbs/words) का इस्तेमाल, यानी बहुत बोलने वाला या लिखने वाला।",
+                "note": "Verbose is the antonym of concise or succinct; remember that verbose writing often obscures meaning rather than clarifying it।",
+                "theme": "Communication",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CHSL 2019",
+                    "Bank PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977c1",
+            "type": "word",
+            "payload": {
+                "word": "Xenophobe",
+                "en": "A person who fears or dislikes foreigners or strangers",
+                "hi": "विदेशियों से डरने या नफरत करने वाला व्यक्ति",
+                "usage": [
+                    "The politician was accused of being a xenophobe after his controversial remarks about immigrants.",
+                    "A true global citizen cannot afford to be a xenophobe in today's interconnected world."
+                ],
+                "daily": [
+                    "He's not really a xenophobe, he's just uncomfortable in unfamiliar places.",
+                    "Some people online act like xenophobes whenever a new culture is discussed."
+                ],
+                "hook": "\"Xeno\" यानी विदेशी और \"phobe\" यानी डर, तो Xenophobe यानी विदेशियों से डरने वाला।",
+                "note": "Words ending in \"-phobe\" or \"-phobia\" always indicate fear or aversion, similar to how \"-phile\" indicates love or attraction।",
+                "theme": "Society",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2021",
+                    "CDS"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977b9",
+            "type": "word",
+            "payload": {
+                "word": "Spill the beans",
+                "en": "To reveal a secret accidentally or carelessly",
+                "hi": "राज़ खोल देना, भेद उजागर करना",
+                "usage": [
+                    "She accidentally spilled the beans about the surprise party during dinner.",
+                    "The employee spilled the beans about the company's upcoming merger to the press."
+                ],
+                "daily": [
+                    "Don't spill the beans about the gift I bought for mom!",
+                    "He always spills the beans whenever he gets excited about something."
+                ],
+                "hook": "पुराने समय में वोटिंग के लिए बीन्स (beans) के जार इस्तेमाल होते थे; जार गिर (spill) जाने पर राज़ खुल जाता था, इसलिए यह मुहावरा राज़ खोलने के लिए प्रयोग होता है।",
+                "note": "This idiom is typically used in informal, conversational contexts and often carries a slightly negative connotation of unintended disclosure।",
+                "theme": "Secrets",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CHSL 2021",
+                    "IBPS PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.923Z",
+            "updatedAt": "2026-08-27T07:35:14.923Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d1",
+            "type": "word",
+            "payload": {
+                "word": "Recluse",
+                "en": "A person who lives in solitude and avoids others",
+                "hi": "एकांतवासी, समाज से दूर रहने वाला व्यक्ति",
+                "usage": [
+                    "After the scandal, the once-famous actor became a recluse, avoiding all public appearances.",
+                    "The old recluse lived alone in a cabin deep in the woods for thirty years."
+                ],
+                "daily": [
+                    "He's become a bit of a recluse since he started working from home.",
+                    "She likes being a recluse on weekends, just books and tea."
+                ],
+                "hook": "Recluse सुनने में reclose जैसा लगता है, यानी अपने दरवाज़े को दोबारा बंद (reclose) करके दुनिया से दूर रहने वाला।",
+                "note": "Recluse is a synonym for hermit; it describes a voluntary withdrawal from society, often for peace or due to disillusionment।",
+                "theme": "Solitude",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2021",
+                    "CDS"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d2",
+            "type": "word",
+            "payload": {
+                "word": "Turn a blind eye",
+                "en": "To deliberately ignore something wrong",
+                "hi": "जानबूझकर अनदेखा करना",
+                "usage": [
+                    "The supervisor decided to turn a blind eye to the minor rule violations.",
+                    "Authorities were accused of turning a blind eye to the illegal construction in the area."
+                ],
+                "daily": [
+                    "My mom always turns a blind eye to my messy room.",
+                    "He turned a blind eye when his friend cheated during the game."
+                ],
+                "hook": "सोचो कोई एक आंख (eye) को अंधा (blind) करके जानबूझकर गलत काम नहीं देखता, यानी नज़रअंदाज़ करना।",
+                "note": "This idiom is used specifically for situations involving deliberate, conscious ignorance of wrongdoing, not accidental oversight।",
+                "theme": "Ignorance",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CGL 2019",
+                    "Bank PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d6",
+            "type": "word",
+            "payload": {
+                "word": "Fall through",
+                "en": "To fail to happen; to not be completed as planned",
+                "hi": "विफल हो जाना, योजना का पूरा न होना",
+                "usage": [
+                    "The business deal fell through at the last minute due to disagreements over pricing.",
+                    "Our vacation plans fell through because of the sudden flight cancellations."
+                ],
+                "daily": [
+                    "My weekend plans fell through, so I'm free now if you want to hang out.",
+                    "The job offer fell through after the company had a hiring freeze."
+                ],
+                "hook": "Fall through यानी कोई योजना ज़मीन में गिर (fall) कर 'through' यानी आर-पार हो जाए, यानी पूरी तरह असफल हो जाए।",
+                "note": "'Fall through' is an intransitive phrasal verb, meaning it does not take a direct object and is commonly used with plans, deals, or agreements।",
+                "theme": "Failure",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CGL 2020",
+                    "IBPS SO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d7",
+            "type": "word",
+            "payload": {
+                "word": "Tenacious",
+                "en": "Holding firmly to a course of action or belief; persistent",
+                "hi": "दृढ़, हठी, लगन वाला",
+                "usage": [
+                    "The tenacious lawyer refused to give up on the case, even after two rejections.",
+                    "Her tenacious spirit helped her recover fully after the accident."
+                ],
+                "daily": [
+                    "He's so tenacious, he never stops until the job is done.",
+                    "You have to be tenacious to succeed in such a competitive field."
+                ],
+                "hook": "Tenacious सुनने में \"ten a-choose\" जैसा लगता है, सोचो कोई दस बार कोशिश करके भी अपना चुनाव (choice) नहीं छोड़ता।",
+                "note": "Tenacious is a synonym for persistent, resolute, and steadfast, often describing someone who does not easily let go of a goal or belief।",
+                "theme": "Persistence",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2020",
+                    "IBPS PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d8",
+            "type": "word",
+            "payload": {
+                "word": "Sun / Son",
+                "en": "Sun - the star at the center of our solar system. Son - a male child in relation to his parents",
+                "hi": "Sun - सूरज; Son - बेटा",
+                "usage": [
+                    "The sun rose brilliantly over the mountains this morning.",
+                    "Their son graduated from medical school last year."
+                ],
+                "daily": [
+                    "It's so sunny today, don't forget your sunglasses.",
+                    "My son just started walking last week."
+                ],
+                "hook": "Sun में \"u\" है जैसे \"up,\" सूरज ऊपर आसमान में चमकता है; Son में \"o\" है जैसे \"own,\" अपना बेटा।",
+                "note": "These homonyms are frequently tested in exams because of identical pronunciation but completely unrelated meanings, one astronomical and one familial।",
+                "theme": "Wordplay",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2018",
+                    "CHSL"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d9",
+            "type": "word",
+            "payload": {
+                "word": "Slow and steady wins the race",
+                "en": "Consistent, careful effort leads to success rather than speed alone",
+                "hi": "धीरे-धीरे और स्थिरता से काम करने वाला ही जीतता है",
+                "usage": [
+                    "The tortoise's victory over the hare proved that slow and steady wins the race.",
+                    "Instead of rushing through the syllabus, he studied consistently, proving slow and steady wins the race."
+                ],
+                "daily": [
+                    "Don't try to cram everything in one night, slow and steady wins the race.",
+                    "She's building her business gradually, slow and steady wins the race."
+                ],
+                "hook": "कछुए (tortoise) और खरगोश (hare) की कहानी याद करो, धीमी लेकिन स्थिर (steady) चाल आख़िरकार रेस (race) जीत जाती है।",
+                "note": "This proverb, derived from Aesop's fable, is used to encourage patience and consistency over impulsive speed in achieving long-term goals।",
+                "theme": "Patience",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2016",
+                    "NDA"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977db",
+            "type": "word",
+            "payload": {
+                "word": "Son",
+                "en": "A male child.",
+                "hi": "पुत्र",
+                "usage": [
+                    "My son just graduated from college.",
+                    "He is a caring son who always helps his parents."
+                ],
+                "daily": [
+                    "My son is learning to ride a bike.",
+                    "She called her son to help with the move."
+                ],
+                "hook": "पुत्र हमेशा आदर्श होता है।",
+                "note": "पुत्र का मतलब है लड़का।",
+                "theme": "family",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2018"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977da",
+            "type": "word",
+            "payload": {
+                "word": "Bite the bullet",
+                "en": "To face a difficult situation with courage.",
+                "hi": "किसी कठिन परिस्थिति का साहस से सामना करना।",
+                "usage": [
+                    "He decided to bite the bullet and confront his fears.",
+                    "Sometimes, we must just bite the bullet and deal with reality."
+                ],
+                "daily": [
+                    "I hate going to the dentist, but I have to bite the bullet.",
+                    "She bit the bullet and started her diet today."
+                ],
+                "hook": "दुखद स्थिति का सामना।",
+                "note": "यह अभिव्यक्ति साहस से सीधे समस्या का सामना करने के लिए प्रणाली है।",
+                "theme": "courage",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CHSL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d5",
+            "type": "word",
+            "payload": {
+                "word": "Privilege",
+                "en": "A special right or advantage available to a particular person or group",
+                "hi": "विशेषाधिकार",
+                "usage": [
+                    "It was a privilege to attend the ceremony hosted by the president.",
+                    "Access to quality education should not be a privilege reserved for the wealthy."
+                ],
+                "daily": [
+                    "I feel it's a privilege to work with such a talented team.",
+                    "Having clean drinking water is a privilege many people take for granted."
+                ],
+                "hook": "Privilege में 'leg' छुपा है (privi-LEG-e), याद रखें इसमें 'i' के बाद 'leg' आता है, ना कि 'priviledge'।",
+                "note": "Privilege is often misspelled with a 'd' before the 'g'; remembering the hidden word 'leg' helps ensure the correct spelling ends in '-lege'।",
+                "theme": "Society",
+                "cat": "spellings",
+                "exams": [
+                    "SSC CGL 2019",
+                    "Railways NTPC"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d3",
+            "type": "word",
+            "payload": {
+                "word": "Voracious",
+                "en": "Having a very eager approach to an activity; extremely hungry",
+                "hi": "पेटू, अत्यधिक उत्साही",
+                "usage": [
+                    "She has always been a voracious reader, finishing several books every week.",
+                    "The voracious wolf devoured its prey within minutes."
+                ],
+                "daily": [
+                    "My little brother is a voracious eater, he never gets full.",
+                    "He's a voracious learner who picks up new skills incredibly fast."
+                ],
+                "hook": "Voracious सुनने में devour us जैसा लगता है, सोचो कोई इतनी भूख से खा रहा है कि सबको निगल (devour) जाएगा।",
+                "note": "Voracious is a synonym for insatiable and ravenous, commonly used both literally for hunger and figuratively for enthusiasm, as in 'voracious reader'।",
+                "theme": "Enthusiasm",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2021",
+                    "RBI Grade B"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977d4",
+            "type": "word",
+            "payload": {
+                "word": "Lethargic",
+                "en": "Lacking energy; sluggish and tired",
+                "hi": "सुस्त, आलसी",
+                "usage": [
+                    "After the heavy lunch, most employees felt lethargic through the afternoon meeting.",
+                    "The lethargic economy showed little sign of growth this quarter."
+                ],
+                "daily": [
+                    "I feel so lethargic today, I just want to stay in bed.",
+                    "This humid weather makes everyone feel lethargic and sleepy."
+                ],
+                "hook": "Lethargic सुनने में 'lay there jack' जैसा लगता है, सोचो कोई बस लेटा (lay) हुआ है, हिलने का मन ही नहीं।",
+                "note": "Lethargic is the antonym of energetic or vigorous; it is often used to describe both physical tiredness and a general lack of enthusiasm।",
+                "theme": "Energy",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CHSL 2020",
+                    "Bank PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "en",
+                "hi",
+                "usage",
+                "daily",
+                "hook",
+                "note",
+                "theme"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        }
+    ]
+}
+{
+    "success": true,
+    "data": [
+        {
+            "_id": "6a8fe8b2d2e604e16ac977dc",
+            "type": "question",
+            "payload": {
+                "q": "What does 'bite the bullet' mean?",
+                "opts": [
+                    "To avoid a problem",
+                    "To face a difficult situation with courage",
+                    "To speak without thinking",
+                    "To enjoy a pleasant moment"
+                ],
+                "ans": "To face a difficult situation with courage",
+                "expl": "'Bite the bullet' refers to facing a challenging situation bravely, especially when it involves discomfort or pain.",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CGL 2021",
+                    "IBPS PO"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977dd",
+            "type": "question",
+            "payload": {
+                "q": "A person who loves or collects books is called a:",
+                "opts": [
+                    "Bibliophile",
+                    "Bibliophobe",
+                    "Zoophile",
+                    "Numismatist"
+                ],
+                "ans": "Bibliophile",
+                "expl": "A Bibliophile is specifically someone who loves books. Bibliophobe would mean someone who fears books, which is the opposite. A Zoophile relates to animals, and a Numismatist is a collector of coins or currency, not books.",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ec",
+            "type": "question",
+            "payload": {
+                "q": "Select the word closest in meaning to 'Meticulous'.",
+                "opts": [
+                    "Thorough",
+                    "Careless",
+                    "Hasty",
+                    "Sloppy"
+                ],
+                "ans": "Thorough",
+                "expl": "Meticulous describes someone who pays great attention to detail, matching the meaning of Thorough. Careless, Hasty, and Sloppy all suggest a lack of attention or precision, making them opposites of Meticulous.",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977eb",
+            "type": "question",
+            "payload": {
+                "q": "What does the idiom 'spill the beans' mean?",
+                "opts": [
+                    "To reveal a secret",
+                    "To cook a meal",
+                    "To make a mistake",
+                    "To argue loudly"
+                ],
+                "ans": "To reveal a secret",
+                "expl": "'Spill the beans' means to accidentally or carelessly disclose secret information. It has no connection to cooking, making mistakes in general, or loud arguments.",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CHSL 2021"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ea",
+            "type": "question",
+            "payload": {
+                "q": "What is the meaning of the proverb 'Actions speak louder than words'?",
+                "opts": [
+                    "What people do matters more than what they say",
+                    "Loud voices are more persuasive",
+                    "Silence is more valuable than speech",
+                    "Words have no real impact on people"
+                ],
+                "ans": "What people do matters more than what they say",
+                "expl": "This proverb emphasizes that genuine behavior and actions carry more weight and credibility than mere verbal promises or statements. It does not literally refer to volume of speech or suggest words are meaningless.",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2017"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e9",
+            "type": "question",
+            "payload": {
+                "q": "Choose the correct homonym: 'Please give me a ______ of that cake.'",
+                "opts": [
+                    "piece",
+                    "peace",
+                    "peas",
+                    "piece's"
+                ],
+                "ans": "piece",
+                "expl": "'Piece' refers to a portion of something, which is appropriate when asking for cake. 'Peace' means tranquility and does not fit the context, 'peas' refers to a vegetable, and 'piece's' is grammatically incorrect as used here.",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e7",
+            "type": "question",
+            "payload": {
+                "q": "Choose the antonym of \"Optimist.\"",
+                "opts": [
+                    "Pessimist",
+                    "Realist",
+                    "Idealist",
+                    "Enthusiast"
+                ],
+                "ans": "Pessimist",
+                "expl": "An Optimist expects good outcomes, while a Pessimist expects negative outcomes, making them direct opposites. A Realist views things practically, an Idealist pursues perfection, and an Enthusiast shows eager interest, none of which are true opposites of Optimist.",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CGL 2018"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e8",
+            "type": "question",
+            "payload": {
+                "q": "Choose the meaning of \"carry out\" in the sentence: \"The team will carry out the experiment tomorrow.\"",
+                "opts": [
+                    "Perform or execute",
+                    "Transport physically",
+                    "Cancel or stop",
+                    "Postpone indefinitely"
+                ],
+                "ans": "Perform or execute",
+                "expl": "\"Carry out\" in this context means to perform or execute a planned task, such as an experiment. It does not mean physically transporting an object, canceling, or postponing the activity.",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CGL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e3",
+            "type": "question",
+            "payload": {
+                "q": "Choose the correct homonym to complete the sentence: \"I could not ______ the pain any longer.\"",
+                "opts": [
+                    "bear",
+                    "bare",
+                    "beer",
+                    "bar"
+                ],
+                "ans": "bear",
+                "expl": "\"Bear\" means to endure or tolerate, fitting the sentence about enduring pain.",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2017"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e4",
+            "type": "question",
+            "payload": {
+                "q": "What does the proverb \"A stitch in time saves nine\" mean?",
+                "opts": [
+                    "Fixing a problem early prevents it from worsening",
+                    "Sewing skills are important in life",
+                    "Time management is impossible",
+                    "Nine problems are better than one"
+                ],
+                "ans": "Fixing a problem early prevents it from worsening",
+                "expl": "This proverb teaches that addressing a small issue promptly prevents it from escalating later.",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2016"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e0",
+            "type": "question",
+            "payload": {
+                "q": "Choose the antonym of 'Frugal.'",
+                "opts": [
+                    "Extravagant",
+                    "Thrifty",
+                    "Economical",
+                    "Prudent"
+                ],
+                "ans": "Extravagant",
+                "expl": "Frugal means being careful with money and avoiding waste, so its opposite is Extravagant, meaning spending money lavishly. Thrifty, Economical, and Prudent are all synonyms of Frugal, not antonyms.",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CHSL 2022"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e5",
+            "type": "question",
+            "payload": {
+                "q": "What does the idiom \"once in a blue moon\" mean?",
+                "opts": [
+                    "Very rarely",
+                    "Every night",
+                    "Only during full moons",
+                    "Frequently and predictably"
+                ],
+                "ans": "Very rarely",
+                "expl": "\"Once in a blue moon\" describes something that happens very infrequently, referencing the rare occurrence of a second full moon in a month. It does not refer to nightly events, literal full moons, or frequent occurrences.",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CHSL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e2",
+            "type": "question",
+            "payload": {
+                "q": "Choose the correct meaning of the phrasal verb \"look up to\" in the sentence: \"Young players look up to the veteran captain.\"",
+                "opts": [
+                    "To admire and respect someone",
+                    "To search for someone",
+                    "To physically look upward",
+                    "To ignore someone completely"
+                ],
+                "ans": "To admire and respect someone",
+                "expl": "In this context, \"look up to\" means to admire or respect someone as a role model.",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CHSL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e1",
+            "type": "question",
+            "payload": {
+                "q": "Identify the correctly spelled word.",
+                "opts": [
+                    "Accommodate",
+                    "Acommodate",
+                    "Accomodate",
+                    "Acommadate"
+                ],
+                "ans": "Accommodate",
+                "expl": "The correct spelling is 'Accommodate,' with double C and double M. Option B has only one C, option C has only one M, and option D has both errors along with an incorrect vowel.",
+                "cat": "spellings",
+                "exams": [
+                    "SSC CGL 2018"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977df",
+            "type": "question",
+            "payload": {
+                "q": "Select the word most similar in meaning to 'Ephemeral.'",
+                "opts": [
+                    "Transient",
+                    "Permanent",
+                    "Eternal",
+                    "Durable"
+                ],
+                "ans": "Transient",
+                "expl": "Ephemeral means lasting for a very short time, which matches 'Transient.' Permanent, Eternal, and Durable all imply long-lasting qualities, making them antonyms rather than synonyms of Ephemeral.",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977de",
+            "type": "question",
+            "payload": {
+                "q": "Choose the correct meaning of the idiom 'bite the bullet.'",
+                "opts": [
+                    "To face a difficult situation with courage",
+                    "To eat something very fast",
+                    "To avoid a confrontation",
+                    "To injure oneself accidentally"
+                ],
+                "ans": "To face a difficult situation with courage",
+                "expl": "'Bite the bullet' means to endure a painful or unpleasant situation bravely. It has no literal connection to eating quickly, avoiding confrontation (which is the opposite meaning), or accidental injury.",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CHSL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977e6",
+            "type": "question",
+            "payload": {
+                "q": "Select the word closest in meaning to \"Candid.\"",
+                "opts": [
+                    "Frank",
+                    "Secretive",
+                    "Deceptive",
+                    "Reserved"
+                ],
+                "ans": "Frank",
+                "expl": "Candid means being open, honest, and straightforward, which is synonymous with Frank. Secretive, Deceptive, and Reserved all suggest withholding information or being untruthful, which contradicts the meaning of Candid.",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2021"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.924Z",
+            "updatedAt": "2026-08-27T07:35:14.924Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f9",
+            "type": "question",
+            "payload": {
+                "q": "What does the idiom \"beat around the bush\" mean?",
+                "opts": [
+                    "To avoid discussing the main topic directly",
+                    "To search thoroughly for something",
+                    "To exercise outdoors",
+                    "To argue aggressively"
+                ],
+                "ans": "To avoid discussing the main topic directly",
+                "expl": "\"Beat around the bush\" means to avoid getting to the point of a conversation.",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CHSL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f8",
+            "type": "question",
+            "payload": {
+                "q": "What is the meaning of \"Where there is a will, there is a way\"?",
+                "opts": [
+                    "Determination helps overcome obstacles to achieve a goal",
+                    "Having a will document is legally necessary",
+                    "Every path leads to success eventually",
+                    "Willpower alone can build roads"
+                ],
+                "ans": "Determination helps overcome obstacles to achieve a goal",
+                "expl": "This proverb emphasizes that strong determination enables people to find solutions to challenges.",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2016"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977fb",
+            "type": "question",
+            "payload": {
+                "q": "Choose the antonym of 'Timid.'",
+                "opts": [
+                    "Bold",
+                    "Shy",
+                    "Nervous",
+                    "Fearful"
+                ],
+                "ans": "Bold",
+                "expl": "'Timid' describes a lack of courage or confidence, so its opposite is 'Bold,' meaning confident and daring. Shy, Nervous, and Fearful are all synonyms of 'Timid,' not antonyms.",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CGL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977fa",
+            "type": "question",
+            "payload": {
+                "q": "Select the word closest in meaning to 'Pragmatic.'",
+                "opts": [
+                    "Practical",
+                    "Idealistic",
+                    "Theoretical",
+                    "Whimsical"
+                ],
+                "ans": "Practical",
+                "expl": "Pragmatic means dealing with things in a sensible, realistic way, which aligns with 'Practical.' Idealistic, Theoretical, and Whimsical all suggest impractical or abstract approaches, opposite to Pragmatic.",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977fc",
+            "type": "question",
+            "payload": {
+                "q": "Choose the meaning of 'come across' in: 'She came across an old letter while packing.'",
+                "opts": [
+                    "To find something by chance",
+                    "To physically cross a road",
+                    "To deliberately search for something",
+                    "To argue with someone"
+                ],
+                "ans": "To find something by chance",
+                "expl": "'Come across' means to encounter or discover something unexpectedly, which fits finding a letter while packing. It does not mean physically crossing a road, deliberate searching, or arguing.",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CGL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977fe",
+            "type": "question",
+            "payload": {
+                "q": "What does the proverb \"Look before you leap\" advise?",
+                "opts": [
+                    "Think carefully before taking action",
+                    "Always run before jumping",
+                    "Avoid looking at obstacles",
+                    "Act quickly without hesitation"
+                ],
+                "ans": "Think carefully before taking action",
+                "expl": "This proverb advises careful consideration of consequences before acting impulsively. It does not literally refer to running or jumping, nor does it suggest avoiding obstacles or acting hastily, which is the opposite meaning.",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2017"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977fd",
+            "type": "question",
+            "payload": {
+                "q": "Choose the correct homonym: 'You have the ______ to remain silent.'",
+                "opts": [
+                    "right",
+                    "write",
+                    "rite",
+                    "wright"
+                ],
+                "ans": "right",
+                "expl": "'Right' refers to a legal entitlement, which fits the context of a legal statement. 'Write' means to compose text, 'rite' refers to a ceremonial act, and 'wright' refers to a maker or craftsman, none of which fit the legal context.",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac97800",
+            "type": "question",
+            "payload": {
+                "q": "Choose the meaning of 'fall through' in: \"Our travel plans fell through unexpectedly.\"",
+                "opts": [
+                    "To fail to happen as planned",
+                    "To physically fall down",
+                    "To succeed brilliantly",
+                    "To be postponed indefinitely"
+                ],
+                "ans": "To fail to happen as planned",
+                "expl": "'Fall through' means a plan or arrangement fails to be completed, fitting the context of canceled travel plans. It does not mean physically falling, succeeding, or simply being postponed.",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CGL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ff",
+            "type": "question",
+            "payload": {
+                "q": "What does the idiom \"turn a blind eye\" mean?",
+                "opts": [
+                    "To deliberately ignore wrongdoing",
+                    "To lose one's eyesight suddenly",
+                    "To pay very close attention",
+                    "To become extremely angry"
+                ],
+                "ans": "To deliberately ignore wrongdoing",
+                "expl": "\"Turn a blind eye\" means to consciously overlook something wrong or improper. It does not refer to actual loss of eyesight, close attention, or anger, which would be the opposite of ignoring.",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CGL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac97801",
+            "type": "question",
+            "payload": {
+                "q": "Choose the correct homonym: \"Their ______ just started college this year.\"",
+                "opts": [
+                    "son",
+                    "sun",
+                    "sons'",
+                    "Sunday"
+                ],
+                "ans": "son",
+                "expl": "\"Son\" refers to a male child, which fits the context of someone starting college. \"Sun\" refers to the star at the center of our solar system, \"sons'\" is an incorrect possessive plural form here, and \"Sunday\" refers to a day of the week, none of which fit the sentence.",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2018"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac97802",
+            "type": "question",
+            "payload": {
+                "q": "What is the meaning of the proverb \"Slow and steady wins the race\"?",
+                "opts": [
+                    "Consistent effort leads to success rather than speed alone",
+                    "Racing quickly always guarantees victory",
+                    "Slow progress should be avoided at all costs",
+                    "Only physical races reward steady effort"
+                ],
+                "ans": "Consistent effort leads to success rather than speed alone",
+                "expl": "This proverb, from Aesop's fable of the tortoise and the hare, emphasizes that patience and persistence often succeed over impulsive speed.",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2016"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f7",
+            "type": "question",
+            "payload": {
+                "q": "Choose the correct homonym: \"I would love to visit the ______ this summer.\"",
+                "opts": [
+                    "sea",
+                    "see",
+                    "seas'",
+                    "scene"
+                ],
+                "ans": "sea",
+                "expl": "\"Sea\" refers to a large body of saltwater, which fits the context of a summer visit destination.",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f4",
+            "type": "question",
+            "payload": {
+                "q": "Select the word closest in meaning to 'Austere.'",
+                "opts": [
+                    "Stern",
+                    "Luxurious",
+                    "Comfortable",
+                    "Indulgent"
+                ],
+                "ans": "Stern",
+                "expl": "Austere describes a strict, simple, and unembellished manner or lifestyle, matching 'Stern.' Luxurious, Comfortable, and Indulgent all suggest ease and abundance, which are opposite in meaning to Austere.",
+                "cat": "synonyms",
+                "exams": [
+                    "SSC CGL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f6",
+            "type": "question",
+            "payload": {
+                "q": "Choose the meaning of \"bring about\" in: \"The reforms brought about major improvements in healthcare.\"",
+                "opts": [
+                    "To cause something to happen",
+                    "To physically carry something",
+                    "To postpone a decision",
+                    "To reject a proposal"
+                ],
+                "ans": "To cause something to happen",
+                "expl": "\"Bring about\" means to cause or result in something, fitting the context of reforms causing improvements.",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CGL 2021"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f5",
+            "type": "question",
+            "payload": {
+                "q": "Choose the antonym of 'Verbose.'",
+                "opts": [
+                    "Concise",
+                    "Wordy",
+                    "Lengthy",
+                    "Rambling"
+                ],
+                "ans": "Concise",
+                "expl": "Verbose means using excessive words, so its opposite is Concise, meaning brief and to the point. Wordy, Lengthy, and Rambling are all synonyms of Verbose, not antonyms.",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CHSL 2019"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f3",
+            "type": "question",
+            "payload": {
+                "q": "What does the idiom 'add fuel to the fire' mean?",
+                "opts": [
+                    "To make a bad situation worse",
+                    "To calm someone down",
+                    "To start a new project",
+                    "To extinguish a problem completely"
+                ],
+                "ans": "To make a bad situation worse",
+                "expl": "'Add fuel to the fire' means to intensify an already difficult or tense situation. It does not mean calming someone down, starting something new, or resolving a problem, all of which are the opposite of intensifying conflict.",
+                "cat": "idioms-phrases",
+                "exams": [
+                    "SSC CGL 2018"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f2",
+            "type": "question",
+            "payload": {
+                "q": "A person who fears or dislikes foreigners is called a:",
+                "opts": [
+                    "Xenophobe",
+                    "Xenophile",
+                    "Cosmopolitan",
+                    "Patriot"
+                ],
+                "ans": "Xenophobe",
+                "expl": "A Xenophobe fears or dislikes foreigners, using the root 'phobe' meaning fear. A Xenophile is the opposite, someone who loves foreign cultures. Cosmopolitan describes someone comfortable across cultures, and Patriot describes love for one's own country, not fear of others.",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2021"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f0",
+            "type": "question",
+            "payload": {
+                "q": "What does the proverb \"Barking dogs seldom bite\" mean?",
+                "opts": [
+                    "A) People who make loud threats rarely act on them",
+                    "B) Dogs are generally harmless animals",
+                    "C) Loud noises indicate real danger",
+                    "D) Silence is more dangerous than noise"
+                ],
+                "ans": "A) People who make loud threats rarely act on them",
+                "expl": "This proverb suggests that those who make the most noise or threats are usually the least likely to cause actual harm. It is not literally about the behavior of dogs, nor does it suggest loud noises always signal danger.",
+                "cat": "proverbs",
+                "exams": [
+                    "SSC CGL 2015"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ee",
+            "type": "question",
+            "payload": {
+                "q": "Choose the meaning of \"give up\" in: \"He refused to give up despite the setbacks.\"",
+                "opts": [
+                    "A) To stop trying or surrender",
+                    "B) To donate something",
+                    "C) To celebrate a victory",
+                    "D) To postpone a decision"
+                ],
+                "ans": "A) To stop trying or surrender",
+                "expl": "\"Give up\" means to quit or stop attempting something, which fits the context of facing setbacks. It does not mean donating, celebrating, or postponing a decision.",
+                "cat": "phrasal-verbs",
+                "exams": [
+                    "SSC CHSL 2020"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ef",
+            "type": "question",
+            "payload": {
+                "q": "Choose the correct homonym: \"I need two cups of ______ to bake this cake.\"",
+                "opts": [
+                    "A) flour",
+                    "B) flower",
+                    "C) flours",
+                    "D) flowers"
+                ],
+                "ans": "A) flour",
+                "expl": "\"Flour\" is the powder made from grain used in baking, which fits the context of baking a cake. \"Flower\" refers to a plant's bloom and does not belong in a baking context, and the plural forms are grammatically incorrect here since \"cups of\" requires the singular uncountable noun.",
+                "cat": "homonyms",
+                "exams": [
+                    "SSC CGL 2018"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977f1",
+            "type": "question",
+            "payload": {
+                "q": "A person who talks excessively is best described as:",
+                "opts": [
+                    "Loquacious",
+                    "Taciturn",
+                    "Reticent",
+                    "Laconic"
+                ],
+                "ans": "Loquacious",
+                "expl": "Loquacious specifically describes someone who talks a great deal. Taciturn, Reticent, and Laconic all describe the opposite trait, someone who speaks very little or is reluctant to talk.",
+                "cat": "one-word-sub",
+                "exams": [
+                    "SSC CGL 2021"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        },
+        {
+            "_id": "6a8fe8b2d2e604e16ac977ed",
+            "type": "question",
+            "payload": {
+                "q": "Choose the antonym of \"Benevolent.\"",
+                "opts": [
+                    "A) Malevolent",
+                    "B) Generous",
+                    "C) Kind",
+                    "D) Charitable"
+                ],
+                "ans": "A) Malevolent",
+                "expl": "Benevolent means kind and well-meaning, so its direct opposite is Malevolent, meaning having harmful intentions. Generous, Kind, and Charitable are all synonyms of Benevolent, not opposites.",
+                "cat": "antonyms",
+                "exams": [
+                    "SSC CGL 2022"
+                ]
+            },
+            "status": "pending",
+            "aiDraftedFields": [
+                "expl"
+            ],
+            "submittedBy": "6a39042961e489baa999d401",
+            "createdAt": "2026-08-27T07:35:14.925Z",
+            "updatedAt": "2026-08-27T07:35:14.925Z",
+            "__v": 0,
+            "validationIssues": []
+        }
+    ]
+}
