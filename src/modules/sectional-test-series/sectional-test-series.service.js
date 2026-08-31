@@ -5,7 +5,7 @@ const User = require('../../models/User.model')
 const crypto = require('crypto')
 const { groupQuestionsByLanguage, groupQuestionsBySubject, scoreAnswers } = require('../../lib/testQuestions')
 const { htmlToPlainText } = require('../../lib/htmlText')
-const sectionalSectionalTestSeriesRepository = require('./sectional-test-series.repository')
+const sectionalTestSeriesRepository = require('./sectional-test-series.repository')
 const rewardsService = require('../rewards/rewards.service')
 const Question = require('../../models/Question.model')
 
@@ -13,7 +13,7 @@ const Question = require('../../models/Question.model')
 
 class SectionalTestSeriesService extends BaseService {
     constructor() {
-        super(sectionalSectionalTestSeriesRepository, 'sectional-test-series')
+        super(sectionalTestSeriesRepository, 'sectional-test-series')
         this.logger = createLogger('sectional-test-series:service')
     }
 
@@ -214,7 +214,7 @@ class SectionalTestSeriesService extends BaseService {
         const seriesHasAccess = await this.checkUserAccess(series, null, userId)
 
         const filter = {
-            sectionalSectionalTestSeries: seriesId,
+            sectionalTestSeries: seriesId,
             isDeleted: false,
             status: query.status || 'active',
         }
@@ -286,14 +286,14 @@ class SectionalTestSeriesService extends BaseService {
 
     async getTestInstructions(testId, userId) {
         const test = await require('../../models/SectionalTestSeriesTest.model').findOne({ _id: testId, isDeleted: false })
-            .select('sectionalSectionalTestSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks instructions instructionsNew localizedContent')
+            .select('sectionalTestSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks instructions instructionsNew localizedContent')
             .lean()
 
         if (!test) {
             throw new AppError('Test not found', 404, 'NOT_FOUND')
         }
 
-        const series = await this.repository.getSeriesById(test.sectionalSectionalTestSeries)
+        const series = await this.repository.getSeriesById(test.sectionalTestSeries)
         if (!series || series.isDeleted || series.status !== 'active') {
             throw new AppError('Test series not found', 404, 'NOT_FOUND')
         }
@@ -320,101 +320,6 @@ class SectionalTestSeriesService extends BaseService {
         }
     }
 
-    async startTest(testId, userId, language = 'hi') {
-        const test = await this.repository.getSeriesTestById(testId)
-        if (!test || test.isDeleted || test.status !== 'active') {
-            throw new AppError('Test not found', 404, 'NOT_FOUND')
-        }
-
-        const series = await this.repository.getSeriesById(test.sectionalSectionalTestSeries)
-        if (!series || series.isDeleted || series.status !== 'active') {
-            throw new AppError('Test series not found', 404, 'NOT_FOUND')
-        }
-
-        const hasAccess = await this.checkUserAccess(series, test, userId)
-        if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
-
-        const questions = await this.repository.findQuestionsForTest(testId)
-        if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
-
-        const groupedQuestions = groupQuestionsBySubject(questions)
-
-        return {
-            series: {
-                _id: series._id,
-                title: series.title,
-                thumbnail: series.thumbnail,
-            },
-            test: {
-                _id: test._id,
-                title: test.title,
-                duration: test.duration,
-                isPerQuestionTime: test.isPerQuestionTime !== false,
-                totalQuestions: test.totalQuestions,
-                totalMarks: test.totalMarks,
-                passingMarks: test.passingMarks,
-                negativeMarks: test.negativeMarks,
-            },
-            hasAccess,
-            questionsBySubject: groupedQuestions,
-        }
-    }
-
-    async submitTest(testId, userId, payload = {}, language = 'hi') {
-        const test = await this.repository.getSeriesTestById(testId)
-        if (!test || test.isDeleted || test.status !== 'active') {
-            throw new AppError('Test not found', 404, 'NOT_FOUND')
-        }
-
-        const series = await this.repository.getSeriesById(test.sectionalSectionalTestSeries)
-        if (!series || series.isDeleted || series.status !== 'active') {
-            throw new AppError('Test series not found', 404, 'NOT_FOUND')
-        }
-
-        const hasAccess = await this.checkUserAccess(series, test, userId)
-        if (!hasAccess) throw new AppError('Please purchase this test to access', 403, 'FORBIDDEN')
-
-        const questions = await this.repository.findQuestionsForTest(testId)
-        if (!questions.length) throw new AppError('No questions mapped for this test', 400, 'VALIDATION_ERROR')
-
-        const { score, correct, wrong, skipped, unattempted, totalQuestions } = scoreAnswers(questions, payload.answers, test)
-
-        const totalMarks = Number(test.totalMarks || totalQuestions * Number(test.marksPerQuestion || 1))
-        const accuracy = totalQuestions > 0
-            ? parseFloat(((correct / totalQuestions) * 100).toFixed(2))
-            : 0
-
-        const attempt = await this.repository.createAttempt({
-            user: userId,
-            sectionalSectionalTestSeries: series._id,
-            test: test._id,
-            answers: payload.answers,
-            score,
-            totalMarks,
-            accuracy,
-            timeTaken: payload.timeTaken,
-            correct,
-            wrong,
-            skipped,
-            unattempted,
-            status: 'completed',
-        })
-
-        this.logger.info({ userId, testId, score, accuracy }, 'Submitted sectional-test-series test')
-
-        return {
-            attemptId: attempt._id,
-            score,
-            totalMarks,
-            passingMarks: Number(test.passingMarks || 0),
-            isPassed: score >= Number(test.passingMarks || 0),
-            accuracy,
-            correct,
-            wrong,
-            skipped,
-            unattempted,
-        }
-    }
 
     async startSession(testId, userId, language = 'hi', existingSessionId = null) {
         const test = await this.repository.getSeriesTestById(testId)
@@ -422,7 +327,7 @@ class SectionalTestSeriesService extends BaseService {
             throw new AppError('Test not found', 404, 'NOT_FOUND')
         }
 
-        const series = await this.repository.getSeriesById(test.sectionalSectionalTestSeries)
+        const series = await this.repository.getSeriesById(test.sectionalTestSeries)
         if (!series || series.isDeleted || series.status !== 'active') {
             throw new AppError('Test series not found', 404, 'NOT_FOUND')
         }
@@ -458,7 +363,7 @@ class SectionalTestSeriesService extends BaseService {
             sessionId = sessionId || crypto.randomUUID()
             attempt = await this.repository.createAttempt({
                 user: userId,
-                sectionalSectionalTestSeries: series._id,
+                sectionalTestSeries: series._id,
                 test: test._id,
                 sessionId,
                 totalTime: test.duration * 60, // Assuming duration is in minutes
@@ -994,7 +899,7 @@ class SectionalTestSeriesService extends BaseService {
 
     async listMyAttempts(userId, query = {}) {
         const filter = {}
-        if (query.seriesId) filter.sectionalSectionalTestSeries = query.seriesId
+        if (query.seriesId) filter.sectionalTestSeries = query.seriesId
         if (query.testId) filter.test = query.testId
 
         return this.repository.listAttemptsByUser(userId, filter, {
@@ -1050,7 +955,7 @@ class SectionalTestSeriesService extends BaseService {
             .lean()
 
         // Map types
-        const sectionalSectionalTestSeriesOngoing = (ongoingSessions || []).map(item => ({
+        const sectionalTestSeriesOngoing = (ongoingSessions || []).map(item => ({
             ...item,
             type: 'sectional-test-series',
             testType: 'sectional-test-series'
@@ -1062,7 +967,7 @@ class SectionalTestSeriesService extends BaseService {
             testType: 'previous-year-paper'
         }))
 
-        const sectionalSectionalTestSeriesCompleted = (completedSessions || []).map(item => ({
+        const sectionalTestSeriesCompleted = (completedSessions || []).map(item => ({
             ...item,
             type: 'sectional-test-series',
             testType: 'sectional-test-series'
@@ -1074,11 +979,11 @@ class SectionalTestSeriesService extends BaseService {
             testType: 'previous-year-paper'
         }))
 
-        const mergedOngoing = [...sectionalSectionalTestSeriesOngoing, ...pypOngoingMapped].sort(
+        const mergedOngoing = [...sectionalTestSeriesOngoing, ...pypOngoingMapped].sort(
             (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         )
 
-        const mergedCompleted = [...sectionalSectionalTestSeriesCompleted, ...pypCompletedMapped].sort(
+        const mergedCompleted = [...sectionalTestSeriesCompleted, ...pypCompletedMapped].sort(
             (a, b) => new Date(b.attemptedAt || b.createdAt) - new Date(a.attemptedAt || a.createdAt)
         )
 

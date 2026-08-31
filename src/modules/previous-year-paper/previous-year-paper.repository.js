@@ -68,9 +68,14 @@ class PreviousYearPaperRepository extends BaseRepository {
 
     async getAttemptStatsByPreviousYearPaper(userId, previousYearPaperIds = []) {
         if (!previousYearPaperIds.length) return {}
+        const mongoose = require('mongoose')
 
         const rows = await PreviousYearPaperAttempt.aggregate([
-            { $match: { user: userId, previousYearPaper: { $in: previousYearPaperIds }, status: 'completed' } },
+            { $match: { 
+                user: new mongoose.Types.ObjectId(userId), 
+                previousYearPaper: { $in: previousYearPaperIds.map(id => new mongoose.Types.ObjectId(id)) }, 
+                status: 'completed' 
+            } },
             { 
                 $group: { 
                     _id: '$previousYearPaper', 
@@ -109,9 +114,13 @@ class PreviousYearPaperRepository extends BaseRepository {
 
     async getLatestAttemptsByTestIds(userId, testIds = []) {
         if (!testIds.length) return {}
+        const mongoose = require('mongoose')
 
         const rows = await PreviousYearPaperAttempt.aggregate([
-            { $match: { user: userId, test: { $in: testIds } } },
+            { $match: { 
+                user: new mongoose.Types.ObjectId(userId), 
+                test: { $in: testIds.map(id => new mongoose.Types.ObjectId(id)) } 
+            } },
             { $sort: { attemptedAt: -1 } },
             {
                 $group: {

@@ -218,8 +218,13 @@ class PreviousYearPaperService extends BaseService {
             const id = item._id.toString()
             const hasAccess = paperHasAccess || !item.isPaid
             const attemptStats = latestAttempts[id]
-            const ongoingSession = ongoingMap.get(id)
-            console.log("ongoingSession========>", ongoingSession);
+            let ongoingSession = ongoingMap.get(id)
+
+            // If the ongoing session is an old leftover and there is a newer completed attempt, ignore the ongoing session
+            if (ongoingSession && attemptStats && ongoingSession.sessionId !== attemptStats.sessionId) {
+                ongoingSession = null
+            }
+
             return {
                 ...item,
                 description: htmlToPlainText(item.description),
