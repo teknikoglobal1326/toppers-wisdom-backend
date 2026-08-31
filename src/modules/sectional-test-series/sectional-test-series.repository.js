@@ -86,10 +86,10 @@ class SectionalTestSeriesRepository extends BaseRepository {
         const CourseOrder = require('../../models/CourseOrder.model')
         const orders = await CourseOrder.find({ user: userId, status: 'paid', 'items.itemType': 'sectional-test-series' }).select('items')
 
-        const sectionalSectionalTestSeriesIds = new Set()
+        const sectionalTestSeriesIds = new Set()
         for (const order of orders) {
             for (const item of order.items) {
-                if (item.itemType === 'sectional-test-series') sectionalSectionalTestSeriesIds.add(item.itemId.toString())
+                if (item.itemType === 'sectional-test-series') sectionalTestSeriesIds.add(item.itemId.toString())
             }
         }
 
@@ -97,7 +97,7 @@ class SectionalTestSeriesRepository extends BaseRepository {
             isDeleted: false,
             status: 'active',
             $or: [
-                { sectionalSectionalTestSeries: { $in: Array.from(sectionalSectionalTestSeriesIds) } },
+                { sectionalTestSeries: { $in: Array.from(sectionalTestSeriesIds) } },
                 { isPaid: false }
             ]
         })
@@ -107,8 +107,8 @@ class SectionalTestSeriesRepository extends BaseRepository {
 
     async getOngoingSessions(userId) {
         return SectionalTestSeriesAttempt.find({ user: userId, status: { $in: ['started', 'ongoing'] } })
-            .select('sessionId sectionalSectionalTestSeries test status score totalMarks timeTaken createdAt')
-            .populate('sectionalSectionalTestSeries', 'title thumbnail')
+            .select('sessionId sectionalTestSeries test status score totalMarks timeTaken createdAt')
+            .populate('sectionalTestSeries', 'title thumbnail')
             .populate('test', 'title totalQuestions duration')
             .sort({ createdAt: -1 })
             .lean()
@@ -116,8 +116,8 @@ class SectionalTestSeriesRepository extends BaseRepository {
 
     async getCompletedSessions(userId) {
         return SectionalTestSeriesAttempt.find({ user: userId, status: 'completed' })
-            .select('sessionId sectionalSectionalTestSeries test status score totalMarks timeTaken accuracy correct wrong skipped unattempted attemptedAt')
-            .populate('sectionalSectionalTestSeries', 'title thumbnail')
+            .select('sessionId sectionalTestSeries test status score totalMarks timeTaken accuracy correct wrong skipped unattempted attemptedAt')
+            .populate('sectionalTestSeries', 'title thumbnail')
             .populate('test', 'title totalQuestions duration passingMarks')
             .sort({ attemptedAt: -1 })
             .lean()
@@ -140,14 +140,14 @@ class SectionalTestSeriesRepository extends BaseRepository {
     async listSeriesTests(filter, options = {}) {
         return paginate(SectionalTestSeriesTest, filter, {
             ...options,
-            select: 'sectionalSectionalTestSeries subjectIds chapterIds topicIds title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status languages createdAt',
+            select: 'sectionalTestSeries subjectIds chapterIds topicIds title description thumbnail duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status languages createdAt',
             populate: [{ path: 'subjectIds', select: 'name chapters' }],
         })
     }
 
     async getSeriesTestById(testId) {
         return SectionalTestSeriesTest.findOne({ _id: testId, isDeleted: false })
-            .select('sectionalSectionalTestSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
+            .select('sectionalTestSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
             .lean()
     }
 
@@ -155,10 +155,10 @@ class SectionalTestSeriesRepository extends BaseRepository {
         if (!seriesIds.length) return {}
 
         const rows = await SectionalTestSeriesTest.aggregate([
-            { $match: { isDeleted: false, status: 'active', sectionalSectionalTestSeries: { $in: seriesIds } } },
+            { $match: { isDeleted: false, status: 'active', sectionalTestSeries: { $in: seriesIds } } },
             { 
                 $group: { 
-                    _id: '$sectionalSectionalTestSeries', 
+                    _id: '$sectionalTestSeries', 
                     totalCount: { $sum: 1 },
                     freeCount: { $sum: { $cond: [{ $eq: ['$isPaid', false] }, 1, 0] } }
                 } 
@@ -179,10 +179,10 @@ class SectionalTestSeriesRepository extends BaseRepository {
         const userObjectId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
 
         const rows = await SectionalTestSeriesAttempt.aggregate([
-            { $match: { user: userObjectId, sectionalSectionalTestSeries: { $in: seriesIds }, status: 'completed' } },
+            { $match: { user: userObjectId, sectionalTestSeries: { $in: seriesIds }, status: 'completed' } },
             { 
                 $group: { 
-                    _id: '$sectionalSectionalTestSeries', 
+                    _id: '$sectionalTestSeries', 
                     totalAttempts: { $sum: 1 },
                     uniqueTestsAttempted: { $addToSet: '$test' },
                     avgScore: { $avg: '$score' },
@@ -300,7 +300,7 @@ class SectionalTestSeriesRepository extends BaseRepository {
                 ...options,
                 sort: options.sort || { attemptedAt: -1 },
                 populate: [
-                    { path: 'sectionalSectionalTestSeries', select: 'title thumbnail' },
+                    { path: 'sectionalTestSeries', select: 'title thumbnail' },
                     { path: 'test', select: 'title duration totalQuestions totalMarks passingMarks' },
                 ],
             }

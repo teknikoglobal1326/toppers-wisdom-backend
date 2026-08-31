@@ -187,7 +187,9 @@ class AdminQuestionService extends BaseService {
     const DailyQuiz = require('../../models/DailyQuiz.model')
     const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
     const MathTest = require('../../models/MathTest.model')
-    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz, mathTest] = await Promise.all([
+    const SectionalTestSeriesTest = require('../../models/SectionalTestSeriesTest.model')
+    
+    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz, mathTest, sectionalTest] = await Promise.all([
       CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
       CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
       TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
@@ -195,8 +197,9 @@ class AdminQuestionService extends BaseService {
       LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id exam subExams isPerQuestionTime').lean(),
       DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id isPerQuestionTime').lean(),
       MathTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
+      SectionalTestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
     ])
-    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || mathTest || null
+    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || mathTest || sectionalTest || null
   }
 
   // Enforce the parent test's per-question-time policy on a question payload:

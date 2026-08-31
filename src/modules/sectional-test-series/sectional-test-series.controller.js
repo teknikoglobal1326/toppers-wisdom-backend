@@ -16,21 +16,11 @@ const listSeriesTests = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
-const startTest = catchAsync(async (req, res) => {
-    sendSuccess(res, await sectionalTestSeriesService.startTest(req.params.testId, req.user._id, req.user.language || 'hi'))
-})
 
 const getTestInstructions = catchAsync(async (req, res) => {
     sendSuccess(res, await sectionalTestSeriesService.getTestInstructions(req.params.testId, req.user._id))
 })
 
-const submitTest = catchAsync(async (req, res) => {
-    sendSuccess(
-        res,
-        await sectionalTestSeriesService.submitTest(req.params.testId, req.user._id, req.body, req.user.language || 'hi'),
-        'Test submitted successfully'
-    )
-})
 
 const startSession = catchAsync(async (req, res) => {
     sendSuccess(
@@ -85,8 +75,6 @@ module.exports = {
     getSeries,
     listSeriesTests,
     getTestInstructions,
-    startTest,
-    submitTest,
     startSession,
     updateSession,
     getSessionAnalytics,

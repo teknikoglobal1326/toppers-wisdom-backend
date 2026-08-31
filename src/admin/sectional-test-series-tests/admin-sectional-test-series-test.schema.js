@@ -70,4 +70,13 @@ const updateSectionalTestSeriesTestSchema = Joi.object({
     hi: localizedBlock.optional(),
 }).min(1)
 
-module.exports = { createSectionalTestSeriesTestSchema, updateSectionalTestSeriesTestSchema }
+const bulkCreateSectionalTestSeriesTestSchema = Joi.array().items(Joi.object({
+    sectionalTestSeries: objectId.required(),
+    subjectIds: Joi.array().items(objectId).single().default([]),
+    chapterIds: Joi.array().items(objectId).single().default([]),
+    topicIds: Joi.array().items(objectId).single().default([]),
+    ...baseSchema,
+    scheduleAt: Joi.date().optional().allow(null, ''),
+}).custom(requireSomeTitle))
+
+module.exports = { createSectionalTestSeriesTestSchema, updateSectionalTestSeriesTestSchema, bulkCreateSectionalTestSeriesTestSchema }
