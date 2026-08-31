@@ -52,6 +52,7 @@ app.use('/api/v1/test-attempts', authMiddleware, require('./modules/test/attempt
 app.use('/api/v1/live-tests', authMiddleware, require('./modules/live-test/live-test.routes'))
 app.use('/api/v1/boosters', authMiddleware, require('./modules/booster/booster.routes'))
 app.use('/api/v1/test-series', authMiddleware, require('./modules/test-series/test-series.routes'))
+app.use('/api/v1/sectional-test-series', authMiddleware, require('./modules/sectional-test-series/sectional-test-series.routes'))
 // app.use('/api/v1/math', authMiddleware, require('./modules/math/math.routes'))
 app.use('/api/v1/math-generator', authMiddleware, require('./modules/math-generator/math-generator.routes'))
 app.use('/api/v1/previous-year-papers', authMiddleware, require('./modules/previous-year-paper/previous-year-paper.routes'))
