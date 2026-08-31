@@ -9,21 +9,33 @@ const DIFFICULTY_CONFIG = {
     subtraction: { maxOperand: 250, borrowAllowed: false, negativeAllowed: false },
     multiplication: { maxOperand: 250 },
     division: { maxDivisor: 250, maxQuotient: 250 },
-    percentage: { maxPercent: 100, maxBase: 250 }
+    percentage: { maxPercent: 100, maxBase: 250 },
+    square: { maxOperand: 20 },
+    cube: { maxOperand: 10 },
+    squareroot: { maxOperand: 20 },
+    cuberoot: { maxOperand: 10 }
   },
   medium: {
     addition: { maxOperand: 999, carryAllowed: true },
     subtraction: { maxOperand: 999, borrowAllowed: true, negativeAllowed: false },
     multiplication: { maxOperand: 999 },
     division: { maxDivisor: 999, maxQuotient: 999 },
-    percentage: { maxPercent: 100, maxBase: 999 }
+    percentage: { maxPercent: 100, maxBase: 999 },
+    square: { maxOperand: 50 },
+    cube: { maxOperand: 20 },
+    squareroot: { maxOperand: 50 },
+    cuberoot: { maxOperand: 20 }
   },
   hard: {
     addition: { maxOperand: 5000, carryAllowed: true },
     subtraction: { maxOperand: 5000, borrowAllowed: true, negativeAllowed: false },
     multiplication: { maxOperand: 5000 },
     division: { maxDivisor: 5000, maxQuotient: 5000 },
-    percentage: { maxPercent: 150, maxBase: 5000 }
+    percentage: { maxPercent: 150, maxBase: 5000 },
+    square: { maxOperand: 100 },
+    cube: { maxOperand: 50 },
+    squareroot: { maxOperand: 100 },
+    cuberoot: { maxOperand: 50 }
   }
 }
 
@@ -58,9 +70,9 @@ function hasBorrowSubtraction(a, b) {
 class TestConfigurationValidator {
   static validate(config) {
     let { questionCount, difficulty, operations, rangeMin, rangeMax } = config
-    
+
     difficulty = difficulty ? difficulty.toLowerCase() : 'easy'
-    
+
     if (rangeMin === undefined || rangeMax === undefined) {
       if (difficulty === 'easy') {
         rangeMin = 1
@@ -83,7 +95,7 @@ class TestConfigurationValidator {
       throw new AppError('operations must contain at least one supported operation', 400)
     }
 
-    const supported = ['addition', 'subtraction', 'multiplication', 'division', 'percentage']
+    const supported = ['addition', 'subtraction', 'multiplication', 'division', 'percentage', 'square', 'cube', 'squareroot', 'cuberoot']
     const uniqueOps = Array.from(new Set(operations.map(o => String(o).toLowerCase().trim())))
     for (const op of uniqueOps) {
       if (!supported.includes(op)) {
@@ -110,20 +122,20 @@ class DifficultyRuleEngine {
       if (operation === 'addition') {
         op1 = Math.floor(Math.random() * (Math.min(rangeMax, config.maxOperand) - rangeMin + 1)) + rangeMin
         op2 = Math.floor(Math.random() * (Math.min(rangeMax, config.maxOperand) - rangeMin + 1)) + rangeMin
-        
+
         const sum = op1 + op2
 
         const hasCarry = hasCarryAddition(op1, op2)
         if (difficulty === 'easy' && hasCarry) continue
         if (difficulty === 'medium' && !hasCarry) continue
-        
+
         return [op1, op2]
       }
 
       if (operation === 'subtraction') {
         op1 = Math.floor(Math.random() * (Math.min(rangeMax, config.maxOperand) - rangeMin + 1)) + rangeMin
         op2 = Math.floor(Math.random() * (Math.min(rangeMax, config.maxOperand) - rangeMin + 1)) + rangeMin
-        
+
         if (op1 < op2) {
           const temp = op1
           op1 = op2
@@ -141,7 +153,7 @@ class DifficultyRuleEngine {
         const limit = config.maxOperand
         op1 = Math.floor(Math.random() * (Math.min(rangeMax, limit) - rangeMin + 1)) + rangeMin
         op2 = Math.floor(Math.random() * (Math.min(rangeMax, limit) - rangeMin + 1)) + rangeMin
-        
+
         if (difficulty === 'easy') {
           op1 = Math.floor(Math.random() * 8) + 2
           op2 = Math.floor(Math.random() * 8) + 2
@@ -183,9 +195,21 @@ class DifficultyRuleEngine {
           percent = Math.floor(Math.random() * 150) + 1
           base = (Math.floor(Math.random() * 20) + 1) * 100
         }
-        
+
         if ((percent * base) % 100 !== 0) continue
         return [percent, base]
+      }
+
+      if (operation === 'square' || operation === 'cube' || operation === 'squareroot' || operation === 'cuberoot') {
+        const limit = config.maxOperand
+        const root = Math.floor(Math.random() * limit) + 1
+        if (operation === 'square' || operation === 'cube') {
+          return [root, null]
+        } else if (operation === 'squareroot') {
+          return [root * root, null]
+        } else if (operation === 'cuberoot') {
+          return [root * root * root, null]
+        }
       }
     }
 
@@ -206,6 +230,9 @@ class DifficultyRuleEngine {
     } else if (operation === 'percentage') {
       op1 = 10
       op2 = 100
+    } else if (operation === 'square' || operation === 'cube' || operation === 'squareroot' || operation === 'cuberoot') {
+      op1 = 10
+      op2 = null
     }
     return [op1, op2]
   }
@@ -218,6 +245,10 @@ class AnswerCalculator {
     if (operation === 'multiplication') return op1 * op2
     if (operation === 'division') return Math.floor(op1 / op2)
     if (operation === 'percentage') return (op1 * op2) / 100
+    if (operation === 'square') return op1 * op1
+    if (operation === 'cube') return op1 * op1 * op1
+    if (operation === 'squareroot') return Math.round(Math.sqrt(op1))
+    if (operation === 'cuberoot') return Math.round(Math.cbrt(op1))
     throw new AppError(`Unsupported operation: ${operation}`, 400)
   }
 }
@@ -265,6 +296,18 @@ class DistractorGenerator {
       candidates.push(operand1 * (operand2 + 100) / 100)
       candidates.push(correctAnswer * 10)
       candidates.push(Math.floor(correctAnswer / 10))
+    } else if (operation === 'square') {
+      candidates.push((operand1 + 1) * (operand1 + 1))
+      candidates.push(Math.max(0, (operand1 - 1) * (operand1 - 1)))
+      candidates.push(operand1 * 2)
+    } else if (operation === 'cube') {
+      candidates.push((operand1 + 1) * (operand1 + 1) * (operand1 + 1))
+      candidates.push(Math.max(0, (operand1 - 1) * (operand1 - 1) * (operand1 - 1)))
+      candidates.push(operand1 * 3)
+    } else if (operation === 'squareroot' || operation === 'cuberoot') {
+      candidates.push(correctAnswer + 1)
+      candidates.push(Math.max(0, correctAnswer - 1))
+      candidates.push(correctAnswer * 2)
     }
 
     for (const cand of candidates) {
@@ -301,7 +344,7 @@ class ExplanationGenerator {
       }
       return `Add the ones: ${ones1} + ${ones2} = ${sumOnes}. Add the tens: ${tens1} + ${tens2} = ${tens1 + tens2}${carryMsg}. Therefore, ${operand1} + ${operand2} = ${correctAnswer}.`
     }
-    
+
     if (operation === 'subtraction') {
       const ones1 = operand1 % 10
       const ones2 = operand2 % 10
@@ -323,6 +366,22 @@ class ExplanationGenerator {
       return `To find ${operand1}% of ${operand2}, multiply ${operand2} by ${operand1}/100. So, ${operand1}/100 × ${operand2} = ${correctAnswer}.`
     }
 
+    if (operation === 'square') {
+      return `The square of ${operand1} is ${operand1} × ${operand1} = ${correctAnswer}.`
+    }
+
+    if (operation === 'cube') {
+      return `The cube of ${operand1} is ${operand1} × ${operand1} × ${operand1} = ${correctAnswer}.`
+    }
+
+    if (operation === 'squareroot') {
+      return `The square root of ${operand1} is the number that when multiplied by itself equals ${operand1}. Since ${correctAnswer} × ${correctAnswer} = ${operand1}, the square root is ${correctAnswer}.`
+    }
+
+    if (operation === 'cuberoot') {
+      return `The cube root of ${operand1} is the number that when cubed equals ${operand1}. Since ${correctAnswer} × ${correctAnswer} × ${correctAnswer} = ${operand1}, the cube root is ${correctAnswer}.`
+    }
+
     return `${operand1} ${operation} ${operand2} = ${correctAnswer}`
   }
 }
@@ -331,14 +390,14 @@ class QuestionValidator {
   static validate(q, rangeMin, rangeMax) {
     if (!q.questionId || !q.question || !q.operation || q.correctAnswer === undefined) return false
     if (q.options.length !== 4) return false
-    
+
     const correctOpts = q.options.filter(o => o.id === q.correctOptionId)
     if (correctOpts.length !== 1) return false
     if (correctOpts[0].value !== q.correctAnswer) return false
 
     const values = q.options.map(o => o.value)
     if (new Set(values).size !== 4) return false
-    
+
     if (q.operation === 'division') {
       if (q.operands[0] % q.operands[1] !== 0) return false
     }
@@ -352,7 +411,7 @@ class QuestionGenerator {
     const [op1, op2] = DifficultyRuleEngine.getOperands(operation, difficulty, rangeMin, rangeMax)
     const correctAnswer = AnswerCalculator.calculate(operation, op1, op2)
     const distractors = DistractorGenerator.generate(operation, op1, op2, correctAnswer)
-    
+
     const rawOptions = [
       { type: 'correct', value: correctAnswer },
       { type: 'distractor', value: distractors[0] },
@@ -363,15 +422,30 @@ class QuestionGenerator {
     // Shuffle options
     const shuffled = rawOptions.sort(() => 0.5 - Math.random())
     const optionIds = ['A', 'B', 'C', 'D']
-    
+
     const options = shuffled.map((o, index) => ({
       id: optionIds[index],
       value: o.value
     }))
 
     const correctOptionId = options.find(o => o.value === correctAnswer).id
-    const opSign = operation === 'addition' ? '+' : operation === 'subtraction' ? '-' : operation === 'multiplication' ? '×' : operation === 'division' ? '÷' : 'of'
-    const questionText = operation === 'percentage' ? `${op1}% of ${op2} = ?` : `${op1} ${opSign} ${op2} = ?`
+    
+    let questionText = ''
+    if (operation === 'percentage') {
+      questionText = `${op1}% of ${op2} = ?`
+    } else if (operation === 'square') {
+      questionText = `${op1}² = ?`
+    } else if (operation === 'cube') {
+      questionText = `${op1}³ = ?`
+    } else if (operation === 'squareroot') {
+      questionText = `√${op1} = ?`
+    } else if (operation === 'cuberoot') {
+      questionText = `∛${op1} = ?`
+    } else {
+      const opSign = operation === 'addition' ? '+' : operation === 'subtraction' ? '-' : operation === 'multiplication' ? '×' : operation === 'division' ? '÷' : 'of'
+      questionText = `${op1} ${opSign} ${op2} = ?`
+    }
+
     const explanation = ExplanationGenerator.generate(operation, op1, op2, correctAnswer)
 
     return {
@@ -394,7 +468,7 @@ class TestAssembler {
     const { rangeMin, rangeMax, questionCount, difficulty, operations } = config
     const questions = []
     const usedKeys = new Set()
-    
+
     const opDistribution = []
     const baseCount = Math.floor(questionCount / operations.length)
     let remainder = questionCount % operations.length
@@ -409,7 +483,7 @@ class TestAssembler {
         opDistribution.push(op)
       }
     }
-    
+
     opDistribution.sort(() => 0.5 - Math.random())
 
     const maxAttempts = questionCount * 20
@@ -420,15 +494,20 @@ class TestAssembler {
       attempts++
       const op = opDistribution[questions.length]
       const questionId = `q${questionIndex}`
-      
+
       const q = QuestionGenerator.generateQuestion(questionId, questionIndex, op, difficulty, rangeMin, rangeMax)
-      
+
       // Prevent duplicates
-      const minOpVal = Math.min(q.operands[0], q.operands[1])
-      const maxOpVal = Math.max(q.operands[0], q.operands[1])
-      const uniqueKey = (op === 'addition' || op === 'multiplication')
-        ? `${op}_${minOpVal}_${maxOpVal}`
-        : `${op}_${q.operands[0]}_${q.operands[1]}`
+      let uniqueKey = ''
+      if (op === 'square' || op === 'cube' || op === 'squareroot' || op === 'cuberoot') {
+        uniqueKey = `${op}_${q.operands[0]}`
+      } else {
+        const minOpVal = Math.min(q.operands[0], q.operands[1])
+        const maxOpVal = Math.max(q.operands[0], q.operands[1])
+        uniqueKey = (op === 'addition' || op === 'multiplication')
+          ? `${op}_${minOpVal}_${maxOpVal}`
+          : `${op}_${q.operands[0]}_${q.operands[1]}`
+      }
 
       if (usedKeys.has(uniqueKey)) {
         continue
@@ -461,9 +540,9 @@ class SpeedMathTestService extends BaseService {
   async generateTest(userId, rawConfig) {
     const validatedConfig = TestConfigurationValidator.validate(rawConfig)
     const testData = TestAssembler.assemble(userId, validatedConfig)
-    
+
     const test = await SpeedMathTest.create(testData)
-    
+
     // Auto-create a started attempt for this test
     const attempt = await SpeedMathAttempt.create({
       user: userId,
@@ -482,7 +561,7 @@ class SpeedMathTestService extends BaseService {
   async getTestQuestions(testId) {
     const test = await SpeedMathTest.findById(testId).lean()
     if (!test) throw new AppError('Test not found', 404)
-    
+
     // Sanitize questions to remove correct answers, explanation, operands, and correctOptionId
     const sanitizedQuestions = test.questions.map(q => ({
       questionId: q.questionId,
@@ -589,7 +668,7 @@ class SpeedMathTestService extends BaseService {
 
     const totalQuestions = test.configuration.questionCount
     const accuracy = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0
-    
+
     // QPM calculation (totalTimeTaken is in milliseconds)
     const totalTimeMinutes = (totalTimeTaken / 1000) / 60
     const questionsPerMinute = totalTimeMinutes > 0 ? Number((correct / totalTimeMinutes).toFixed(2)) : 0
@@ -601,7 +680,7 @@ class SpeedMathTestService extends BaseService {
     attempt.accuracy = accuracy
     attempt.timeTaken = totalTimeTaken
     attempt.questionsPerMinute = questionsPerMinute
-    
+
     await attempt.save()
 
     return attempt
@@ -621,7 +700,7 @@ class SpeedMathTestService extends BaseService {
     // Build rich details mapping questions with answers, explanations, and correctness status
     const details = test.questions.map(q => {
       const studentAns = attempt.answers.find(ans => ans.questionId === q.questionId)
-      
+
       let isCorrect = false;
       let isSkipped = true;
 
@@ -666,9 +745,9 @@ class SpeedMathTestService extends BaseService {
 
   async getDashboardData(userId) {
     const attempts = await SpeedMathAttempt.find({ user: userId, status: 'completed' }).lean()
-    
+
     const totalAttempted = attempts.length
-    
+
     if (totalAttempted === 0) {
       return {
         totalAttempted: 0,
