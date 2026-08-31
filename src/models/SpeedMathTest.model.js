@@ -7,7 +7,7 @@ const speedMathTestSchema = new mongoose.Schema({
     rangeMax: { type: Number, required: true },
     questionCount: { type: Number, required: true },
     difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
-    operations: [{ type: String, enum: ['addition', 'subtraction', 'multiplication', 'division', 'percentage'] }]
+    operations: [{ type: String, enum: ['addition', 'subtraction', 'multiplication', 'division', 'percentage', 'square', 'cube', 'squareroot', 'cuberoot'] }]
   },
   questions: [{
     questionId: { type: String, required: true },
