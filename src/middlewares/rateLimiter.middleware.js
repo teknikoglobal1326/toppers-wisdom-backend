@@ -1,7 +1,7 @@
 const rateLimit = require('express-rate-limit')
 
-const otpLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 100, message: { success: false, error: { message: 'Too many OTP requests. Try in 1 hour.' } } })
-const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5000, message: { success: false, error: { message: 'Too many requests.' } } })
-const adminLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5000 })
+const otpLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 1000, message: { success: false, error: { message: 'Too many OTP requests. Try in 1 hour.' } } })
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50000, message: { success: false, error: { message: 'Too many requests.' } } })
+const adminLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50000 })
 
 module.exports = { otpLimiter, apiLimiter, adminLimiter }

@@ -362,6 +362,8 @@ const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
   const aiPrompt = `
     You are an expert OCR and NLP assistant. Extract all vocabulary words and multiple-choice questions from the provided document.
     Categorize each item strictly into one of these 8 categories: 'one-word-sub', 'idioms-phrases', 'synonyms', 'antonyms', 'spellings', 'phrasal-verbs', 'homonyms', 'proverbs'.
+    
+    IMPORTANT: DO NOT invent or generate multiple-choice questions from vocabulary words. Only extract questions if they are explicitly written as Multiple Choice Questions with options in the text.
 
     For WORDS, draft the following fields:
     - word: the vocabulary word
@@ -386,11 +388,23 @@ const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
     Return ONLY a valid JSON object matching this schema:
     {
       "words": [{ ...fields... }],
-      "questions": [{ ...fields... }]
+      "questions": [{ ...fields... }] 
     }
   `;
 
-  const textContext = fileBuffer.toString('utf-8');
+  let textContext = '';
+  if (fileName.toLowerCase().endsWith('.docx')) {
+    const mammoth = require('mammoth');
+    const result = await mammoth.extractRawText({ buffer: fileBuffer });
+    textContext = result.value;
+  } else {
+    textContext = fileBuffer.toString('utf-8');
+  }
+  
+  if (!textContext || textContext.trim().length === 0) {
+    console.error(`No text could be extracted from ${fileName}.`);
+    return;
+  }
   
   const paragraphs = textContext.split(/\n\s*\n/);
   const chunks = [];

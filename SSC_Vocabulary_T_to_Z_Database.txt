@@ -1,0 +1,1185 @@
+====================================================
+SSC/BANKING/NDA/CDS ENGLISH VOCABULARY & MCQ DATABASE
+100 Items: 50 Vocabulary Words + 50 Multiple Choice Questions
+Alphabet Range: T to Z
+Categories: one-word-sub | idioms-phrases | synonyms | antonyms | spellings | phrasal-verbs | homonyms | proverbs
+====================================================
+
+===== SECTION 1: VOCABULARY WORDS (1-50) =====
+
+Word: Taciturn
+English Meaning: A person who is reserved or says very little
+Hindi Meaning: अल्पभाषी, कम बोलने वाला
+Usage 1: The taciturn employee rarely spoke during team meetings.
+Usage 2: His taciturn nature made him seem mysterious to his new classmates.
+Daily 1: My brother is taciturn in the morning before his coffee.
+Daily 2: She is usually taciturn around strangers.
+Mnemonic Hook: "Taciturn" को "talk is turned off" की तरह याद रखें, यानी जो बहुत कम बोलता है।
+Concept Note: Taciturn is a synonym of reserved and reticent, and an antonym of loquacious.
+Theme: Personality
+Category: one-word-sub
+Exams: SSC CGL, SSC CHSL
+
+Word: Take to task
+English Meaning: To criticize or reprimand someone for a mistake
+Hindi Meaning: किसी को गलती के लिए फटकारना
+Usage 1: The manager took the employee to task for missing the deadline.
+Usage 2: The teacher took the students to task for their careless work.
+Daily 1: Mom took me to task for leaving the door open.
+Daily 2: The coach took the players to task after the poor performance.
+Mnemonic Hook: "Task" यानी काम और "take to task" यानी गलती के लिए किसी को जवाबदेह बनाना।
+Concept Note: This idiom is used when someone is strongly criticized or reprimanded for an action.
+Theme: Criticism
+Category: idioms-phrases
+Exams: SSC CGL, IBPS PO
+
+Word: Tenacious
+English Meaning: Persistent and determined
+Hindi Meaning: दृढ़, लगनशील
+Usage 1: The tenacious candidate continued preparing despite repeated failures.
+Usage 2: Her tenacious efforts finally led to success.
+Daily 1: Be tenacious when you are learning a difficult skill.
+Daily 2: He is tenacious and never quits halfway.
+Mnemonic Hook: "Tenacious" को "tenaciously holding on" से जोड़ें—जो लक्ष्य को मजबूती से पकड़े रहे।
+Concept Note: Tenacious is a synonym of persistent, resolute, and steadfast.
+Theme: Persistence
+Category: synonyms
+Exams: SSC CGL, IBPS PO
+
+Word: Timid
+English Meaning: Lacking courage or confidence
+Hindi Meaning: डरपोक, संकोची
+Usage 1: The timid student hesitated to answer the question.
+Usage 2: The timid puppy hid behind the chair.
+Daily 1: Don't be timid; ask your question confidently.
+Daily 2: He was timid at first but soon became comfortable.
+Mnemonic Hook: "Timid" को "time hid" की तरह याद करें—डरकर छिप जाना।
+Concept Note: Timid is an antonym of bold, brave, and courageous.
+Theme: Courage
+Category: antonyms
+Exams: SSC CGL, CDS
+
+Word: Transparent
+English Meaning: Open, clear, and easy to understand
+Hindi Meaning: पारदर्शी, स्पष्ट
+Usage 1: The organization follows a transparent recruitment process.
+Usage 2: The company promised transparent communication with its customers.
+Daily 1: Please be transparent about the problem.
+Daily 2: I prefer transparent pricing with no hidden charges.
+Mnemonic Hook: "Transparent" यानी ऐसी चीज़ जिसके आर-पार देखा जा सके; figuratively, सब कुछ स्पष्ट होना।
+Concept Note: Transparent can mean physically see-through or figuratively open and honest.
+Theme: Clarity
+Category: synonyms
+Exams: SSC CGL, Bank PO
+
+Word: Thorough
+English Meaning: Complete and careful
+Hindi Meaning: पूर्ण, बारीकी से किया हुआ
+Usage 1: The inspector conducted a thorough investigation.
+Usage 2: A thorough review found several small errors.
+Daily 1: Give the document a thorough check before submitting it.
+Daily 2: She did a thorough cleaning of the room.
+Mnemonic Hook: "Thorough" यानी काम को पूरी तरह और हर detail के साथ करना।
+Concept Note: Thorough is a synonym of comprehensive, exhaustive, and meticulous.
+Theme: Diligence
+Category: synonyms
+Exams: SSC CGL, RBI Grade B
+
+Word: Turn down
+English Meaning: To reject or refuse something
+Hindi Meaning: अस्वीकार करना
+Usage 1: She turned down the job offer because the salary was too low.
+Usage 2: The committee turned down the proposal.
+Daily 1: I had to turn down the invitation.
+Daily 2: He turned down the volume before going to sleep.
+Mnemonic Hook: "Turn down" यानी किसी offer को नीचे कर देना—reject करना; volume के लिए भी कम करना।
+Concept Note: Turn down can mean reject an offer/request or reduce the level of something such as volume.
+Theme: Rejection
+Category: phrasal-verbs
+Exams: SSC CHSL, Bank Clerk
+
+Word: Stationary / Stationery
+English Meaning: Stationary - not moving; Stationery - writing materials
+Hindi Meaning: Stationary - स्थिर; Stationery - लेखन सामग्री
+Usage 1: The vehicle remained stationary during the inspection.
+Usage 2: I bought new stationery for my office.
+Daily 1: The car was stationary at the signal.
+Daily 2: She ordered stationery for the new semester.
+Mnemonic Hook: "Stationery" has "e" like envelope, so it means writing materials; "stationary" means staying still.
+Concept Note: These homophones are commonly tested in spelling questions.
+Theme: Wordplay
+Category: homonyms
+Exams: SSC CGL, SSC CHSL
+
+Word: Time and tide wait for no man
+English Meaning: Opportunities and time do not wait for anyone
+Hindi Meaning: समय और अवसर किसी की प्रतीक्षा नहीं करते
+Usage 1: Start preparing today because time and tide wait for no man.
+Usage 2: He regretted delaying the decision because time and tide wait for no man.
+Daily 1: Don't postpone your work; time and tide wait for no man.
+Daily 2: We must act quickly because time and tide wait for no man.
+Mnemonic Hook: समय और ज्वार किसी के लिए नहीं रुकते, इसलिए समय का सही उपयोग करें।
+Concept Note: This proverb encourages timely action and warns against unnecessary delay.
+Theme: Time
+Category: proverbs
+Exams: SSC CGL, NDA
+
+Word: Ubiquitous
+English Meaning: Present or found everywhere
+Hindi Meaning: सर्वव्यापी, हर जगह मौजूद
+Usage 1: Smartphones have become ubiquitous in modern society.
+Usage 2: Digital payments are now ubiquitous in urban areas.
+Daily 1: Wi-Fi is ubiquitous in most modern offices.
+Daily 2: Social media has become ubiquitous among young adults.
+Mnemonic Hook: "Ubiquitous" को "you be everywhere" से जोड़ें—जो हर जगह हो।
+Concept Note: Ubiquitous means present, appearing, or found everywhere.
+Theme: Presence
+Category: one-word-sub
+Exams: SSC CGL, CDS
+
+Word: Under the weather
+English Meaning: Feeling slightly ill or unwell
+Hindi Meaning: अस्वस्थ महसूस करना
+Usage 1: I am feeling under the weather today.
+Usage 2: She stayed home because she was under the weather.
+Daily 1: I'm a little under the weather, so I'll rest.
+Daily 2: He looked under the weather after the long journey.
+Mnemonic Hook: "Weather" खराब हो तो mood और health दोनों down लगते हैं—under the weather यानी अस्वस्थ।
+Concept Note: This idiom is generally used for temporary or minor illness.
+Theme: Health
+Category: idioms-phrases
+Exams: SSC CHSL, Bank PO
+
+Word: Unanimous
+English Meaning: Agreed by everyone
+Hindi Meaning: सर्वसम्मत
+Usage 1: The committee reached a unanimous decision.
+Usage 2: The jury was unanimous in its verdict.
+Daily 1: We were unanimous about going out for dinner.
+Daily 2: The team gave unanimous support to the plan.
+Mnemonic Hook: "Uni" यानी one और "animous" को minds समझें—सबकी एक राय।
+Concept Note: Unanimous means complete agreement among all members of a group.
+Theme: Agreement
+Category: synonyms
+Exams: SSC CGL, RBI Grade B
+
+Word: Unprecedented
+English Meaning: Never done or known before
+Hindi Meaning: अभूतपूर्व
+Usage 1: The city experienced unprecedented rainfall this year.
+Usage 2: The invention brought unprecedented changes to communication.
+Daily 1: The demand for the product was unprecedented.
+Daily 2: We faced an unprecedented situation at work.
+Mnemonic Hook: "Precedent" यानी पहले का example; unprecedented यानी जिसका पहले कोई example नहीं।
+Concept Note: Unprecedented means without previous example or parallel.
+Theme: Novelty
+Category: synonyms
+Exams: SSC CGL, CDS
+
+Word: Up in arms
+English Meaning: Very angry or protesting strongly
+Hindi Meaning: बहुत नाराज़ या विरोध में होना
+Usage 1: Residents were up in arms over the sudden tax increase.
+Usage 2: The employees were up in arms about the new policy.
+Daily 1: Parents were up in arms over the fee hike.
+Daily 2: Fans were up in arms after the decision.
+Mnemonic Hook: "Arms" ऊपर उठाना protest या anger दिखाने जैसा है।
+Concept Note: This idiom describes strong anger, protest, or opposition.
+Theme: Protest
+Category: idioms-phrases
+Exams: SSC CGL, Bank PO
+
+Word: Vacillate
+English Meaning: To keep changing between different opinions or choices
+Hindi Meaning: दुविधा में बार-बार निर्णय बदलना
+Usage 1: The manager continued to vacillate between the two proposals.
+Usage 2: Don't vacillate when a clear decision is needed.
+Daily 1: I vacillated between the two phones before buying one.
+Daily 2: She tends to vacillate when making important choices.
+Mnemonic Hook: "Vacillate" को "back and forth" की तरह याद करें—बार-बार निर्णय बदलना।
+Concept Note: Vacillate means to be indecisive or unable to settle on a choice.
+Theme: Decision-Making
+Category: antonyms
+Exams: SSC CGL, Bank PO
+
+Word: Vigilant
+English Meaning: Alert and watchful
+Hindi Meaning: सतर्क, चौकन्ना
+Usage 1: Security guards must remain vigilant at all times.
+Usage 2: Citizens should be vigilant about online fraud.
+Daily 1: Stay vigilant when sharing personal information online.
+Daily 2: The driver remained vigilant on the busy road.
+Mnemonic Hook: "Vigilant" को "vigil" यानी जागकर पहरा देना से जोड़ें।
+Concept Note: Vigilant is a synonym of alert, watchful, and attentive.
+Theme: Alertness
+Category: synonyms
+Exams: SSC CGL, NDA
+
+Word: Vindicate
+English Meaning: To prove that someone was right or not guilty
+Hindi Meaning: निर्दोष या सही सिद्ध करना
+Usage 1: The new evidence vindicated the accused.
+Usage 2: The investigation vindicated her earlier decision.
+Daily 1: The test results vindicated his concerns.
+Daily 2: His success vindicated the decision to trust him.
+Mnemonic Hook: "Vindicate" यानी evidence देकर किसी को right साबित करना।
+Concept Note: Vindicate is commonly used when evidence clears someone from blame or proves a position correct.
+Theme: Justice
+Category: one-word-sub
+Exams: SSC CGL, CDS
+
+Word: Virtuous
+English Meaning: Having high moral standards
+Hindi Meaning: सदाचारी, नैतिक
+Usage 1: The virtuous leader was respected for his honesty.
+Usage 2: She was known for her virtuous conduct.
+Daily 1: Helping others is considered a virtuous act.
+Daily 2: He tries to make virtuous choices every day.
+Mnemonic Hook: "Virtue" यानी अच्छाई और morality; virtuous यानी गुणी और नैतिक।
+Concept Note: Virtuous is related to virtue and describes morally good behavior.
+Theme: Morality
+Category: antonyms
+Exams: SSC CGL, IBPS PO
+
+Word: Walk of life
+English Meaning: A person's occupation, social group, or way of living
+Hindi Meaning: जीवन का क्षेत्र या वर्ग
+Usage 1: People from every walk of life attended the event.
+Usage 2: The program helps students from different walks of life.
+Daily 1: We meet people from all walks of life here.
+Daily 2: Volunteers came from every walk of life.
+Mnemonic Hook: "Walk" यानी जीवन की यात्रा और "walk of life" यानी जीवन का अलग क्षेत्र।
+Concept Note: The phrase is usually used as "people from all walks of life."
+Theme: Society
+Category: idioms-phrases
+Exams: SSC CGL, Bank PO
+
+Word: Wary
+English Meaning: Cautious and watchful
+Hindi Meaning: सावधान, सतर्क
+Usage 1: Investors are wary of making risky decisions.
+Usage 2: She was wary of accepting an offer from a stranger.
+Daily 1: Be wary of suspicious links.
+Daily 2: He is wary of spending money without comparing prices.
+Mnemonic Hook: "Wary" सुनने में "beware" जैसा लगता है—सावधान रहना।
+Concept Note: Wary means cautious because of possible danger or problems.
+Theme: Caution
+Category: synonyms
+Exams: SSC CGL, SSC CHSL
+
+Word: Weather the storm
+English Meaning: To survive a difficult situation
+Hindi Meaning: कठिन परिस्थिति को झेलकर निकलना
+Usage 1: The company managed to weather the storm during the recession.
+Usage 2: Strong families can weather the storm together.
+Daily 1: We will weather the storm and solve the problem.
+Daily 2: The team weathered the storm and finished the project.
+Mnemonic Hook: तूफान में सुरक्षित रहकर निकलना यानी कठिन समय को successfully handle करना।
+Concept Note: This idiom is figurative and refers to surviving hardship rather than literal weather.
+Theme: Resilience
+Category: idioms-phrases
+Exams: SSC CGL, IBPS PO
+
+Word: Whimsical
+English Meaning: Playfully unusual or unpredictable
+Hindi Meaning: सनकी, मनमौजी
+Usage 1: The artist is famous for her whimsical designs.
+Usage 2: The story has a charming and whimsical atmosphere.
+Daily 1: He has a whimsical sense of humor.
+Daily 2: The child made a whimsical drawing.
+Mnemonic Hook: "Whim" यानी अचानक मन में आया विचार; whimsical यानी मनमौजी या playful।
+Concept Note: Whimsical can describe something fanciful, playful, or unpredictably unusual.
+Theme: Creativity
+Category: synonyms
+Exams: SSC CGL, Bank PO
+
+Word: With flying colors
+English Meaning: With outstanding success
+Hindi Meaning: शानदार सफलता के साथ
+Usage 1: She passed the examination with flying colors.
+Usage 2: The team completed the project with flying colors.
+Daily 1: I hope you pass the test with flying colors.
+Daily 2: He finished the interview with flying colors.
+Mnemonic Hook: जीत के बाद झंडे उड़ाना—flying colors—यानी शानदार सफलता।
+Concept Note: This idiom is used to indicate excellent or highly successful performance.
+Theme: Success
+Category: idioms-phrases
+Exams: SSC CHSL, Bank PO
+
+Word: Xenial
+English Meaning: Hospitable or friendly to guests or strangers
+Hindi Meaning: अतिथि-सत्कार करने वाला
+Usage 1: The xenial host made every guest feel comfortable.
+Usage 2: Their xenial nature impressed the visitors.
+Daily 1: Our new neighbor is very xenial.
+Daily 2: The hotel staff were warm and xenial.
+Mnemonic Hook: "Xen-" का संबंध guests/strangers से है; xenial यानी strangers के प्रति friendly।
+Concept Note: Xenial relates to hospitality and friendly relations with guests or strangers.
+Theme: Hospitality
+Category: one-word-sub
+Exams: SSC CGL, CDS
+
+Word: Xenophobia
+English Meaning: Fear or dislike of foreigners or strangers
+Hindi Meaning: विदेशियों या अजनबियों के प्रति भय या घृणा
+Usage 1: Xenophobia can create barriers between communities.
+Usage 2: The campaign aimed to challenge xenophobia.
+Daily 1: Education can help reduce xenophobia.
+Daily 2: The article discussed the effects of xenophobia.
+Mnemonic Hook: "Xeno" यानी foreign और "phobia" यानी fear—foreigners का डर या dislike।
+Concept Note: Xenophobia is the fear or aversion toward foreigners or unfamiliar people.
+Theme: Society
+Category: one-word-sub
+Exams: SSC CGL, CDS
+
+Word: Yield
+English Meaning: To produce, provide, or give way
+Hindi Meaning: उपज देना, प्रदान करना, रास्ता देना
+Usage 1: The new method yielded better results.
+Usage 2: Drivers must yield to pedestrians at the crossing.
+Daily 1: This investment may yield good returns.
+Daily 2: Please yield to the vehicle coming from the right.
+Mnemonic Hook: "Yield" यानी result देना या रास्ता छोड़ देना—context के अनुसार meaning बदलता है।
+Concept Note: Yield has several meanings, including produce, provide a return, or give way.
+Theme: Results
+Category: synonyms
+Exams: SSC CGL, NDA
+
+Word: Zeal
+English Meaning: Great enthusiasm and energy
+Hindi Meaning: उत्साह, जोश
+Usage 1: The volunteers worked with great zeal.
+Usage 2: Her zeal for learning inspired her classmates.
+Daily 1: He studies with remarkable zeal.
+Daily 2: The team began the project with fresh zeal.
+Mnemonic Hook: "Zeal" को "ज़ील" यानी जोश से याद करें।
+Concept Note: Zeal is a synonym of enthusiasm, eagerness, and fervor.
+Theme: Enthusiasm
+Category: synonyms
+Exams: SSC CGL, IBPS PO
+
+Word: Zealous
+English Meaning: Very enthusiastic and devoted
+Hindi Meaning: उत्साही, जोशीला
+Usage 1: The zealous campaigner worked tirelessly for the cause.
+Usage 2: She is a zealous supporter of environmental protection.
+Daily 1: He is zealous about improving his skills.
+Daily 2: The zealous volunteers arrived early.
+Mnemonic Hook: Zealous = full of zeal, यानी बहुत जोशीला।
+Concept Note: Zealous describes someone who shows strong enthusiasm or devotion.
+Theme: Dedication
+Category: one-word-sub
+Exams: SSC CGL, CDS
+
+Word: Zero in on
+English Meaning: To focus closely on something
+Hindi Meaning: किसी चीज़ पर विशेष रूप से ध्यान केंद्रित करना
+Usage 1: The investigators zeroed in on the main suspect.
+Usage 2: The team needs to zero in on the key problem.
+Daily 1: Let's zero in on the most important issue.
+Daily 2: She zeroed in on the error immediately.
+Mnemonic Hook: "Zero in" यानी target को बिल्कुल center में लाना—पूरी तरह focus करना।
+Concept Note: Zero in on is a phrasal verb meaning to focus attention precisely on a target or issue.
+Theme: Focus
+Category: phrasal-verbs
+Exams: SSC CGL, Bank PO
+
+Word: Zest
+English Meaning: Great enthusiasm and energy
+Hindi Meaning: उत्साह, उमंग
+Usage 1: She approached her new job with zest.
+Usage 2: He has a zest for adventure.
+Daily 1: Start the day with zest and confidence.
+Daily 2: Her zest for learning is impressive.
+Mnemonic Hook: "Zest" को "ज़ोरदार excitement" से जोड़ें।
+Concept Note: Zest refers to lively enthusiasm, energy, or enjoyment.
+Theme: Energy
+Category: synonyms
+Exams: SSC CGL, RBI Grade B
+
+Word: Zany
+English Meaning: Amusingly unconventional or silly
+Hindi Meaning: अजीबोगरीब, हास्यास्पद
+Usage 1: The comedian is known for his zany sense of humor.
+Usage 2: The movie features several zany characters.
+Daily 1: His zany ideas always make us laugh.
+Daily 2: She wore a zany costume to the party.
+Mnemonic Hook: "Zany" यानी ऐसा funny और unusual कि देखकर हँसी आए।
+Concept Note: Zany describes someone or something amusingly unconventional or absurd.
+Theme: Humor
+Category: synonyms
+Exams: SSC CGL, SSC CHSL
+
+Word: Zip up
+English Meaning: To close something with a zipper
+Hindi Meaning: ज़िप लगाकर बंद करना
+Usage 1: Please zip up your jacket before going outside.
+Usage 2: He zipped up the bag after packing it.
+Daily 1: Zip up your backpack properly.
+Daily 2: She zipped up her coat in the cold weather.
+Mnemonic Hook: "Zip" यानी zipper और "zip up" यानी zipper से बंद करना।
+Concept Note: Zip up is a common phrasal verb used for clothing, bags, and similar items with zippers.
+Theme: Daily Life
+Category: phrasal-verbs
+Exams: SSC CHSL, Bank Clerk
+
+Word: Zestful
+English Meaning: Full of energy and enthusiasm
+Hindi Meaning: उत्साहपूर्ण, जोश से भरा
+Usage 1: The zestful performance energized the audience.
+Usage 2: She gave a zestful presentation.
+Daily 1: His zestful attitude makes work enjoyable.
+Daily 2: The children were zestful during the activity.
+Mnemonic Hook: Zestful = full of zest, यानी energy और enthusiasm से भरपूर।
+Concept Note: Zestful is an adjective formed from zest and describes lively enthusiasm.
+Theme: Enthusiasm
+Category: antonyms
+Exams: SSC CGL, Bank PO
+
+Word: Terse
+English Meaning: Brief and abrupt in speech or writing
+Hindi Meaning: संक्षिप्त और रूखा
+Usage 1: His terse reply ended the conversation quickly.
+Usage 2: The report was terse but informative.
+Daily 1: She gave me a terse answer.
+Daily 2: Keep the message terse and clear.
+Mnemonic Hook: "Terse" यानी बहुत कम words में बात करना, कभी-कभी थोड़ा रूखा भी।
+Concept Note: Terse is a synonym of concise but may also suggest abruptness.
+Theme: Communication
+Category: antonyms
+Exams: SSC CGL, Bank PO
+
+Word: Trivial
+English Meaning: Of little importance or value
+Hindi Meaning: तुच्छ, मामूली
+Usage 1: The dispute was caused by a trivial misunderstanding.
+Usage 2: Do not waste time on trivial matters.
+Daily 1: It was just a trivial mistake.
+Daily 2: Don't let trivial issues distract you.
+Mnemonic Hook: "Trivial" यानी very small or unimportant matter।
+Concept Note: Trivial is an antonym of important, significant, and substantial.
+Theme: Importance
+Category: antonyms
+Exams: SSC CGL, CDS
+
+Word: Turn over a new leaf
+English Meaning: To start behaving in a better way
+Hindi Meaning: नई और बेहतर शुरुआत करना
+Usage 1: After the warning, he decided to turn over a new leaf.
+Usage 2: She turned over a new leaf and began studying regularly.
+Daily 1: This month I'm turning over a new leaf.
+Daily 2: He promised to turn over a new leaf.
+Mnemonic Hook: पुरानी page छोड़कर नया leaf पलटना यानी नई शुरुआत करना।
+Concept Note: This idiom indicates a positive change in behavior or lifestyle.
+Theme: Change
+Category: idioms-phrases
+Exams: SSC CGL, Bank PO
+
+Word: Uphold
+English Meaning: To support or maintain a principle, law, or decision
+Hindi Meaning: बनाए रखना, समर्थन करना
+Usage 1: The court upheld the original decision.
+Usage 2: Leaders must uphold the law.
+Daily 1: We should uphold our promises.
+Daily 2: The organization upholds high standards.
+Mnemonic Hook: "Up" + "hold" यानी किसी principle को ऊपर उठाकर मजबूती से बनाए रखना।
+Concept Note: Uphold commonly refers to maintaining a law, principle, decision, or standard.
+Theme: Principles
+Category: one-word-sub
+Exams: SSC CGL, NDA
+
+Word: Verbatim
+English Meaning: Using exactly the same words
+Hindi Meaning: शब्दशः
+Usage 1: The reporter quoted the witness verbatim.
+Usage 2: Please copy the instructions verbatim.
+Daily 1: I repeated her message verbatim.
+Daily 2: The minutes recorded his statement verbatim.
+Mnemonic Hook: "Verbatim" में "verb" यानी words—exactly the same words।
+Concept Note: Verbatim means word-for-word, without changing the wording.
+Theme: Accuracy
+Category: one-word-sub
+Exams: SSC CGL, RBI Grade B
+
+Word: Volatile
+English Meaning: Likely to change suddenly and unpredictably
+Hindi Meaning: अस्थिर, तेजी से बदलने वाला
+Usage 1: The volatile market made investors nervous.
+Usage 2: The political situation remained volatile.
+Daily 1: Prices are volatile this week.
+Daily 2: His volatile mood made the situation difficult.
+Mnemonic Hook: "Volatile" को "volcano" की तरह अचानक बदलने वाली चीज़ से जोड़ें।
+Concept Note: Volatile can describe markets, situations, substances, or people that change suddenly.
+Theme: Instability
+Category: synonyms
+Exams: SSC CGL, Bank PO
+
+Word: Wane
+English Meaning: To decrease gradually in strength or intensity
+Hindi Meaning: धीरे-धीरे कम होना
+Usage 1: Public interest in the issue began to wane.
+Usage 2: Her enthusiasm did not wane despite difficulties.
+Daily 1: My energy starts to wane in the afternoon.
+Daily 2: The excitement began to wane after the event.
+Mnemonic Hook: "Wane" यानी धीरे-धीरे weak होना।
+Concept Note: Wane is the antonym of wax when describing the moon's apparent size, and more generally means diminish.
+Theme: Decline
+Category: antonyms
+Exams: SSC CGL, CDS
+
+Word: Wreak havoc
+English Meaning: To cause great damage or destruction
+Hindi Meaning: भारी तबाही मचाना
+Usage 1: The cyclone wreaked havoc across the coastal region.
+Usage 2: The malware wreaked havoc on the company's network.
+Daily 1: Heavy rain can wreak havoc on traffic.
+Daily 2: The power cut wreaked havoc with our schedule.
+Mnemonic Hook: "Havoc" यानी तबाही; wreak havoc यानी तबाही मचा देना।
+Concept Note: Wreak havoc is commonly used for events or actions that cause widespread damage or disruption.
+Theme: Damage
+Category: idioms-phrases
+Exams: SSC CGL, Bank PO
+
+Word: Yoke
+English Meaning: A burden or a device used to join animals for pulling
+Hindi Meaning: जुआ, बोझ
+Usage 1: The farmers placed a yoke on the oxen.
+Usage 2: He felt the yoke of heavy responsibility.
+Daily 1: She disliked the yoke of unnecessary rules.
+Daily 2: The old cart used a wooden yoke.
+Mnemonic Hook: Yoke को बैलों को जोड़ने वाले लकड़ी के उपकरण और figurative burden दोनों से याद करें।
+Concept Note: Yoke can be literal or figurative, referring to control, burden, or bondage.
+Theme: Burden
+Category: one-word-sub
+Exams: SSC CGL, NDA
+
+Word: Yield to
+English Meaning: To give way to someone or something
+Hindi Meaning: रास्ता देना, झुकना
+Usage 1: Drivers must yield to pedestrians.
+Usage 2: He finally yielded to pressure and accepted the proposal.
+Daily 1: Please yield to emergency vehicles.
+Daily 2: She refused to yield to unnecessary pressure.
+Mnemonic Hook: Yield to = सामने वाले को रास्ता देना या pressure के आगे झुकना।
+Concept Note: Yield to can refer to giving way physically or surrendering to pressure, authority, or influence.
+Theme: Submission
+Category: phrasal-verbs
+Exams: SSC CGL, CDS
+
+Word: Yonder
+English Meaning: At or in that distant place
+Hindi Meaning: वहाँ दूर
+Usage 1: The village yonder is famous for its temple.
+Usage 2: Look at the mountains yonder.
+Daily 1: The shop yonder sells fresh bread.
+Daily 2: We could see a farmhouse yonder.
+Mnemonic Hook: "Yonder" यानी "there" से भी दूर कोई जगह।
+Concept Note: Yonder is a somewhat old-fashioned or literary word meaning at or in a distant place.
+Theme: Place
+Category: synonyms
+Exams: SSC CGL, SSC CHSL
+
+Word: Zephyr
+English Meaning: A gentle, mild breeze
+Hindi Meaning: मंद समीर, हल्की हवा
+Usage 1: A cool zephyr entered through the open window.
+Usage 2: The evening zephyr made the garden pleasant.
+Daily 1: A gentle zephyr cooled us after the walk.
+Daily 2: We enjoyed the soft zephyr by the lake.
+Mnemonic Hook: Zephyr को "soft breeze" से याद करें—हल्की ठंडी हवा।
+Concept Note: Zephyr traditionally refers to a gentle west wind and is commonly used poetically for a soft breeze.
+Theme: Nature
+Category: one-word-sub
+Exams: SSC CGL, CDS
+
+===== SECTION 2: MULTIPLE CHOICE QUESTIONS (1-50) =====
+
+Question: A person who says very little is called:
+A) Loquacious
+B) Taciturn
+C) Verbose
+D) Garrulous
+Correct Answer: Taciturn
+Explanation: Taciturn describes a person who is habitually quiet or reserved. Loquacious, Verbose, and Garrulous all relate to using many words or talking a lot.
+Category: one-word-sub
+Exams: SSC CGL
+
+Question: What does the idiom "take to task" mean?
+A) To praise someone
+B) To criticize or reprimand someone
+C) To give someone a task
+D) To ignore a mistake
+Correct Answer: To criticize or reprimand someone
+Explanation: "Take to task" means to strongly criticize or reprimand someone for an error or wrongdoing.
+Category: idioms-phrases
+Exams: SSC CGL
+
+Question: Select the word closest in meaning to "Tenacious."
+A) Persistent
+B) Careless
+C) Weak
+D) Hesitant
+Correct Answer: Persistent
+Explanation: Tenacious means persistent and determined, especially in continuing toward a goal despite difficulty.
+Category: synonyms
+Exams: SSC CGL
+
+Question: Choose the antonym of "Timid."
+A) Bold
+B) Shy
+C) Nervous
+D) Fearful
+Correct Answer: Bold
+Explanation: Timid means lacking confidence or courage, so Bold is its direct opposite.
+Category: antonyms
+Exams: CDS
+
+Question: Select the word closest in meaning to "Transparent."
+A) Clear
+B) Secretive
+C) Confusing
+D) Hidden
+Correct Answer: Clear
+Explanation: Transparent can mean clear and easy to understand, as well as physically see-through. Clear is the closest option.
+Category: synonyms
+Exams: SSC CGL
+
+Question: Choose the word closest in meaning to "Thorough."
+A) Comprehensive
+B) Careless
+C) Partial
+D) Hasty
+Correct Answer: Comprehensive
+Explanation: Thorough means complete, detailed, and careful. Comprehensive conveys the idea of covering all or nearly all aspects.
+Category: synonyms
+Exams: SSC CGL
+
+Question: What does "turn down" mean in "She turned down the offer"?
+A) Accept
+B) Reject
+C) Increase
+D) Repeat
+Correct Answer: Reject
+Explanation: Turn down means to refuse or reject an offer, request, or proposal.
+Category: phrasal-verbs
+Exams: SSC CHSL
+
+Question: Choose the correct word: "The car remained ______ at the signal."
+A) stationary
+B) stationery
+C) stationarity
+D) station
+Correct Answer: stationary
+Explanation: Stationary means not moving. Stationery means writing materials, so it does not fit the sentence.
+Category: homonyms
+Exams: SSC CGL
+
+Question: What does "Time and tide wait for no man" mean?
+A) Time and opportunities do not wait for anyone
+B) Tides are dangerous
+C) Everyone should wait patiently
+D) Time can be stopped
+Correct Answer: Time and opportunities do not wait for anyone
+Explanation: The proverb advises people to use time and opportunities promptly because they do not wait indefinitely.
+Category: proverbs
+Exams: NDA
+
+Question: A word meaning "present everywhere" is:
+A) Ubiquitous
+B) Unique
+C) Uncertain
+D) Unusual
+Correct Answer: Ubiquitous
+Explanation: Ubiquitous means found or present everywhere.
+Category: one-word-sub
+Exams: SSC CGL
+
+Question: What does "under the weather" mean?
+A) Feeling unwell
+B) Enjoying rain
+C) Working outdoors
+D) Feeling energetic
+Correct Answer: Feeling unwell
+Explanation: Under the weather is an idiom meaning to feel slightly ill or unwell.
+Category: idioms-phrases
+Exams: SSC CHSL
+
+Question: Select the word closest in meaning to "Unanimous."
+A) Divided
+B) Agreed
+C) Confused
+D) Doubtful
+Correct Answer: Agreed
+Explanation: Unanimous means that everyone in a group agrees on the same decision or opinion.
+Category: synonyms
+Exams: SSC CGL
+
+Question: "Unprecedented" means:
+A) Happening regularly
+B) Never done or known before
+C) Very ordinary
+D) Completely predictable
+Correct Answer: Never done or known before
+Explanation: Unprecedented describes something with no previous example or parallel.
+Category: synonyms
+Exams: SSC CGL
+
+Question: What does "up in arms" mean?
+A) Very happy
+B) Very angry or protesting
+C) Physically asleep
+D) Completely relaxed
+Correct Answer: Very angry or protesting
+Explanation: Up in arms means being strongly angry, upset, or ready to protest.
+Category: idioms-phrases
+Exams: Bank PO
+
+Question: Choose the meaning of "vacillate."
+A) Decide firmly
+B) Change repeatedly between choices
+C) Speak loudly
+D) Work quickly
+Correct Answer: Change repeatedly between choices
+Explanation: Vacillate means to be indecisive and repeatedly change one's opinion or choice.
+Category: antonyms
+Exams: SSC CGL
+
+Question: A person who is alert and watchful is:
+A) Vigilant
+B) Careless
+C) Negligent
+D) Sleepy
+Correct Answer: Vigilant
+Explanation: Vigilant means alert, watchful, and careful about possible danger or problems.
+Category: synonyms
+Exams: SSC CGL
+
+Question: What does "vindicate" mean?
+A) To blame
+B) To prove someone right or not guilty
+C) To confuse
+D) To punish
+Correct Answer: To prove someone right or not guilty
+Explanation: Vindicate means to clear someone of blame or show that a person or position was justified.
+Category: one-word-sub
+Exams: CDS
+
+Question: Choose the antonym of "Virtuous."
+A) Moral
+B) Good
+C) Wicked
+D) Honorable
+Correct Answer: Wicked
+Explanation: Virtuous means morally good, so Wicked is an appropriate antonym.
+Category: antonyms
+Exams: SSC CGL
+
+Question: "Walk of life" refers to:
+A) A physical walking route
+B) A person's occupation or social sphere
+C) A sports activity
+D) A travel plan
+Correct Answer: A person's occupation or social sphere
+Explanation: Walk of life refers to a person's profession, social group, or general area of life.
+Category: idioms-phrases
+Exams: Bank PO
+
+Question: Choose the correct meaning of "wary."
+A) Careless
+B) Cautious
+C) Excited
+D) Certain
+Correct Answer: Cautious
+Explanation: Wary means being cautious and watchful because of possible danger or problems.
+Category: synonyms
+Exams: SSC CGL
+
+Question: What does "weather the storm" mean?
+A) Predict the weather
+B) Survive a difficult situation
+C) Create a storm
+D) Avoid travel
+Correct Answer: Survive a difficult situation
+Explanation: Weather the storm is used figuratively for successfully enduring a difficult period or crisis.
+Category: idioms-phrases
+Exams: IBPS PO
+
+Question: "Whimsical" is closest in meaning to:
+A) Playfully unusual
+B) Strict
+C) Ordinary
+D) Serious
+Correct Answer: Playfully unusual
+Explanation: Whimsical describes something fanciful, playful, or unusually imaginative.
+Category: synonyms
+Exams: SSC CGL
+
+Question: What does "with flying colors" mean?
+A) With failure
+B) With outstanding success
+C) By flying
+D) Without preparation
+Correct Answer: With outstanding success
+Explanation: The idiom means to achieve something very successfully or with excellent results.
+Category: idioms-phrases
+Exams: SSC CHSL
+
+Question: A word meaning "hospitable to guests or strangers" is:
+A) Xenial
+B) Xenophobic
+C) Hostile
+D) Taciturn
+Correct Answer: Xenial
+Explanation: Xenial means friendly or hospitable toward guests or strangers.
+Category: one-word-sub
+Exams: SSC CGL
+
+Question: Xenophobia means:
+A) Love of travel
+B) Fear or dislike of foreigners
+C) Love of animals
+D) Fear of darkness
+Correct Answer: Fear or dislike of foreigners
+Explanation: Xenophobia combines xeno- relating to foreigners or strangers with -phobia meaning fear or aversion.
+Category: one-word-sub
+Exams: SSC CGL
+
+Question: "Yield" can mean:
+A) To produce or give way
+B) To destroy
+C) To hide
+D) To refuse always
+Correct Answer: To produce or give way
+Explanation: Yield can mean produce a result or return, or give way to another person or vehicle depending on context.
+Category: synonyms
+Exams: NDA
+
+Question: Select the word closest in meaning to "Zeal."
+A) Enthusiasm
+B) Boredom
+C) Fear
+D) Laziness
+Correct Answer: Enthusiasm
+Explanation: Zeal means great enthusiasm, energy, and eagerness.
+Category: synonyms
+Exams: SSC CGL
+
+Question: A person who is very enthusiastic and devoted is:
+A) Zealous
+B) Indifferent
+C) Timid
+D) Taciturn
+Correct Answer: Zealous
+Explanation: Zealous describes someone who shows strong enthusiasm or devotion toward a cause or activity.
+Category: one-word-sub
+Exams: SSC CGL
+
+Question: What does "zero in on" mean?
+A) Avoid completely
+B) Focus closely on
+C) Move randomly
+D) Reduce to zero
+Correct Answer: Focus closely on
+Explanation: Zero in on means to focus attention precisely on a particular target, problem, or subject.
+Category: phrasal-verbs
+Exams: Bank PO
+
+Question: "Zest" means:
+A) Great enthusiasm
+B) Complete boredom
+C) Anger
+D) Silence
+Correct Answer: Great enthusiasm
+Explanation: Zest means lively enthusiasm, energy, and enjoyment.
+Category: synonyms
+Exams: SSC CGL
+
+Question: "Zany" is closest in meaning to:
+A) Amusingly unconventional
+B) Formal
+C) Predictable
+D) Dull
+Correct Answer: Amusingly unconventional
+Explanation: Zany describes something humorously strange, unconventional, or silly.
+Category: synonyms
+Exams: SSC CHSL
+
+Question: What does "zip up" mean?
+A) Open with force
+B) Close with a zipper
+C) Throw away
+D) Fold carefully
+Correct Answer: Close with a zipper
+Explanation: Zip up means to close clothing, bags, or similar items using a zipper.
+Category: phrasal-verbs
+Exams: SSC CHSL
+
+Question: "Zestful" means:
+A) Full of energy and enthusiasm
+B) Completely tired
+C) Very silent
+D) Extremely cautious
+Correct Answer: Full of energy and enthusiasm
+Explanation: Zestful means lively, energetic, and full of enthusiasm.
+Category: antonyms
+Exams: Bank PO
+
+Question: Choose the word closest in meaning to "Terse."
+A) Concise
+B) Lengthy
+C) Verbose
+D) Rambling
+Correct Answer: Concise
+Explanation: Terse means brief and to the point, although it can sometimes suggest an abrupt tone.
+Category: antonyms
+Exams: SSC CGL
+
+Question: Choose the antonym of "Trivial."
+A) Insignificant
+B) Minor
+C) Important
+D) Petty
+Correct Answer: Important
+Explanation: Trivial means of little importance, so Important is its direct opposite.
+Category: antonyms
+Exams: SSC CGL
+
+Question: What does "turn over a new leaf" mean?
+A) Start behaving better
+B) Change a page literally
+C) Stop reading
+D) Forget a book
+Correct Answer: Start behaving better
+Explanation: The idiom means to make a fresh start and improve one's behavior or habits.
+Category: idioms-phrases
+Exams: Bank PO
+
+Question: What does "uphold" mean?
+A) Support or maintain
+B) Destroy
+C) Reject automatically
+D) Hide
+Correct Answer: Support or maintain
+Explanation: Uphold means to support, maintain, or confirm a law, principle, decision, or standard.
+Category: one-word-sub
+Exams: NDA
+
+Question: "Verbatim" means:
+A) In summary
+B) Word-for-word
+C) Approximately
+D) Secretly
+Correct Answer: Word-for-word
+Explanation: Verbatim means using exactly the same words, without changing the wording.
+Category: one-word-sub
+Exams: SSC CGL
+
+Question: A situation that changes suddenly and unpredictably can be described as:
+A) Volatile
+B) Stable
+C) Permanent
+D) Fixed
+Correct Answer: Volatile
+Explanation: Volatile describes something liable to change rapidly and unpredictably, such as a market or situation.
+Category: synonyms
+Exams: Bank PO
+
+Question: "Wane" means:
+A) Increase rapidly
+B) Decrease gradually
+C) Remain constant
+D) Begin suddenly
+Correct Answer: Decrease gradually
+Explanation: Wane means to become weaker, smaller, or less intense gradually.
+Category: antonyms
+Exams: SSC CGL
+
+Question: What does "wreak havoc" mean?
+A) Cause great damage
+B) Solve a problem
+C) Make peace
+D) Improve a situation
+Correct Answer: Cause great damage
+Explanation: Wreak havoc means to cause widespread damage, destruction, or disruption.
+Category: idioms-phrases
+Exams: SSC CGL
+
+Question: A "yoke" can figuratively mean:
+A) A burden or form of control
+B) A reward
+C) A celebration
+D) A shortcut
+Correct Answer: A burden or form of control
+Explanation: Besides its literal agricultural meaning, yoke can refer figuratively to a burden, control, or bondage.
+Category: one-word-sub
+Exams: NDA
+
+Question: What does "yield to" mean in "The driver yielded to the pedestrian"?
+A) Gave way to
+B) Challenged
+C) Followed aggressively
+D) Ignored
+Correct Answer: Gave way to
+Explanation: In traffic, yield to means to give another road user the right of way.
+Category: phrasal-verbs
+Exams: SSC CGL
+
+Question: "Yonder" means:
+A) Nearby
+B) At or in a distant place
+C) Underground
+D) Inside
+Correct Answer: At or in a distant place
+Explanation: Yonder is a literary or somewhat old-fashioned word meaning at or in that distant place.
+Category: synonyms
+Exams: SSC CHSL
+
+Question: A "zephyr" is:
+A) A violent storm
+B) A gentle breeze
+C) A heavy cloud
+D) A desert
+Correct Answer: A gentle breeze
+Explanation: Zephyr commonly refers to a gentle, mild breeze, especially in poetic usage.
+Category: one-word-sub
+Exams: SSC CGL
+
+Question: Which word is spelled correctly?
+A) Vacilate
+B) Vacillate
+C) Vascillate
+D) Vacillatte
+Correct Answer: Vacillate
+Explanation: The correct spelling is Vacillate, meaning to be indecisive or repeatedly change between choices.
+Category: spellings
+Exams: SSC CGL
+
+Question: Which is the correct spelling?
+A) Vigilent
+B) Vigillant
+C) Vigilant
+D) Vigelant
+Correct Answer: Vigilant
+Explanation: Vigilant is spelled V-I-G-I-L-A-N-T and means alert and watchful.
+Category: spellings
+Exams: SSC CGL
+
+Question: Identify the correctly spelled word.
+A) Unanimous
+B) Unanamous
+C) Unnanimous
+D) Unanimus
+Correct Answer: Unanimous
+Explanation: The correct spelling is Unanimous, meaning agreed by everyone.
+Category: spellings
+Exams: SSC CGL
+
+Question: Identify the correctly spelled word.
+A) Unprecedented
+B) Unprecidented
+C) Unpreceededent
+D) Unpresedented
+Correct Answer: Unprecedented
+Explanation: The correct spelling is Unprecedented, meaning never done or known before.
+Category: spellings
+Exams: SSC CGL
+
+Question: Identify the correctly spelled word.
+A) Xenophobe
+B) Xenophob
+C) Zenophobe
+D) Xenophobe
+Correct Answer: Xenophobe
+Explanation: Xenophobe is the correct spelling for a person who fears or dislikes foreigners or strangers.
+Category: spellings
+Exams: SSC CGL
+
+Question: Choose the correctly spelled word.
+A) Zealous
+B) Zeelous
+C) Zealouss
+D) Zealos
+Correct Answer: Zealous
+Explanation: Zealous means very enthusiastic or devoted and is spelled Z-E-A-L-O-U-S.
+Category: spellings
+Exams: SSC CGL
+
+Question: Choose the correctly spelled word.
+A) Whimsical
+B) Whimssical
+C) Wimsical
+D) Whimcical
+Correct Answer: Whimsical
+Explanation: The correct spelling is Whimsical, meaning playfully unusual or fanciful.
+Category: spellings
+Exams: SSC CGL
+
+Question: Choose the correct spelling.
+A) Thorough
+B) Thourough
+C) Thorogh
+D) Throughe
+Correct Answer: Thorough
+Explanation: Thorough is spelled T-H-O-R-O-U-G-H and means complete and careful.
+Category: spellings
+Exams: SSC CGL
+
+Question: Choose the correct spelling.
+A) Terse
+B) Terce
+C) Tersea
+D) Tersse
+Correct Answer: Terse
+Explanation: Terse is the correct spelling for something brief and sometimes abrupt.
+Category: spellings
+Exams: SSC CHSL
+
+Question: Choose the correct spelling.
+A) Ubiquitous
+B) Ubiqueous
+C) Ubiquitus
+D) Ubiquitious
+Correct Answer: Ubiquitous
+Explanation: The correct spelling is Ubiquitous, meaning present everywhere.
+Category: spellings
+Exams: SSC CGL
+
+Question: Choose the correct spelling.
+A) Virtuous
+B) Virtous
+C) Virtueous
+D) Virtuoous
+Correct Answer: Virtuous
+Explanation: Virtuous is the correct spelling of the adjective meaning morally good or honorable.
+Category: spellings
+Exams: SSC CGL
+
+Question: Choose the correct spelling.
+A) Verbatim
+B) Verbattim
+C) Verbetim
+D) Verbatem
+Correct Answer: Verbatim
+Explanation: Verbatim means word-for-word and is spelled V-E-R-B-A-T-I-M.
+Category: spellings
+Exams: SSC CGL
+
+Question: Choose the correct spelling.
+A) Wane
+B) Wayne
+C) Waane
+D) Waine
+Correct Answer: Wane
+Explanation: Wane means to decrease gradually. Wayne is normally a proper name and does not fit the meaning.
+Category: spellings
+Exams: SSC CHSL
+
+Question: Choose the correct spelling.
+A) Zephyr
+B) Zepheyr
+C) Zephir
+D) Zephar
+Correct Answer: Zephyr
+Explanation: Zephyr is the correct spelling for a gentle breeze.
+Category: spellings
+Exams: SSC CGL
