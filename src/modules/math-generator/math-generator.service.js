@@ -694,6 +694,7 @@ class SpeedMathTestService extends BaseService {
     if (!attempt) throw new AppError('No completed attempt found. Please submit the test first.', 404)
 
     let correctCount = 0;
+    
     let incorrectCount = 0;
     let skippedCount = 0;
 

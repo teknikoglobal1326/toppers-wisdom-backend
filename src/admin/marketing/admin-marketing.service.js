@@ -225,6 +225,10 @@ class AdminMarketingService extends BaseService {
   }
 
   async createAnnouncement(data, adminId) {
+    if (!data.image) {
+      data.image = 'https://topperswisdom.teknikoglobal.in/images/logo/auth-logo.png'
+    }
+
     const announcement = await Announcement.create({
       ...data,
       createdBy: adminId
@@ -273,6 +277,10 @@ class AdminMarketingService extends BaseService {
     const announcement = await Announcement.findOne({ _id: id, isDeleted: false })
     if (!announcement) throw new AppError('Announcement not found', 404, 'NOT_FOUND')
 
+    if (data.image === '' || (!data.image && !announcement.image)) {
+      data.image = 'https://topperswisdom.teknikoglobal.in/images/logo/auth-logo.png'
+    }
+
     const hasNewSchedule = data.schedule && new Date(data.schedule).getTime() !== new Date(announcement.schedule).getTime()
 
     Object.assign(announcement, data)
@@ -319,6 +327,7 @@ class AdminMarketingService extends BaseService {
       }
     }
 
+    console.log("announcement",announcement);
     announcement.isProcessed = false
     const job = await notificationQueue.add(
       'announcement-campaign-broadcast',
@@ -328,6 +337,7 @@ class AdminMarketingService extends BaseService {
     announcement.jobId = job.id
     await announcement.save()
 
+    console.log("job",job);
     return announcement
   }
 }

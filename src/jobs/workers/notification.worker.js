@@ -135,7 +135,10 @@ new Worker('notification', async (job) => {
     let totalSent = 0
 
     while (hasMore) {
-      const batchUsers = await User.find({ fcmToken: { $ne: null, $exists: true }, isDeleted: false })
+      const batchUsers = await User.find({ 
+        fcmToken: { $ne: null, $exists: true }, 
+        isDeleted: false 
+      })
         .select('_id fcmToken')
         .skip(skip)
         .limit(batchSize)
@@ -161,6 +164,15 @@ new Worker('notification', async (job) => {
               announcementId: String(announcementId)
             }
           })
+          
+          result.responses.forEach((resp, index) => {
+            if (resp.success) {
+              logger.info(`Success: User ${batchUsers[index]._id} received push.`);
+            } else {
+              logger.error(`Failed: User ${batchUsers[index]._id} failed. Reason: ${resp.error}`);
+            }
+          });
+          
           logger.info({ jobId: job.id, sent: result.successCount, failed: result.failureCount }, 'FCM announcement campaign batch sent')
         } catch (err) {
           logger.error({ err }, 'FCM announcement campaign batch send failed')

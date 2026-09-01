@@ -342,6 +342,7 @@ class UserService extends BaseService {
     async updateFcmToken(userId, data) {
         const { fcmToken, deviceId, deviceName, deviceType, modelName, versionCode } = data
         const updated = await userRepository.updateById(userId, { fcmToken, deviceId, deviceName, deviceType, modelName, versionCode })
+        console.log('updated', updated);
         return {
             fcmToken: updated.fcmToken,
             deviceId: updated.deviceId,
