@@ -39,6 +39,7 @@ const courseSchema = new mongoose.Schema({
   }, { _id: false }),
   lessons: [lessonSchema],
   tests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Test' }],
+  faculties: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Faculty' }],
   avgRating: { type: Number, default: 0 },
   totalReviews: { type: Number, default: 0 },
   totalEnrollments: { type: Number, default: 0 },

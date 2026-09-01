@@ -77,6 +77,7 @@ app.use('/api/v1/offers', require('./modules/offer/offer.routes'))
 app.use('/api/v1/twsPost', authMiddleware, require('./modules/thought-of-the-day/thought-of-the-day.routes'))
 app.use('/api/v1/ai-tests', authMiddleware, require('./modules/ai-test/ai-test.routes'))
 
+
 // ── Admin API ─────────────────────────────────
 app.use('/api/v1/admin', adminLimiter, adminAuthMiddleware, require('./admin/admin.router'))
 

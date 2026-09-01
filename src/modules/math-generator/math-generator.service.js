@@ -676,7 +676,7 @@ class SpeedMathTestService extends BaseService {
     attempt.correct = correct
     attempt.incorrect = incorrect
     attempt.skipped = skipped
-    attempt.score = accuracy
+    attempt.score = correct
     attempt.accuracy = accuracy
     attempt.timeTaken = totalTimeTaken
     attempt.questionsPerMinute = questionsPerMinute
@@ -734,6 +734,8 @@ class SpeedMathTestService extends BaseService {
     attempt.correct = correctCount;
     attempt.incorrect = incorrectCount;
     attempt.skipped = skippedCount;
+    attempt.score = correctCount;
+    attempt.accuracy = test.questions.length > 0 ? Math.round((correctCount / test.questions.length) * 100) : 0;
 
     return {
       testId: test._id,

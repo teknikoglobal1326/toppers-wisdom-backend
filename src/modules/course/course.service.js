@@ -98,6 +98,7 @@ class CourseService extends BaseService {
     const filter = { status: 'published', isDeleted: false }
     if (filters.type) filter.type = filters.type
     if (filters.isFree !== undefined) filter.isFree = filters.isFree === 'true'
+    if (filters.facultyId) filter.faculties = filters.facultyId
 
     let purchasedCourseIds = []
     if (userId) {
