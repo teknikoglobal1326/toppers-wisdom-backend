@@ -2,6 +2,7 @@ const router = require('express').Router()
 const controller = require('./daily-quiz.controller')
 
 router.get('/', controller.listQuizzes)
+router.get('/stats', controller.getStats)
 router.get('/attempts', controller.listMyAttempts)
 router.get('/:id/instructions', controller.getQuizInstructions)
 router.get('/:id/start-session', controller.startSession)

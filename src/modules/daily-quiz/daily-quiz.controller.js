@@ -52,6 +52,14 @@ const listMyAttempts = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
+const getStats = catchAsync(async (req, res) => {
+    sendSuccess(
+        res,
+        await dailyQuizService.getStats(req.user._id),
+        'Daily quiz stats retrieved successfully'
+    )
+})
+
 module.exports = {
     listQuizzes,
     getQuizInstructions,
@@ -60,4 +68,5 @@ module.exports = {
     getSessionAnalytics,
     getSessionSolution,
     listMyAttempts,
+    getStats,
 }

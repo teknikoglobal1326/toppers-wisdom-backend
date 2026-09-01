@@ -66,7 +66,7 @@ class ThoughtOfTheDayService extends BaseService {
 
     // Populate user details inside comments
     if (data.length > 0) {
-      data = await ThoughtOfTheDay.populate(data, {
+      data = await TWPost.populate(data, {
         path: 'comments.user',
         select: 'name avatar'
       })
@@ -74,19 +74,17 @@ class ThoughtOfTheDayService extends BaseService {
 
     // Map counts and user actions
     data = data.map(item => {
-      if (item.itemType === 'thought') {
-        const likes = item.likes || []
-        const shares = item.shares || []
-        return {
-          ...item,
-          likesCount: likes.length,
-          sharesCount: shares.length,
-          commentsCount: (item.comments || []).length,
-          isLiked: userId ? likes.some(uId => String(uId) === String(userId)) : false,
-          isShared: userId ? shares.some(uId => String(uId) === String(userId)) : false,
-        }
+      const likes = item.likes || []
+      const shares = item.shares || []
+      const comments = item.comments || []
+      return {
+        ...item,
+        likesCount: likes.length,
+        sharesCount: shares.length,
+        commentsCount: comments.length,
+        isLiked: userId ? likes.some(uId => String(uId) === String(userId)) : false,
+        isShared: userId ? shares.some(uId => String(uId) === String(userId)) : false,
       }
-      return item
     })
 
     return {
@@ -103,40 +101,55 @@ class ThoughtOfTheDayService extends BaseService {
   }
 
   async toggleLike(id, userId) {
-    const thought = await ThoughtOfTheDay.findOne({ _id: id, isDeleted: false })
-    if (!thought) {
-      const AppError = require('../../core/AppError')
-      throw new AppError('Thought not found', 404)
+    const AppError = require('../../core/AppError')
+    if (!id) {
+      throw new AppError('TW Post ID is required', 400)
     }
 
-    const likeIdx = thought.likes.findIndex(uId => String(uId) === String(userId))
+    const post = await TWPost.findOne({ _id: id, isDeleted: false })
+    if (!post) {
+      throw new AppError('TW Post not found', 404)
+    }
+
+    if (!Array.isArray(post.likes)) {
+      post.likes = []
+    }
+
+    const likeIdx = post.likes.findIndex(uId => String(uId) === String(userId))
     let liked = false
     if (likeIdx > -1) {
-      thought.likes.splice(likeIdx, 1)
+      post.likes.splice(likeIdx, 1)
     } else {
-      thought.likes.push(userId)
+      post.likes.push(userId)
       liked = true
     }
 
-    await thought.save()
-    return { liked, likesCount: thought.likes.length }
+    await post.save()
+    return { liked, likesCount: post.likes.length }
   }
 
   async addComment(id, userId, commentText) {
+    const AppError = require('../../core/AppError')
+    if (!id) {
+      throw new AppError('TW Post ID is required', 400)
+    }
     if (!commentText || !String(commentText).trim()) {
-      const AppError = require('../../core/AppError')
       throw new AppError('Comment text is required', 400)
     }
-    const thought = await ThoughtOfTheDay.findOne({ _id: id, isDeleted: false })
-    if (!thought) {
-      const AppError = require('../../core/AppError')
-      throw new AppError('Thought not found', 404)
+
+    const post = await TWPost.findOne({ _id: id, isDeleted: false })
+    if (!post) {
+      throw new AppError('TW Post not found', 404)
     }
 
-    thought.comments.push({ user: userId, comment: String(commentText).trim() })
-    await thought.save()
+    if (!Array.isArray(post.comments)) {
+      post.comments = []
+    }
 
-    const populated = await ThoughtOfTheDay.findById(id)
+    post.comments.push({ user: userId, comment: String(commentText).trim() })
+    await post.save()
+
+    const populated = await TWPost.findById(id)
       .populate('comments.user', 'name avatar')
       .lean()
 
@@ -144,19 +157,27 @@ class ThoughtOfTheDayService extends BaseService {
   }
 
   async shareThought(id, userId) {
-    const thought = await ThoughtOfTheDay.findOne({ _id: id, isDeleted: false })
-    if (!thought) {
-      const AppError = require('../../core/AppError')
-      throw new AppError('Thought not found', 404)
+    const AppError = require('../../core/AppError')
+    if (!id) {
+      throw new AppError('TW Post ID is required', 400)
     }
 
-    const shareIdx = thought.shares.findIndex(uId => String(uId) === String(userId))
+    const post = await TWPost.findOne({ _id: id, isDeleted: false })
+    if (!post) {
+      throw new AppError('TW Post not found', 404)
+    }
+
+    if (!Array.isArray(post.shares)) {
+      post.shares = []
+    }
+
+    const shareIdx = post.shares.findIndex(uId => String(uId) === String(userId))
     if (shareIdx === -1) {
-      thought.shares.push(userId)
-      await thought.save()
+      post.shares.push(userId)
+      await post.save()
     }
 
-    return { sharesCount: thought.shares.length }
+    return { sharesCount: post.shares.length }
   }
 }
 
