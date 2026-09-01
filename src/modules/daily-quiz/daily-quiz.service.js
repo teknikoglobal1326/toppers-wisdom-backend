@@ -2,6 +2,7 @@ const BaseService = require('../../core/BaseService')
 const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
 const User = require('../../models/User.model')
+const DailyQuiz = require('../../models/DailyQuiz.model')
 const DailyQuizAttempt = require('../../models/DailyQuizAttempt.model')
 const crypto = require('crypto')
 const { groupQuestionsByLanguage, groupQuestionsBySubject, scoreAnswers } = require('../../lib/testQuestions')
@@ -690,6 +691,54 @@ const sectionWise = new Map()
             page: query.page,
             limit: query.limit,
         })
+    }
+
+    async getStats(userId) {
+        const user = await User.findById(userId).select('exam subExams language').lean()
+        const subExamIds = (user?.subExams || []).map((item) => item._id)
+        const examId = user?.exam?._id || (typeof user?.exam === 'object' ? user?.exam?._id : user?.exam)
+
+        const quizFilter = { isDeleted: false, status: 'active' }
+        if (examId) {
+            quizFilter.exam = examId
+        }
+        if (subExamIds.length) {
+            quizFilter.$or = [
+                { subExams: { $exists: false } },
+                { subExams: { $size: 0 } },
+                { subExams: { $in: subExamIds } },
+            ]
+        }
+
+        const totalTests = await DailyQuiz.countDocuments(quizFilter)
+        const stats = await this.repository.getUserOverallStats(userId)
+
+        let overallRank = 0
+        let totalStudents = await this.repository.getTotalPlatformParticipants()
+        let topPercentile = 0
+
+        if (stats.uniqueAttemptedTests > 0) {
+            overallRank = await this.repository.getOverallPlatformRank(stats.totalScore, stats.timeSpent)
+            if (totalStudents > 0) {
+                topPercentile = (overallRank / totalStudents) * 100
+                topPercentile = Math.round(topPercentile * 10) / 10
+            }
+        }
+
+        const questionsSolved = stats.totalCorrect + stats.totalWrong
+        let accuracy = 0
+        if (questionsSolved > 0) {
+            accuracy = (stats.totalCorrect / questionsSolved) * 100
+            accuracy = Math.round(accuracy * 10) / 10
+        }
+
+        return {
+            totalTests,
+            uniqueAttemptedTests: stats.uniqueAttemptedTests,
+            totalUsers: totalStudents,
+            overallRank,
+            accuracy,
+        }
     }
 }
 

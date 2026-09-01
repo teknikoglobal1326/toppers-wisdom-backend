@@ -8,18 +8,21 @@ const listFeed = catchAsync(async (req, res) => {
 })
 
 const toggleLike = catchAsync(async (req, res) => {
-  const result = await thoughtOfTheDayService.toggleLike(req.params.id, req.user._id)
+  const postId = req.params.id || req.params.twPostId || req.body.twPostId || req.body.twpostId || req.body.postId || req.body.id
+  const result = await thoughtOfTheDayService.toggleLike(postId, req.user._id)
   sendSuccess(res, result)
 })
 
 const addComment = catchAsync(async (req, res) => {
+  const postId = req.params.id || req.params.twPostId || req.body.twPostId || req.body.twpostId || req.body.postId || req.body.id
   const { comment } = req.body
-  const result = await thoughtOfTheDayService.addComment(req.params.id, req.user._id, comment)
+  const result = await thoughtOfTheDayService.addComment(postId, req.user._id, comment)
   sendSuccess(res, result)
 })
 
 const shareThought = catchAsync(async (req, res) => {
-  const result = await thoughtOfTheDayService.shareThought(req.params.id, req.user._id)
+  const postId = req.params.id || req.params.twPostId || req.body.twPostId || req.body.twpostId || req.body.postId || req.body.id
+  const result = await thoughtOfTheDayService.shareThought(postId, req.user._id)
   sendSuccess(res, result)
 })
 
