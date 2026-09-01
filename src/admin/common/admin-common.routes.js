@@ -57,6 +57,15 @@ router.get('/courses', catchAsync(async (req, res) => {
 })
 );
 
+// GET /api/v1/admin/common/faculties
+router.get('/faculties', catchAsync(async (req, res) => {
+  const Faculty = require('../../models/Faculty.model')
+  const faculties = await Faculty.find(
+    { isDeleted: false, status: 'active' }
+  ).sort({ sortOrder: 1, name: 1 }).select('_id name').lean()
+  sendSuccess(res, faculties)
+}))
+
 // GET /api/v1/admin/common/subjects
 router.get('/subjects', catchAsync(async (req, res) => {
   const { examId, exam, courseId, course, testId, courseTestId, limit, search, q } = req.query;

@@ -9,6 +9,7 @@ const createCourse = catchAsync(async (req, res) => { sendCreated(res, await adm
 const updateCourse = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.update(req.params.id, req.body)) })
 const deleteCourse = catchAsync(async (req, res) => { await adminCourseService.archive(req.params.id); sendSuccess(res, null, 'Course archived') })
 const publish = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.publish(req.params.id), 'Course published') })
+const mapFaculties = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.mapFaculties(req.params.id, req.body.faculties), 'Faculties mapped successfully') })
 const addLesson = catchAsync(async (req, res) => { sendCreated(res, await adminCourseService.addLesson(req.params.id, req.body)) })
 const removeLesson = catchAsync(async (req, res) => { await adminCourseService.removeLesson(req.params.id, req.params.lessonId); sendSuccess(res, null, 'Lesson removed') })
 const uploadUrl = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getLessonUploadUrl(req.params.id, req.params.lessonId, req.body.contentType)) })
@@ -75,4 +76,4 @@ const deleteTestForCourse = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Test deleted successfully')
 })
 
-module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse, uploadTestForCourse, listTestsForCourse, getTestForCourse, updateTestForCourse, deleteTestForCourse }
+module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, mapFaculties, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse, uploadTestForCourse, listTestsForCourse, getTestForCourse, updateTestForCourse, deleteTestForCourse }

@@ -134,6 +134,15 @@ class AdminCourseService extends BaseService {
     return this.update(courseId, { status: "archived", isDeleted: true });
   }
 
+  async mapFaculties(courseId, faculties) {
+    this.logger.info({ courseId, faculties }, "Mapping faculties to course");
+    if (!Array.isArray(faculties)) {
+      const AppError = require('../../core/AppError');
+      throw new AppError('faculties must be an array of ids', 400);
+    }
+    return this.update(courseId, { faculties });
+  }
+
   async addLesson(courseId, lessonData) {
     this.logger.info({ courseId }, "Adding lesson");
     return courseRepository.addLesson(courseId, lessonData);

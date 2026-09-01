@@ -22,14 +22,14 @@ router.get('/words/:id', dictionaryController.getWordById);
 router.get('/categories/:cat/practice/mcq', dictionaryController.getPracticeMcqs);
 
 // Progress & Spaced Repetition Routes
-router.post('/progress/flashcard', dictionaryController.updateFlashcardProgress);
+router.post('/progress/flash-card', dictionaryController.updateFlashcardProgress);
 router.post('/progress/mcq-attempt', dictionaryController.updateMcqAttempt);
 router.get('/progress/:studentId/due', dictionaryController.getDueItems);
 
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Admin Ingestion & Review Queue (require admin auth)
+// Admin Ingestion & Review Queue (require admin auth)~
 router.use('/ingest', adminAuthMiddleware);
 
 router.post('/ingest/upload', upload.single('file'), dictionaryController.uploadIngestDocument);
