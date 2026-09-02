@@ -86,9 +86,17 @@ class AdminQuestionService extends BaseService {
     if (updatedDailyQuiz) return
 
     const EditorialTest = require('../../models/EditorialTest.model')
-    await EditorialTest.findOneAndUpdate(
+    const updatedEditorial = await EditorialTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },
       { totalQuestions: count, totalMappedQuestions: count, mappedQuestions: count },
+      { new: true }
+    )
+    if (updatedEditorial) return
+
+    const TestMaster = require('../../models/TestMaster.model')
+    await TestMaster.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      { totalQuestions: count, totalMappedQuestions: count },
       { new: true }
     )
   }
@@ -188,8 +196,9 @@ class AdminQuestionService extends BaseService {
     const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
     const MathTest = require('../../models/MathTest.model')
     const SectionalTestSeriesTest = require('../../models/SectionalTestSeriesTest.model')
+    const TestMaster = require('../../models/TestMaster.model')
     
-    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz, mathTest, sectionalTest] = await Promise.all([
+    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz, mathTest, sectionalTest, testMaster] = await Promise.all([
       CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
       CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
       TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
@@ -198,8 +207,14 @@ class AdminQuestionService extends BaseService {
       DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id isPerQuestionTime').lean(),
       MathTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
       SectionalTestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
+      TestMaster.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exams subExams').lean(),
     ])
-    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || mathTest || sectionalTest || null
+
+    if (testMaster && testMaster.exams && testMaster.exams.length > 0) {
+      testMaster.exam = testMaster.exams[0]
+    }
+
+    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || mathTest || sectionalTest || testMaster || null
   }
 
   // Enforce the parent test's per-question-time policy on a question payload:
