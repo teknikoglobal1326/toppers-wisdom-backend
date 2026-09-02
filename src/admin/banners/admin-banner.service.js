@@ -21,7 +21,7 @@ class AdminBannerService extends BaseService {
     const exactLanguage = getExactLanguageFilter(language)
     if (exactLanguage) filter.language = exactLanguage
     const direction = sortOrder === 'desc' ? -1 : 1
-    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: 'examId subexamId subscriptionId' })
+    return this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 }, populate: 'examId subexamId subscriptionId courseId' })
   }
 
   async getOne(id) {
@@ -65,6 +65,19 @@ class AdminBannerService extends BaseService {
     if (payload.examId === '' || payload.examId === 'null' || payload.examId === 'undefined') payload.examId = null
     if (payload.subexamId === '' || payload.subexamId === 'null' || payload.subexamId === 'undefined') payload.subexamId = null
     if (payload.subscriptionId === '' || payload.subscriptionId === 'null' || payload.subscriptionId === 'undefined') payload.subscriptionId = null
+    if (payload.courseId === '' || payload.courseId === 'null' || payload.courseId === 'undefined') payload.courseId = null
+
+    // Apply type logic
+    if (payload.type === 'external') {
+      payload.subscriptionId = null
+      payload.courseId = null
+    } else if (payload.type === 'subscription') {
+      payload.url = null
+      payload.courseId = null
+    } else if (payload.type === 'course') {
+      payload.url = null
+      payload.subscriptionId = null
+    }
     
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)
@@ -87,6 +100,23 @@ class AdminBannerService extends BaseService {
     if (payload.examId === '' || payload.examId === 'null' || payload.examId === 'undefined') payload.examId = null
     if (payload.subexamId === '' || payload.subexamId === 'null' || payload.subexamId === 'undefined') payload.subexamId = null
     if (payload.subscriptionId === '' || payload.subscriptionId === 'null' || payload.subscriptionId === 'undefined') payload.subscriptionId = null
+    if (payload.courseId === '' || payload.courseId === 'null' || payload.courseId === 'undefined') payload.courseId = null
+
+    // Determine type (from payload or fallback to existing banner)
+    const activeType = payload.type || banner.type
+
+    // Apply type logic
+    if (activeType === 'external') {
+      payload.subscriptionId = null
+      payload.courseId = null
+      if (payload.url === '') payload.url = null
+    } else if (activeType === 'subscription') {
+      payload.url = null
+      payload.courseId = null
+    } else if (activeType === 'course') {
+      payload.url = null
+      payload.subscriptionId = null
+    }
 
     if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
       const parsedSortOrder = Number(payload.sortOrder)
