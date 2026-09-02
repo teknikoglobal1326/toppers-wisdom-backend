@@ -105,6 +105,14 @@ class SectionalTestSeriesRepository extends BaseRepository {
         return testCount
     }
 
+    async getTotalPlatformSeriesCount() {
+        return SectionalTestSeries.countDocuments({ isDeleted: false, status: 'active' })
+    }
+
+    async getTotalPlatformTestsCount() {
+        return SectionalTestSeriesTest.countDocuments({ isDeleted: false, status: 'active' })
+    }
+
     async getOngoingSessions(userId) {
         return SectionalTestSeriesAttempt.find({ user: userId, status: { $in: ['started', 'ongoing'] } })
             .select('sessionId sectionalTestSeries test status score totalMarks timeTaken createdAt')
@@ -156,12 +164,12 @@ class SectionalTestSeriesRepository extends BaseRepository {
 
         const rows = await SectionalTestSeriesTest.aggregate([
             { $match: { isDeleted: false, status: 'active', sectionalTestSeries: { $in: seriesIds } } },
-            { 
-                $group: { 
-                    _id: '$sectionalTestSeries', 
+            {
+                $group: {
+                    _id: '$sectionalTestSeries',
                     totalCount: { $sum: 1 },
                     freeCount: { $sum: { $cond: [{ $eq: ['$isPaid', false] }, 1, 0] } }
-                } 
+                }
             },
         ])
 
@@ -180,14 +188,15 @@ class SectionalTestSeriesRepository extends BaseRepository {
 
         const rows = await SectionalTestSeriesAttempt.aggregate([
             { $match: { user: userObjectId, sectionalTestSeries: { $in: seriesIds }, status: 'completed' } },
-            { 
-                $group: { 
-                    _id: '$sectionalTestSeries', 
+            {
+                $group: {
+                    _id: '$sectionalTestSeries',
                     totalAttempts: { $sum: 1 },
                     uniqueTestsAttempted: { $addToSet: '$test' },
                     avgScore: { $avg: '$score' },
-                    avgAccuracy: { $avg: '$accuracy' }
-                } 
+                    avgAccuracy: { $avg: '$accuracy' },
+                    bestScore: { $max: '$score' }
+                }
             },
         ])
 
@@ -196,7 +205,8 @@ class SectionalTestSeriesRepository extends BaseRepository {
                 totalAttempts: row.totalAttempts,
                 attemptedTestsCount: row.uniqueTestsAttempted.length,
                 avgScore: row.avgScore || 0,
-                avgAccuracy: row.avgAccuracy || 0
+                avgAccuracy: row.avgAccuracy || 0,
+                bestScore: row.bestScore || 0
             }
             return acc
         }, {})

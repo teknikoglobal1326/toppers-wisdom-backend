@@ -9,6 +9,7 @@ const {
 } = require('./sectional-test-series.schema')
 
 router.get('/', validateQuery(listSeriesQuerySchema), controller.listSeries)
+router.get('/stats', require('../../middlewares/auth.middleware').authMiddleware, controller.getStats)
 router.get('/dashboard-stats', require('../../middlewares/auth.middleware').authMiddleware, controller.getUserDashboardStats)
 router.get('/attempts', validateQuery(listAttemptsQuerySchema), controller.listMyAttempts)
 router.get('/tests/:testId/instructions', controller.getTestInstructions)
@@ -18,6 +19,7 @@ router.put('/tests/:testId/session/:sessionId/update', controller.updateSession)
 router.get('/tests/:testId/session/:sessionId/analytics', controller.getSessionAnalytics)
 router.get('/tests/:testId/session/:sessionId/solution', controller.getSessionSolution)
 router.get('/:id/tests', validateQuery(listSeriesTestsQuerySchema), controller.listSeriesTests)
+router.get('/:id/stats', require('../../middlewares/auth.middleware').authMiddleware, controller.getSeriesStats)
 router.get('/:id', controller.getSeries)
 
 module.exports = router

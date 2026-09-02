@@ -76,6 +76,10 @@ app.use('/api/v1/rewards', authMiddleware, require('./modules/rewards/rewards.ro
 app.use('/api/v1/offers', require('./modules/offer/offer.routes'))
 app.use('/api/v1/twsPost', authMiddleware, require('./modules/thought-of-the-day/thought-of-the-day.routes'))
 app.use('/api/v1/ai-tests', authMiddleware, require('./modules/ai-test/ai-test.routes'))
+app.use('/api/v1/share', require('./modules/share/share.routes'))
+
+// ── Deep Link Resolution ──────────────────────
+app.get('/api/v1/:slug', require('./modules/share/share.controller').resolveLink)
 
 
 // ── Admin API ─────────────────────────────────

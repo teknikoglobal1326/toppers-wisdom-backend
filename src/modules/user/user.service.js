@@ -306,6 +306,17 @@ class UserService extends BaseService {
         }
     }
 
+    async getExamCalendar(userId) {
+        const calendar = await this.repository.getExamCalendarForUser(userId)
+        return calendar
+    }
+
+    async getStreakCount(userId) {
+        const Streak = require('../../models/Streak.model')
+        const streak = await Streak.findOne({ user: userId, streakStatus: 'active' }).select('currentStreak').lean()
+        return streak ? streak.currentStreak : 0
+    }
+
     async getSaved(userId, opts) {
         const items = await userRepository.getSavedItems(userId)
         const page = Math.max(1, parseInt(opts.page) || 1)

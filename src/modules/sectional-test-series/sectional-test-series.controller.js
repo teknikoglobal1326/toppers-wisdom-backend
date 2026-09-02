@@ -16,6 +16,14 @@ const listSeriesTests = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
+const getSeriesStats = catchAsync(async (req, res) => {
+    sendSuccess(
+        res,
+        await sectionalTestSeriesService.getSeriesStats(req.params.id, req.user._id),
+        'Series stats retrieved successfully'
+    )
+})
+
 
 const getTestInstructions = catchAsync(async (req, res) => {
     sendSuccess(res, await sectionalTestSeriesService.getTestInstructions(req.params.testId, req.user._id))
@@ -62,6 +70,14 @@ const listMyAttempts = catchAsync(async (req, res) => {
     sendPaginated(res, result.data, result.pagination)
 })
 
+const getStats = catchAsync(async (req, res) => {
+    sendSuccess(
+        res,
+        await sectionalTestSeriesService.getStats(req.user._id),
+        'Stats retrieved successfully'
+    )
+})
+
 const getUserDashboardStats = catchAsync(async (req, res) => {
     sendSuccess(
         res,
@@ -74,11 +90,13 @@ module.exports = {
     listSeries,
     getSeries,
     listSeriesTests,
+    getSeriesStats,
     getTestInstructions,
     startSession,
     updateSession,
     getSessionAnalytics,
     getSessionSolution,
     listMyAttempts,
+    getStats,
     getUserDashboardStats,
 }
