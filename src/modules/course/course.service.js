@@ -201,24 +201,28 @@ class CourseService extends BaseService {
   }
 
   async getScheduledLiveClasses(userId, filters = {}) {
-    this.logger.info({ userId }, 'Fetching scheduled live classes')
+    this.logger.info({ userId, filters }, 'Fetching scheduled live classes')
 
     const CourseOrder = require('../../models/CourseOrder.model')
-    const orders = await CourseOrder.find({
-      user: userId,
-      status: 'paid',
-      'items.itemType': 'course'
-    }).select('items').lean()
+    const Enrollment = require('../../models/Enrollment.model')
+
+    const [orders, enrollments] = await Promise.all([
+      CourseOrder.find({
+        user: userId,
+        status: 'paid',
+        'items.itemType': 'course'
+      }).select('items').lean(),
+      Enrollment.find({ user: userId }).select('course').lean()
+    ])
 
     const purchasedCourseIds = orders.flatMap(order =>
       order.items
         .filter(item => item.itemType === 'course')
         .map(item => item.itemId.toString())
     )
+    const enrolledCourseIds = (enrollments || []).map(e => e.course?.toString()).filter(Boolean)
 
-    const allAllowedCourseIds = Array.from(new Set(purchasedCourseIds))
-
-    // this.logger.info({ userId, enrolledCount: enrolledCourseIds.length, freeCount: freeCourseIds.length, totalAllowed: allAllowedCourseIds.length }, 'Scheduled live classes course mapping info')
+    const allAllowedCourseIds = Array.from(new Set([...purchasedCourseIds, ...enrolledCourseIds]))
 
     if (allAllowedCourseIds.length === 0) {
       return {
@@ -232,6 +236,7 @@ class CourseService extends BaseService {
       }
     }
 
+    const now = new Date()
     const startOfToday = new Date()
     startOfToday.setHours(0, 0, 0, 0)
 
@@ -240,11 +245,45 @@ class CourseService extends BaseService {
       isLive: true,
       isDeleted: false,
       status: 'active',
-      liveStatus: { $in: ['pending', 'ongoing'] },
-      scheduledStartTime: { $gte: startOfToday }
+      liveStatus: { $in: ['pending', 'ongoing'] }
     }
 
-    // this.logger.info({ filter }, 'Scheduled live classes MongoDB query filter')
+    if (filters.course || filters.courseId) {
+      const targetCourseId = (filters.course || filters.courseId).toString()
+      if (allAllowedCourseIds.includes(targetCourseId)) {
+        filter.course = targetCourseId
+      } else {
+        return {
+          data: [],
+          pagination: {
+            total: 0,
+            page: Number(filters.page) || 1,
+            limit: Number(filters.limit) || 20,
+            totalPages: 0
+          }
+        }
+      }
+    }
+
+    const type = (filters.type || '').trim().toLowerCase()
+    if (type === 'upcoming') {
+      filter.$or = [
+        { scheduledStartTime: { $gt: now } },
+        { scheduleAt: { $gt: now } }
+      ]
+    } else if (type === 'all') {
+      filter.$or = [
+        { scheduledStartTime: { $gte: startOfToday } },
+        { scheduleAt: { $gte: startOfToday } }
+      ]
+    } else {
+      // By default: currently running / ongoing classes
+      filter.$or = [
+        { liveStatus: 'ongoing' },
+        { scheduledStartTime: { $gte: startOfToday, $lte: now } },
+        { scheduleAt: { $gte: startOfToday, $lte: now } }
+      ]
+    }
 
     const page = Math.max(1, Number(filters.page) || 1)
     const limit = Math.max(1, Number(filters.limit) || 20)
@@ -262,8 +301,6 @@ class CourseService extends BaseService {
         ])
         .lean()
     ])
-
-    // this.logger.info({ total, foundCount: data.length }, 'Scheduled live classes query result')
 
     return {
       data,
