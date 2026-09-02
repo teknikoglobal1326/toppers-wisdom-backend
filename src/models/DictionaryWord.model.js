@@ -23,6 +23,7 @@ const dictionaryWordSchema = new mongoose.Schema({
   en: { type: String, required: true },
   hi: { type: String },
   exams: [{ type: String }],
+  examCount: { type: Number, default: 0 },
   syn: [{ type: String }],
   ant: [{ type: String }],
   usage: [{ type: String }],

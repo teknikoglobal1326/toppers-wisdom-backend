@@ -10,6 +10,7 @@ router.use('/platform-settings', require('./platform-settings/admin-platform-set
 
 router.use('/courses', requirePermission('courses'), require('./courses/admin-course.routes'))
 router.use('/tests', requirePermission('tests'), require('./tests/admin-test.routes'))
+router.use('/test-masters', requirePermission('tests'), require('./test-masters/admin-test-master.routes'))
 router.use('/test-series', requirePermission('tests'), require('./test-series/admin-test-series.routes'))
 router.use('/test-series-tests', requirePermission('tests'), require('./test-series-tests/admin-test-series-test.routes'))
 router.use('/sectional-test-series', requirePermission('tests'), require('./sectional-test-series/admin-sectional-test-series.routes'))
