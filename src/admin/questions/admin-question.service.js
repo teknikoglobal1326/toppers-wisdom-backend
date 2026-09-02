@@ -85,6 +85,14 @@ class AdminQuestionService extends BaseService {
     )
     if (updatedDailyQuiz) return
 
+    const TestMaster = require('../../models/TestMaster.model')
+    const updatedTestMaster = await TestMaster.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      update,
+      { new: true }
+    )
+    if (updatedTestMaster) return
+
     const EditorialTest = require('../../models/EditorialTest.model')
     await EditorialTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },
@@ -188,8 +196,9 @@ class AdminQuestionService extends BaseService {
     const CourseSeparatedTest = require('../../models/CourseSeparatedTest.model')
     const MathTest = require('../../models/MathTest.model')
     const SectionalTestSeriesTest = require('../../models/SectionalTestSeriesTest.model')
-    
-    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz, mathTest, sectionalTest] = await Promise.all([
+    const TestMaster = require('../../models/TestMaster.model')
+
+    const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz, mathTest, sectionalTest, masterTest] = await Promise.all([
       CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
       CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
       TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
@@ -198,8 +207,9 @@ class AdminQuestionService extends BaseService {
       DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id isPerQuestionTime').lean(),
       MathTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
       SectionalTestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
+      TestMaster.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exams subExams').lean(),
     ])
-    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || mathTest || sectionalTest || null
+    return separatedTest || courseTest || seriesTest || pypTest || liveTest || dailyQuiz || mathTest || sectionalTest || masterTest || null
   }
 
   // Enforce the parent test's per-question-time policy on a question payload:

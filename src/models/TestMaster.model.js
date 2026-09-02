@@ -46,6 +46,17 @@ const testMasterSchema = new mongoose.Schema({
     },
     isDeleted: { type: Boolean, default: false, index: true },
     scheduleAt: { type: Date, default: null },
+    assignments: [{
+        moduleKey: { type: String },
+        moduleName: { type: String },
+        target: { type: String },
+        targetSeriesId: { type: String },
+        targetSeriesTitle: { type: String },
+        liveStartDateTime: { type: String },
+        liveEndDateTime: { type: String },
+        assignedAt: { type: Date, default: Date.now },
+        status: { type: String, default: 'assigned' },
+    }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
 }, { timestamps: true })
 

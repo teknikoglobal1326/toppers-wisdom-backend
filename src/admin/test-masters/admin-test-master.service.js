@@ -61,7 +61,7 @@ class AdminTestMasterService extends BaseService {
 
     // 3. Fetch original questions
     const Question = require('../../models/Question.model')
-    const originalQuestions = await Question.find({ test: testMasterId, testModel: 'TestMaster' }).lean()
+    const originalQuestions = await Question.find({ test: testMasterId, isDeleted: { $ne: true } }).lean()
 
     // Normalize payload to an array of assignments
     const assignments = Array.isArray(payload.assignments) ? payload.assignments : [payload];
@@ -132,6 +132,35 @@ class AdminTestMasterService extends BaseService {
       results.push({ target, newTargetId: newTargetDoc._id });
     }
     
+    // Persist assignments onto the TestMaster document
+    const assignmentRecords = assignments.map(a => {
+      let moduleKey = 'test-series';
+      let moduleName = 'Test Series';
+      if (a.target === 'TestSeries') { moduleKey = 'test-series'; moduleName = 'Test Series'; }
+      else if (a.target === 'SectionalTestSeries') { moduleKey = 'sectional-tests'; moduleName = 'Sectional Tests'; }
+      else if (a.target === 'PreviousYearPaper') { moduleKey = 'previous-year-papers'; moduleName = 'Previous Year Papers'; }
+      else if (a.target === 'LiveTest') { moduleKey = 'live-tests'; moduleName = 'Live Test'; }
+      else if (a.target === 'DailyQuiz') { moduleKey = 'quiz'; moduleName = 'Quiz'; }
+      else if (a.target === 'AiTest') { moduleKey = 'ai-test'; moduleName = 'AI Test'; }
+
+      return {
+        moduleKey,
+        moduleName,
+        target: a.target,
+        targetSeriesId: a.parentId || null,
+        liveStartDateTime: a.startDateTime || null,
+        liveEndDateTime: a.endDateTime || null,
+        assignedAt: new Date(),
+        status: 'assigned',
+      };
+    });
+
+    await testMasterRepository.model.findByIdAndUpdate(
+      testMasterId,
+      { $push: { assignments: { $each: assignmentRecords } } },
+      { new: true }
+    );
+
     return results
   }
 }
