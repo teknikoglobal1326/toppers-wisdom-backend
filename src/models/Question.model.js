@@ -231,6 +231,12 @@ const questionSchema = new mongoose.Schema(
       index: true,
     },
 
+    masterQuestionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Question',
+      default: null,
+      index: true,
+    },
     testModel: {
       type: String,
       required: true,

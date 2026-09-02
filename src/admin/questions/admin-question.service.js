@@ -85,6 +85,14 @@ class AdminQuestionService extends BaseService {
     )
     if (updatedDailyQuiz) return
 
+    const TestMaster = require('../../models/TestMaster.model')
+    const updatedTestMaster = await TestMaster.findOneAndUpdate(
+      { _id: testId, isDeleted: false },
+      update,
+      { new: true }
+    )
+    if (updatedTestMaster) return
+
     const EditorialTest = require('../../models/EditorialTest.model')
     const updatedEditorial = await EditorialTest.findOneAndUpdate(
       { _id: testId, isDeleted: false },
@@ -93,12 +101,12 @@ class AdminQuestionService extends BaseService {
     )
     if (updatedEditorial) return
 
-    const TestMaster = require('../../models/TestMaster.model')
-    await TestMaster.findOneAndUpdate(
-      { _id: testId, isDeleted: false },
-      { totalQuestions: count, totalMappedQuestions: count },
-      { new: true }
-    )
+    // const TestMaster = require('../../models/TestMaster.model')
+    // await TestMaster.findOneAndUpdate(
+    //   { _id: testId, isDeleted: false },
+    //   { totalQuestions: count, totalMappedQuestions: count },
+    //   { new: true }
+    // )
   }
 
   async listAll({ page, limit, test, testModel, status, search, sortOrder } = {}) {
@@ -209,7 +217,6 @@ class AdminQuestionService extends BaseService {
       SectionalTestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
       TestMaster.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exams subExams').lean(),
     ])
-
     if (testMaster && testMaster.exams && testMaster.exams.length > 0) {
       testMaster.exam = testMaster.exams[0]
     }

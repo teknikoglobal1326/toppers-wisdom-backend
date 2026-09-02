@@ -68,7 +68,7 @@ router.get('/faculties', catchAsync(async (req, res) => {
 
 // GET /api/v1/admin/common/subjects
 router.get('/subjects', catchAsync(async (req, res) => {
-  const { examId, exam, courseId, course, testId, courseTestId, limit, search, q } = req.query;
+  const { examId, exam, examIds, subExamId, subExam, subExamIds, courseId, course, testId, courseTestId, limit, search, q } = req.query;
   const filter = { isDeleted: false, status: 'active' };
 
   const targetTestId = testId || courseTestId;
@@ -126,7 +126,7 @@ router.get('/subjects', catchAsync(async (req, res) => {
   }
 
   let queryBuilder = Subject.find(filter)
-    .select('_id name sortOrder examIds chapters')
+    .select('_id name sortOrder examIds subExamIds chapters')
     .sort({ sortOrder: 1, createdAt: -1 });
 
   if (limit) {
@@ -176,7 +176,7 @@ router.get('/subjects/:courseId', catchAsync(async (req, res) => {
       status: 'active'
     }
   )
-    .select('_id name sortOrder examIds chapters')
+    .select('_id name sortOrder examIds subExamIds chapters')
     .sort({ sortOrder: 1, createdAt: -1 })
     .lean();
 
@@ -219,7 +219,7 @@ router.get(['/course-test-subjects', '/course-test-subjects/:testId'], catchAsyn
       return sendSuccess(res, []);
     }
     const subjects = await Subject.find({ _id: { $in: subjectIds }, isDeleted: false, status: 'active' })
-      .select('_id name sortOrder examIds chapters')
+      .select('_id name sortOrder examIds subExamIds chapters')
       .sort({ sortOrder: 1, createdAt: -1 })
       .lean();
     return sendSuccess(res, subjects);
@@ -238,7 +238,7 @@ router.get(['/course-test-subjects', '/course-test-subjects/:testId'], catchAsyn
   }
 
   const subjects = await Subject.find(filter)
-    .select('_id name sortOrder examIds chapters')
+    .select('_id name sortOrder examIds subExamIds chapters')
     .sort({ sortOrder: 1, createdAt: -1 })
     .lean();
 
@@ -319,7 +319,7 @@ router.get(['/chapters', '/all-chapters'], catchAsync(async (req, res) => {
   }
 
   const subjects = await Subject.find(filter)
-    .select('_id name sortOrder examIds chapters')
+    .select('_id name sortOrder examIds subExamIds chapters')
     .sort({ sortOrder: 1, createdAt: -1 })
     .lean();
 
