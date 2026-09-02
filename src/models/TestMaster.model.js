@@ -52,6 +52,7 @@ const testMasterSchema = new mongoose.Schema({
         target: { type: String },
         targetSeriesId: { type: String },
         targetSeriesTitle: { type: String },
+        targetTestId: { type: mongoose.Schema.Types.ObjectId, default: null },
         liveStartDateTime: { type: String },
         liveEndDateTime: { type: String },
         assignedAt: { type: Date, default: Date.now },
