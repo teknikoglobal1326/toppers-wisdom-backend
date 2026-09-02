@@ -31,5 +31,6 @@ router.post('/me/test-notification', controller.sendTestNotification)
 
 router.get('/premium-plan', controller.getPremiumPlan)
 router.get('/me/exam-calendar', controller.getExamCalendar)
+router.get('/streak-count', controller.getStreakCount)
 
 module.exports = router

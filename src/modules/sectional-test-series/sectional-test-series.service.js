@@ -187,7 +187,7 @@ class SectionalTestSeriesService extends BaseService {
         const hasAccess = await this.checkUserAccess(series, null, userId)
         const testStats = await this.repository.getTestCountsBySeries([series._id])
         const attemptStats = await this.repository.getAttemptStatsBySeries(userId, [series._id])
-        
+
         const tStats = testStats[series._id.toString()] || { total: 0, free: 0 }
         const aStats = attemptStats[series._id.toString()] || { totalAttempts: 0, attemptedTestsCount: 0, avgScore: 0, avgAccuracy: 0 }
 
@@ -280,8 +280,46 @@ class SectionalTestSeriesService extends BaseService {
                 } : null
             }
         })
-        console.log("result============>", result);
+        
         return result
+    }
+
+    async getSeriesStats(seriesId, userId) {
+        const attemptStatsDict = await this.repository.getAttemptStatsBySeries(userId, [new (require('mongoose').Types.ObjectId)(seriesId)])
+        const seriesStats = attemptStatsDict[seriesId.toString()] || {
+            totalAttempts: 0,
+            attemptedTestsCount: 0,
+            avgScore: 0,
+            avgAccuracy: 0,
+            bestScore: 0
+        }
+
+        const testCountsDict = await this.repository.getTestCountsBySeries([new (require('mongoose').Types.ObjectId)(seriesId)])
+        const totalTestsInSeries = testCountsDict[seriesId.toString()] ? testCountsDict[seriesId.toString()].total : 0
+
+        const SectionalTestSeriesAttempt = require('../../models/SectionalTestSeriesAttempt.model')
+        const bestAttempt = await SectionalTestSeriesAttempt.findOne({
+            user: userId,
+            sectionalTestSeries: seriesId,
+            status: 'completed'
+        }).sort({ score: -1, timeTaken: 1 }).lean()
+
+        let bestScoreData = { score: 0, rank: 0, totalParticipants: 0 }
+        if (bestAttempt) {
+            const { rank, totalParticipants } = await this.repository.getAttemptRank(bestAttempt.test, bestAttempt.score, bestAttempt.timeTaken)
+            bestScoreData = {
+                score: bestAttempt.score,
+                rank,
+                totalParticipants
+            }
+        }
+
+        return {
+            totalTests: totalTestsInSeries,
+            attemptedTests: seriesStats.attemptedTestsCount,
+            bestScore: bestScoreData,
+            accuracy: Math.round(seriesStats.avgAccuracy * 10) / 10
+        }
     }
 
     async getTestInstructions(testId, userId) {
@@ -299,19 +337,19 @@ class SectionalTestSeriesService extends BaseService {
         }
 
         return {
-           
-                _id: test._id,
-                title: test.title,
-                duration: test.duration,
-                totalQuestions: test.totalQuestions,
-                totalMarks: test.totalMarks,
-                marksPerQuestion: test.marksPerQuestion,
-                negativeMarks: test.negativeMarks,
-                passingMarks: test.passingMarks,
-                isPerQuestionTime: test.isPerQuestionTime,
-                instructions: test.instructions,
-                instructionsNew: test.instructionsNew,
-                localizedContent: test.localizedContent,
+
+            _id: test._id,
+            title: test.title,
+            duration: test.duration,
+            totalQuestions: test.totalQuestions,
+            totalMarks: test.totalMarks,
+            marksPerQuestion: test.marksPerQuestion,
+            negativeMarks: test.negativeMarks,
+            passingMarks: test.passingMarks,
+            isPerQuestionTime: test.isPerQuestionTime,
+            instructions: test.instructions,
+            instructionsNew: test.instructionsNew,
+            localizedContent: test.localizedContent,
             series: {
                 _id: series._id,
                 title: series.title,
@@ -908,6 +946,48 @@ class SectionalTestSeriesService extends BaseService {
         })
     }
 
+    async getStats(userId) {
+        const stats = await this.repository.getUserOverallStats(userId)
+        const totalAccessibleTests = await this.repository.getAccessibleTotalTests(userId)
+        
+        const totalSeriesCount = await this.repository.getTotalPlatformSeriesCount()
+        const totalTestsCount = await this.repository.getTotalPlatformTestsCount()
+
+        let overallRank = 0
+        let totalAspirants = 0
+        let topPercentile = 0
+
+        if (stats.totalAttemptedTests > 0) {
+            overallRank = await this.repository.getOverallPlatformRank(stats.totalScore, stats.timeSpent)
+            totalAspirants = await this.repository.getTotalPlatformParticipants()
+
+            if (totalAspirants > 0) {
+                topPercentile = (overallRank / totalAspirants) * 100
+                topPercentile = Math.round(topPercentile * 10) / 10
+            }
+        }
+
+        const totalAttemptedQs = stats.totalCorrect + stats.totalWrong
+        let accuracy = 0
+        if (totalAttemptedQs > 0) {
+            accuracy = (stats.totalCorrect / totalAttemptedQs) * 100
+            accuracy = Math.round(accuracy * 10) / 10
+        }
+
+        return {
+            totalSeriesCount,
+            totalTestsCount,
+            totalAccessibleTests,
+            totalAttemptedTests: stats.totalAttemptedTests,
+            questionsSolved: totalAttemptedQs,
+            timeSpent: stats.timeSpent,
+            accuracy,
+            overallRank,
+            totalAspirants,
+            topPercentile
+        }
+    }
+
     async getUserDashboardStats(userId) {
         const stats = await this.repository.getUserOverallStats(userId)
         const totalAccessibleTests = await this.repository.getAccessibleTotalTests(userId)
@@ -939,7 +1019,7 @@ class SectionalTestSeriesService extends BaseService {
 
         // Fetch Previous Year Paper attempts
         const PreviousYearPaperAttempt = require('../../models/PreviousYearPaperAttempt.model')
-        
+
         const pypOngoing = await PreviousYearPaperAttempt.find({ user: userId, status: 'started' })
             .select('sessionId previousYearPaper test status score totalMarks timeTaken createdAt')
             .populate('previousYearPaper', 'title thumbnail')

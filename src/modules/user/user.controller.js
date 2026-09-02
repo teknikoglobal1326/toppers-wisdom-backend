@@ -84,4 +84,9 @@ const getExamCalendar = catchAsync(async (req, res) => {
   sendSuccess(res, calendar, 'Exam calendar retrieved successfully')
 })
 
-module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification, getPremiumPlan, getExamCalendar }
+const getStreakCount = catchAsync(async (req, res) => {
+  const count = await userService.getStreakCount(req.user._id)
+  sendSuccess(res, { count }, 'Active streak count retrieved successfully')
+})
+
+module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification, getPremiumPlan, getExamCalendar, getStreakCount }
