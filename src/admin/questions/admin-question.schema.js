@@ -44,7 +44,7 @@ const languageQuestionSchema = Joi.object({
 const createQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).required(),
   testId: Joi.string().hex().length(24).optional(),
-  testModel: Joi.string().valid('CourseTest', 'CourseSeparatedTest').default('CourseTest'),
+  testModel: Joi.string().valid('CourseTest', 'CourseSeparatedTest', 'TestMaster', 'TestSeriesTest', 'PreviousYearPaperTest', 'SectionalTestSeriesTest', 'LiveTest', 'DailyQuiz').default('CourseTest'),
   subjectId: Joi.string().hex().length(24).required().messages({
     'any.required': 'Subject is required',
     'string.empty': 'Subject cannot be empty',
@@ -100,7 +100,7 @@ const languageQuestionUpdateSchema = Joi.object({
 const updateQuestionSchema = Joi.object({
   test: Joi.string().hex().length(24).optional(),
   testId: Joi.string().hex().length(24).optional(),
-  testModel: Joi.string().valid('CourseTest', 'CourseSeparatedTest').optional(),
+  testModel: Joi.string().valid('CourseTest', 'CourseSeparatedTest', 'TestMaster', 'TestSeriesTest', 'PreviousYearPaperTest', 'SectionalTestSeriesTest', 'LiveTest', 'DailyQuiz').optional(),
   subjectId: Joi.string().hex().length(24).optional().messages({
     'string.empty': 'Subject cannot be empty',
     'string.length': 'Subject ID must be a 24-character hex string'

@@ -234,7 +234,7 @@ const questionSchema = new mongoose.Schema(
     testModel: {
       type: String,
       required: true,
-      enum: ["CourseTest", "CourseSeparatedTest", "EditorialTest"],
+      enum: ["CourseTest", "CourseSeparatedTest", "EditorialTest", "TestMaster", "TestSeriesTest", "PreviousYearPaperTest", "SectionalTestSeriesTest", "LiveTest", "DailyQuiz"],
       default: "CourseTest",
     },
 
