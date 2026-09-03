@@ -30,6 +30,12 @@ const testSeriesTestSchema = new mongoose.Schema({
     instructionsNew: { type: String, default: null },
     isPaid: { type: Boolean, default: false, index: true },
     sortOrder: { type: Number, default: 0, index: true },
+    sectionTimings: [{
+        subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject' },
+        subjectName: { type: String },
+        duration: { type: Number, default: 0 },
+        isLocked: { type: Boolean, default: true }
+    }],
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
     // Languages this test is authored in. ['en'] | ['hi'] | ['en','hi'].
     // Drives which language question forms the admin fills and which language(s)

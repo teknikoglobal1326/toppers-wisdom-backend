@@ -595,4 +595,25 @@ const getTestAnalytics = catchAsync(async (req, res) => {
     })
 })
 
-module.exports = { list, getOne, create, update, remove, metadata, bulkCreate, getTestAnalytics }
+const getSectionTimings = catchAsync(async (req, res) => {
+    const doc = await TestSeriesTest.findOne({ _id: req.params.id, isDeleted: false })
+        .populate('subjectIds', 'name title')
+    if (!doc) throw new AppError('Test not found', 404, 'NOT_FOUND')
+    sendSuccess(res, {
+        testId: doc._id,
+        totalDuration: doc.duration,
+        sectionTimings: doc.sectionTimings || []
+    })
+})
+
+const updateSectionTimings = catchAsync(async (req, res) => {
+    const doc = await TestSeriesTest.findOne({ _id: req.params.id, isDeleted: false })
+    if (!doc) throw new AppError('Test not found', 404, 'NOT_FOUND')
+    const { sectionTimings } = req.body
+    doc.sectionTimings = sectionTimings || []
+    doc.markModified('sectionTimings')
+    await doc.save()
+    sendSuccess(res, doc, 'Section timings updated successfully')
+})
+
+module.exports = { list, getOne, create, update, remove, metadata, bulkCreate, getTestAnalytics, getSectionTimings, updateSectionTimings }
