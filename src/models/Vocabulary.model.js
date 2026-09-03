@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const vocabularySchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
-  type: { type: String, enum: ["pyp_dictionary", "daily_vocab"], required: true, index: true },
+  type: { type: String, enum: ["pyp_dictionary", "daily_vocab", "beginner"], required: true, index: true },
   word: { type: String, required: true, trim: true },
   pronunciation: { type: String, default: "" },
   audio: { type: String, default: "" },

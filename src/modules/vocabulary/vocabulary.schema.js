@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
-const VALID_TYPES = ['pyp_dictionary', 'daily_vocab']
+const VALID_TYPES = ['pyp_dictionary', 'daily_vocab', 'beginner']
 const VALID_STATUS = ['draft', 'active', 'inactive']
 
 const listVocabularyQuerySchema = Joi.object({
