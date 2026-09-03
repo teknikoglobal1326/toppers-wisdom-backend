@@ -29,7 +29,12 @@ router.get('/progress/:studentId/due', dictionaryController.getDueItems);
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Admin Ingestion & Review Queue (require admin auth)~
+// Admin Word Management Routes
+router.put('/words/:id', adminAuthMiddleware, dictionaryController.updateWord);
+router.patch('/words/:id', adminAuthMiddleware, dictionaryController.updateWord);
+router.delete('/words/:id', adminAuthMiddleware, dictionaryController.deleteWord);
+
+// Admin Ingestion & Review Queue (require admin auth)
 router.use('/ingest', adminAuthMiddleware);
 
 router.post('/ingest/upload', upload.single('file'), dictionaryController.uploadIngestDocument);
@@ -37,5 +42,8 @@ router.get('/ingest/review-queue', dictionaryController.getReviewQueue);
 router.post('/ingest/bulk-approve', dictionaryController.bulkApproveIngestItems);
 router.post('/ingest/:id/approve', dictionaryController.approveIngestItem);
 router.post('/ingest/:id/reject', dictionaryController.rejectIngestItem);
+router.put('/ingest/:id', dictionaryController.updateWord);
+router.patch('/ingest/:id', dictionaryController.updateWord);
+router.delete('/ingest/:id', dictionaryController.deleteWord);
 
 module.exports = router;

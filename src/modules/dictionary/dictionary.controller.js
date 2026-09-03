@@ -163,6 +163,27 @@ const uploadIngestDocument = async (req, res, next) => {
   }
 };
 
+const updateWord = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body.payload || req.body;
+    const word = await dictionaryService.updateWord(id, updateData);
+    res.status(200).json({ success: true, message: 'Word updated successfully', data: word });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteWord = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await dictionaryService.deleteWord(id);
+    res.status(200).json({ success: true, message: 'Word deleted successfully', data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCategories,
   getCategoryHub,
@@ -178,5 +199,7 @@ module.exports = {
   approveIngestItem,
   bulkApproveIngestItems,
   rejectIngestItem,
-  uploadIngestDocument
+  uploadIngestDocument,
+  updateWord,
+  deleteWord
 };
