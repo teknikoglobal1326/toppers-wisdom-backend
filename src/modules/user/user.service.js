@@ -562,7 +562,7 @@ class UserService extends BaseService {
 
         return calendarExamRepository.findAll(filter, {
             select: 'title image publishDate exams subExams',
-            sort: { sortOrder: 1, publishDate: -1 },
+            sort: { publishDate: -1 },
             populate: [
                 { path: 'exams', select: 'name' },
                 { path: 'subExams', select: 'name' }
