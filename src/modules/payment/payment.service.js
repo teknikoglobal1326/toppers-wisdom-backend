@@ -94,8 +94,63 @@ class PaymentService extends BaseService {
     }
   }
 
-  async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {
-    this.logger.info({ userId, razorpayOrderId }, 'Verifying payment')
+  // async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {
+  //   this.logger.info({ userId, razorpayOrderId }, 'Verifying payment')
+
+  //   const expectedSig = crypto
+  //     .createHmac('sha256', config.RAZORPAY_KEY_SECRET)
+  //     .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+  //     .digest('hex')
+
+  //   if (expectedSig !== razorpaySignature) {
+  //     this.logger.warn({ userId, razorpayOrderId }, 'Signature mismatch')
+  //     throw new AppError('Invalid payment signature', 400, 'PAYMENT_INVALID')
+  //   }
+
+  //   const order = await paymentRepository.findByRazorpayOrderId(razorpayOrderId)
+  //   if (!order) throw new AppError('Order not found', 404)
+  //   if (order.status === 'paid') throw new AppError('Payment already processed', 409)
+
+  //   // inherited: this.update() → BaseRepository.updateById()
+  //   const updated = await this.update(order._id, { status: 'paid', razorpayPaymentId, razorpaySignature, paidAt: new Date() })
+
+  //   const courseItems = order.items.filter((i) => i.itemType === 'course')
+  //   await paymentRepository.createEnrollmentsForOrder(userId, courseItems)
+  //   const courseRepository = require('../course/course.repository')
+  //   for (const item of courseItems) {
+  //     await courseRepository.incrementEnrollments(item.itemId)
+  //   }
+
+  //   if (order.couponApplied && order.couponApplied.code) {
+  //     const Coupon = require('../../models/Coupon.model')
+  //     await Coupon.updateOne({ code: order.couponApplied.code }, { $inc: { usageCount: 1 } })
+  //   }
+
+  //   const { notificationQueue, emailQueue } = require('../../jobs/queue')
+  //   await Promise.all([
+  //     notificationQueue.add('payment-success', { userId, orderId: order._id, amount: order.totalAmount }),
+  //     emailQueue.add('payment-receipt', { userId, orderId: order._id }),
+  //   ])
+
+  //   this.logger.info({ userId, orderId: order._id }, 'Payment verified — access granted')
+  //   return { success: true, order: updated }
+  // }
+
+  async verifyPayment(
+  userId,
+  razorpayOrderId,
+  razorpayPaymentId,
+  razorpaySignature
+) {
+  try {
+    this.logger.info(
+      {
+        userId,
+        razorpayOrderId,
+        razorpayPaymentId
+      },
+      'Verifying payment'
+    )
 
     const expectedSig = crypto
       .createHmac('sha256', config.RAZORPAY_KEY_SECRET)
@@ -103,38 +158,155 @@ class PaymentService extends BaseService {
       .digest('hex')
 
     if (expectedSig !== razorpaySignature) {
-      this.logger.warn({ userId, razorpayOrderId }, 'Signature mismatch')
-      throw new AppError('Invalid payment signature', 400, 'PAYMENT_INVALID')
+      this.logger.warn(
+        { userId, razorpayOrderId },
+        'Signature mismatch'
+      )
+
+      throw new AppError(
+        'Invalid payment signature',
+        400,
+        'PAYMENT_INVALID'
+      )
     }
 
-    const order = await paymentRepository.findByRazorpayOrderId(razorpayOrderId)
-    if (!order) throw new AppError('Order not found', 404)
-    if (order.status === 'paid') throw new AppError('Payment already processed', 409)
+    this.logger.info(
+      { razorpayOrderId },
+      'Payment signature verified'
+    )
 
-    // inherited: this.update() → BaseRepository.updateById()
-    const updated = await this.update(order._id, { status: 'paid', razorpayPaymentId, razorpaySignature, paidAt: new Date() })
+    const order =
+      await paymentRepository.findByRazorpayOrderId(razorpayOrderId)
 
-    const courseItems = order.items.filter((i) => i.itemType === 'course')
-    await paymentRepository.createEnrollmentsForOrder(userId, courseItems)
-    const courseRepository = require('../course/course.repository')
+    if (!order) {
+      throw new AppError('Order not found', 404)
+    }
+
+    this.logger.info(
+      {
+        orderId: order._id,
+        status: order.status
+      },
+      'Payment order found'
+    )
+
+    if (order.status === 'paid') {
+      throw new AppError(
+        'Payment already processed',
+        409
+      )
+    }
+
+    const updated = await this.update(order._id, {
+      status: 'paid',
+      razorpayPaymentId,
+      razorpaySignature,
+      paidAt: new Date()
+    })
+
+    this.logger.info(
+      { orderId: order._id },
+      'Order marked as paid'
+    )
+
+    const courseItems = order.items.filter(
+      (i) => i.itemType === 'course'
+    )
+
+    this.logger.info(
+      {
+        orderId: order._id,
+        courseCount: courseItems.length
+      },
+      'Creating enrollments'
+    )
+
+    await paymentRepository.createEnrollmentsForOrder(
+      userId,
+      courseItems
+    )
+
+    const courseRepository =
+      require('../course/course.repository')
+
     for (const item of courseItems) {
-      await courseRepository.incrementEnrollments(item.itemId)
+      await courseRepository.incrementEnrollments(
+        item.itemId
+      )
     }
 
-    if (order.couponApplied && order.couponApplied.code) {
-      const Coupon = require('../../models/Coupon.model')
-      await Coupon.updateOne({ code: order.couponApplied.code }, { $inc: { usageCount: 1 } })
+    if (
+      order.couponApplied &&
+      order.couponApplied.code
+    ) {
+      const Coupon =
+        require('../../models/Coupon.model')
+
+      await Coupon.updateOne(
+        { code: order.couponApplied.code },
+        { $inc: { usageCount: 1 } }
+      )
     }
 
-    const { notificationQueue, emailQueue } = require('../../jobs/queue')
-    await Promise.all([
-      notificationQueue.add('payment-success', { userId, orderId: order._id, amount: order.totalAmount }),
-      emailQueue.add('payment-receipt', { userId, orderId: order._id }),
-    ])
+    const { notificationQueue, emailQueue } =
+      require('../../jobs/queue')
 
-    this.logger.info({ userId, orderId: order._id }, 'Payment verified — access granted')
-    return { success: true, order: updated }
+    try {
+      await Promise.all([
+        notificationQueue.add('payment-success', {
+          userId,
+          orderId: order._id,
+          amount: order.totalAmount
+        }),
+        emailQueue.add('payment-receipt', {
+          userId,
+          orderId: order._id
+        })
+      ])
+    } catch (queueError) {
+      this.logger.error(
+        {
+          err: queueError,
+          userId,
+          orderId: order._id
+        },
+        'Failed to queue payment notifications'
+      )
+    }
+
+    this.logger.info(
+      {
+        userId,
+        orderId: order._id
+      },
+      'Payment verified — access granted'
+    )
+
+    return {
+      success: true,
+      order: updated
+    }
+  } catch (error) {
+    this.logger.error(
+    {
+      err: error,
+      userId,
+      razorpayOrderId,
+      razorpayPaymentId,
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      code: error?.code,
+      statusCode: error?.statusCode,
+      response: error?.response?.data,
+    },
+    'verifyPayment FAILED'
+  )
+
+  throw error
   }
+}
+
 
   async handleWebhook(body, signature) {
     const expected = crypto.createHmac('sha256', config.RAZORPAY_KEY_SECRET).update(JSON.stringify(body)).digest('hex')
