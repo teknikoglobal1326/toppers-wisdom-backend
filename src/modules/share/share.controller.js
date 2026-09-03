@@ -153,19 +153,24 @@ exports.resolveLink = async (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="${escapedDescription}" />
     <title>${escapedTitle}</title>
     
     <!-- Open Graph Meta Tags for Previews (WhatsApp, Telegram, Facebook, etc.) -->
     <meta property="og:title" content="${escapedTitle}" />
     <meta property="og:description" content="${escapedDescription}" />
     ${fullImageUrl ? `<meta property="og:image" content="${escapedImageUrl}" />
+    <meta property="og:image:secure_url" content="${escapedImageUrl}" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />` : ''}
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${escapedShareUrl}" />
+    <meta property="og:site_name" content="Toppers Wisdom" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapedTitle}" />
     <meta name="twitter:description" content="${escapedDescription}" />
+    <meta name="twitter:url" content="${escapedShareUrl}" />
     ${fullImageUrl ? `<meta name="twitter:image" content="${escapedImageUrl}" />` : ''}
 
     <style>
