@@ -300,202 +300,88 @@ const bulkApproveIngestItems = async (approvals) => {
 };
 
 
-// ----------------------------------------------------------------------
-// AI Extraction Service Integration
-// ----------------------------------------------------------------------
-const { OpenAI } = require('openai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const redis = require('../../config/redis');
-
-// Set a daily limit for OpenAI calls to control costs before falling back to Gemini
-const OPENAI_DAILY_LIMIT = 500;
-
-const invokeLLMWithFailover = async (textContext, prompt) => {
-  const fullPrompt = `${prompt}\n\nDOCUMENT TEXT:\n${textContext}`;
-  const dateStr = new Date().toISOString().split('T')[0];
-  const countKey = `ai:openai:count:${dateStr}`;
-  const failKey = `ai:openai:fails:${dateStr}`;
-
-  // 1. Check if we've exceeded the daily limit for OpenAI
-  const currentCount = parseInt(await redis.get(countKey) || '0', 10);
-  
-  if (currentCount < OPENAI_DAILY_LIMIT) {
-    try {
-      console.log(`Attempting AI extraction via OpenAI... (Daily Usage: ${currentCount + 1}/${OPENAI_DAILY_LIMIT})`);
-      
-      // Increment the attempt count
-      await redis.incr(countKey);
-      // Optional: Set expiry to 24h if it's a new key
-      if (currentCount === 0) await redis.expire(countKey, 86400);
-
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: fullPrompt }],
-        response_format: { type: 'json_object' },
-      });
-      return response.choices[0].message.content;
-    } catch (error) {
-      console.error('OpenAI extraction failed, logging fail count and falling over to Gemini...', error.message);
-      
-      // Increment fail count
-      const fails = await redis.incr(failKey);
-      if (fails === 1) await redis.expire(failKey, 86400);
-    }
-  } else {
-    console.log(`OpenAI daily limit (${OPENAI_DAILY_LIMIT}) reached. Skipping directly to Gemini...`);
-  }
-  
-  // Secondary: Google Gemini (gemini-1.5-flash)
-  console.log('Attempting AI extraction via Gemini...');
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
-    generationConfig: { responseMimeType: 'application/json' },
-  });
-  return result.response.text();
-};
-
-const processAiExtractionJob = async (fileBuffer, fileName, uploaderId) => {
-  
-  const aiPrompt = `
-    You are an expert OCR and NLP assistant. Extract all vocabulary words and multiple-choice questions from the provided document.
-    Categorize each item strictly into one of these 8 categories: 'one-word-sub', 'idioms-phrases', 'synonyms', 'antonyms', 'spellings', 'phrasal-verbs', 'homonyms', 'proverbs'.
-    
-    IMPORTANT: DO NOT invent or generate multiple-choice questions from vocabulary words. Only extract questions if they are explicitly written as Multiple Choice Questions with options in the text.
-
-    For WORDS, draft the following fields:
-    - word: the vocabulary word
-    - en: English meaning
-    - hi: Hindi meaning (if determinable)
-    - usage: array of 1-2 natural usage sentences (no em-dashes)
-    - daily: array of 1-2 colloquial/daily use sentences (no em-dashes)
-    - hook: a mnemonic in Devanagari ending strictly with a danda (।)
-    - note: a concept line ending strictly with a danda (।)
-    - theme: a suggested 1-2 word theme
-    - cat: the assigned category
-    - exams: array of exams mentioned
-    
-    For QUESTIONS, draft the following fields:
-    - q: the question text
-    - opts: array of exactly 4 string options
-    - ans: the correct option (exact string match to one of opts)
-    - expl: explanation for the answer
-    - cat: the assigned category
-    - exams: array of exams mentioned
-
-    Return ONLY a valid JSON object matching this schema:
-    {
-      "words": [{ ...fields... }],
-      "questions": [{ ...fields... }] 
-    }
-  `;
-
-  let textContext = '';
-  if (fileName.toLowerCase().endsWith('.docx')) {
-    const mammoth = require('mammoth');
-    const result = await mammoth.extractRawText({ buffer: fileBuffer });
-    textContext = result.value;
-  } else {
-    textContext = fileBuffer.toString('utf-8');
-  }
-  
-  if (!textContext || textContext.trim().length === 0) {
-    console.error(`No text could be extracted from ${fileName}.`);
-    return;
-  }
-  
-  const paragraphs = textContext.split(/\n\s*\n/);
-  const chunks = [];
-  let currentChunk = "";
-  for (const p of paragraphs) {
-    if (currentChunk.length + p.length > 2500 && currentChunk.length > 0) {
-      chunks.push(currentChunk);
-      currentChunk = p;
-    } else {
-      currentChunk += (currentChunk ? "\n\n" : "") + p;
-    }
-  }
-  if (currentChunk) chunks.push(currentChunk);
-
-  let allWords = [];
-  let allQuestions = [];
-
-  for (let i = 0; i < chunks.length; i++) {
-    console.log(`Processing chunk ${i + 1}/${chunks.length}...`);
-    try {
-      const aiResponseString = await invokeLLMWithFailover(chunks[i], aiPrompt);
-      const extractedData = JSON.parse(aiResponseString);
-      if (extractedData.words) allWords = allWords.concat(extractedData.words);
-      if (extractedData.questions) allQuestions = allQuestions.concat(extractedData.questions);
-    } catch (error) {
-      console.error(`AI Extraction failed for chunk ${i + 1} of ${fileName}:`, error);
-    }
-  }
-
-  const wordTexts = allWords.map(w => w.word).filter(Boolean);
-  const existingWords = await DictionaryWord.find({ word: { $in: wordTexts } }).select('word').lean();
-  const existingIngestWords = await DictionaryIngest.find({ type: 'word', 'payload.word': { $in: wordTexts } }).select('payload.word').lean();
-  const duplicateWordSet = new Set([
-    ...existingWords.map(w => w.word.toLowerCase()),
-    ...existingIngestWords.map(w => w.payload.word.toLowerCase())
-  ]);
-
-  const questionTexts = allQuestions.map(q => q.q).filter(Boolean);
-  const existingQuestions = await DictionaryQuestion.find({ q: { $in: questionTexts } }).select('q').lean();
-  const existingIngestQuestions = await DictionaryIngest.find({ type: 'question', 'payload.q': { $in: questionTexts } }).select('payload.q').lean();
-  const duplicateQuestionSet = new Set([
-    ...existingQuestions.map(q => q.q.toLowerCase()),
-    ...existingIngestQuestions.map(q => q.payload.q.toLowerCase())
-  ]);
-
-  const stagingPromises = [];
-
-  for (const w of allWords) {
-    if (!w.word || !w.en || !w.cat) continue;
-    if (duplicateWordSet.has(w.word.toLowerCase())) continue;
-
-    stagingPromises.push(new DictionaryIngest({
-      type: 'word',
-      payload: w,
-      status: 'pending',
-      aiDraftedFields: ['en', 'hi', 'usage', 'daily', 'hook', 'note', 'theme'],
-      submittedBy: uploaderId
-    }).save());
-    duplicateWordSet.add(w.word.toLowerCase());
-  }
-
-  for (const q of allQuestions) {
-    if (!q.q || !q.opts || !q.ans || !q.cat) continue;
-    if (duplicateQuestionSet.has(q.q.toLowerCase())) continue;
-
-    stagingPromises.push(new DictionaryIngest({
-      type: 'question',
-      payload: q,
-      status: 'pending',
-      aiDraftedFields: ['expl'],
-      submittedBy: uploaderId
-    }).save());
-    duplicateQuestionSet.add(q.q.toLowerCase());
-  }
-
-  const results = await Promise.allSettled(stagingPromises);
-  results.forEach((r, idx) => {
-    if (r.status === 'rejected') console.error(`Failed to stage item ${idx}:`, r.reason);
-  });
-  console.log(`Successfully staged ${results.filter(r => r.status === 'fulfilled').length} non-duplicate items from ${fileName}`);
-};
-
 const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
-  const jobId = `job_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-  
-  // Fire and forget background job
-  processAiExtractionJob(fileBuffer, fileName, uploaderId).catch(err => {
-    console.error('Background AI Job Failed:', err);
+  if (!fileName.toLowerCase().endsWith('.json')) {
+    throw new Error('Please upload a valid JSON file.');
+  }
+
+  let data;
+  try {
+    const fileContent = fileBuffer.toString('utf-8');
+    data = JSON.parse(fileContent);
+  } catch (err) {
+    throw new Error('Invalid JSON file format.');
+  }
+
+  // Handle case where JSON is just an array of words, or an object with words/questions
+  let words = [];
+  let questions = [];
+
+  if (Array.isArray(data)) {
+    // Assuming array of words based on sample file
+    words = data;
+  } else if (data.words || data.questions) {
+    if (data.words) words = data.words;
+    if (data.questions) questions = data.questions;
+  }
+
+  let importedWordsCount = 0;
+  let importedQuestionsCount = 0;
+  let errors = [];
+
+  // Import Words using save() to trigger mongoose pre-save validation hooks
+  const wordPromises = words.map(async (w) => {
+    if (!w._id) {
+       w._id = `w_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+    }
+    const existing = await DictionaryWord.findById(w._id);
+    if (existing) {
+      Object.assign(existing, w);
+      return existing.save();
+    } else {
+      const newWord = new DictionaryWord(w);
+      return newWord.save();
+    }
   });
-  
-  return { jobId, status: 'processing', message: 'Document queued for AI extraction' };
+
+  const wordResults = await Promise.allSettled(wordPromises);
+  wordResults.forEach((res, idx) => {
+    if (res.status === 'fulfilled') {
+      importedWordsCount++;
+    } else {
+      errors.push(`Word index ${idx} failed: ${res.reason.message}`);
+    }
+  });
+
+  // Import Questions using save()
+  const questionPromises = questions.map(async (q) => {
+    const filter = q._id ? { _id: q._id } : { q: q.q };
+    const existing = await DictionaryQuestion.findOne(filter);
+    if (existing) {
+      Object.assign(existing, q);
+      return existing.save();
+    } else {
+      const newQ = new DictionaryQuestion(q);
+      return newQ.save();
+    }
+  });
+
+  const questionResults = await Promise.allSettled(questionPromises);
+  questionResults.forEach((res, idx) => {
+    if (res.status === 'fulfilled') {
+      importedQuestionsCount++;
+    } else {
+      errors.push(`Question index ${idx} failed: ${res.reason.message}`);
+    }
+  });
+
+  return {
+    status: 'completed',
+    importedWordsCount,
+    importedQuestionsCount,
+    message: `Successfully imported ${importedWordsCount} words and ${importedQuestionsCount} questions into the live database.`,
+    errors: errors.length > 0 ? errors : undefined
+  };
 };
 
 module.exports = {

@@ -95,7 +95,7 @@ class TestConfigurationValidator {
       throw new AppError('operations must contain at least one supported operation', 400)
     }
 
-    const supported = ['addition', 'subtraction', 'multiplication', 'division', 'percentage', 'square', 'cube', 'squareroot', 'cuberoot']
+    const supported = ['addition', 'subtraction', 'multiplication', 'division', 'percentage', 'square', 'cube', 'squareroot', 'cuberoot', 'brainbooster']
     const uniqueOps = Array.from(new Set(operations.map(o => String(o).toLowerCase().trim())))
     for (const op of uniqueOps) {
       if (!supported.includes(op)) {
@@ -211,6 +211,24 @@ class DifficultyRuleEngine {
           return [root * root * root, null]
         }
       }
+      if (operation === 'brainbooster') {
+        const steps = difficulty === 'easy' ? 3 : (difficulty === 'medium' ? 5 : 7)
+        const sequence = []
+        let current = Math.floor(Math.random() * (difficulty === 'easy' ? 20 : 50)) + 1
+        sequence.push(current)
+        
+        for (let s = 0; s < steps; s++) {
+           const opType = Math.random() > 0.5 ? '+' : '-'
+           let val = Math.floor(Math.random() * (difficulty === 'easy' ? 20 : 50)) + 1
+           
+           if (opType === '-' && current - val < 0 && difficulty !== 'hard') {
+              val = Math.min(current, val)
+           }
+           sequence.push(`${opType}${val}`)
+           current = opType === '+' ? current + val : current - val
+        }
+        return [sequence, null]
+      }
     }
 
     // Fallbacks
@@ -233,6 +251,9 @@ class DifficultyRuleEngine {
     } else if (operation === 'square' || operation === 'cube' || operation === 'squareroot' || operation === 'cuberoot') {
       op1 = 10
       op2 = null
+    } else if (operation === 'brainbooster') {
+      op1 = [2, '+5', '+10', '+4']
+      op2 = null
     }
     return [op1, op2]
   }
@@ -249,6 +270,17 @@ class AnswerCalculator {
     if (operation === 'cube') return op1 * op1 * op1
     if (operation === 'squareroot') return Math.round(Math.sqrt(op1))
     if (operation === 'cuberoot') return Math.round(Math.cbrt(op1))
+    if (operation === 'brainbooster') {
+      let result = op1[0]
+      for (let i = 1; i < op1.length; i++) {
+        const step = String(op1[i])
+        const opType = step.charAt(0)
+        const val = Number(step.slice(1))
+        if (opType === '+') result += val
+        else if (opType === '-') result -= val
+      }
+      return result
+    }
     throw new AppError(`Unsupported operation: ${operation}`, 400)
   }
 }
@@ -308,6 +340,13 @@ class DistractorGenerator {
       candidates.push(correctAnswer + 1)
       candidates.push(Math.max(0, correctAnswer - 1))
       candidates.push(correctAnswer * 2)
+    } else if (operation === 'brainbooster') {
+      candidates.push(correctAnswer + 5)
+      candidates.push(correctAnswer - 5)
+      candidates.push(correctAnswer + 10)
+      candidates.push(correctAnswer - 10)
+      candidates.push(correctAnswer + 2)
+      candidates.push(correctAnswer - 2)
     }
 
     for (const cand of candidates) {
@@ -382,6 +421,20 @@ class ExplanationGenerator {
       return `The cube root of ${operand1} is the number that when cubed equals ${operand1}. Since ${correctAnswer} × ${correctAnswer} × ${correctAnswer} = ${operand1}, the cube root is ${correctAnswer}.`
     }
 
+    if (operation === 'brainbooster') {
+       let expl = `Start with ${operand1[0]}.`
+       let current = operand1[0]
+       for (let i = 1; i < operand1.length; i++) {
+         const step = String(operand1[i])
+         const opType = step.charAt(0)
+         const val = Number(step.slice(1))
+         const next = opType === '+' ? current + val : current - val
+         expl += ` Then ${current} ${opType === '+' ? '+' : '-'} ${val} = ${next}.`
+         current = next
+       }
+       return expl
+    }
+
     return `${operand1} ${operation} ${operand2} = ${correctAnswer}`
   }
 }
@@ -441,6 +494,8 @@ class QuestionGenerator {
       questionText = `√${op1} = ?`
     } else if (operation === 'cuberoot') {
       questionText = `∛${op1} = ?`
+    } else if (operation === 'brainbooster') {
+      questionText = op1.join(' ') + ' = ?'
     } else {
       const opSign = operation === 'addition' ? '+' : operation === 'subtraction' ? '-' : operation === 'multiplication' ? '×' : operation === 'division' ? '÷' : 'of'
       questionText = `${op1} ${opSign} ${op2} = ?`
@@ -458,7 +513,7 @@ class QuestionGenerator {
       explanation,
       difficulty,
       correctAnswer,
-      operands: [op1, op2]
+      operands: operation === 'brainbooster' ? op1 : [op1, op2]
     }
   }
 }
@@ -499,7 +554,9 @@ class TestAssembler {
 
       // Prevent duplicates
       let uniqueKey = ''
-      if (op === 'square' || op === 'cube' || op === 'squareroot' || op === 'cuberoot') {
+      if (op === 'brainbooster') {
+        uniqueKey = `${op}_${q.operands.join('_')}`
+      } else if (op === 'square' || op === 'cube' || op === 'squareroot' || op === 'cuberoot') {
         uniqueKey = `${op}_${q.operands[0]}`
       } else {
         const minOpVal = Math.min(q.operands[0], q.operands[1])
