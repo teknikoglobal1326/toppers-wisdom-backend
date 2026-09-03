@@ -21,6 +21,17 @@ class VocabularyService extends BaseService {
 
         filter.status = status || 'active'
 
+        if (type === 'daily_vocab' && !publishDate) {
+            const startOfToday = new Date()
+            startOfToday.setHours(0, 0, 0, 0)
+            const endOfToday = new Date()
+            endOfToday.setHours(23, 59, 59, 999)
+            filter.publishDate = {
+                $gte: startOfToday,
+                $lte: endOfToday,
+            }
+        }
+
         if (word) {
             filter.word = new RegExp(word, 'i')
         }

@@ -143,7 +143,10 @@ class SubscriptionService {
         const subscriptionDetails = {
             name: subscription.name,
             description: subscription.description,
-            price: subscription.price
+            price: subscription.price,
+            tests: subscription.tests || [],
+            boosters: subscription.boosters || [],
+            materials: subscription.materials || []
         };
 
         console.log(`[SubscriptionService] Creating SubscriptionOrder for user: ${userId}, subscription: ${subscription._id}`);
