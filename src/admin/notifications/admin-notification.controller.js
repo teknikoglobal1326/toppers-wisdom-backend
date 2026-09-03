@@ -6,14 +6,38 @@ const { createLogger }      = require('../../config/logger')
 const logger = createLogger('admin:notification:controller')
 
 const broadcast = catchAsync(async (req, res) => {
-  const { title, body, subExamId, all, type } = req.body
-  logger.info({ title, all, subExamId }, 'Broadcasting notification')
+  const { title, body, examId, subExamId, all, type, moduleType, moduleId } = req.body
+  logger.info({ title, all, examId, subExamId, type, moduleType, moduleId }, 'Broadcasting notification')
 
-  await notificationQueue.add('broadcast', {
-    title, body, subExamId, all, data: { type },
+  const targetModuleType = moduleType || 'system'
+
+  const job = await notificationQueue.add('broadcast', {
+    title,
+    body,
+    examId,
+    subExamId,
+    all,
+    data: {
+      moduleType: targetModuleType,
+      moduleId: moduleId ? String(moduleId) : '',
+    },
   })
 
-  sendSuccess(res, null, 'Notification broadcast queued')
+  const resultData = {
+    jobId: job.id,
+    title,
+    message: body,
+    body,
+    examId: examId || null,
+    subExamId: subExamId || null,
+    all: !!all,
+    moduleType: targetModuleType,
+    moduleId: moduleId || null,
+    isProcessed: false,
+    createdAt: new Date().toISOString()
+  }
+
+  sendSuccess(res, resultData, 'Notification broadcast queued')
 })
 
 module.exports = { broadcast }
