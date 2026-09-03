@@ -81,7 +81,7 @@ class UserService extends BaseService {
             }
 
             user.referredBy = referrer._id
-            
+
             const rewardsService = require('../rewards/rewards.service')
             const ReferralHistory = require('../../models/ReferralHistory.model')
             try {
@@ -145,7 +145,7 @@ class UserService extends BaseService {
             ? new mongoose.Types.ObjectId(userId)
             : userId
 
-        const vocabularyTypes = ['pyp_dictionary', 'daily_vocab']
+        const vocabularyTypes = ['pyp_dictionary', 'daily_vocab', 'beginner']
         const editorialTypes = ['daily_editorial', 'ncert_based']
 
         const [

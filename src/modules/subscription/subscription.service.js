@@ -49,6 +49,8 @@ class SubscriptionService {
             if (objectId) queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'PreviousYearPaper', moduleId: objectId } } });
         } else if (['live-test-series', 'livetestseries'].includes(typeStr)) {
             if (objectId) queryOptions.push({ 'tests': { $elemMatch: { moduleType: 'LiveTestSeries', moduleId: objectId } } });
+        } else if (['sectional-test', 'sectionaltest', 'sectionaltestseries', 'sectional-test-series'].includes(typeStr)) {
+            if (objectId) queryOptions.push({ 'tests': { $elemMatch: { moduleType: { $in: ['SectionalTestSeries', 'SectionalTest'] }, moduleId: objectId } } });
         } else if (typeStr === 'vocabulary') {
             if (objectId) queryOptions.push({ 'boosters': { $elemMatch: { moduleType: { $in: ['Vocabulary', 'vocabulary'] }, moduleId: objectId } } });
         } else {

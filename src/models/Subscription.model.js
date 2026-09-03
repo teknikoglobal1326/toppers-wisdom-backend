@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const testItemSchema = new mongoose.Schema({
   moduleType: {
     type: String,
-    enum: ['TestSeries', 'PreviousYearPaper', 'LiveTestSeries'],
+    enum: ['TestSeries', 'PreviousYearPaper', 'LiveTestSeries', 'SectionalTestSeries', 'SectionalTest'],
     required: true
   },
   moduleId: [{

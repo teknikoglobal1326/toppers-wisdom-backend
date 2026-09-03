@@ -229,12 +229,23 @@ class AdminMarketingService extends BaseService {
       data.image = 'https://topperswisdom.teknikoglobal.in/images/logo/auth-logo.png'
     }
 
+    const scheduledTime = data.schedule ? new Date(data.schedule).getTime() : Date.now()
+    if (data.countdown) {
+      const countdownTime = new Date(data.countdown).getTime()
+      if (isNaN(countdownTime)) {
+        throw new AppError('Invalid countdown date & time', 400, 'VALIDATION_ERROR')
+      }
+      if (countdownTime <= scheduledTime) {
+        throw new AppError('Countdown date & time must be strictly after the scheduled delivery time (scheduled < countdown)', 400, 'VALIDATION_ERROR')
+      }
+    }
+
     const announcement = await Announcement.create({
       ...data,
       createdBy: adminId
     })
 
-    const runTime = new Date(announcement.schedule).getTime()
+    const runTime = announcement.schedule ? new Date(announcement.schedule).getTime() : Date.now()
     const delay = Math.max(0, runTime - Date.now())
 
     try {
@@ -281,7 +292,21 @@ class AdminMarketingService extends BaseService {
       data.image = 'https://topperswisdom.teknikoglobal.in/images/logo/auth-logo.png'
     }
 
-    const hasNewSchedule = data.schedule && new Date(data.schedule).getTime() !== new Date(announcement.schedule).getTime()
+    const targetSchedule = data.schedule !== undefined ? data.schedule : announcement.schedule
+    const targetCountdown = data.countdown !== undefined ? data.countdown : announcement.countdown
+
+    if (targetCountdown) {
+      const schedTime = targetSchedule ? new Date(targetSchedule).getTime() : Date.now()
+      const countTime = new Date(targetCountdown).getTime()
+      if (isNaN(countTime)) {
+        throw new AppError('Invalid countdown date & time', 400, 'VALIDATION_ERROR')
+      }
+      if (countTime <= schedTime) {
+        throw new AppError('Countdown date & time must be strictly after the scheduled delivery time (scheduled < countdown)', 400, 'VALIDATION_ERROR')
+      }
+    }
+
+    const hasNewSchedule = data.schedule && new Date(data.schedule).getTime() !== (announcement.schedule ? new Date(announcement.schedule).getTime() : 0)
 
     Object.assign(announcement, data)
 

@@ -11,6 +11,7 @@ const editorialRepository = require('../../modules/editorial/editorial.repositor
 const testSeriesRepository = require('../../modules/test-series/test-series.repository')
 const shortCategoryRepository = require('../../modules/short-category/short-category.repository')
 const previousYearPaperRepository = require('../../modules/previous-year-paper/previous-year-paper.repository')
+const sectionalTestSeriesRepository = require('../../modules/sectional-test-series/sectional-test-series.repository')
 const subjectRepository = require('../../modules/subject/subject.repository')
 const Subject = require('../../models/Subject.model')
 const Role = require('../../models/Role.model')
@@ -614,6 +615,25 @@ router.get('/previous-year-papers', catchAsync(async (req, res) => {
     { sort: { title: 1 }, select: 'title _id' }
   )
   sendSuccess(res, papers)
+}))
+
+// GET /api/v1/admin/common/sectional-tests
+router.get('/sectional-tests', catchAsync(async (req, res) => {
+  const { examId, exam } = req.query
+  const filter = { status: 'active', isDeleted: false }
+  const targetExam = examId || exam
+  if (targetExam) {
+    if (targetExam.includes(',')) {
+      filter.exam = { $in: targetExam.split(',') }
+    } else {
+      filter.exam = targetExam
+    }
+  }
+  const tests = await sectionalTestSeriesRepository.findAll(
+    filter,
+    { sort: { title: 1 }, select: 'title _id' }
+  )
+  sendSuccess(res, tests)
 }))
 // GET /api/v1/admin/common/exam-subjects-chapters?examId=xxx
 // Returns subjects for the given exam, with each subject's embedded chapters and topics.

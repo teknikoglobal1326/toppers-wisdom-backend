@@ -12,7 +12,14 @@ const announcementSchema = new mongoose.Schema({
   redirectUrl: { type: String, default: '' },
   iconStatus: { type: String, default: 'active' },
   announcementBlocks: { type: [announcementBlockSchema], default: [] },
-  schedule: { type: Date, required: true, index: true },
+  schedule: { type: Date, required: false, default: null, index: true },
+  countdown: { type: Date, default: null },
+
+  examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null },
+  subExamId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', default: null },
+  all: { type: Boolean, default: true },
+  moduleType: { type: String, default: null },
+  moduleId: { type: String, default: null },
 
   isProcessed: { type: Boolean, default: false, index: true },
   jobId: { type: String, default: null },
