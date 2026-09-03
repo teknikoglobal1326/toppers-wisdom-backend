@@ -6,7 +6,7 @@ const broadcastSchema = Joi.object({
   examId:      Joi.string().optional().allow('', null),
   subExamId:   Joi.string().optional().allow('', null),
   all:         Joi.boolean().default(false),
-  moduleType:  Joi.string().valid('course', 'test', 'subscription', 'test_series', 'live_test', 'previous_year_paper', 'daily_quiz', 'book', 'editorial', 'system').default('system').optional().allow('', null),
+  moduleType:  Joi.string().valid('course', 'test', 'subscription', 'test_series', 'live_test', 'previous_year_paper','live_classes','daily_quiz', 'book', 'editorial', 'system').default('system').optional().allow('', null),
   moduleId:    Joi.string().optional().allow('', null),
 })
 
