@@ -1,0 +1,431 @@
+[
+  {
+    "_id": "w_00001",
+    "cat": "synonyms",
+    "word": "Laconic",
+    "pron": "luh-KON-ik",
+    "pos": "Adjective",
+    "rep": 6,
+    "en": "Using very few words",
+    "hi": "अल्पभाषी, बहुत कम शब्दों में कहने वाला",
+    "exams": [
+      "SSC CGL 2019 Tier-II · 11 Sep",
+      "SSC CHSL 2025 Tier-I · 27 Nov, Shift 1",
+      "SSC CPO 2024 Tier-II · 08 Jan",
+      "SSC CPO Tier-I",
+      "SSC MTS 2023 · 12 Sep, Shift 1",
+      "SSC MTS 2025 Tier-I · 06 Feb, Shift 2",
+      "SSC MTS 2025 Tier-I · 06 Feb, Shift 3",
+      "SSC PYQ 2018"
+    ],
+    "examCount": 8,
+    "syn": [
+      "Concise",
+      "Terse",
+      "Brief"
+    ],
+    "ant": [
+      "Wordy",
+      "Verbose",
+      "Garrulous"
+    ],
+    "usage": [
+      "He gave a laconic reply of two words.",
+      "Her laconic style suits a telegram.",
+      "A laconic answer can still be complete."
+    ],
+    "daily": [
+      "Laconic jawab tha, do shabd ka.",
+      "Laconic hai par baat poori kehta hai."
+    ],
+    "hook": "प्राचीन Laconia यानी स्पार्टा के लोग बहुत कम बोलते थे। स्पार्टा की वही नपी तुली बोली; verbose और garrulous ठीक उल्टे।",
+    "note": "Laconic यानी कम शब्दों में, taciturn यानी स्वभाव से चुप और reticent यानी विषय पर चुप साथ याद रखिए। Garrulous और verbose इसके antonym हैं।",
+    "deriv": [
+      "Laconically"
+    ],
+    "theme": "",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00002",
+    "cat": "synonyms",
+    "word": "Craven",
+    "pron": "KRAY-vuhn",
+    "pos": "Adjective",
+    "rep": 2,
+    "en": "Cowardly in a contemptible way",
+    "hi": "अत्यंत कायर",
+    "exams": [
+      "SSC CHSL 2023 Tier-I · 20 Mar, Shift 3",
+      "SSC CPO 2020 Tier-I · 25 Nov",
+      "SSC CPO 2020 Tier-I · 25 Nov, Evening"
+    ],
+    "examCount": 3,
+    "syn": [
+      "Cowardly",
+      "Spineless",
+      "Timid"
+    ],
+    "ant": [
+      "Brave",
+      "Valiant",
+      "Bold"
+    ],
+    "usage": [
+      "It was a craven silence when one word was needed.",
+      "Craven is stronger than timid and meant to sting."
+    ],
+    "daily": [
+      "Craven chuppi thi.",
+      "Craven ka matlab bahut kayar."
+    ],
+    "hook": "संभवतः पुरानी फ़्रेंच 'cravante' यानी परास्त। Craven surrender यानी कायर आत्मसमर्पण; valiant ठीक उल्टा।",
+    "note": "Craven का अर्थ कायर है। Exam के विकल्पों में इसके साथ timorous यानी डरपोक, intrepid यानी निडर, valiant यानी वीर और dauntless यानी अविचल आते हैं।",
+    "deriv": [],
+    "theme": "Fear & Courage",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00003",
+    "cat": "antonyms",
+    "word": "Verbose",
+    "pron": "vur-BOHS",
+    "pos": "Adjective",
+    "rep": 7,
+    "en": "Using more words than are needed",
+    "hi": "शब्दाडंबरपूर्ण, ज़रूरत से ज़्यादा शब्द इस्तेमाल करने वाला",
+    "exams": [
+      "SSC CGL 2022 Tier-I · 11 Apr, Afternoon",
+      "SSC CGL 2022 Tier-II · 08 Aug",
+      "SSC CGL 2025 Tier-I · 23 Sep, Shift 2",
+      "SSC CPO Tier-I",
+      "SSC MTS 2022 · 05 Jul, Morning",
+      "SSC PYQ 2012",
+      "SSC Steno 2025 · 06 Aug, Shift 1"
+    ],
+    "examCount": 7,
+    "syn": [
+      "Garrulous",
+      "Wordy",
+      "Rambling"
+    ],
+    "ant": [
+      "Concise",
+      "Terse",
+      "Succinct"
+    ],
+    "usage": [
+      "The report is verbose and hard to follow.",
+      "A verbose answer hides a weak point."
+    ],
+    "daily": [
+      "Verbose answer mat likho.",
+      "Report verbose hai, padhi nahi jati."
+    ],
+    "hook": "Latin 'verbum' यानी शब्द, वही Root जो verbal और proverb में है।",
+    "note": "Verbose के synonym wordy, long-winded और prolix हैं। Concise, terse और laconic इसके antonym हैं।",
+    "deriv": [],
+    "theme": "",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00004",
+    "cat": "antonyms",
+    "word": "Tacit",
+    "pron": "TAS-it",
+    "pos": "Adjective",
+    "rep": 1,
+    "en": "Understood without being stated",
+    "hi": "मौन, बिना कहे समझा गया",
+    "exams": [
+      "SSC CHSL 2019 Tier-I · 09 Jul",
+      "SSC CHSL 2025 Tier-I · 17 Nov, Shift 1"
+    ],
+    "examCount": 2,
+    "syn": [
+      "Implied",
+      "Unspoken"
+    ],
+    "ant": [
+      "Explicit",
+      "Stated"
+    ],
+    "usage": [
+      "There was a tacit agreement and nobody signed anything.",
+      "Tacit approval is the hardest kind to withdraw."
+    ],
+    "daily": [
+      "Tacit samjhauta tha.",
+      "Tacit ka matlab bina kahe."
+    ],
+    "hook": "Latin 'tacere' यानी चुप रहना, वही Root जो taciturn और reticent से भाव में मिलती है।",
+    "note": "Tacit यानी मौन। विकल्पों में इसके आसपास explicit यानी स्पष्ट, implicit यानी निहित, taciturn यानी अल्पभाषी और unequivocal यानी असंदिग्ध दिखते हैं।",
+    "deriv": [],
+    "theme": "",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00005",
+    "cat": "one-word-substitution",
+    "word": "Claustrophobia",
+    "pron": "klaws-truh-FOH-bee-uh",
+    "pos": "Noun",
+    "rep": 18,
+    "en": "An extreme fear of confined spaces",
+    "hi": "बंद जगहों से लगने वाला अत्यधिक डर",
+    "exams": [
+      "SSC CGL 2019 Tier-II · 11 Sep",
+      "SSC CGL 2024 Tier-I · 10 Sep, Shift 3",
+      "SSC CGL 2024 Tier-I · 24 Sep, Shift 3",
+      "SSC CGL 2025 Tier-I · 22 Sep, Shift 1",
+      "SSC CGL 2025 Tier-I · 26 Sep, Shift 1",
+      "SSC CHSL 2023 Tier-I · 16 Mar, Shift 1",
+      "SSC CPO 2019 Tier-I · 14 Mar, Evening",
+      "SSC CPO 2019 Tier-II · 27 Sep",
+      "SSC CPO 2024 Tier-I · 29 Jun, Shift 3",
+      "SSC CPO 2024 Tier-II · 08 Jan",
+      "SSC MTS 2019 · 19 Aug, Afternoon",
+      "SSC MTS 2025 Tier-I · 13 Feb, Shift 1",
+      "SSC PYQ 2010",
+      "SSC PYQ 2012",
+      "SSC PYQ 2013",
+      "SSC PYQ 2018",
+      "SSC Selection Post Phase 13 2025 · 29 Aug, Shift 2",
+      "SSC Selection Post Phase 13 2025 · 29 Jul, Shift 1"
+    ],
+    "examCount": 18,
+    "syn": [],
+    "ant": [],
+    "usage": [
+      "Her claustrophobia makes lifts impossible.",
+      "He refused the MRI because of claustrophobia.",
+      "Claustrophobia is common in crowded metros."
+    ],
+    "daily": [
+      "Lift mein ghabra jata hai, claustrophobia hai.",
+      "Bhari bheed mein claustrophobia mehsoos hoti hai."
+    ],
+    "hook": "Claustrophobia में 'close' सुनिए, close यानी बंद जगह का डर। Latin 'claustrum' यानी बंद जगह, जिससे cloister भी बना, और 'phobos' यानी डर।",
+    "note": "Phobia परिवार साथ याद कीजिए। SSC इनके साथ Acrophobia यानी ऊँचाई, hydrophobia यानी पानी, xenophobia यानी अजनबियों, agoraphobia यानी खुली जगह और nyctophobia यानी अंधेरा रखता है।",
+    "deriv": [
+      "Claustrophobic"
+    ],
+    "theme": "Fears & Phobias",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00006",
+    "cat": "one-word-substitution",
+    "word": "Oligarchy",
+    "pron": "OL-ih-gaar-kee",
+    "pos": "Noun",
+    "rep": 23,
+    "en": "Government by a small group of people",
+    "hi": "छोटे समूह द्वारा शासन",
+    "exams": [
+      "SSC CGL 2020 Tier-II · 15 Nov",
+      "SSC CGL 2025 Tier-I · 13 Sep, Shift 1",
+      "SSC CGL 2025 Tier-I · 19 Sep, Shift 1",
+      "SSC CGL 2025 Tier-I · 23 Sep, Shift 3",
+      "SSC CHSL 2020 Tier-I · 17 Mar, Afternoon",
+      "SSC CHSL 2021 Tier-I · 04 Aug, Morning",
+      "SSC CHSL 2025 Tier-I · 20 Nov, Shift 3",
+      "SSC CHSL 2025 Tier-I · 21 Nov, Shift 2",
+      "SSC CHSL 2025 Tier-I · 21 Nov, Shift 3",
+      "SSC CHSL 2025 Tier-I · 30 Nov, Shift 1",
+      "SSC CPO 2019 Tier-I · 09 Dec, Evening",
+      "SSC CPO 2019 Tier-I · 13 Mar, Evening",
+      "SSC CPO 2019 Tier-I · 13 Mar, Morning",
+      "SSC CPO 2020 Tier-I · 25 Nov, Morning",
+      "SSC CPO 2024 Tier-I · 29 Jun, Shift 1",
+      "SSC MTS 2025 Tier-I · 05 Feb, Shift 1",
+      "SSC MTS 2025 Tier-I · 16 Feb, Shift 2",
+      "SSC PYQ 2010",
+      "SSC PYQ 2012",
+      "SSC PYQ 2013",
+      "SSC PYQ 2016",
+      "SSC Steno 2025 · 07 Aug, Shift 3"
+    ],
+    "examCount": 22,
+    "syn": [],
+    "ant": [],
+    "usage": [
+      "The city was ruled by an oligarchy of five families.",
+      "Critics called the arrangement an oligarchy in disguise.",
+      "Ancient Sparta functioned as an oligarchy."
+    ],
+    "daily": [
+      "Committee ke naam pe wahan oligarchy chalti hai.",
+      "Paanch logon ki oligarchy poore club ko chalati hai."
+    ],
+    "hook": "Greek 'oligos' यानी थोड़े और 'arkhein' यानी शासन करना। थोड़े लोगों का शासन।",
+    "note": "Oligarchy छोटे समूह का शासन है, plutocracy धनवानों का, meritocracy योग्यता के आधार पर। इन्हें विकल्पों में साथ रखकर पूछा जाता है।",
+    "deriv": [
+      "Oligarch",
+      "Oligarchic"
+    ],
+    "theme": "Government & Rule",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00007",
+    "cat": "spellings",
+    "word": "Dilemma",
+    "pron": "dih-LEM-uh",
+    "pos": "Noun",
+    "rep": 23,
+    "en": "A situation in which a difficult choice has to be made between two options",
+    "hi": "दुविधा, दो विकल्पों में से कठिन चुनाव की स्थिति",
+    "exams": [
+      "SSC CGL 2020 Tier-I · 09 Mar, Afternoon",
+      "SSC CGL 2021 Tier-I · 16 Aug, Evening",
+      "SSC CGL 2023 Tier-I · 18 Jul, Shift 4",
+      "SSC CGL 2023 Tier-I · 19 Jul, Shift 2",
+      "SSC CGL 2024 Tier-I · 10 Sep, Shift 3",
+      "SSC CGL 2024 Tier-I · 13 Sep, Shift 1",
+      "SSC CGL 2024 Tier-I · 24 Sep, Shift 1",
+      "SSC CHSL 2020 Tier-I · 19 Mar, Afternoon",
+      "SSC CHSL 2020 Tier-I · 20 Oct, Afternoon",
+      "SSC CHSL 2021 Tier-I · 10 Aug, Afternoon",
+      "SSC CHSL 2021 Tier-I · 11 Aug, Afternoon",
+      "SSC CHSL 2023 Tier-I · 03 Aug, Shift 3",
+      "SSC CHSL 2023 Tier-I · 04 Aug, Shift 4",
+      "SSC CHSL 2023 Tier-I · 10 Aug, Shift 1",
+      "SSC CHSL 2024 Tier-I · 10 Jul, Shift 4",
+      "SSC CHSL 2024 Tier-I · 11 Jul, Shift 3",
+      "SSC CPO 2020 Tier-I · 23 Nov, Evening",
+      "SSC CPO 2024 Tier-I · 27 Jun, Shift 2",
+      "SSC MTS 2019 · 05 Aug, Afternoon",
+      "SSC MTS 2022 · 13 Jul, Afternoon",
+      "SSC MTS 2026 Tier-I · 18 Feb, Shift 1",
+      "SSC PYQ 2017",
+      "SSC Selection Post Phase 13 2025 · 31 Jul, Shift 2",
+      "SSC Steno 2024 · 11 Dec, Morning"
+    ],
+    "examCount": 24,
+    "syn": [
+      "Quandary",
+      "Predicament"
+    ],
+    "ant": [],
+    "usage": [
+      "She faced a dilemma between the job and the exam.",
+      "The board is in a dilemma over the new fee.",
+      "It was a genuine dilemma with no easy answer."
+    ],
+    "daily": [
+      "Bade dilemma mein hoon, job karun ya tayari.",
+      "Dilemma mein mat raho, ek decide kar lo."
+    ],
+    "hook": "Dilemma में 'दिल' सुनिए, जब दिल दो तरफ़ खिंचे तो वही dilemma है। Greek 'di' यानी दो और 'lemma' यानी प्रस्ताव। दो प्रस्तावों के बीच फँसना, dilemma।",
+    "note": "Spelling में एक l और दो m आते हैं, D-I-L-E-M-M-A। Quandary और predicament इसके synonym हैं।",
+    "deriv": [
+      "Dilemmatic"
+    ],
+    "theme": "",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00008",
+    "cat": "phrasal-verbs",
+    "word": "Bank on",
+    "pron": "",
+    "pos": "Phrasal verb",
+    "rep": 0,
+    "en": "To depend on with confidence",
+    "hi": "पूरा भरोसा रखना",
+    "exams": [
+      "SSC Steno 2025 · 07 Aug, Shift 2"
+    ],
+    "examCount": 1,
+    "syn": [],
+    "ant": [],
+    "usage": [
+      "We are banking on your support.",
+      "Do not bank on last-minute revision."
+    ],
+    "daily": [
+      "Aap par bank on kar rahe hain.",
+      "Last minute par bank on mat karo."
+    ],
+    "hook": "Bank यानी भरोसे की तिजोरी और on यानी उस पर; जिस पर दाँव लगाया जा सके।",
+    "note": "Bank on के साथ count on और rely on इसके जुड़वाँ हैं।",
+    "deriv": [],
+    "theme": "",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00009",
+    "cat": "homonyms",
+    "word": "Bear",
+    "pron": "BAIR",
+    "pos": "Verb",
+    "rep": 5,
+    "en": "To carry or endure, or a large animal",
+    "hi": "सहना या उठाना, या भालू",
+    "exams": [
+      "SSC CGL 2023 Tier-I · 26 Jul, Shift 4",
+      "SSC CHSL 2022 Tier-I · 31 May, Morning",
+      "SSC CHSL 2023 Tier-I · 02 Aug, Shift 1",
+      "SSC CHSL 2024 Tier-I · 02 Jul, Shift 3",
+      "SSC CPO 2020 Tier-I · 24 Nov, Evening",
+      "SSC Delhi Police 2026 Tier-I · 07 Jan, Shift 1",
+      "SSC Delhi Police 2026 Tier-I · 08 Jan, Shift 1",
+      "SSC MTS 2025 Tier-I · 11 Feb, Shift 2",
+      "SSC PYQ 2016",
+      "SSC PYQ 2017"
+    ],
+    "examCount": 10,
+    "syn": [],
+    "ant": [],
+    "usage": [
+      "He bore the delay without a complaint.",
+      "A bear is an omnivore and not a carnivore."
+    ],
+    "daily": [
+      "Deri bear kar li usne.",
+      "Bear ka matlab sehna ya bhalu."
+    ],
+    "hook": "पुरानी अंग्रेज़ी 'beran' यानी उठाना, वही भाव जो burden में है। वही 'beran' burden यानी बोझ और birth में है; उठाना, सहना और जन्म देना, तीनों एक जड़ पर।",
+    "note": "विकल्पों में Bear यानी सहना और bare यानी नंगा साथ आते हैं। यह जोड़ा homonym में पूछा जाता है। Bear, bore, borne रूप हैं। 'Bear with' धैर्य रखना।",
+    "deriv": [],
+    "theme": "",
+    "src": "Previous Year Papers"
+  },
+  {
+    "_id": "w_00010",
+    "cat": "idioms-phrases",
+    "word": "On tenterhooks",
+    "pron": "",
+    "pos": "Idiom",
+    "rep": 6,
+    "en": "In a state of anxious suspense",
+    "hi": "बेचैनी और चिंता की स्थिति में",
+    "exams": [
+      "SSC CGL 2019 Tier-I · 07 Jun, Afternoon",
+      "SSC CGL 2022 Tier-II · 03 Feb",
+      "SSC CGL 2025 Tier-I · 22 Sep, Shift 2",
+      "SSC CHSL 2021 Tier-I · 04 Aug, Morning",
+      "SSC PYQ 2016",
+      "SSC PYQ 2017",
+      "SSC PYQ 2018",
+      "SSC Selection Post Phase 13 2025 · 01 Aug, Shift 3"
+    ],
+    "examCount": 8,
+    "syn": [],
+    "ant": [],
+    "usage": [
+      "He was on tenterhooks for four days waiting for the list.",
+      "On tenterhooks is waiting with the worry showing."
+    ],
+    "daily": [
+      "Result ka wait karte hue on tenterhooks tha.",
+      "On tenterhooks ka matlab bechaini mein rehna."
+    ],
+    "hook": "Tenter एक फ़्रेम होता था जिस पर गीला कपड़ा हुक से खींचकर सुखाया जाता था। कपड़ा तना रहता था, वैसे ही मन तना रहता है।",
+    "note": "On tenterhooks का अर्थ बेचैन है। Exam के विकल्पों में इसके साथ at ease यानी निश्चिंत, in suspense यानी असमंजस में, unruffled यानी अविचल और uptight यानी तनावग्रस्त आते हैं।",
+    "deriv": [],
+    "theme": "",
+    "src": "Previous Year Papers"
+  }
+]
