@@ -27,7 +27,7 @@ class TestSeriesService extends BaseService {
             status: 'paid',
             items: {
                 $elemMatch: {
-                    itemType: 'test',
+                    itemType: { $in: ['test', 'test-series'] },
                     itemId: series._id
                 }
             }
@@ -53,7 +53,7 @@ class TestSeriesService extends BaseService {
                 'subscriptionDetails.tests': {
                     $elemMatch: {
                         moduleType: 'TestSeries',
-                        moduleId: series._id
+                        moduleId: { $in: [series._id, series._id.toString()] }
                     }
                 }
             })
