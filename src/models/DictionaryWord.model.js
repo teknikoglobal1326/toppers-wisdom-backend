@@ -55,12 +55,12 @@ dictionaryWordSchema.pre('save', function (next) {
     }
   }
 
-  // Danda check
-  if (this.hook && !this.hook.trim().endsWith('।')) {
-    return next(new Error(`Validation Error: hook must end in a danda (।).`));
+  // Danda check & auto-fix
+  if (this.hook && this.hook.trim() && !this.hook.trim().endsWith('।')) {
+    this.hook = this.hook.trim() + ' ।';
   }
-  if (this.note && !this.note.trim().endsWith('।')) {
-    return next(new Error(`Validation Error: note must end in a danda (।).`));
+  if (this.note && this.note.trim() && !this.note.trim().endsWith('।')) {
+    this.note = this.note.trim() + ' ।';
   }
 
   next();

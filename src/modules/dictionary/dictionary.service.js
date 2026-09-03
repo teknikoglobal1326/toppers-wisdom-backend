@@ -384,6 +384,40 @@ const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
   };
 };
 
+const updateWord = async (id, data) => {
+  let word = await DictionaryWord.findById(id);
+  if (!word) {
+    const ingestItem = await DictionaryIngest.findById(id);
+    if (ingestItem) {
+      ingestItem.payload = { ...ingestItem.payload, ...(data || {}) };
+      await ingestItem.save();
+      return ingestItem;
+    }
+    throw new Error('Word not found');
+  }
+
+  const updatePayload = { ...data };
+  if (updatePayload.exams && !Array.isArray(updatePayload.exams)) {
+    updatePayload.exams = typeof updatePayload.exams === 'string'
+      ? updatePayload.exams.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+  }
+
+  Object.assign(word, updatePayload);
+  await word.save();
+  return word;
+};
+
+const deleteWord = async (id) => {
+  const deletedWord = await DictionaryWord.findByIdAndDelete(id);
+  if (deletedWord) return deletedWord;
+
+  const deletedIngest = await DictionaryIngest.findByIdAndDelete(id);
+  if (deletedIngest) return deletedIngest;
+
+  throw new Error('Word not found');
+};
+
 module.exports = {
   getCategories,
   getCategoryHub,
@@ -399,5 +433,7 @@ module.exports = {
   approveIngestItem,
   bulkApproveIngestItems,
   rejectIngestItem,
-  uploadIngestDocument
+  uploadIngestDocument,
+  updateWord,
+  deleteWord
 };

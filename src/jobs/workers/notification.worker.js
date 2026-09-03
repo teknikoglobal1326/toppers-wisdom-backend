@@ -208,7 +208,7 @@ new Worker('notification', async (job) => {
     return
   }
 
-  let { userId, subExamId, all, title, body, data } = job.data
+  let { userId, subExamId, examId, all, title, body, data } = job.data
 
   if (name === 'payment-success') {
     title = 'Course Purchased!'
@@ -229,27 +229,42 @@ new Worker('notification', async (job) => {
   }
 
   let filter = {}
-  if (!all && subExamId) filter = { 'subExam._id': subExamId }
-  else if (!all && userId) filter = { _id: userId }
+  if (!all && examId && subExamId) {
+    filter = {
+      $and: [
+        { $or: [{ 'exam._id': examId }, { 'examType._id': examId }] },
+        { $or: [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }] }
+      ]
+    }
+  } else if (!all && examId) {
+    filter = { $or: [{ 'exam._id': examId }, { 'examType._id': examId }] }
+  } else if (!all && subExamId) {
+    filter = { $or: [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }] }
+  } else if (!all && userId) {
+    filter = { _id: userId }
+  }
 
   const users  = await User.find(filter).select('_id fcmToken').lean()
   const tokens = users.map((u) => u.fcmToken).filter(Boolean)
 
+  const fcmData = {}
+  if (data && typeof data === 'object') {
+    for (const [key, val] of Object.entries(data)) {
+      if (val !== null && val !== undefined) {
+        fcmData[key] = String(val)
+      }
+    }
+  }
+
   if (fcmEnabled && tokens.length) {
-    const result = await admin.messaging().sendEachForMulticast({ tokens, notification: { title, body, imageUrl: 'https://topperswisdom.teknikoglobal.in/images/logo/auth-logo.png' }, data: data || {} })
+    const result = await admin.messaging().sendEachForMulticast({ tokens, notification: { title, body, imageUrl: 'https://topperswisdom.teknikoglobal.in/images/logo/auth-logo.png' }, data: fcmData })
     logger.info({ jobId: job.id, sent: result.successCount, failed: result.failureCount }, 'FCM sent')
   }
 
   if (users.length) {
     await Notification.insertMany(users.map((u) => {
-      let dbType = 'system'
-      const typeVal = data?.type || ''
-      if (['course', 'test', 'payment', 'system'].includes(typeVal)) {
-        dbType = typeVal
-      } else if (typeVal === 'payment_success') {
-        dbType = 'payment'
-      }
-      return { user: u._id, title, body, type: dbType, data }
+      const dbType = data?.moduleType || data?.type || 'system'
+      return { user: u._id, title, body, type: dbType, data: data || {} }
     }))
   }
   logger.info({ jobId: job.id, count: users.length }, 'Notification job done')
