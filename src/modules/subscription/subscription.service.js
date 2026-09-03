@@ -271,7 +271,7 @@ class SubscriptionService {
             console.error('Failed to queue subscription success notification:', err);
         }
 
-        return { success: true, userSubscription: userSub };
+        return { success: true, userSubscription: UserSubscription };
     }
 }
 

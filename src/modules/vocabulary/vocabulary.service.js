@@ -162,6 +162,7 @@ class VocabularyService extends BaseService {
             select: 'title type word pronunciation audio thumbnail bannerImage shortDescription longDescription usages synonyms antonyms publishDate sortOrder status createdAt updatedAt',
         })
 
+        console.log("result.data",result.data);
         const data = await this.attachUserState(result.data, userId)
         return { ...result, data }
     }
