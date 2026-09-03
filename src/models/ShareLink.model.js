@@ -9,7 +9,7 @@ const shareLinkSchema = new mongoose.Schema({
   },
   resourceType: {
     type: String,
-    required: true,
+    // required: true,
     enum: [
       'course',
       'subject',
@@ -24,9 +24,12 @@ const shareLinkSchema = new mongoose.Schema({
       'editorial',
       'daily-quiz',
       'book',
-      'previous-year-paper'
+      'previous-year-paper',
+      'thought',
+      'post'
     ],
-    index: true
+    index: true,
+    default: 'course'
   },
   resourceId: {
     type: mongoose.Schema.Types.ObjectId,

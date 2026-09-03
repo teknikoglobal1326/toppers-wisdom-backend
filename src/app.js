@@ -79,7 +79,7 @@ app.use('/api/v1/ai-tests', authMiddleware, require('./modules/ai-test/ai-test.r
 app.use('/api/v1/share', require('./modules/share/share.routes'))
 
 // ── Deep Link Resolution ──────────────────────
-app.get('/api/v1/:slug', require('./modules/share/share.controller').resolveLink)
+app.get('/s/:slug', require('./modules/share/share.controller').resolveLink)
 
 
 // ── Admin API ─────────────────────────────────
