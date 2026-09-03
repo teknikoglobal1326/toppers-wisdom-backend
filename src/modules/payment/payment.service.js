@@ -17,8 +17,20 @@ class PaymentService extends BaseService {
   async createOrder(userId, items, metadata = {}) {
     this.logger.info({ userId, itemCount: items.length }, 'Creating order')
 
-    const totalAmount = metadata.totalAmount ?? items.reduce((sum, i) => sum + i.price, 0)
-    const grandTotal = metadata.grandTotal ?? totalAmount
+    let totalAmount = metadata.totalAmount ?? items.reduce((sum, i) => sum + i.price, 0)
+    let grandTotal = metadata.grandTotal ?? totalAmount
+    let discount = metadata.discount || 0
+    let appliedCoupon = null
+
+    if (metadata.couponCode) {
+      const couponService = require('../coupon/coupon.service')
+      const validation = await couponService.validateAndCalculateDiscount(metadata.couponCode, userId, totalAmount)
+      if (validation.isValid) {
+        discount = validation.discountAmount
+        grandTotal = totalAmount - discount
+        appliedCoupon = validation.couponApplied
+      }
+    }
 
     let rzpOrder = null
     let status = 'pending'
@@ -37,14 +49,15 @@ class PaymentService extends BaseService {
       user: userId,
       items,
       totalAmount,
-      discount: metadata.discount || 0,
+      discount,
       gstRate: metadata.gstRate || 0,
       gstAmount: metadata.gstAmount || 0,
       grandTotal,
       currency: 'INR',
       razorpayOrderId: rzpOrder ? rzpOrder.id : null,
       status,
-      paidAt
+      paidAt,
+      couponApplied: appliedCoupon
     }
 
     const order = await this.create(orderData)
@@ -56,6 +69,11 @@ class PaymentService extends BaseService {
       const courseRepository = require('../course/course.repository')
       for (const item of courseItems) {
         await courseRepository.incrementEnrollments(item.itemId)
+      }
+
+      if (order.couponApplied && order.couponApplied.code) {
+        const Coupon = require('../../models/Coupon.model')
+        await Coupon.updateOne({ code: order.couponApplied.code }, { $inc: { usageCount: 1 } })
       }
 
       const { notificationQueue, emailQueue } = require('../../jobs/queue')
@@ -101,6 +119,11 @@ class PaymentService extends BaseService {
     const courseRepository = require('../course/course.repository')
     for (const item of courseItems) {
       await courseRepository.incrementEnrollments(item.itemId)
+    }
+
+    if (order.couponApplied && order.couponApplied.code) {
+      const Coupon = require('../../models/Coupon.model')
+      await Coupon.updateOne({ code: order.couponApplied.code }, { $inc: { usageCount: 1 } })
     }
 
     const { notificationQueue, emailQueue } = require('../../jobs/queue')

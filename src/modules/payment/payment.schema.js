@@ -7,6 +7,7 @@ const createOrderSchema = Joi.object({
     title:    Joi.string().required(),
     price:    Joi.number().min(0).required(),
   })).min(1).required(),
+  couponCode: Joi.string().trim().optional(),
 })
 
 const verifyPaymentSchema = Joi.object({

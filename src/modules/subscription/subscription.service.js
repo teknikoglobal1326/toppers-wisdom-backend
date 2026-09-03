@@ -100,7 +100,7 @@ class SubscriptionService {
         }));
     }
 
-    async purchaseSubscription(userId, subscriptionId) {
+    async purchaseSubscription(userId, subscriptionId, couponCode = null) {
         const Subscription = require('../../models/Subscription.model');
         const SubscriptionOrder = require('../../models/SubscriptionOrder.model');
         const Razorpay = require('razorpay');
@@ -114,40 +114,101 @@ class SubscriptionService {
 
         const razorpay = new Razorpay({ key_id: config.RAZORPAY_KEY_ID, key_secret: config.RAZORPAY_KEY_SECRET });
 
-        const rzpOrder = await razorpay.orders.create({
-            amount: Math.round(subscription.price * 100),
-            currency: 'INR',
-            receipt: `sub_${Date.now()}`,
-        });
+        let discount = 0;
+        let grandTotal = subscription.price;
+        let appliedCoupon = null;
 
-        const subscriptionDetails = subscription.toObject();
-        subscriptionDetails.duration = subscription.durationDays;
-        subscriptionDetails.price = subscription.price;
+        if (couponCode) {
+            const couponService = require('../coupon/coupon.service');
+            const validation = await couponService.validateAndCalculateDiscount(couponCode, userId, subscription.price);
+            if (validation.isValid) {
+                discount = validation.discountAmount;
+                grandTotal = subscription.price - discount;
+                appliedCoupon = validation.couponApplied;
+            }
+        }
+
+        let rzpOrder = null;
+        if (grandTotal > 0) {
+            rzpOrder = await razorpay.orders.create({
+                amount: Math.round(grandTotal * 100),
+                currency: 'INR',
+                receipt: `sub_receipt_${Date.now()}`
+            });
+            console.log(`[SubscriptionService] Razorpay order created: ${rzpOrder.id} for amount ${grandTotal}`);
+        } else {
+            console.log(`[SubscriptionService] Free subscription/coupon applied. No Razorpay order needed.`);
+        }
+
+        const subscriptionDetails = {
+            name: subscription.name,
+            description: subscription.description,
+            price: subscription.price
+        };
 
         console.log(`[SubscriptionService] Creating SubscriptionOrder for user: ${userId}, subscription: ${subscription._id}`);
         console.log(`[SubscriptionService] Supplying fields: duration=${subscription.durationDays}, isActive=${subscription.isActive}, subscriptionDetails=${JSON.stringify(subscriptionDetails)}`);
 
-        const order = await SubscriptionOrder.create({
+        const orderData = {
             user: userId,
             subscription: subscription._id,
-            amount: subscription.price,
+            amount: grandTotal, // storing discounted amount as final amount
             currency: 'INR',
-            razorpayOrderId: rzpOrder.id,
-            status: 'pending',
+            razorpayOrderId: rzpOrder ? rzpOrder.id : null,
+            status: grandTotal > 0 ? 'pending' : 'paid',
+            paidAt: grandTotal > 0 ? null : new Date(),
             duration: subscription.durationDays,
             isActive: subscription.isActive,
+            couponApplied: appliedCoupon,
             subscriptionDetails
-        });
+        };
+
+        const order = await SubscriptionOrder.create(orderData);
 
         console.log(`[SubscriptionService] Created Order ID: ${order._id}. Saved fields: duration=${order.duration}, isActive=${order.isActive}, detailsExists=${!!order.subscriptionDetails}`);
+
+        if (orderData.status === 'paid') {
+            await this.activateSubscriptionForFreeOrder(order);
+            return {
+                orderId: order._id,
+                razorpayOrderId: null,
+                amount: grandTotal,
+                currency: 'INR',
+                keyId: null,
+                status: 'paid',
+                payment_status: 'success'
+            };
+        }
 
         return {
             orderId: order._id,
             razorpayOrderId: rzpOrder.id,
-            amount: subscription.price,
+            amount: grandTotal,
             currency: 'INR',
-            keyId: config.RAZORPAY_KEY_ID
+            keyId: process.env.RAZORPAY_KEY_ID,
+            status: 'pending',
+            payment_status: 'pending'
         };
+    }
+
+    async activateSubscriptionForFreeOrder(order) {
+        const UserSubscription = require('../../models/UserSubscription.model');
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + (order.duration || 0));
+
+        await UserSubscription.create({
+            user: order.user,
+            subscription: order.subscription,
+            order: order._id,
+            startDate: new Date(),
+            endDate,
+            status: 'active'
+        });
+
+        if (order.couponApplied && order.couponApplied.code) {
+            const Coupon = require('../../models/Coupon.model');
+            await Coupon.updateOne({ code: order.couponApplied.code }, { $inc: { usageCount: 1 } });
+        }
     }
 
     async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {
@@ -183,14 +244,21 @@ class SubscriptionService {
         const startDate = new Date();
         const endDate = new Date(startDate.getTime() + (subscription.durationDays * 24 * 60 * 60 * 1000));
 
-        const userSub = await UserSubscription.create({
+        await UserSubscription.create({
             user: userId,
-            subscription: subscription._id,
+            subscription: order.subscription,
             order: order._id,
-            startDate,
+            startDate: new Date(),
             endDate,
-            isActive: true
+            status: 'active'
         });
+
+        if (order.couponApplied && order.couponApplied.code) {
+            const Coupon = require('../../models/Coupon.model');
+            await Coupon.updateOne({ code: order.couponApplied.code }, { $inc: { usageCount: 1 } });
+        }
+
+        console.log(`[SubscriptionService] Subscription activated for user: ${userId}, Order: ${order._id}`);
 
         try {
             const { notificationQueue } = require('../../jobs/queue');

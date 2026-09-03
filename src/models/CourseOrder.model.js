@@ -18,6 +18,13 @@ const courseOrderSchema = new mongoose.Schema({
   razorpayPaymentId: String,
   razorpaySignature: String,
   paidAt:            Date,
+  couponApplied: {
+    couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+    code: String,
+    discountValue: Number,
+    discountType: String,
+    discountAmount: Number
+  },
 }, { timestamps: true })
 
 module.exports = mongoose.model('CourseOrder', courseOrderSchema)

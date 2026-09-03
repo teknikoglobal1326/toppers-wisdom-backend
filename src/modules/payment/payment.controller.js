@@ -3,7 +3,11 @@ const { sendSuccess } = require('../../core/response')
 const paymentService = require('./payment.service')
 
 const createOrder = catchAsync(async (req, res) => {
-  sendSuccess(res, await paymentService.createOrder(req.user._id, req.body.items), 'Order created', 201)
+  const metadata = {}
+  if (req.body.couponCode) {
+    metadata.couponCode = req.body.couponCode
+  }
+  sendSuccess(res, await paymentService.createOrder(req.user._id, req.body.items, metadata), 'Order created', 201)
 })
 
 const verifyPayment = catchAsync(async (req, res) => {
