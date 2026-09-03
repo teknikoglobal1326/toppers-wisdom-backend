@@ -804,6 +804,9 @@ function extractTextAndImage(htmlString) {
 
     let text = $("div").text() || "";
     text = text.trim();
+    
+    // Convert newlines back to <br/> so they render correctly as HTML on the frontend
+    text = text.replace(/\n/g, "<br/>");
 
     // Decode leading slash if it's relative
     if (image && !image.startsWith("http") && !image.startsWith("/")) {

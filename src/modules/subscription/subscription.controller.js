@@ -12,8 +12,8 @@ const checkSubscriptions = catchAsync(async (req, res) => {
 });
 
 const purchaseSubscription = catchAsync(async (req, res) => {
-    const { subscriptionId } = req.body;
-    const result = await subscriptionService.purchaseSubscription(req.user._id, subscriptionId);
+    const { subscriptionId, couponCode } = req.body;
+    const result = await subscriptionService.purchaseSubscription(req.user._id, subscriptionId, couponCode);
     sendSuccess(res, result, 'Subscription purchase initiated');
 });
 

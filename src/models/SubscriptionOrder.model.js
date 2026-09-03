@@ -9,6 +9,13 @@ const subscriptionOrderSchema = new mongoose.Schema({
   status:            { type: String, enum: ['pending', 'paid', 'failed', 'refunded'], default: 'pending', index: true },
   duration:          { type: Number },
   isActive:          { type: Boolean, default: true, index: true },
+  couponApplied: {
+    couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+    code: String,
+    discountValue: Number,
+    discountType: String,
+    discountAmount: Number
+  },
   subscriptionDetails: { type: mongoose.Schema.Types.Mixed },
   razorpayOrderId:   { type: String, index: true },
   razorpayPaymentId: String,
