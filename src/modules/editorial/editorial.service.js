@@ -926,35 +926,88 @@ class EditorialService extends BaseService {
 
     const EditorialQuestion = require('../../models/Question.model')
     const questions = await EditorialQuestion.find({ test: testId, isDeleted: false, status: 'active' })
-      .select('en hi sortOrder subjectId explanation')
+      .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime en hi subjectId')
       .populate('subjectId', 'name')
-      .sort({ sortOrder: 1, createdAt: 1 })
+      .sort({ sortOrder: 1, order: 1, createdAt: 1 })
       .lean()
 
-    const userAnswersMap = new Map(attempt.answers.map(ans => [ans.questionId.toString(), ans]))
+    const { htmlToPlainText } = require('../../lib/htmlText')
 
-    const solvedQuestions = questions.map((q, idx) => {
-      const userAns = userAnswersMap.get(q._id.toString())
-      const correctOptionIndex = (q.en?.options || []).findIndex(o => o.isCorrect) !== -1
-        ? (q.en?.options || []).findIndex(o => o.isCorrect)
-        : (q.hi?.options || []).findIndex(o => o.isCorrect)
-
-      const correctOption = correctOptionIndex !== -1 ? correctOptionIndex : 0
-
-      return {
-        ...q,
-        order: idx + 1,
-        subjectId: q.subjectId || q.subject,
-        userSelectedOption: userAns ? userAns.selectedOption : null,
-        userStatus: userAns ? userAns.status : 'unattempted',
-        timeTaken: userAns ? userAns.timeTaken : 0,
-      }
-    })
-
-    const { groupQuestionsBySubject } = require('../../lib/testQuestions')
-    return {
-      questions: groupQuestionsBySubject(solvedQuestions)
+    const answersByQuestionId = {}
+    for (const ans of (attempt.answers || [])) {
+        if (ans && ans.questionId) {
+            answersByQuestionId[ans.questionId.toString()] = ans
+        }
     }
+
+    const subjectMap = new Map()
+    for (const q of questions) {
+        const subjectId = q.subjectId?._id ? String(q.subjectId._id) : (q.subjectId ? String(q.subjectId) : 'uncategorized')
+        const subjectName = q.subjectId?.name || 'Uncategorized'
+
+        if (!subjectMap.has(subjectId)) {
+            subjectMap.set(subjectId, {
+                subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
+                questions: {}
+            })
+        }
+
+        const group = subjectMap.get(subjectId)
+        const questionKey = String(q._id)
+
+        if (!group.questions[questionKey]) {
+            group.questions[questionKey] = { en: {}, hi: {} }
+        }
+
+        let langs = []
+        if (q.en && (q.en.question?.text || q.en.options?.length)) langs.push('en')
+        if (q.hi && (q.hi.question?.text || q.hi.options?.length)) langs.push('hi')
+        if (langs.length === 0) {
+            langs = q.language === 'both' ? ['en', 'hi'] : [q.language || 'en']
+        }
+
+        const userAnswer = answersByQuestionId[q._id.toString()] || null
+
+        for (const lang of langs) {
+            if (lang !== 'en' && lang !== 'hi') continue
+
+            const langObj = q[lang] || {}
+            const questionData = langObj.question || q.question || {}
+            const explanationData = langObj.explanation || q.explanation || {}
+            const optionsData = (langObj.options && langObj.options.length > 0) ? langObj.options : (q.options || [])
+
+            const correctIndex = optionsData.findIndex(opt => opt && opt.isCorrect)
+            const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
+            const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
+
+            group.questions[questionKey][lang] = {
+                _id: q._id,
+                question: { text: htmlToPlainText(questionData.text || ''), image: questionData.image || '' },
+                options: optionsData.map((opt) => ({
+                    text: htmlToPlainText(opt.text || ''),
+                    image: opt.image || '',
+                    isCorrect: !!opt.isCorrect,
+                })),
+                explanation: { text: htmlToPlainText(explanationData.text || ''), image: explanationData.image || '' },
+                order: q.order,
+                sortOrder: q.sortOrder,
+                perQuestionTime: q.perQuestionTime,
+                userAnswer: userAnswer ? {
+                    selectedOption: userAnswer.selectedOption,
+                    status: userAnswer.status,
+                    timeTaken: userAnswer.timeTaken,
+                } : null,
+                status: userAnswer?.status || 'unattempted',
+                timeTaken: userAnswer?.timeTaken || 0,
+                isCorrect,
+            }
+        }
+    }
+
+    return Array.from(subjectMap.values()).map((subj) => ({
+        subject: subj.subject,
+        questions: Object.values(subj.questions)
+    }))
   }
 }
 

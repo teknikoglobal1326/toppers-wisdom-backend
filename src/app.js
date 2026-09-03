@@ -70,6 +70,7 @@ app.use('/api/v1/short-categories', authMiddleware, require('./modules/short-cat
 app.use('/api/v1/dictionary', require('./modules/dictionary/dictionary.routes'))
 app.use('/api/v1/editorials', authMiddleware, require('./modules/editorial/editorial.routes'))
 app.use('/api/v1/editorial-vocabularies', authMiddleware, require('./modules/editorial-vocabulary/editorial-vocabulary.routes'))
+app.use('/api/v1/vocabulary', authMiddleware, require('./modules/vocabulary/vocabulary.routes'))
 app.use('/api/v1/grammars', authMiddleware, require('./modules/grammar/grammar.routes'))
 app.use('/api/v1/coupons', authMiddleware, require('./modules/coupon/coupon.routes'))
 app.use('/api/v1/faqs', authMiddleware, require('./modules/faq/faq.routes'))
