@@ -40,7 +40,13 @@ const createAnnouncementSchema = Joi.object({
   redirectUrl: Joi.string().trim().allow('').optional().default(''),
   iconStatus: Joi.string().trim().default('active'),
   announcementBlocks: Joi.array().items(announcementBlockSchema).min(1).required(),
-  schedule: Joi.date().required()
+  schedule: Joi.date().optional().allow('', null),
+  countdown: Joi.date().optional().allow('', null),
+  examId: Joi.string().optional().allow('', null),
+  subExamId: Joi.string().optional().allow('', null),
+  all: Joi.boolean().optional(),
+  moduleType: Joi.string().optional().allow('', null),
+  moduleId: Joi.string().optional().allow('', null),
 })
 
 const updateAnnouncementSchema = Joi.object({
@@ -50,7 +56,13 @@ const updateAnnouncementSchema = Joi.object({
   redirectUrl: Joi.string().trim().allow('').optional(),
   iconStatus: Joi.string().trim().optional(),
   announcementBlocks: Joi.array().items(announcementBlockSchema).min(1).optional(),
-  schedule: Joi.date().optional()
+  schedule: Joi.date().optional().allow('', null),
+  countdown: Joi.date().optional().allow('', null),
+  examId: Joi.string().optional().allow('', null),
+  subExamId: Joi.string().optional().allow('', null),
+  all: Joi.boolean().optional(),
+  moduleType: Joi.string().optional().allow('', null),
+  moduleId: Joi.string().optional().allow('', null),
 }).min(1)
 
 const listCampaignQuerySchema = Joi.object({
