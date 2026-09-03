@@ -9,6 +9,26 @@ const APP_SCHEME = 'topperswisdom://';
 // Fallback URL for Play Store / App Store
 const FALLBACK_URL = 'https://play.google.com/store/apps/details?id=com.topperswisdom';
 
+const getBaseUrl = (req) => {
+  const forwardedProtocol = req.get('x-forwarded-proto')?.split(',')[0].trim();
+  const forwardedHost = req.get('x-forwarded-host')?.split(',')[0].trim();
+  const protocol = forwardedProtocol || req.protocol;
+  const host = forwardedHost || req.get('host');
+
+  return `${protocol}://${host}`;
+};
+
+const getImageUrl = (image, baseUrl) => {
+  if (!image) return '';
+
+  const imageUrl = new URL(image, baseUrl);
+  if (['localhost', '127.0.0.1', '::1'].includes(imageUrl.hostname)) {
+    return new URL(`${imageUrl.pathname}${imageUrl.search}`, baseUrl).href;
+  }
+
+  return imageUrl.href;
+};
+
 /**
  * Generate a short link for sharing a resource
  * POST /api/v1/share/generate
@@ -67,7 +87,7 @@ exports.generateLink = async (req, res) => {
     await newShareLink.save();
 
     // The actual domain will be determined dynamically by the request, or from env config
-    const baseUrl = req.protocol + '://' + req.get('host');
+    const baseUrl = getBaseUrl(req);
     const shortLink = `${baseUrl}/s/${slug}`;
 
     return res.status(201).json({
@@ -108,8 +128,8 @@ exports.resolveLink = async (req, res) => {
     // Construct the deep link URL for the mobile app
     const deepLinkUrl = `${APP_SCHEME}share?type=${encodeURIComponent(resourceType)}&id=${encodeURIComponent(resourceId)}`;
 
-    const baseUrl = req.protocol + '://' + req.get('host');
-    const fullImageUrl = image && image.startsWith('http') ? image : (image ? new URL(image, baseUrl).href : '');
+    const baseUrl = getBaseUrl(req);
+    const fullImageUrl = getImageUrl(image, baseUrl);
     const shareUrl = `${baseUrl}/s/${encodeURIComponent(slug)}`;
     const pageTitle = title || 'Toppers Wisdom - Shared Content';
     const pageDescription = description || 'Click the link to open this content directly in the app.';
