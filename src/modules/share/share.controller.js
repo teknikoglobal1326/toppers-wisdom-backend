@@ -106,10 +106,25 @@ exports.resolveLink = async (req, res) => {
     const { resourceType, resourceId, title, image, description } = shareLink;
 
     // Construct the deep link URL for the mobile app
-    const deepLinkUrl = `${APP_SCHEME}share?type=${resourceType}&id=${resourceId}`;
+    const deepLinkUrl = `${APP_SCHEME}share?type=${encodeURIComponent(resourceType)}&id=${encodeURIComponent(resourceId)}`;
 
     const baseUrl = req.protocol + '://' + req.get('host');
-    const fullImageUrl = image && image.startsWith('http') ? image : (image ? baseUrl + image : '');
+    const fullImageUrl = image && image.startsWith('http') ? image : (image ? new URL(image, baseUrl).href : '');
+    const shareUrl = `${baseUrl}/s/${encodeURIComponent(slug)}`;
+    const pageTitle = title || 'Toppers Wisdom - Shared Content';
+    const pageDescription = description || 'Click the link to open this content directly in the app.';
+    const escapeHtml = (value) => String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    const escapeJs = (value) => JSON.stringify(String(value));
+    const escapedTitle = escapeHtml(pageTitle);
+    const escapedDescription = escapeHtml(pageDescription);
+    const escapedImageUrl = escapeHtml(fullImageUrl);
+    const escapedDeepLinkUrl = escapeHtml(deepLinkUrl);
+    const escapedShareUrl = escapeHtml(shareUrl);
 
     // Render an HTML page with Open Graph metadata and JavaScript redirect
     const html = `
@@ -118,14 +133,20 @@ exports.resolveLink = async (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title || 'Toppers Wisdom - Shared Content'}</title>
+    <title>${escapedTitle}</title>
     
     <!-- Open Graph Meta Tags for Previews (WhatsApp, Telegram, Facebook, etc.) -->
-    <meta property="og:title" content="${title || 'Check this out on Toppers Wisdom!'}" />
-    <meta property="og:description" content="${description || 'Click the link to open this content directly in the app.'}" />
-    ${fullImageUrl ? `<meta property="og:image" content="${fullImageUrl}" />` : ''}
+    <meta property="og:title" content="${escapedTitle}" />
+    <meta property="og:description" content="${escapedDescription}" />
+    ${fullImageUrl ? `<meta property="og:image" content="${escapedImageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />` : ''}
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="${baseUrl}/s/${slug}" />
+    <meta property="og:url" content="${escapedShareUrl}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapedTitle}" />
+    <meta name="twitter:description" content="${escapedDescription}" />
+    ${fullImageUrl ? `<meta name="twitter:image" content="${escapedImageUrl}" />` : ''}
 
     <style>
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background-color: #f0f2f5; text-align: center; padding: 20px; box-sizing: border-box; }
@@ -142,20 +163,20 @@ exports.resolveLink = async (req, res) => {
 </head>
 <body>
     <div class="card">
-        ${fullImageUrl ? `<img src="${fullImageUrl}" alt="${title || 'Content Image'}">` : ''}
-        <h1>${title || 'Shared Content'}</h1>
-        <p>${description || 'Tap the button below to view this content in the Toppers Wisdom app.'}</p>
+        ${fullImageUrl ? `<img src="${escapedImageUrl}" alt="${escapedTitle}">` : ''}
+        <h1>${escapedTitle}</h1>
+        <p>${escapedDescription}</p>
     </div>
 
     <div class="loader"></div>
     <div class="status-text">Opening in Toppers Wisdom App...</div>
     
-    <a href="${deepLinkUrl}" class="btn">Open in App</a>
+    <a href="${escapedDeepLinkUrl}" class="btn">Open in App</a>
 
     <script>
         window.onload = function() {
-            var deepLink = "${deepLinkUrl}";
-            var fallbackLink = "${FALLBACK_URL}";
+            var deepLink = ${escapeJs(deepLinkUrl)};
+            var fallbackLink = ${escapeJs(FALLBACK_URL)};
             
             // Try to open the app
             window.location.href = deepLink;
