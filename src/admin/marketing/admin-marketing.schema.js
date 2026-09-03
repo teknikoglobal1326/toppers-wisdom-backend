@@ -10,7 +10,13 @@ const createNotificationSchema = Joi.object({
   message: Joi.string().trim().required(),
   image: Joi.string().trim().allow('', null).optional(),
   notificationType: Joi.string().trim().default('marketing'),
-  schedule: Joi.date().required()
+  schedule: Joi.date().required(),
+  examId: Joi.string().optional().allow('', null),
+  subExamId: Joi.string().optional().allow('', null),
+  all: Joi.boolean().optional(),
+  moduleType: Joi.string().optional().allow('', null),
+  moduleId: Joi.string().optional().allow('', null),
+  countdown: Joi.date().optional().allow('', null),
 })
 
 const updateNotificationSchema = Joi.object({
@@ -18,7 +24,13 @@ const updateNotificationSchema = Joi.object({
   message: Joi.string().trim().optional(),
   image: Joi.string().trim().allow('', null).optional(),
   notificationType: Joi.string().trim().optional(),
-  schedule: Joi.date().optional()
+  schedule: Joi.date().optional(),
+  examId: Joi.string().optional().allow('', null),
+  subExamId: Joi.string().optional().allow('', null),
+  all: Joi.boolean().optional(),
+  moduleType: Joi.string().optional().allow('', null),
+  moduleId: Joi.string().optional().allow('', null),
+  countdown: Joi.date().optional().allow('', null),
 }).min(1)
 
 const createAnnouncementSchema = Joi.object({

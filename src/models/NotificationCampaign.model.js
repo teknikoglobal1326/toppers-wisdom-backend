@@ -6,6 +6,12 @@ const notificationCampaignSchema = new mongoose.Schema({
   image: { type: String, default: '' },
   notificationType: { type: String, default: 'marketing' },
   schedule: { type: Date, required: true, index: true },
+  examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null },
+  subExamId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', default: null },
+  all: { type: Boolean, default: false },
+  moduleType: { type: String, default: null },
+  moduleId: { type: String, default: null },
+  countdown: { type: Date, default: null },
 
   isProcessed: { type: Boolean, default: false, index: true },
   jobId: { type: String, default: null },
