@@ -56,7 +56,13 @@ class AdminStreakController {
           currentStreak: { $ifNull: ['$streakData.currentStreak', 0] },
           longestStreak: { $ifNull: ['$streakData.longestStreak', 0] },
           tier: { $ifNull: ['$streakData.tier', 1] },
-          totalActiveDays: { $ifNull: ['$streakData.totalActiveDays', 0] },
+          totalActiveDays: {
+            $max: [
+              { $ifNull: ['$streakData.totalActiveDays', 0] },
+              { $ifNull: ['$streakData.longestStreak', 0] },
+              { $ifNull: ['$streakData.currentStreak', 0] }
+            ]
+          },
           freezesAvailable: { $ifNull: ['$streakData.freezesAvailable', 2] },
           freezesUsed: { $ifNull: ['$streakData.freezesUsed', 0] },
           streakStatus: {
@@ -244,7 +250,7 @@ class AdminStreakController {
       },
       currentStreak: streak ? streak.currentStreak : 0,
       longestStreak: streak ? streak.longestStreak : 0,
-      totalActiveDays: streak ? streak.totalActiveDays : 0,
+      totalActiveDays: (streak && streak.totalActiveDays > 0) ? streak.totalActiveDays : Math.max(streak ? streak.currentStreak : 0, streak ? streak.longestStreak : 0),
       freezesAvailable: streak ? streak.freezesAvailable : 2,
       freezesUsed: streak ? streak.freezesUsed : 0,
       streakStatus: streak ? streak.streakStatus : 'active',

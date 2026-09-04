@@ -179,6 +179,7 @@ class RewardsService {
         streak.currentStreak = 1;
       }
 
+      streak.totalActiveDays = (streak.totalActiveDays || 0) + 1;
       streak.lastActivityDate = new Date();
       if (streak.currentStreak > streak.longestStreak) {
         streak.longestStreak = streak.currentStreak;
