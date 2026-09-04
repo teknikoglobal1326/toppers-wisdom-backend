@@ -190,7 +190,7 @@ const getAllWords = async (req, res, next) => {
     const { cat, q, word, search, page, limit } = req.query;
     const searchTerm = q || word || search || '';
     const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 1000;
+    const limitNum = parseInt(limit) || 20;
     const result = await dictionaryService.getAllWords({ cat, q: searchTerm, page: pageNum, limit: limitNum });
     res.status(200).json({ success: true, ...result });
   } catch (error) {
