@@ -517,6 +517,7 @@ function _parseQuestionsFromHTML(html) {
     $("body > *").each((_, blockDom) => {
         const $block = $(blockDom);
         let isFirstInBlock = true;
+        let didAppendAnything = false;
 
         $block.contents().each((_, node) => {
             const separator = isFirstInBlock ? "<br/>" : " ";
@@ -535,8 +536,11 @@ function _parseQuestionsFromHTML(html) {
                             if (ansMatch)
                                 currentQuestion.correctAnswer = ansMatch[0].toUpperCase();
                         } else {
-                            _appendContentToMode(currentQuestion, mode, segment, separator);
-                            isFirstInBlock = false;
+                            if (segment.trim()) {
+                                _appendContentToMode(currentQuestion, mode, segment, isFirstInBlock ? "<br/>" : " ");
+                                isFirstInBlock = false;
+                                didAppendAnything = true;
+                            }
                         }
                     }
                 });
@@ -549,10 +553,12 @@ function _parseQuestionsFromHTML(html) {
                         const imgHtml = `<img src="${src}" style="max-width: 100%; height: auto;" />`;
                         _appendContentToMode(currentQuestion, mode, imgHtml, isFirstInBlock ? "<br/>" : " ");
                         isFirstInBlock = false;
+                        didAppendAnything = true;
                     }
                 } else if (eleName === "br") {
                     if (currentQuestion && mode) {
                         _appendContentToMode(currentQuestion, mode, "<br/>", "");
+                        didAppendAnything = true;
                     }
                 } else {
                     const text = $ele.text();
@@ -565,18 +571,29 @@ function _parseQuestionsFromHTML(html) {
                                 handleMarkerMatched(markerMatch[0]);
                                 isFirstInBlock = true;
                             } else if (currentQuestion && mode) {
-                                _appendContentToMode(currentQuestion, mode, segment, isFirstInBlock ? "<br/>" : " ");
-                                isFirstInBlock = false;
+                                if (segment.trim()) {
+                                    _appendContentToMode(currentQuestion, mode, segment, isFirstInBlock ? "<br/>" : " ");
+                                    isFirstInBlock = false;
+                                    didAppendAnything = true;
+                                }
                             }
                         });
                     } else if (currentQuestion && mode) {
                         const eleHtml = $.html($ele);
-                        _appendContentToMode(currentQuestion, mode, eleHtml, isFirstInBlock ? "<br/>" : " ");
-                        isFirstInBlock = false;
+                        if ($ele.text().trim() || $ele.find('img').length > 0) {
+                            _appendContentToMode(currentQuestion, mode, eleHtml, isFirstInBlock ? "<br/>" : " ");
+                            isFirstInBlock = false;
+                            didAppendAnything = true;
+                        }
                     }
                 }
             }
         });
+
+        // If it was an empty paragraph (e.g., user just hit Enter in Word), add a break
+        if (!didAppendAnything && currentQuestion && mode) {
+            _appendContentToMode(currentQuestion, mode, "<br/>", "");
+        }
     });
 
     if (currentQuestion) {

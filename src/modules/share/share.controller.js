@@ -88,7 +88,7 @@ exports.generateLink = async (req, res) => {
 
     // The actual domain will be determined dynamically by the request, or from env config
     const baseUrl = getBaseUrl(req);
-    const shortLink = `${baseUrl}/s/${slug}`;
+    const shortLink = `${baseUrl}/api/v1/share/s/${slug}`;
 
     return res.status(201).json({
       success: true,
@@ -130,7 +130,7 @@ exports.resolveLink = async (req, res) => {
 
     const baseUrl = getBaseUrl(req);
     const fullImageUrl = getImageUrl(image, baseUrl);
-    const shareUrl = `${baseUrl}/s/${encodeURIComponent(slug)}`;
+    const shareUrl = `${baseUrl}/api/v1/share/s/${encodeURIComponent(slug)}`;
     const pageTitle = title || 'Toppers Wisdom - Shared Content';
     const pageDescription = description || 'Click the link to open this content directly in the app.';
     const escapeHtml = (value) => String(value)

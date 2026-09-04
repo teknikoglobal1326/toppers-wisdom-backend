@@ -80,8 +80,7 @@ app.use('/api/v1/twsPost', authMiddleware, require('./modules/thought-of-the-day
 app.use('/api/v1/ai-tests', authMiddleware, require('./modules/ai-test/ai-test.routes'))
 app.use('/api/v1/share', require('./modules/share/share.routes'))
 
-// ── Deep Link Resolution ──────────────────────
-app.get('/s/:slug', require('./modules/share/share.controller').resolveLink)
+// Deep Link resolution is now handled in share.routes.js (/api/v1/share/s/:slug)
 
 
 // ── Admin API ─────────────────────────────────

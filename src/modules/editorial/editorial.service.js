@@ -473,11 +473,17 @@ class EditorialService extends BaseService {
     const endOfDate = new Date(baseDate)
     endOfDate.setHours(23, 59, 59, 999)
 
-    const editorials = await Editorial.find({
+    const filter = {
       isDeleted: false,
       status: 'published',
       publishDate: { $gte: startOfDate, $lte: endOfDate }
-    }).select('editorialTopic').lean()
+    }
+
+    if (query.type) {
+      filter.type = query.type
+    }
+
+    const editorials = await Editorial.find(filter).select('editorialTopic').lean()
 
     const topicIds = [...new Set(editorials.map(e => e.editorialTopic).filter(Boolean).map(id => id.toString()))]
 

@@ -8,6 +8,7 @@ const { authMiddleware } = require('../../middlewares/auth.middleware');
 // POST /api/v1/share/generate-link
 router.post('/generate-link', authMiddleware, upload.single('image'), shareController.generateLink);
 
-// The resolution route (GET /s/:slug) will be mounted in app.js at the root level for shorter URLs.
+// GET /api/v1/share/s/:slug - resolve short link
+router.get('/s/:slug', shareController.resolveLink);
 
 module.exports = router;
