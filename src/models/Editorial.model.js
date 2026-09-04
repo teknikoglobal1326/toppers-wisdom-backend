@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const editorialSchema = new mongoose.Schema({
   title: { type: String, trim: true },
   slug: { type: String, unique: true, lowercase: true, trim: true },
-  type: { type: String, enum: ["daily_editorial", "ncert_based"], index: true },
+  type: { type: String, enum: ["daily_editorial", "ncert_based", "beginner"], index: true },
   bannerImage: { type: String },
   thumbnail: { type: String },
   publishDate: { type: Date, index: true },

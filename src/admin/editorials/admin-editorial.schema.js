@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
-const TYPE_VALUES = ['daily_editorial', 'ncert_based']
+const TYPE_VALUES = ['daily_editorial', 'ncert_based', 'beginner']
 const STATUS_VALUES = ['draft', 'published', 'inactive']
 const objectId = Joi.string().hex().length(24).allow('', null)
 

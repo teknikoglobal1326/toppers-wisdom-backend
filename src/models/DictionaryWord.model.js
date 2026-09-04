@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const dictionaryWordSchema = new mongoose.Schema({
   _id: { type: String, required: true }, // Custom ID, e.g., "w_00187"
@@ -67,3 +67,4 @@ dictionaryWordSchema.pre('save', function (next) {
 });
 
 module.exports = mongoose.model('DictionaryWord', dictionaryWordSchema);
+
