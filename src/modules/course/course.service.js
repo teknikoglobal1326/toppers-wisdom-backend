@@ -265,6 +265,9 @@ class CourseService extends BaseService {
       }
     }
 
+    const endOfToday = new Date()
+    endOfToday.setHours(23, 59, 59, 999)
+
     const type = (filters.type || '').trim().toLowerCase()
     if (type === 'upcoming') {
       filter.$or = [
@@ -277,11 +280,11 @@ class CourseService extends BaseService {
         { scheduleAt: { $gte: startOfToday } }
       ]
     } else {
-      // By default: currently running / ongoing classes
+      // By default: upcoming (scheduled > now) OR currently running (ongoing)
       filter.$or = [
-        { liveStatus: 'ongoing' },
-        { scheduledStartTime: { $gte: startOfToday, $lte: now } },
-        { scheduleAt: { $gte: startOfToday, $lte: now } }
+        { scheduledStartTime: { $gt: now } },
+        { scheduleAt: { $gt: now } },
+        { liveStatus: 'ongoing' }
       ]
     }
 
@@ -292,8 +295,8 @@ class CourseService extends BaseService {
     const [total, data] = await Promise.all([
       Content.countDocuments(filter),
       Content.find(filter)
-        .select('title description isLive liveStatus scheduledStartTime scheduledEndTime course agoraChannel rtmpServer rtmpStreamKey rtmpUrl agoraToken restreamUrls')
-        .sort({ scheduledStartTime: 1 })
+        .select('title description isLive liveStatus scheduledStartTime scheduleAt scheduledEndTime course agoraChannel rtmpServer rtmpStreamKey rtmpUrl agoraToken restreamUrls')
+        .sort({ scheduledStartTime: -1, scheduleAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate([

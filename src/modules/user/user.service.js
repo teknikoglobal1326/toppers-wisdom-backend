@@ -57,7 +57,7 @@ class UserService extends BaseService {
                 { examId: examId },
                 { examIds: examId }
             ]
-        }).select('name price durationDays').lean()
+        }).lean()
     }
 
     async updateProfile(userId, data) {

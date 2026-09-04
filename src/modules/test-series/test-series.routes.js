@@ -15,7 +15,7 @@ router.get('/tests/:testId/instructions', controller.getTestInstructions)
 router.get('/tests/:testId/start', controller.startTest)
 router.post('/tests/:testId/submit', validate(submitSeriesTestSchema), controller.submitTest)
 
-// These session routes are currently in the working 
+// These session routes are currently in the working
 router.get('/tests/:testId/start-session', controller.startSession)
 router.put('/tests/:testId/session/:sessionId/update', controller.updateSession)
 router.get('/tests/:testId/session/:sessionId/analytics', controller.getSessionAnalytics)
