@@ -1,4 +1,4 @@
-const DictionaryWord = require('../../models/DictionaryWord.model');
+﻿const DictionaryWord = require('../../models/DictionaryWord.model');
 const DictionaryQuestion = require('../../models/DictionaryQuestion.model');
 const DictionaryProgress = require('../../models/DictionaryProgress.model');
 
@@ -418,7 +418,28 @@ const deleteWord = async (id) => {
   throw new Error('Word not found');
 };
 
+
+const getAllWords = async ({ cat, q, page = 1, limit = 1000 } = {}) => {
+  const query = {};
+  if (cat) query.cat = cat;
+  if (q) {
+    query.$or = [
+      { word: new RegExp(q, 'i') },
+      { en: new RegExp(q, 'i') },
+      { hi: new RegExp(q, 'i') }
+    ];
+  }
+
+  const skip = (page - 1) * limit;
+  const words = await DictionaryWord.find(query).sort({ updatedAt: -1, createdAt: -1 }).skip(skip).limit(limit);
+  const total = await DictionaryWord.countDocuments(query);
+  const totalCategories = (await DictionaryWord.distinct('cat')).length;
+
+  return { words, data: words, total, totalCategories, page, limit, totalPages: Math.ceil(total / limit) };
+};
+
 module.exports = {
+  getAllWords,
   getCategories,
   getCategoryHub,
   getCategoryGroups,
@@ -437,3 +458,4 @@ module.exports = {
   updateWord,
   deleteWord
 };
+

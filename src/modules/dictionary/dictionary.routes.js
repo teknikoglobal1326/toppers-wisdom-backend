@@ -1,8 +1,21 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const dictionaryController = require('./dictionary.controller');
 const { authMiddleware } = require('../../middlewares/auth.middleware');
 const { adminAuthMiddleware } = require('../../middlewares/adminAuth.middleware');
+
+const flexibleAuth = (req, res, next) => {
+  adminAuthMiddleware(req, res, (err1) => {
+    if (!err1) return next();
+    authMiddleware(req, res, (err2) => {
+      if (!err2) return next();
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    });
+  });
+};
+
+// Route for all words - allow admin or student auth
+router.get('/words', flexibleAuth, dictionaryController.getAllWords);
 
 // User routes (require student auth)
 router.use('/categories', authMiddleware);

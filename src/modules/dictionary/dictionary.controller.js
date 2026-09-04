@@ -1,4 +1,4 @@
-const dictionaryService = require('./dictionary.service');
+﻿const dictionaryService = require('./dictionary.service');
 
 const getCategories = async (req, res, next) => {
   try {
@@ -184,7 +184,22 @@ const deleteWord = async (req, res, next) => {
   }
 };
 
+
+const getAllWords = async (req, res, next) => {
+  try {
+    const { cat, q, word, search, page, limit } = req.query;
+    const searchTerm = q || word || search || '';
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 1000;
+    const result = await dictionaryService.getAllWords({ cat, q: searchTerm, page: pageNum, limit: limitNum });
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
+  getAllWords,
   getCategories,
   getCategoryHub,
   getCategoryGroups,
@@ -203,3 +218,4 @@ module.exports = {
   updateWord,
   deleteWord
 };
+
