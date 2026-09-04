@@ -26,6 +26,13 @@ const updateSettings = catchAsync(async (req, res) => {
   if (updateData.platformFee !== undefined) updateData.platformFee = Number(updateData.platformFee)
   if (updateData.gst !== undefined) updateData.gst = Number(updateData.gst)
 
+  if (updateData.open_api_key !== undefined) {
+    if (updateData.openaiApiKey === undefined) {
+      updateData.openaiApiKey = updateData.open_api_key
+    }
+    delete updateData.open_api_key
+  }
+
   const settings = await platformSettingService.updateSettings(updateData)
   sendSuccess(res, settings, 'Platform settings updated successfully')
 })
