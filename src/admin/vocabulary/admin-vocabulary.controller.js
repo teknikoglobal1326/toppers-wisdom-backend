@@ -24,4 +24,9 @@ const remove = catchAsync(async (req, res) => {
     sendSuccess(res, null, 'Vocabulary deleted')
 })
 
-module.exports = { list, getOne, create, update, remove }
+const bulkUpload = catchAsync(async (req, res) => {
+    const result = await adminVocabularyService.bulkUpload(req.file, req.body, req.admin?._id)
+    sendCreated(res, result, `${result.insertedCount} vocabulary items imported successfully`)
+})
+
+module.exports = { list, getOne, create, update, remove, bulkUpload }

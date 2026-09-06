@@ -1,10 +1,11 @@
 const router = require('express').Router()
 const controller = require('./admin-vocabulary.controller')
 const { validate, validateQuery } = require('../../core/validate')
-const { uploadVocabularyImages, parseFormData } = require('./admin-vocabulary.upload')
+const { uploadVocabularyImages, parseFormData, uploadBulkFile } = require('./admin-vocabulary.upload')
 const { createVocabularySchema, updateVocabularySchema, listVocabularyQuerySchema } = require('./admin-vocabulary.schema')
 
 router.get('/', validateQuery(listVocabularyQuerySchema), controller.list)
+router.post('/bulk', uploadBulkFile, controller.bulkUpload)
 router.post('/', uploadVocabularyImages, parseFormData, validate(createVocabularySchema), controller.create)
 router.get('/:id', controller.getOne)
 router.put('/:id', uploadVocabularyImages, parseFormData, validate(updateVocabularySchema), controller.update)
