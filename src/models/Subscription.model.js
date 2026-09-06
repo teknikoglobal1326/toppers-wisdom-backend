@@ -38,6 +38,7 @@ const subscriptionSchema = new mongoose.Schema({
 
   tests: [testItemSchema],
   boosters: [boosterItemSchema],
+  courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   materials: [{ type: mongoose.Schema.Types.ObjectId }],
 
   examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam' },
