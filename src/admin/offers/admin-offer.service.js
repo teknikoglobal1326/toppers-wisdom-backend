@@ -4,6 +4,12 @@ const offerRepository = require('../../modules/offer/offer.repository')
 const AppError = require('../../core/AppError')
 const { uploadFile } = require('../../lib/fileUpload')
 
+const POPULATE_FIELDS = [
+  { path: 'exams', select: 'name' },
+  { path: 'subExams', select: 'name' },
+  { path: 'subscriptions', select: 'name title price durationDays banner' },
+]
+
 class AdminOfferService extends BaseService {
   constructor() {
     super(offerRepository, 'admin:offer')
@@ -13,14 +19,14 @@ class AdminOfferService extends BaseService {
     const filter = { isDeleted: false }
     if (type) filter.type = type
     if (itemId) filter.itemId = itemId
-    if (isActive !== undefined) {
+    if (isActive !== undefined && isActive !== '') {
       filter.isActive = isActive === 'true' || isActive === true
     }
-    return this.getAll(filter, { page, limit, sort: { createdAt: -1 }, populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }] })
+    return this.getAll(filter, { page, limit, sort: { createdAt: -1 }, populate: POPULATE_FIELDS })
   }
 
   async getOne(id) {
-    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }] })
+    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: POPULATE_FIELDS })
     if (!offer) throw new AppError('Offer not found', 404, 'NOT_FOUND')
     return offer
   }
@@ -54,14 +60,26 @@ class AdminOfferService extends BaseService {
     return null
   }
 
+  parseArrayField(fieldVal) {
+    if (typeof fieldVal === 'string') {
+      try {
+        const parsed = JSON.parse(fieldVal)
+        if (Array.isArray(parsed)) return parsed.filter(Boolean)
+      } catch (e) {
+        return fieldVal.split(',').map(s => s.trim()).filter(Boolean)
+      }
+    }
+    if (Array.isArray(fieldVal)) return fieldVal.filter(Boolean)
+    return []
+  }
+
   async createOffer(data, file) {
     const payload = { ...data }
-        if (typeof payload.exams === 'string') {
-      try { payload.exams = JSON.parse(payload.exams) } catch (e) { payload.exams = payload.exams.split(',').filter(Boolean) }
-    }
-    if (typeof payload.subExams === 'string') {
-      try { payload.subExams = JSON.parse(payload.subExams) } catch (e) { payload.subExams = payload.subExams.split(',').filter(Boolean) }
-    }
+
+    if (payload.exams) payload.exams = this.parseArrayField(payload.exams)
+    if (payload.subExams) payload.subExams = this.parseArrayField(payload.subExams)
+    if (payload.subscriptions) payload.subscriptions = this.parseArrayField(payload.subscriptions)
+
     if (payload.isActive !== undefined) {
       payload.isActive = payload.isActive === 'true' || payload.isActive === true
     }
@@ -73,30 +91,33 @@ class AdminOfferService extends BaseService {
       throw new AppError('Image is required', 400, 'BAD_REQUEST')
     }
 
-    if (payload.type === 'course') {
+    if (payload.type === 'course' && payload.itemId) {
       const Course = require('../../models/Course.model')
       const courseExists = await Course.exists({ _id: payload.itemId })
       if (!courseExists) throw new AppError('Associated course not found', 404, 'NOT_FOUND')
-    } else if (payload.type === 'testSeries') {
+    } else if (payload.type === 'testSeries' && payload.itemId) {
       const TestSeries = require('../../models/TestSeries.model')
       const testSeriesExists = await TestSeries.exists({ _id: payload.itemId })
       if (!testSeriesExists) throw new AppError('Associated test series not found', 404, 'NOT_FOUND')
+    } else if (payload.type === 'subscription' && payload.itemId) {
+      const Subscription = require('../../models/Subscription.model')
+      const subExists = await Subscription.exists({ _id: payload.itemId })
+      if (!subExists) throw new AppError('Associated subscription not found', 404, 'NOT_FOUND')
     }
 
     return this.create(payload)
   }
 
   async updateOffer(id, data, file) {
-    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }] })
+    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: POPULATE_FIELDS })
     if (!offer) throw new AppError('Offer not found', 404, 'NOT_FOUND')
 
     const payload = { ...data }
-        if (typeof payload.exams === 'string') {
-      try { payload.exams = JSON.parse(payload.exams) } catch (e) { payload.exams = payload.exams.split(',').filter(Boolean) }
-    }
-    if (typeof payload.subExams === 'string') {
-      try { payload.subExams = JSON.parse(payload.subExams) } catch (e) { payload.subExams = payload.subExams.split(',').filter(Boolean) }
-    }
+
+    if (payload.exams) payload.exams = this.parseArrayField(payload.exams)
+    if (payload.subExams) payload.subExams = this.parseArrayField(payload.subExams)
+    if (payload.subscriptions) payload.subscriptions = this.parseArrayField(payload.subscriptions)
+
     if (payload.isActive !== undefined) {
       payload.isActive = payload.isActive === 'true' || payload.isActive === true
     }
@@ -110,14 +131,18 @@ class AdminOfferService extends BaseService {
       const type = payload.type || offer.type
       const itemId = payload.itemId || offer.itemId
 
-      if (type === 'course') {
+      if (type === 'course' && itemId) {
         const Course = require('../../models/Course.model')
         const courseExists = await Course.exists({ _id: itemId })
         if (!courseExists) throw new AppError('Associated course not found', 404, 'NOT_FOUND')
-      } else if (type === 'testSeries') {
+      } else if (type === 'testSeries' && itemId) {
         const TestSeries = require('../../models/TestSeries.model')
         const testSeriesExists = await TestSeries.exists({ _id: itemId })
         if (!testSeriesExists) throw new AppError('Associated test series not found', 404, 'NOT_FOUND')
+      } else if (type === 'subscription' && itemId) {
+        const Subscription = require('../../models/Subscription.model')
+        const subExists = await Subscription.exists({ _id: itemId })
+        if (!subExists) throw new AppError('Associated subscription not found', 404, 'NOT_FOUND')
       }
     }
 
@@ -125,7 +150,7 @@ class AdminOfferService extends BaseService {
   }
 
   async softDelete(id) {
-    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }] })
+    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: POPULATE_FIELDS })
     if (!offer) throw new AppError('Offer not found', 404, 'NOT_FOUND')
     await offerRepository.updateById(id, { isDeleted: true })
     this.logger.info({ offerId: id }, 'Offer soft deleted')

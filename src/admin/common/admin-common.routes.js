@@ -58,6 +58,15 @@ router.get('/courses', catchAsync(async (req, res) => {
 })
 );
 
+// GET /api/v1/admin/common/subscriptions
+router.get('/subscriptions', catchAsync(async (req, res) => {
+  const Subscription = require('../../models/Subscription.model')
+  const subscriptions = await Subscription.find(
+    { isDeleted: false, isActive: true }
+  ).sort({ createdAt: -1 }).select('_id name title price durationDays banner').lean()
+  sendSuccess(res, subscriptions)
+}));
+
 // GET /api/v1/admin/common/faculties
 router.get('/faculties', catchAsync(async (req, res) => {
   const Faculty = require('../../models/Faculty.model')
