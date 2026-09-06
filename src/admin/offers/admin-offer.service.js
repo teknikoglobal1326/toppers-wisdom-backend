@@ -16,11 +16,11 @@ class AdminOfferService extends BaseService {
     if (isActive !== undefined) {
       filter.isActive = isActive === 'true' || isActive === true
     }
-    return this.getAll(filter, { page, limit, sort: { createdAt: -1 } })
+    return this.getAll(filter, { page, limit, sort: { createdAt: -1 }, populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }] })
   }
 
   async getOne(id) {
-    const offer = await offerRepository.findOne({ _id: id, isDeleted: false })
+    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }] })
     if (!offer) throw new AppError('Offer not found', 404, 'NOT_FOUND')
     return offer
   }
@@ -56,6 +56,12 @@ class AdminOfferService extends BaseService {
 
   async createOffer(data, file) {
     const payload = { ...data }
+        if (typeof payload.exams === 'string') {
+      try { payload.exams = JSON.parse(payload.exams) } catch (e) { payload.exams = payload.exams.split(',').filter(Boolean) }
+    }
+    if (typeof payload.subExams === 'string') {
+      try { payload.subExams = JSON.parse(payload.subExams) } catch (e) { payload.subExams = payload.subExams.split(',').filter(Boolean) }
+    }
     if (payload.isActive !== undefined) {
       payload.isActive = payload.isActive === 'true' || payload.isActive === true
     }
@@ -81,10 +87,16 @@ class AdminOfferService extends BaseService {
   }
 
   async updateOffer(id, data, file) {
-    const offer = await offerRepository.findOne({ _id: id, isDeleted: false })
+    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }] })
     if (!offer) throw new AppError('Offer not found', 404, 'NOT_FOUND')
 
     const payload = { ...data }
+        if (typeof payload.exams === 'string') {
+      try { payload.exams = JSON.parse(payload.exams) } catch (e) { payload.exams = payload.exams.split(',').filter(Boolean) }
+    }
+    if (typeof payload.subExams === 'string') {
+      try { payload.subExams = JSON.parse(payload.subExams) } catch (e) { payload.subExams = payload.subExams.split(',').filter(Boolean) }
+    }
     if (payload.isActive !== undefined) {
       payload.isActive = payload.isActive === 'true' || payload.isActive === true
     }
@@ -113,7 +125,7 @@ class AdminOfferService extends BaseService {
   }
 
   async softDelete(id) {
-    const offer = await offerRepository.findOne({ _id: id, isDeleted: false })
+    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }] })
     if (!offer) throw new AppError('Offer not found', 404, 'NOT_FOUND')
     await offerRepository.updateById(id, { isDeleted: true })
     this.logger.info({ offerId: id }, 'Offer soft deleted')

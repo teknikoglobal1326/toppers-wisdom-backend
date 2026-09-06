@@ -6,6 +6,8 @@ const offerSchema = new mongoose.Schema(
     image: { type: String, required: true },
     type: { type: String, enum: ["course", "testSeries"], required: true },
     itemId: { type: mongoose.Schema.Types.ObjectId, required: true, refPath: "type" },
+    exams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam' }],
+    subExams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubExam' }],
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
   },
