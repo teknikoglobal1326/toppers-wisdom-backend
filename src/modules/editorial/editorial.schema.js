@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
-const TYPE_VALUES = ['daily_editorial', 'ncert_based']
+const TYPE_VALUES = ['daily_editorial', 'ncert_based', 'beginner']
 const STATUS_VALUES = ['draft', 'published', 'inactive']
 
 const listEditorialQuerySchema = Joi.object({

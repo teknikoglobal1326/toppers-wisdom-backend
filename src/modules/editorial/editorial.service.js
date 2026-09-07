@@ -232,7 +232,7 @@ class EditorialService extends BaseService {
   async listAll(query = {}, userId) {
     console.log("editorila userId", userId);
     const filter = await this.buildListFilter(query, userId)
-    const sort = query.type === 'ncert_based' ? { publishDate: -1, createdAt: -1 } : this.buildSort(query)
+    const sort = ['ncert_based', 'beginner'].includes(query.type) ? { publishDate: -1, createdAt: -1 } : this.buildSort(query)
 
     const result = await this.getAll(filter, {
       page: query.page,
@@ -262,7 +262,7 @@ class EditorialService extends BaseService {
     const topTodayIds = new Set(topTodayEditorials.map(e => e._id.toString()))
 
     let editorialTopics = undefined
-    if (query.type === 'ncert_based' && result.data && result.data.length > 0) {
+    if (['ncert_based', 'beginner'].includes(query.type) && result.data && result.data.length > 0) {
       const topicIds = [...new Set(result.data.map(e => e.editorialTopic?._id || e.editorialTopic).filter(Boolean).map(id => id.toString()))]
       const EditorialTopic = require('../../models/EditorialTopic.model')
       editorialTopics = await EditorialTopic.find({

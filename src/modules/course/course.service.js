@@ -782,7 +782,13 @@ class CourseService extends BaseService {
     const content = await Content.findOne({ _id: contentId, course: courseId, isDeleted: false })
     if (!content) throw new AppError('Content not found', 404, 'NOT_FOUND')
     if (!content.isLive) throw new AppError('This content is not a live class', 400)
-    if (content.liveStatus !== 'ongoing') throw new AppError('Live class is not currently ongoing', 400)
+    if (content.liveStatus !== 'ongoing') {
+      if (content.liveStatus === 'pending') {
+        throw new AppError('Stream will start in a while.', 400)
+      } else {
+        throw new AppError('Live class is not currently ongoing', 400)
+      }
+    }
 
     const token = generateSubscriberToken(content.agoraChannel, 0)
     return { token, channel: content.agoraChannel }
