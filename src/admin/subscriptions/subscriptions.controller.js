@@ -31,7 +31,7 @@ const extractObjectIds = (val) => {
 exports.createSubscription = async (req, res, next) => {
   try {
     const { name, description, price, durationDays, isActive, isPremium, examId, examIds } = req.body;
-    let { banner, tests, boosters, materials } = req.body;
+    let { banner, tests, boosters, materials, courses } = req.body;
 
     if (typeof tests === 'string') {
       try { tests = JSON.parse(tests); } catch (e) { tests = []; }
@@ -42,6 +42,8 @@ exports.createSubscription = async (req, res, next) => {
     if (typeof materials === 'string') {
       try { materials = JSON.parse(materials); } catch (e) { materials = []; }
     }
+
+    let parsedCourses = extractObjectIds(courses);
 
     let parsedExamIds = [];
     if (examIds) {
@@ -76,6 +78,7 @@ exports.createSubscription = async (req, res, next) => {
       durationDays,
       tests: tests || [],
       boosters: boosters || [],
+      courses: parsedCourses || [],
       materials: materials || [],
       banner,
       examId: parsedExamIds.length > 0 ? parsedExamIds[0] : undefined,
@@ -125,6 +128,7 @@ exports.getAllSubscriptions = async (req, res, next) => {
 
     const subscriptions = await Subscription.find(filter)
       .populate('createdBy', 'name email')
+      .populate('courses', 'title thumbnail')
       .populate('examId', 'name title')
       .populate('examIds', 'name title')
       .sort({ createdAt: -1 })
@@ -154,6 +158,7 @@ exports.getSubscriptionById = async (req, res, next) => {
     const subscription = await Subscription.findOne({ _id: req.params.id, isDeleted: false })
       .populate('tests.moduleId', 'title thumbnail')
       .populate('boosters.moduleId', 'title thumbnail')
+      .populate('courses', 'title thumbnail price type')
       .populate('examId', 'name title')
       .populate('examIds', 'name title');
 
@@ -174,7 +179,7 @@ exports.getSubscriptionById = async (req, res, next) => {
 exports.updateSubscription = async (req, res, next) => {
   try {
     const { name, description, price, durationDays, isActive, isPremium, examId, examIds } = req.body;
-    let { banner, tests, boosters, materials } = req.body;
+    let { banner, tests, boosters, materials, courses } = req.body;
 
     if (typeof tests === 'string') {
       try { tests = JSON.parse(tests); } catch (e) { tests = []; }
@@ -184,6 +189,11 @@ exports.updateSubscription = async (req, res, next) => {
     }
     if (typeof materials === 'string') {
       try { materials = JSON.parse(materials); } catch (e) { materials = []; }
+    }
+
+    let parsedCourses;
+    if (courses !== undefined) {
+      parsedCourses = extractObjectIds(courses);
     }
 
     let parsedExamIds;
@@ -224,6 +234,7 @@ exports.updateSubscription = async (req, res, next) => {
 
     if (tests) subscription.tests = tests;
     if (boosters) subscription.boosters = boosters;
+    if (parsedCourses !== undefined) subscription.courses = parsedCourses;
     if (materials) subscription.materials = materials;
     if (isActive !== undefined) subscription.isActive = isActive;
     if (isPremium !== undefined) subscription.isPremium = Boolean(isPremium);

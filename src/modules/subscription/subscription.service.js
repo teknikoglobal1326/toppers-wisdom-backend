@@ -53,10 +53,13 @@ class SubscriptionService {
             if (objectId) queryOptions.push({ 'tests': { $elemMatch: { moduleType: { $in: ['SectionalTestSeries', 'SectionalTest'] }, moduleId: objectId } } });
         } else if (typeStr === 'vocabulary') {
             if (objectId) queryOptions.push({ 'boosters': { $elemMatch: { moduleType: { $in: ['Vocabulary', 'vocabulary'] }, moduleId: objectId } } });
+        } else if (['course', 'courses'].includes(typeStr)) {
+            if (objectId) queryOptions.push({ 'courses': objectId });
         } else {
             if (objectId) {
                 queryOptions.push({ 'tests.moduleId': objectId });
                 queryOptions.push({ 'boosters.moduleId': objectId });
+                queryOptions.push({ 'courses': objectId });
             }
         }
 
@@ -88,7 +91,7 @@ class SubscriptionService {
 
 
         const subscriptions = await Subscription.find(filter)
-            .select('name description price durationDays tests boosters banner isPremium')
+            .select('name description price durationDays tests boosters courses banner isPremium')
             .lean();
 
         return subscriptions.map(sub => ({
@@ -148,6 +151,7 @@ class SubscriptionService {
             price: subscription.price,
             tests: subscription.tests || [],
             boosters: subscription.boosters || [],
+            courses: subscription.courses || [],
             materials: subscription.materials || []
         };
 
