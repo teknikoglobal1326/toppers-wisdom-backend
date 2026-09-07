@@ -16,7 +16,7 @@ class OfferService extends BaseService {
     } else {
       filter.isActive = true // Default for users: only return active offers
     }
-    return this.getAll(filter, { page, limit, sort })
+    return this.getAll(filter, { page, limit, sort, populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }, { path: 'subscriptions', select: 'name title price durationDays banner' }] })
   }
 
   async getLatest({ type, itemId, isActive } = {}) {
@@ -28,11 +28,11 @@ class OfferService extends BaseService {
     } else {
       filter.isActive = true
     }
-    return this.repository.findOne(filter, { sort: { createdAt: -1 } })
+    return this.repository.findOne(filter, { sort: { createdAt: -1 }, populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }, { path: 'subscriptions', select: 'name title price durationDays banner' }] })
   }
 
   async getOne(id) {
-    const offer = await offerRepository.findOne({ _id: id, isDeleted: false })
+    const offer = await offerRepository.findOne({ _id: id, isDeleted: false }, { populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }, { path: 'subscriptions', select: 'name title price durationDays banner' }] })
     if (!offer) throw new AppError('Offer not found', 404, 'NOT_FOUND')
     return offer
   }

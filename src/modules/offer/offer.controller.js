@@ -1,5 +1,5 @@
 const catchAsync = require('../../core/catchAsync')
-const { sendSuccess, sendPaginated } = require('../../core/response')
+const { sendSuccess } = require('../../core/response')
 const offerService = require('./offer.service')
 
 const list = catchAsync(async (req, res) => {
