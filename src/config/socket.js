@@ -399,6 +399,8 @@ const initSocket = (httpServer) => {
         });
 
         const messagePayload = chatMessage.toObject();
+        messagePayload.chatMode = chatMode;
+        messagePayload.name = messagePayload.senderName;
 
         if (socket.role === 'admin' || chatMode === 'public') {
           // Broadcast to everyone in the room

@@ -369,6 +369,14 @@ class AdminContentService extends BaseService {
       agoraToken: ''
     })
 
+    try {
+      const { getIo } = require('../../config/socket')
+      const io = getIo()
+      io.to(`live_${id}`).emit('end-live-class', { contentId: id })
+    } catch (e) {
+      this.logger.error(e, 'Failed to emit end-live-class socket event')
+    }
+
     return { message: 'Live class ended successfully' }
   }
 

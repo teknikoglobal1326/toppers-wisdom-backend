@@ -320,8 +320,11 @@ class CourseService extends BaseService {
     this.logger.info({ courseId, userId }, 'Fetching course detail')
     // inherited: this.getById() throws 404 automatically if not found
     const course = await this.getById(courseId, {
-      select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects timetable courseThought',
-      populate: [{ path: 'subjects.subject', select: 'name' }]
+      select: 'title slug description longDescription mrp price thumbnail bannerImage isFree lessons subjects timetable courseThought faculties',
+      populate: [
+        { path: 'subjects.subject', select: 'name' },
+        { path: 'faculties', select: 'name image bio' }
+      ]
     })
     if (course.isDeleted) throw new AppError('Course not found', 404, 'NOT_FOUND')
     const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId)

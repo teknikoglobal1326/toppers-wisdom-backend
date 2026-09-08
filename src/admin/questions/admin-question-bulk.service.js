@@ -315,7 +315,7 @@ function _parseQuestionsFromHTML(html) {
             let seqHiOptions = [];
 
             $table.find("tr").each((_, trDom) => {
-                const cells = $(trDom).find("td");
+                const cells = $(trDom).find("td, th");
                 if (cells.length < 2) return;
                 const rawKey = $(cells[0]).text().trim().toLowerCase().replace(/[\s_-]+/g, "");
                 const valHtml = $(cells[1]).html() || "";
@@ -813,17 +813,8 @@ function extractTextAndImage(htmlString) {
         }
     }
 
-    // Strip HTML tags, but preserve line breaks
-    $("br").replaceWith("\n");
-    $("p").each((_, el) => {
-        $(el).append("\n");
-    });
-
-    let text = $("div").text() || "";
+    let text = $("div").html() || "";
     text = text.trim();
-    
-    // Convert newlines back to <br/> so they render correctly as HTML on the frontend
-    text = text.replace(/\n/g, "<br/>");
 
     // Decode leading slash if it's relative
     if (image && !image.startsWith("http") && !image.startsWith("/")) {
