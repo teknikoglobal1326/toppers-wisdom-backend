@@ -547,7 +547,7 @@ class AdminContentService extends BaseService {
     const LiveClassAttendance = require('../../models/LiveClassAttendance.model')
     const Content = require('../../models/Content.model')
 
-    const content = await Content.findOne({ _id: contentId, isLive: true, isDeleted: false }).lean()
+    const content = await Content.findOne({ _id: contentId, isDeleted: false }).lean()
     if (!content) throw new AppError('Live class not found', 404, 'NOT_FOUND')
 
     const attendanceRecords = await LiveClassAttendance.find({ content: contentId })
