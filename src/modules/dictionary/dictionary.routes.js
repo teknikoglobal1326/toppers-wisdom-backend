@@ -16,11 +16,24 @@ const flexibleAuth = (req, res, next) => {
 
 // Route for all words - allow admin or student auth
 router.get('/words', flexibleAuth, dictionaryController.getAllWords);
+router.post('/words', flexibleAuth, dictionaryController.createWord);
+
+// Admin Word Management Routes
+router.put('/words/:id', flexibleAuth, dictionaryController.updateWord);
+router.patch('/words/:id', flexibleAuth, dictionaryController.updateWord);
+router.delete('/words/:id', flexibleAuth, dictionaryController.deleteWord);
+
+// Question Management Routes
+router.get('/questions', flexibleAuth, dictionaryController.getAllQuestions);
+router.post('/questions', flexibleAuth, dictionaryController.createQuestion);
+router.put('/questions/:id', flexibleAuth, dictionaryController.updateQuestion);
+router.patch('/questions/:id', flexibleAuth, dictionaryController.updateQuestion);
+router.delete('/questions/:id', flexibleAuth, dictionaryController.deleteQuestion);
+
 
 // User routes (require student auth)
 router.use('/categories', authMiddleware);
 router.use('/search', authMiddleware);
-router.use('/words', authMiddleware);
 router.use('/progress', authMiddleware);
 
 // Read-Only Core Endpoints
@@ -42,13 +55,8 @@ router.get('/progress/:studentId/due', dictionaryController.getDueItems);
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Admin Word Management Routes
-router.put('/words/:id', adminAuthMiddleware, dictionaryController.updateWord);
-router.patch('/words/:id', adminAuthMiddleware, dictionaryController.updateWord);
-router.delete('/words/:id', adminAuthMiddleware, dictionaryController.deleteWord);
-
-// Admin Ingestion & Review Queue (require admin auth)
-router.use('/ingest', adminAuthMiddleware);
+// Admin Ingestion & Review Queue
+router.use('/ingest', flexibleAuth);
 
 router.post('/ingest/upload', upload.single('file'), dictionaryController.uploadIngestDocument);
 router.get('/ingest/review-queue', dictionaryController.getReviewQueue);

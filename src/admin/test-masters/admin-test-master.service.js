@@ -1,4 +1,4 @@
-const BaseService      = require('../../core/BaseService')
+﻿const BaseService      = require('../../core/BaseService')
 const testMasterRepository = require('../../modules/test-master/test-master.repository')
 const AppError         = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
@@ -34,6 +34,16 @@ class AdminTestMasterService extends BaseService {
 
   async create(data) {
     return super.create(this.normalizePayload(data))
+  }
+
+  async getById(id) {
+    return this.repository.findByIdOrFail(id, undefined, {
+      populate: [
+        { path: 'exams', select: 'name title hiName enName' },
+        { path: 'subExams', select: 'name title hiName enName examId' },
+        { path: 'subjectIds', select: 'name chapters examIds subExamIds' },
+      ],
+    })
   }
 
   async update(id, data) {
