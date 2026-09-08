@@ -57,6 +57,8 @@ const initSocket = (httpServer) => {
         }
       }
 
+      console.log("User socket hand shake token",token);
+
       if (!token) return next(new Error('Authentication error'));
 
       let decoded;
@@ -124,6 +126,10 @@ const initSocket = (httpServer) => {
         // Fetch current chat mode from redis
         const chatMode = await redis.get(`live_chat_mode:${contentId}`) || 'private';
 
+        if (socket.role === 'user') {
+          console.log(`[LIVE JOIN] Student: ${socket.user?.name || 'Unknown'}, Chat Mode: ${chatMode}`);
+        }
+
         // Fetch the active poll from DB
         const activePoll = await LivePoll.findOne({ content: contentId, isActive: true }).lean();
 
@@ -132,8 +138,16 @@ const initSocket = (httpServer) => {
           .sort({ createdAt: -1 })
           .lean();
 
-        // Fetch recent chat history from DB
-        const recentChats = await LiveChatMessage.find({ content: contentId })
+        // Fetch recent chat history from DB based on role and chat mode
+        let chatQuery = { content: contentId };
+        if (socket.role === 'user' && chatMode === 'private') {
+          chatQuery.$or = [
+            { senderId: socket.user?._id?.toString() },
+            { role: 'admin' }
+          ];
+        }
+
+        const recentChats = await LiveChatMessage.find(chatQuery)
           .sort({ timestamp: -1 })
           .limit(50)
           .lean();

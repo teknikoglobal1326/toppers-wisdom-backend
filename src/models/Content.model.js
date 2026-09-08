@@ -26,7 +26,8 @@ const contantSchema = new mongoose.Schema({
   rtmpServer: { type: String },
   rtmpStreamKey: { type: String },
   rtmpUrl: { type: String },
-  agoraToken: { type: String }
+  agoraToken: { type: String },
+  hlsUrl: { type: String, default: null }
 }, { timestamps: true })
 
 module.exports = mongoose.model('Contant', contantSchema)
