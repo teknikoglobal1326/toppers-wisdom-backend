@@ -1,8 +1,15 @@
+const escapeRegExp = (str) => {
+    if (!str) return '';
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 const path = require('path')
 const BaseService = require('../../core/BaseService')
 const AppError = require('../../core/AppError')
 const vocabularyRepository = require('../../modules/vocabulary/vocabulary.repository')
 const { VALID_TYPES } = require('./admin-vocabulary.schema')
+
+
 
 class AdminVocabularyService extends BaseService {
     constructor() {
@@ -159,7 +166,7 @@ class AdminVocabularyService extends BaseService {
                     try {
                         const parsed = JSON.parse(val)
                         if (Array.isArray(parsed)) return parsed.map(s => String(s).trim()).filter(Boolean)
-                    } catch (_) {}
+                    } catch (_) { }
                 }
                 return val.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
             }
@@ -174,7 +181,7 @@ class AdminVocabularyService extends BaseService {
                     try {
                         const parsed = JSON.parse(val)
                         if (Array.isArray(parsed)) return parsed.filter(Boolean)
-                    } catch (_) {}
+                    } catch (_) { }
                 }
                 return val.split(',').map(s => s.trim()).filter(Boolean)
             }

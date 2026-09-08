@@ -1,4 +1,4 @@
-﻿const dictionaryService = require('./dictionary.service');
+const dictionaryService = require('./dictionary.service');
 
 const getCategories = async (req, res, next) => {
   try {
@@ -92,9 +92,6 @@ const updateMcqAttempt = async (req, res, next) => {
 
 const getDueItems = async (req, res, next) => {
   try {
-    // We assume the authenticated user ID is req.user.id or requested via param depending on setup.
-    // The spec said /progress/:studentId/due but standard REST with JWT would just use req.user.id
-    // I'll use the param as spec'd but fallback to req.user.id if param is 'me'.
     const studentId = req.params.studentId === 'me' ? req.user.id : req.params.studentId;
     const items = await dictionaryService.getDueItems(studentId);
     res.status(200).json({ success: true, data: items });
@@ -115,7 +112,6 @@ const getReviewQueue = async (req, res, next) => {
 
 const approveIngestItem = async (req, res, next) => {
   try {
-    // Optionally accept updated fields from the frontend review screen
     const savedEntity = await dictionaryService.approveIngestItem(req.params.id, req.body.payload);
     res.status(200).json({ success: true, message: 'Item approved and saved to live DB', data: savedEntity });
   } catch (error) {
@@ -153,11 +149,26 @@ const uploadIngestDocument = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
     
-    // Admins or Members upload this, fallback to user just in case
     const uploaderId = req.admin?._id || req.member?._id || req.user?.id;
     
     const result = await dictionaryService.uploadIngestDocument(req.file.buffer, req.file.originalname, uploaderId);
     res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createWord = async (req, res, next) => {
+  try {
+    const wordData = req.body.payload || req.body;
+    const result = await dictionaryService.createWord(wordData);
+    const count = Array.isArray(result) ? result.length : 1;
+    res.status(201).json({ 
+      success: true, 
+      message: `${count} word${count > 1 ? 's' : ''} added to live dictionary successfully`, 
+      data: result,
+      count
+    });
   } catch (error) {
     next(error);
   }
@@ -184,21 +195,91 @@ const deleteWord = async (req, res, next) => {
   }
 };
 
-
 const getAllWords = async (req, res, next) => {
   try {
-    const { cat, q, word, search, page, limit } = req.query;
+    const { cat, q, word, search, page, limit, sort, order } = req.query;
     const searchTerm = q || word || search || '';
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
-    const result = await dictionaryService.getAllWords({ cat, q: searchTerm, page: pageNum, limit: limitNum });
+    const sortParam = sort || order;
+    const result = await dictionaryService.getAllWords({ 
+      cat, 
+      q: searchTerm, 
+      page: pageNum, 
+      limit: limitNum, 
+      sort: sortParam 
+    });
     res.status(200).json({ success: true, ...result });
   } catch (error) {
     next(error);
   }
 };
 
+
+const getAllQuestions = async (req, res, next) => {
+  try {
+    const { cat, type, category, q, question, search, page, limit, sort, order } = req.query;
+    const searchTerm = q || question || search || '';
+    const categoryParam = cat || type || category || '';
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const sortParam = sort || order;
+    const result = await dictionaryService.getAllQuestions({ 
+      cat: categoryParam, 
+      q: searchTerm, 
+      page: pageNum, 
+      limit: limitNum, 
+      sort: sortParam 
+    });
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createQuestion = async (req, res, next) => {
+  try {
+    const questionData = req.body.payload || req.body;
+    const result = await dictionaryService.createQuestion(questionData);
+    const count = Array.isArray(result) ? result.length : 1;
+    res.status(201).json({ 
+      success: true, 
+      message: `${count} question${count > 1 ? 's' : ''} saved successfully`, 
+      data: result,
+      count
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateQuestion = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body.payload || req.body;
+    const question = await dictionaryService.updateQuestion(id, updateData);
+    res.status(200).json({ success: true, message: 'Question updated successfully', data: question });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteQuestion = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await dictionaryService.deleteQuestion(id);
+    res.status(200).json({ success: true, message: 'Question deleted successfully', data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
+  getAllQuestions,
+  createQuestion,
+  updateQuestion,
+  deleteQuestion,
+  createWord,
   getAllWords,
   getCategories,
   getCategoryHub,
@@ -218,4 +299,3 @@ module.exports = {
   updateWord,
   deleteWord
 };
-

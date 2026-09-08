@@ -207,15 +207,15 @@ class AdminQuestionService extends BaseService {
     const TestMaster = require('../../models/TestMaster.model')
     
     const [courseTest, separatedTest, seriesTest, pypTest, liveTest, dailyQuiz, mathTest, sectionalTest, testMaster] = await Promise.all([
-      CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
-      CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course').lean(),
-      TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
-      PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
-      LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id exam subExams isPerQuestionTime').lean(),
-      DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id isPerQuestionTime').lean(),
-      MathTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
-      SectionalTestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams').lean(),
-      TestMaster.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exams subExams').lean(),
+      CourseTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course subjects subjectIds subject').lean(),
+      CourseSeparatedTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams course subjects subjectIds subject').lean(),
+      TestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams subjects subjectIds subject').lean(),
+      PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams subjects subjectIds subject').lean(),
+      LiveTest.findOne({ _id: testId, isDeleted: false }).select('_id exam subExams isPerQuestionTime subjects subjectIds subject').lean(),
+      DailyQuiz.findOne({ _id: testId, isDeleted: false }).select('_id isPerQuestionTime subjects subjectIds subject').lean(),
+      MathTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams subjects subjectIds subject').lean(),
+      SectionalTestSeriesTest.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exam subExams subjects subjectIds subject').lean(),
+      TestMaster.findOne({ _id: testId, isDeleted: false }).select('isPerQuestionTime exams subExams subjectIds subjects subject').lean(),
     ])
     if (testMaster && testMaster.exams && testMaster.exams.length > 0) {
       testMaster.exam = testMaster.exams[0]
@@ -367,11 +367,19 @@ class AdminQuestionService extends BaseService {
         metadata.subExams = metadata.subExamIds.split(',').map(s => s.trim())
       }
     }
-    // Fallback to parentTest values if not provided in metadata
-    if (parentTest && (parentTest.exam || parentTest.subExams)) {
-      if (!metadata.exam) metadata.exam = parentTest.exam ? parentTest.exam.toString() : null
+    // Automatically extract exam and subExams from parentTest / TestMaster if not explicitly provided in metadata
+    if (parentTest) {
+      if (!metadata.exam) {
+        const rawExam = parentTest.exam || (Array.isArray(parentTest.exams) && parentTest.exams.length > 0 ? parentTest.exams[0] : null)
+        if (rawExam) {
+          metadata.exam = (rawExam._id || rawExam).toString()
+        }
+      }
       if (!metadata.subExams || !metadata.subExams.length) {
-        metadata.subExams = parentTest.subExams ? parentTest.subExams.map(s => s.toString()) : []
+        const rawSubExams = parentTest.subExams || parentTest.subExamIds || []
+        if (Array.isArray(rawSubExams) && rawSubExams.length > 0) {
+          metadata.subExams = rawSubExams.map(s => (s && s._id ? s._id : s).toString())
+        }
       }
     }
 
@@ -429,7 +437,41 @@ class AdminQuestionService extends BaseService {
     metadata.subjectId = activeSubjectId || null
     metadata.chapterId = activeChapterId || null
     metadata.topicId = activeTopicId || null
-x
+
+    // Determine mapped subjects directly for this testId
+    const TestMaster = require('../../models/TestMaster.model')
+    const testMasterDoc = await TestMaster.findOne({ _id: metadata.test, isDeleted: false }).lean()
+
+    let allowedSubjects = []
+    const testDoc = testMasterDoc || parentTest
+    
+    // Extract any subject IDs directly mapped to this test document
+    const rawTestSubjects = [
+      ...(Array.isArray(testDoc?.subjectIds) ? testDoc.subjectIds : []),
+      ...(Array.isArray(testDoc?.subjects) ? testDoc.subjects : []),
+      testDoc?.subjectId,
+      testDoc?.subject
+    ].filter(Boolean)
+
+    if (rawTestSubjects.length > 0) {
+      const ids = rawTestSubjects.map(s => (s && s._id ? s._id.toString() : s.toString()))
+      const uniqueIds = [...new Set(ids)]
+      allowedSubjects = await Subject.find({ _id: { $in: uniqueIds }, isDeleted: false }).lean()
+    }
+
+    // Fallback: If no direct subjects mapped to testId, fallback to subjects linked to test's exam/sub-exams
+    if (allowedSubjects.length === 0 && (metadata.exam || testDoc?.exam || testDoc?.exams)) {
+      const targetExam = metadata.exam || (testDoc?.exams && testDoc.exams[0]) || testDoc?.exam
+      const targetSubExams = metadata.subExams || testDoc?.subExams || []
+      const orConditions = []
+      if (targetExam) orConditions.push({ examIds: targetExam })
+      if (targetSubExams.length > 0) orConditions.push({ subExamIds: { $in: targetSubExams } })
+
+      if (orConditions.length > 0) {
+        allowedSubjects = await Subject.find({ $or: orConditions, isDeleted: false }).lean()
+      }
+    }
+
     const extension = path.extname(file.originalname).toLowerCase()
     const { parseWordFile, mapWordQuestionToSchema, parseXmlFile, parseExcelFile, extractTextAndImage } = require('./admin-question-bulk.service')
 
@@ -520,7 +562,32 @@ x
       // Resolve subject, chapter, and topic for individual question payload
       let qSubjectDoc = null;
       let qSubjectId = qPayload.subjectId;
-      if (qSubjectId) {
+
+      if (allowedSubjects && allowedSubjects.length > 0) {
+        const rawSub = String(qSubjectId || '').trim().toLowerCase()
+        const rawSubNoSpace = rawSub.replace(/\s+/g, '')
+
+        qSubjectDoc = allowedSubjects.find(s => {
+          const sId = s._id.toString()
+          if (sId === String(qSubjectId).trim()) return true
+          const sName = (s.name || '').trim().toLowerCase()
+          const sNameNoSpace = sName.replace(/\s+/g, '')
+          if (sName === rawSub || sNameNoSpace === rawSubNoSpace) return true
+          if (s.enName && s.enName.trim().toLowerCase() === rawSub) return true
+          if (s.hiName && s.hiName.trim().toLowerCase() === rawSub) return true
+          return false
+        })
+
+        if (!qSubjectDoc) {
+          const allowedNames = allowedSubjects.map(s => s.name).filter(Boolean).join(', ')
+          throw new AppError(
+            'Row ' + (index + 1) + ': Subject "' + qSubjectId + '" is not mapped with the selected Exam / Sub-exam for this test. Mapped subjects are: ' + (allowedNames || 'None'),
+            400,
+            'VALIDATION_ERROR'
+          )
+        }
+        qSubjectId = qSubjectDoc._id.toString()
+      } else if (qSubjectId) {
         if (qSubjectId.toString().match(/^[0-9a-fA-F]{24}$/)) {
           qSubjectDoc = await Subject.findOne({ _id: qSubjectId, isDeleted: false });
         } else {
