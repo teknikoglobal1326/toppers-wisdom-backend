@@ -1,8 +1,16 @@
+
 const mongoose = require('mongoose');
 const DictionaryWord = require('../../models/DictionaryWord.model');
 const DictionaryQuestion = require('../../models/DictionaryQuestion.model');
 const DictionaryProgress = require('../../models/DictionaryProgress.model');
 const DictionaryIngest = require('../../models/DictionaryIngest.model');
+
+
+
+const escapeRegExp = (str) => {
+  if (!str) return '';
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
 
 const normalizeCategory = (cat) => {
   if (!cat || typeof cat !== 'string') return 'synonyms';
@@ -419,6 +427,72 @@ const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
     if (data.questions) questions = data.questions;
   }
 
+  // 1. Check internal duplicate words inside file
+  const fileSeenWords = new Set();
+  const internalDuplicates = new Set();
+  for (const item of words) {
+    const wStr = (item && item.word ? String(item.word) : '').trim().toLowerCase();
+    if (wStr) {
+      if (fileSeenWords.has(wStr)) {
+        internalDuplicates.add((item.word || '').trim());
+      } else {
+        fileSeenWords.add(wStr);
+      }
+    }
+  }
+  if (internalDuplicates.size > 0) {
+    throw new Error(`Duplicate word(s) found inside uploaded file: ${Array.from(internalDuplicates).map(w => `"${w}"`).join(', ')}`);
+  }
+
+  // 2. Check DB duplicate words
+  const incomingWordStrs = words
+    .map(w => (w && w.word ? String(w.word).trim() : ''))
+    .filter(Boolean);
+
+  if (incomingWordStrs.length > 0) {
+    const regexList = incomingWordStrs.map(w => new RegExp('^' + escapeRegExp(w) + '$', 'i'));
+    const existingDocs = await DictionaryWord.find({
+      word: { $in: regexList }
+    });
+    if (existingDocs.length > 0) {
+      const existingNames = Array.from(new Set(existingDocs.map(d => d.word)));
+      throw new Error(`The following word(s) already exist in the database: ${existingNames.map(w => `"${w}"`).join(', ')}`);
+    }
+  }
+
+  // 3. Check internal duplicate questions inside file
+  const fileSeenQuestions = new Set();
+  const internalQuestionDuplicates = new Set();
+  for (const item of questions) {
+    const qStr = (item && item.q ? String(item.q) : '').trim().toLowerCase();
+    if (qStr) {
+      if (fileSeenQuestions.has(qStr)) {
+        internalQuestionDuplicates.add((item.q || '').trim());
+      } else {
+        fileSeenQuestions.add(qStr);
+      }
+    }
+  }
+  if (internalQuestionDuplicates.size > 0) {
+    throw new Error(`Duplicate question(s) found inside uploaded file: ${Array.from(internalQuestionDuplicates).map(q => `"${q.length > 35 ? q.slice(0, 35) + '...' : q}"`).join(', ')}`);
+  }
+
+  // 4. Check DB duplicate questions
+  const incomingQuestionStrs = questions
+    .map(q => (q && q.q ? String(q.q).trim() : ''))
+    .filter(Boolean);
+
+  if (incomingQuestionStrs.length > 0) {
+    const regexList = incomingQuestionStrs.map(q => new RegExp('^' + escapeRegExp(q) + '$', 'i'));
+    const existingQDocs = await DictionaryQuestion.find({
+      q: { $in: regexList }
+    });
+    if (existingQDocs.length > 0) {
+      const existingQTexts = Array.from(new Set(existingQDocs.map(d => d.q)));
+      throw new Error(`The following question(s) already exist in the database: ${existingQTexts.map(q => `"${q.length > 35 ? q.slice(0, 35) + '...' : q}"`).join(', ')}`);
+    }
+  }
+
   let importedWordsCount = 0;
   let importedQuestionsCount = 0;
   let errors = [];
@@ -443,20 +517,11 @@ const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
         w.en = w.word;
       }
 
-      if (!w._id || String(w._id).trim() === '') {
-        w._id = `w_${Date.now()}_${Math.floor(Math.random() * 10000)}_${idx}`;
-      }
+      // Always assign fresh unique ID so new words increase total live count
+      w._id = `w_${Date.now()}_${Math.floor(Math.random() * 10000)}_${idx}`;
 
-      const existing = await DictionaryWord.findById(w._id);
-      if (existing) {
-        Object.assign(existing, w);
-        existing.updatedAt = now;
-        existing.markModified('updatedAt');
-        await existing.save();
-      } else {
-        const newWord = new DictionaryWord({ ...w, updatedAt: now, createdAt: now });
-        await newWord.save();
-      }
+      const newWord = new DictionaryWord({ ...w, updatedAt: now, createdAt: now });
+      await newWord.save();
       importedWordsCount++;
     } catch (err) {
       errors.push(`Word index ${idx} ("${raw?.word || 'unknown'}"): ${err.message}`);
@@ -473,8 +538,8 @@ const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
         continue;
       }
 
-      const qId = (qItem._id && mongoose.Types.ObjectId.isValid(qItem._id)) 
-        ? new mongoose.Types.ObjectId(qItem._id) 
+      const qId = (qItem._id && mongoose.Types.ObjectId.isValid(qItem._id))
+        ? new mongoose.Types.ObjectId(qItem._id)
         : null;
 
       const updateData = {
@@ -491,18 +556,18 @@ const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
 
       await DictionaryQuestion.findOneAndUpdate(
         qId ? { $or: [{ _id: qId }, { q: qItem.q }] } : { q: qItem.q },
-        { 
+        {
           $set: updateData,
-          $setOnInsert: { 
+          $setOnInsert: {
             createdAt: now,
             ...(qId ? { _id: qId } : {})
           }
         },
-        { 
-          upsert: true, 
-          new: true, 
+        {
+          upsert: true,
+          new: true,
           runValidators: true,
-          setDefaultsOnInsert: true 
+          setDefaultsOnInsert: true
         }
       );
       importedQuestionsCount++;
@@ -528,6 +593,38 @@ const createWord = async (data) => {
     items = data.words;
   } else if (data) {
     items = [data];
+  }
+
+  // 1. Check internal duplicates in input array
+  const fileSeenWords = new Set();
+  const internalDuplicates = new Set();
+  for (const item of items) {
+    const wStr = (item && item.word ? String(item.word) : '').trim().toLowerCase();
+    if (wStr) {
+      if (fileSeenWords.has(wStr)) {
+        internalDuplicates.add((item.word || '').trim());
+      } else {
+        fileSeenWords.add(wStr);
+      }
+    }
+  }
+  if (internalDuplicates.size > 0) {
+    throw new Error(`Duplicate word(s) found in input: ${Array.from(internalDuplicates).map(w => `"${w}"`).join(', ')}`);
+  }
+
+  // 2. Check DB duplicates
+  for (const item of items) {
+    const wStr = (item && item.word ? String(item.word) : '').trim();
+    const itemId = item && item._id ? String(item._id).trim() : null;
+    if (wStr) {
+      const existingWordDoc = await DictionaryWord.findOne({
+        word: new RegExp('^' + escapeRegExp(wStr) + '$', 'i'),
+        ...(itemId ? { _id: { $ne: itemId } } : {})
+      });
+      if (existingWordDoc) {
+        throw new Error(`Word "${wStr}" already exists in the dictionary.`);
+      }
+    }
   }
 
   const results = [];
@@ -579,6 +676,17 @@ const updateWord = async (id, data) => {
       return ingestItem;
     }
     throw new Error('Word not found');
+  }
+
+  const newWordStr = data && data.word ? String(data.word).trim() : '';
+  if (newWordStr) {
+    const existingWordDoc = await DictionaryWord.findOne({
+      _id: { $ne: id },
+      word: new RegExp('^' + escapeRegExp(newWordStr) + '$', 'i')
+    });
+    if (existingWordDoc) {
+      throw new Error(`Word "${newWordStr}" already exists in the dictionary.`);
+    }
   }
 
   const normalized = normalizeWordItem({ ...data, _id: id });
@@ -730,8 +838,8 @@ const createQuestion = async (data) => {
     qItem.updatedAt = now;
     qItem.createdAt = qItem.createdAt || now;
 
-    const qId = (qItem._id && mongoose.Types.ObjectId.isValid(qItem._id)) 
-      ? new mongoose.Types.ObjectId(qItem._id) 
+    const qId = (qItem._id && mongoose.Types.ObjectId.isValid(qItem._id))
+      ? new mongoose.Types.ObjectId(qItem._id)
       : null;
 
     const updateData = {
@@ -748,18 +856,18 @@ const createQuestion = async (data) => {
 
     const savedQ = await DictionaryQuestion.findOneAndUpdate(
       qId ? { $or: [{ _id: qId }, { q: qItem.q }] } : { q: qItem.q },
-      { 
+      {
         $set: updateData,
-        $setOnInsert: { 
+        $setOnInsert: {
           createdAt: now,
           ...(qId ? { _id: qId } : {})
         }
       },
-      { 
-        upsert: true, 
-        new: true, 
+      {
+        upsert: true,
+        new: true,
         runValidators: true,
-        setDefaultsOnInsert: true 
+        setDefaultsOnInsert: true
       }
     );
     results.push(savedQ);
