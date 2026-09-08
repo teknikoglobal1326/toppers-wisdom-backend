@@ -53,6 +53,7 @@ const createLiveClassSchema = Joi.object({
   status: Joi.string().valid('active', 'inactive').default('active'),
   restreamUrls: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
   agoraConverters: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
+  hlsUrl: Joi.string().trim().uri().optional().allow('', null)
 })
 const updateContentSchema = Joi.object({
   course: Joi.string().hex().length(24).optional(),
@@ -103,6 +104,7 @@ const updateLiveClassSchema = Joi.object({
   status: Joi.string().valid('active', 'inactive'),
   restreamUrls: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
   agoraConverters: Joi.alternatives().try(Joi.array().items(Joi.string().allow('')), Joi.string().allow('')).optional(),
+  hlsUrl: Joi.string().trim().uri().optional().allow('', null)
 }).min(1)
 
 const bulkCreateContentSchema = Joi.array().items(

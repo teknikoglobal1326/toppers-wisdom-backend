@@ -429,7 +429,7 @@ class AdminQuestionService extends BaseService {
     metadata.subjectId = activeSubjectId || null
     metadata.chapterId = activeChapterId || null
     metadata.topicId = activeTopicId || null
-
+x
     const extension = path.extname(file.originalname).toLowerCase()
     const { parseWordFile, mapWordQuestionToSchema, parseXmlFile, parseExcelFile, extractTextAndImage } = require('./admin-question-bulk.service')
 

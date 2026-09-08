@@ -105,7 +105,7 @@ class CourseService extends BaseService {
       const CourseOrder = require('../../models/CourseOrder.model')
       const orders = await CourseOrder.find({
         user: userId,
-        status: { $in: ['paid', 'pending'] },
+        status: 'paid',
         'items.itemType': 'course'
       }).select('items').lean()
 
@@ -794,7 +794,11 @@ class CourseService extends BaseService {
     }
 
     const token = generateSubscriberToken(content.agoraChannel, 0)
-    return { token, channel: content.agoraChannel }
+    return { 
+      token, 
+      channel: content.agoraChannel,
+      hlsPlaybackUrl: content.hlsUrl || null
+    }
   }
 
   async createNote(courseId, lessonId, userId, data) {
