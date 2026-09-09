@@ -265,54 +265,28 @@ class AdminContentService extends BaseService {
       restreamUrls = body.restreamUrls.split(',').map(url => url.trim()).filter(Boolean)
     }
 
-    const agoraConverters = []
+    const agoraIngressServer = "rtmp://rtls-ingress-prod-ap.agoramdn.com/live/"
+    const agoraIngressUrl = `${agoraIngressServer}${rtmpStreamKey}`
 
-    // If restream URLs are provided, start the Agora RTMP Converter for each
-    if (restreamUrls.length > 0) {
-      const appId = process.env.AGORA_APP_ID
-      const customerId = process.env.AGORA_CUSTOMER_ID
-      const customerCert = process.env.AGORA_CUSTOMER_CERTIFICATE
-
-      if (!appId || !customerId || !customerCert) {
-        this.logger.warn({ appId, hasCustomerId: !!customerId, hasCustomerCert: !!customerCert }, 'Cannot start restreaming: Agora App ID, Customer ID, or Customer Certificate is missing')
-      } else {
-        const auth = Buffer.from(`${customerId}:${customerCert}`).toString('base64')
-
-        for (let i = 0; i < restreamUrls.length; i++) {
-          const publishUrl = restreamUrls[i]
-          const converterId = `${id}_restream_${i}_${Date.now()}`
-
-          try {
-            const url = `https://api.agora.io/v1/projects/${appId}/rtmp-converters`
-            await axios.post(url, {
-              converterId,
-              channelName: content.agoraChannel,
-              publishUrl,
-              transcodingEnabled: false
-            }, {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${auth}`
-              }
-            })
-            agoraConverters.push(converterId)
-            this.logger.info({ converterId, publishUrl }, 'Agora RTMP converter started successfully')
-          } catch (err) {
-            this.logger.error({ err: err.response?.data || err.message, publishUrl }, 'Failed to start Agora RTMP converter')
-          }
-        }
-      }
-    }
+    const publicIp = process.env.RTMP_PUBLIC_IP || '127.0.0.1'
+    const localRtmpServer = `rtmp://${publicIp}:1935/live/`
+    const localRtmpStreamKey = content._id.toString()
+    
+    // Add Agora to restream URLs
+    restreamUrls.push(agoraIngressUrl)
 
     const Content = require('../../models/Content.model')
+    const publicDomain = process.env.PUBLIC_DOMAIN || 'http://localhost:3001'
+    const hlsUrl = `${publicDomain}/media/live/${content._id.toString()}/index.m3u8`
+
     await Content.updateMany({ agoraChannel: content.agoraChannel, isDeleted: false }, {
       liveStatus: 'ongoing',
       restreamUrls,
-      agoraConverters,
-      rtmpServer,
-      rtmpStreamKey,
-      rtmpUrl: `${rtmpServer}${rtmpStreamKey}`,
-      agoraToken: token
+      rtmpServer: localRtmpServer,
+      rtmpStreamKey: localRtmpStreamKey,
+      rtmpUrl: `${localRtmpServer}${localRtmpStreamKey}`,
+      agoraToken: token,
+      hlsUrl
     })
 
     const viewerToken = generateSubscriberToken(content.agoraChannel, 888888)
@@ -320,10 +294,9 @@ class AdminContentService extends BaseService {
       token,
       viewerToken,
       channel: content.agoraChannel,
-      rtmpServer,
-      rtmpStreamKey,
-      rtmpUrl: `${rtmpServer}${rtmpStreamKey}`,
-      agoraConverters
+      rtmpServer: localRtmpServer,
+      rtmpStreamKey: localRtmpStreamKey,
+      rtmpUrl: `${localRtmpServer}${localRtmpStreamKey}`
     }
   }
 

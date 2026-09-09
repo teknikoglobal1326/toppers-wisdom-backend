@@ -22,6 +22,10 @@ const start = async () => {
   const { initSocket } = require('./config/socket')
   initSocket(server)
 
+  // Initialize Node Media Server
+  const nms = require('./config/mediaServer')
+  nms.run()
+
   const shutdown = async (signal) => {
     rootLogger.info({ signal }, 'Shutting down')
     server.close(async () => {
