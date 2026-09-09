@@ -36,11 +36,18 @@ const importVocabularies = catchAsync(async (req, res) => {
   sendCreated(res, result, 'Vocabularies imported successfully')
 })
 
+const bulkUpload = catchAsync(async (req, res) => {
+  const adminId = req.admin?._id || req.user?._id || req.user?.id
+  const result = await adminEditorialVocabularyService.bulkUpload(req.file, req.body, adminId)
+  sendCreated(res, result, `${result.insertedCount} editorial vocabulary items imported successfully`)
+})
+
 module.exports = {
   list,
   getOne,
   create,
   update,
   remove,
-  importVocabularies
+  importVocabularies,
+  bulkUpload
 }

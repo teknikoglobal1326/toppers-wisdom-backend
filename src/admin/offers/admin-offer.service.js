@@ -84,6 +84,30 @@ class AdminOfferService extends BaseService {
       payload.isActive = payload.isActive === 'true' || payload.isActive === true
     }
 
+    // Check if an offer already exists for any of the selected exams or subExams
+    const conflictConditions = []
+    if (payload.exams && payload.exams.length > 0) {
+      conflictConditions.push({ exams: { $in: payload.exams } })
+    }
+    if (payload.subExams && payload.subExams.length > 0) {
+      conflictConditions.push({ subExams: { $in: payload.subExams } })
+    }
+
+    if (conflictConditions.length > 0) {
+      const existingOffer = await offerRepository.findOne({
+        isDeleted: false,
+        $or: conflictConditions,
+      })
+
+      if (existingOffer) {
+        throw new AppError(
+          `An offer ("${existingOffer.title}") already exists for one or more selected Exams / Sub-Exams. You can only update existing offers.`,
+          400,
+          'DUPLICATE_OFFER'
+        )
+      }
+    }
+
     const processedImage = await this.processImage(file, data.image)
     if (processedImage) {
       payload.image = processedImage
@@ -120,6 +144,33 @@ class AdminOfferService extends BaseService {
 
     if (payload.isActive !== undefined) {
       payload.isActive = payload.isActive === 'true' || payload.isActive === true
+    }
+
+    const targetExams = payload.exams || offer.exams || []
+    const targetSubExams = payload.subExams || offer.subExams || []
+
+    const conflictConditions = []
+    if (targetExams.length > 0) {
+      conflictConditions.push({ exams: { $in: targetExams } })
+    }
+    if (targetSubExams.length > 0) {
+      conflictConditions.push({ subExams: { $in: targetSubExams } })
+    }
+
+    if (conflictConditions.length > 0) {
+      const existingOffer = await offerRepository.findOne({
+        _id: { $ne: id },
+        isDeleted: false,
+        $or: conflictConditions,
+      })
+
+      if (existingOffer) {
+        throw new AppError(
+          `Another offer ("${existingOffer.title}") already exists for one or more selected Exams / Sub-Exams.`,
+          400,
+          'DUPLICATE_OFFER'
+        )
+      }
     }
 
     const processedImage = await this.processImage(file, data.image)

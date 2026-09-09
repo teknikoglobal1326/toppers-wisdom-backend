@@ -1,4 +1,6 @@
 const path = require('path')
+const multer = require('multer')
+const AppError = require('../../core/AppError')
 const { uploadVideoImage } = require('../../middlewares/upload.middleware')
 const { uploadFile } = require('../../lib/fileUpload')
 
@@ -56,4 +58,19 @@ const parseFormData = async (req, _res, next) => {
   }
 }
 
-module.exports = { uploadVocabularyMedia, parseFormData }
+const uploadBulk = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedExtensions = ['.xlsx', '.xls', '.csv', '.docx', '.doc']
+    const ext = path.extname(file.originalname).toLowerCase()
+    if (allowedExtensions.includes(ext) || file.fieldname === 'file') {
+      return cb(null, true)
+    }
+    return cb(new AppError('Invalid file type. Please upload Excel (.xlsx, .xls, .csv) or Word (.docx, .doc) file', 400, 'INVALID_FILE_TYPE'))
+  },
+})
+
+const uploadBulkFile = uploadBulk.single('file')
+
+module.exports = { uploadVocabularyMedia, parseFormData, uploadBulkFile }
