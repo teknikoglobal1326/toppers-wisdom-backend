@@ -10,6 +10,7 @@ const offerSchema = new mongoose.Schema(
     exams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam' }],
     subExams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubExam' }],
     subscriptions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subscription' }],
+    redirectUrl: { type: String, trim: true, default: null },
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
   },

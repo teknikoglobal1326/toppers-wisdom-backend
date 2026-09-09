@@ -399,8 +399,9 @@ const bulkApproveIngestItems = async (approvals) => {
 };
 
 const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
-  if (!fileName.toLowerCase().endsWith('.json')) {
-    throw new Error('Please upload a valid JSON file.');
+  const lowerName = fileName.toLowerCase();
+  if (!lowerName.endsWith('.txt')) {
+    throw new Error('Please upload a valid TXT file.');
   }
 
   let data;
