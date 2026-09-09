@@ -237,15 +237,11 @@ class CourseService extends BaseService {
     }
 
     const now = new Date()
-    const startOfToday = new Date()
-    startOfToday.setHours(0, 0, 0, 0)
 
     const filter = {
       course: { $in: allAllowedCourseIds },
-      isLive: true,
       isDeleted: false,
-      status: 'active',
-      liveStatus: { $in: ['pending', 'ongoing'] }
+      status: 'active'
     }
 
     if (filters.course || filters.courseId) {
@@ -265,27 +261,16 @@ class CourseService extends BaseService {
       }
     }
 
-    const endOfToday = new Date()
-    endOfToday.setHours(23, 59, 59, 999)
-
     const type = (filters.type || '').trim().toLowerCase()
     if (type === 'upcoming') {
+      filter.liveStatus = { $in: ['pending', 'ongoing'] }
       filter.$or = [
         { scheduledStartTime: { $gt: now } },
         { scheduleAt: { $gt: now } }
       ]
-    } else if (type === 'all') {
-      filter.$or = [
-        { scheduledStartTime: { $gte: startOfToday } },
-        { scheduleAt: { $gte: startOfToday } }
-      ]
     } else {
-      // By default: upcoming (scheduled > now) OR currently running (ongoing)
-      filter.$or = [
-        { scheduledStartTime: { $gt: now } },
-        { scheduleAt: { $gt: now } },
-        { liveStatus: 'ongoing' }
-      ]
+      // Default: only ongoing live classes
+      filter.liveStatus = 'ongoing'
     }
 
     const page = Math.max(1, Number(filters.page) || 1)
@@ -482,19 +467,24 @@ class CourseService extends BaseService {
     const chapterIds = (subject.chapters || []).map(c => c._id.toString());
     const [pdfs, contents, courseTests, separatedPdfs, separatedTests] = await Promise.all([
       Pdf.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
-        .select('title description pdfFile image topics chapters scheduledStartTime scheduledEndTime')
+        .select('title description pdfFile image topics chapters scheduledStartTime scheduledEndTime sortOrder')
+        .sort({ sortOrder: 1, createdAt: -1 })
         .lean(),
       Content.find({ course: courseId, chapter: { $in: chapterIds }, isDeleted: false, status: 'active' })
-        .select('title description video image topic chapter isLive liveStatus scheduledStartTime scheduledEndTime agoraChannel type youtubeUrl')
+        .select('title description video image topic chapter isLive liveStatus scheduledStartTime scheduledEndTime agoraChannel type youtubeUrl sortOrder')
+        .sort({ sortOrder: 1, createdAt: -1 })
         .lean(),
       CourseTest.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
-        .select('title slug description image duration isPerQuestionTime totalQuestion scheduledStartTime scheduledEndTime totalMarks difficulty topics chapters')
+        .select('title slug description image duration isPerQuestionTime totalQuestion scheduledStartTime scheduledEndTime totalMarks difficulty topics chapters sortOrder')
+        .sort({ sortOrder: 1, createdAt: -1 })
         .lean(),
       CourseSeparatedPdf.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: 'active' })
-        .select('title description pdfFile image topics chapters scheduledStartTime scheduledEndTime')
+        .select('title description pdfFile image topics chapters scheduledStartTime scheduledEndTime sortOrder')
+        .sort({ sortOrder: 1, createdAt: -1 })
         .lean(),
       CourseSeparatedTest.find({ course: courseId, chapters: { $in: chapterIds }, isDeleted: false, status: { $in: ['active', 'published'] } })
-        .select('title slug description image duration isPerQuestionTime totalQuestions totalMappedQuestions scheduledStartTime scheduledEndTime totalMarks difficulty topics chapters')
+        .select('title slug description image duration isPerQuestionTime totalQuestions totalMappedQuestions scheduledStartTime scheduledEndTime totalMarks difficulty topics chapters sortOrder')
+        .sort({ sortOrder: 1, createdAt: -1 })
         .lean()
     ]);
 
@@ -504,12 +494,12 @@ class CourseService extends BaseService {
       test: separatedTests.map(t => mapAccess({ ...t, materialType: 'test' }))
     };
 
-    const chapters = subject.chapters || [];
+    const chapters = (subject.chapters || []).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
     chapters.forEach(chapterDoc => {
       const chapterId = chapterDoc._id.toString();
       const chapterName = chapterDoc.name;
-      const embeddedTopics = chapterDoc.topics || [];
+      const embeddedTopics = (chapterDoc.topics || []).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
       const topicIdentifiers = embeddedTopics.flatMap(t => [t.name, t._id?.toString()]).filter(Boolean);
 
       const combinedTopics = [];
@@ -546,15 +536,25 @@ class CourseService extends BaseService {
         const mappedTests = topicTests.map(t => mapAccess({ ...t, materialType: 'test' }));
 
         if (mappedContents.length > 0 || mappedPdfs.length > 0 || mappedTests.length > 0) {
+          let minSortOrder = Number.MAX_SAFE_INTEGER;
+          if (mappedContents.length > 0 && mappedContents[0].sortOrder != null) minSortOrder = Math.min(minSortOrder, mappedContents[0].sortOrder);
+          if (mappedPdfs.length > 0 && mappedPdfs[0].sortOrder != null) minSortOrder = Math.min(minSortOrder, mappedPdfs[0].sortOrder);
+          if (mappedTests.length > 0 && mappedTests[0].sortOrder != null) minSortOrder = Math.min(minSortOrder, mappedTests[0].sortOrder);
+          if (minSortOrder === Number.MAX_SAFE_INTEGER) minSortOrder = topic.sortOrder || 0;
+
           combinedTopics.push({
             _id: topic._id,
             title: topicName,
+            minSortOrder,
             video: mappedContents,
             pdf: mappedPdfs,
             test: mappedTests
           });
         }
       });
+
+      combinedTopics.sort((a, b) => a.minSortOrder - b.minSortOrder);
+      combinedTopics.forEach(t => delete t.minSortOrder);
 
       const unassignedContents = contents.filter(c => (c.chapter || []).some(ch => ch.toString() === chapterId) && isUnassigned(c, 'content'));
       const unassignedPdfs = pdfs.filter(p => (p.chapters || []).some(ch => ch.toString() === chapterId) && isUnassigned(p, 'pdf'));

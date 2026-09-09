@@ -17,6 +17,11 @@ const app = express()
 // app.set('trust proxy', true)
 
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')))
+app.use('/api/media', express.static(path.join(__dirname, '..', 'public', 'media'), {
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}))
 app.use(helmet())
 app.use(cors({ origin: config.ALLOWED_ORIGINS.split(','), credentials: true }))
 app.use(compression())
@@ -39,6 +44,9 @@ app.use('/api/v1/admin-auth', require('./modules/admin-auth/admin-auth.routes'))
 // ── Common (public, no auth) ──────────────────
 app.use('/api/v1/common', require('./common/common.routes'))
 app.use('/api/v1/admin/common', require('./admin/common/admin-common.routes'))
+
+// ── Webhooks (public, custom endpoints for 3rd party providers) ──
+app.use('/api/v1/webhooks', require('./modules/webhook/webhook.routes'))
 
 // ── User API ──────────────────────────────────
 app.use('/api/v1/auth', require('./modules/auth/auth.routes'))
