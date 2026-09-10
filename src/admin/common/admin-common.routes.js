@@ -435,7 +435,7 @@ router.get('/topics/:chapterId', catchAsync(async (req, res) => {
 );
 
 // GET /api/v1/admin/common/all-topics or /topics
-router.get(['/all-topics', '/topics-list'], catchAsync(async (req, res) => {
+router.get(['/all-topics', '/topics-list','/topics'], catchAsync(async (req, res) => {
   const { chapterId, chapter, subjectId, subject, search, q, limit } = req.query;
   const filter = { isDeleted: false, status: 'active' };
 

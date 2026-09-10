@@ -10,7 +10,8 @@ const speedMathAttemptSchema = new mongoose.Schema({
     studentAnswer: { type: Number, default: null }, // user selected option's value
     selectedOptionId: { type: String, default: null }, // 'A', 'B', 'C', 'D'
     timeTaken: { type: Number, default: 0 }, // in milliseconds
-    isCorrect: { type: Boolean, default: false }
+    isCorrect: { type: Boolean, default: false },
+    isSkipped: { type: Boolean, default: false }
   }],
   score: { type: Number, default: 0 }, // accuracy or correct count percentage
   accuracy: { type: Number, default: 0 },
