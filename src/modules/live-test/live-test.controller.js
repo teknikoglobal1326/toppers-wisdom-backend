@@ -64,6 +64,14 @@ const listMyAttempts = catchAsync(async (req, res) => {
   sendPaginated(res, result.data, result.pagination, 'Live test attempts retrieved successfully')
 })
 
+const getDashboardStats = catchAsync(async (req, res) => {
+  sendSuccess(
+    res,
+    await liveTestService.getDashboardStats(req.user._id),
+    'Dashboard stats retrieved successfully'
+  )
+})
+
 module.exports = {
   getSyllabus,
   autoGenerateQuestions,
@@ -73,5 +81,6 @@ module.exports = {
   updateSession,
   getSessionAnalytics,
   getSessionSolution,
-  listMyAttempts
+  listMyAttempts,
+  getDashboardStats
 }
