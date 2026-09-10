@@ -453,28 +453,31 @@ const uploadIngestDocument = async (fileBuffer, fileName, uploaderId) => {
         w.en = trimmedWord;
       }
 
-      // Always insert new word records even if same file is uploaded multiple times
-      let wordId = w._id;
-      if (wordId) {
-        const idExists = await DictionaryWord.exists({ _id: wordId });
-        if (idExists) {
-          wordId = `w_${Date.now()}_${Math.floor(Math.random() * 100000)}_${idx}`;
-        }
+      // Check if word exists by _id or word name (case-insensitive)
+      const existingWord = await DictionaryWord.findOne({
+        $or: [
+          ...(w._id ? [{ _id: w._id }] : []),
+          { word: new RegExp('^' + escapeRegExp(trimmedWord) + '$', 'i') }
+        ]
+      });
+
+      if (existingWord) {
+        // Override existing word with new word details
+        const updatePayload = { ...w, word: trimmedWord, updatedAt: now };
+        delete updatePayload._id;
+        Object.assign(existingWord, updatePayload);
+        existingWord.markModified('updatedAt');
+        await existingWord.save();
+        importedWordsCount++;
       } else {
-        wordId = `w_${Date.now()}_${Math.floor(Math.random() * 100000)}_${idx}`;
+        // Add new word
+        if (!w._id) {
+          w._id = `w_${Date.now()}_${Math.floor(Math.random() * 10000)}_${idx}`;
+        }
+        const newWord = new DictionaryWord({ ...w, word: trimmedWord, updatedAt: now, createdAt: now });
+        await newWord.save();
+        importedWordsCount++;
       }
-
-      const wordPayload = {
-        ...w,
-        _id: wordId,
-        word: trimmedWord,
-        updatedAt: now,
-        createdAt: now
-      };
-
-      const newWord = new DictionaryWord(wordPayload);
-      await newWord.save();
-      importedWordsCount++;
     } catch (err) {
       errors.push(`Word index ${idx} ("${raw?.word || 'unknown'}"): ${err.message}`);
     }
@@ -530,8 +533,6 @@ const createWord = async (data) => {
     items = [data];
   }
 
-  // Duplicate validation removed as requested
-
   const results = [];
   const now = new Date();
 
@@ -540,29 +541,38 @@ const createWord = async (data) => {
     const w = normalizeWordItem(raw);
     if (!w) continue;
 
-    if (!w.word || !w.word.trim()) {
+    const trimmedWord = (w.word || '').trim();
+    if (!trimmedWord) {
       throw new Error(`Word at index ${i} is missing word/term`);
     }
     if (!w.en || !w.en.trim()) {
-      w.en = w.word;
+      w.en = trimmedWord;
     }
 
-    if (!w._id || String(w._id).trim() === '') {
-      w._id = `w_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
-    }
+    // Check if word already exists by _id or word name (case-insensitive)
+    const existingWord = await DictionaryWord.findOne({
+      $or: [
+        ...(w._id ? [{ _id: w._id }] : []),
+        { word: new RegExp('^' + escapeRegExp(trimmedWord) + '$', 'i') }
+      ]
+    });
 
-    w.updatedAt = now;
-    w.createdAt = w.createdAt || now;
-
-    const existing = await DictionaryWord.findById(w._id);
-    if (existing) {
-      Object.assign(existing, w);
-      existing.updatedAt = now;
-      existing.markModified('updatedAt');
-      await existing.save();
-      results.push(existing);
+    if (existingWord) {
+      // Override existing word with new details
+      const updatePayload = { ...w, word: trimmedWord, updatedAt: now };
+      delete updatePayload._id;
+      Object.assign(existingWord, updatePayload);
+      existingWord.markModified('updatedAt');
+      await existingWord.save();
+      results.push(existingWord);
     } else {
-      const newWord = new DictionaryWord(w);
+      // Add new word
+      if (!w._id || String(w._id).trim() === '') {
+        w._id = `w_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
+      }
+      w.updatedAt = now;
+      w.createdAt = w.createdAt || now;
+      const newWord = new DictionaryWord({ ...w, word: trimmedWord });
       await newWord.save();
       results.push(newWord);
     }
@@ -734,11 +744,7 @@ const createQuestion = async (data) => {
     qItem.updatedAt = now;
     qItem.createdAt = qItem.createdAt || now;
 
-    const qId = (qItem._id && mongoose.Types.ObjectId.isValid(qItem._id))
-      ? new mongoose.Types.ObjectId(qItem._id)
-      : null;
-
-    const updateData = {
+    const questionPayload = {
       cat: qItem.cat,
       q: qItem.q,
       opts: qItem.opts,
@@ -747,25 +753,12 @@ const createQuestion = async (data) => {
       tip: qItem.tip || '',
       wordId: qItem.wordId || undefined,
       exams: qItem.exams || [],
+      createdAt: now,
       updatedAt: now
     };
 
-    const savedQ = await DictionaryQuestion.findOneAndUpdate(
-      qId ? { $or: [{ _id: qId }, { q: qItem.q }] } : { q: qItem.q },
-      {
-        $set: updateData,
-        $setOnInsert: {
-          createdAt: now,
-          ...(qId ? { _id: qId } : {})
-        }
-      },
-      {
-        upsert: true,
-        new: true,
-        runValidators: true,
-        setDefaultsOnInsert: true
-      }
-    );
+    const newQuestion = new DictionaryQuestion(questionPayload);
+    const savedQ = await newQuestion.save();
     results.push(savedQ);
   }
 
