@@ -7,6 +7,7 @@ router.post('/auto-generate-questions', controller.autoGenerateQuestions)
 
 // User-side live test routes
 router.get('/', controller.listLiveTests)
+router.get('/dashboard-stats', controller.getDashboardStats)
 router.get('/attempts', controller.listMyAttempts)
 router.get('/:id/instructions', controller.getLiveTestInstructions)
 router.get('/:id/start-session', controller.startSession)

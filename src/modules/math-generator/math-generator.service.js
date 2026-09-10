@@ -651,6 +651,7 @@ class SpeedMathTestService extends BaseService {
     const attempt = await SpeedMathAttempt.findOne({ user: userId, test: testId, status: 'started' })
     if (!attempt) throw new AppError('No active test attempt found', 404)
 
+    let isSkipped = false
     let isCorrect = false
     let studentAnswerVal = null
     let optId = null
@@ -661,12 +662,12 @@ class SpeedMathTestService extends BaseService {
       studentAnswerVal = selectedOption.value
       optId = selectedOptionId
       isCorrect = (selectedOptionId === q.correctOptionId)
-    } else if (typedAnswer !== undefined && typedAnswer !== null) {
+    } else if (typedAnswer !== undefined && typedAnswer !== null && String(typedAnswer).trim() !== '') {
       studentAnswerVal = Number(typedAnswer)
       optId = null
       isCorrect = (studentAnswerVal === q.correctAnswer)
     } else {
-      throw new AppError('Either selectedOptionId or typedAnswer must be provided', 400)
+      isSkipped = true
     }
 
     // Check if answer already exists
@@ -676,7 +677,8 @@ class SpeedMathTestService extends BaseService {
       selectedOptionId: optId,
       studentAnswer: studentAnswerVal,
       timeTaken: Number(timeTaken) || 0,
-      isCorrect
+      isCorrect,
+      isSkipped
     }
 
     if (existingIndex > -1) {
@@ -709,7 +711,9 @@ class SpeedMathTestService extends BaseService {
       const studentAns = attempt.answers.find(ans => ans.questionId === q.questionId)
       if (studentAns) {
         totalTimeTaken += studentAns.timeTaken
-        if (studentAns.isCorrect) {
+        if (studentAns.isSkipped) {
+          skipped++
+        } else if (studentAns.isCorrect) {
           correct++
         } else {
           incorrect++
@@ -818,24 +822,31 @@ class SpeedMathTestService extends BaseService {
     }
 
     let totalAccuracy = 0
-    let totalTimeTaken = 0
+    let totalTimeTakenMs = 0
     let totalQuestionsCount = 0
 
     for (const att of attempts) {
       totalAccuracy += att.accuracy || 0
-      totalTimeTaken += att.timeTaken || 0
-      totalQuestionsCount += att.answers.length
+      
+      let attemptTimeMs = att.timeTaken || 0
+      // Fallback for older attempts that didn't record timeTaken
+      if (attemptTimeMs === 0 && att.endTime && att.startTime) {
+        attemptTimeMs = new Date(att.endTime).getTime() - new Date(att.startTime).getTime()
+      }
+      totalTimeTakenMs += attemptTimeMs
+
+      totalQuestionsCount += (att.answers && att.answers.length) ? att.answers.length : 0
     }
 
     const overallAccuracy = Math.round(totalAccuracy / totalAttempted)
-    const averageTimeTaken = Math.round(totalTimeTaken / totalAttempted)
-    const averageTimePerQuestion = totalQuestionsCount > 0 ? Math.round(totalTimeTaken / totalQuestionsCount) : 0
+    const averageTimeTakenSeconds = Math.round((totalTimeTakenMs / totalAttempted) / 1000)
+    const averageTimePerQuestionSeconds = totalQuestionsCount > 0 ? Math.round((totalTimeTakenMs / totalQuestionsCount) / 1000) : 0
 
     return {
       totalAttempted,
       overallAccuracy,
-      averageTimeTaken,
-      averageTimePerQuestion
+      averageTimeTaken: averageTimeTakenSeconds,
+      averageTimePerQuestion: averageTimePerQuestionSeconds
     }
   }
 }

@@ -222,22 +222,11 @@ class LiveTestService extends BaseService {
 
         // Apply type filter if provided
         if (query.type === 'ongoing') {
-            filter.$or = [
-                {
-                    scheduleAt: { $gte: startOfToday, $lte: endOfToday },
-                    _id: { $nin: Array.from(completedTestIds) }
-                },
-                {
-                    scheduleAt: null,
-                    startDateTime: { $gte: startOfToday, $lte: endOfToday },
-                    _id: { $nin: Array.from(completedTestIds) }
-                }
-            ]
+            filter.startDateTime = { $lte: now }
+            filter.endDateTime = { $gt: now }
+            filter._id = { $nin: Array.from(completedTestIds) }
         } else if (query.type === 'upcoming') {
-            filter.$or = [
-                { scheduleAt: { $gt: endOfToday } },
-                { scheduleAt: null, startDateTime: { $gt: endOfToday } }
-            ]
+            filter.startDateTime = { $gt: now }
         } else if (query.type === 'attempted') {
             filter._id = { $in: Array.from(completedTestIds) }
         }
@@ -353,6 +342,48 @@ class LiveTestService extends BaseService {
                 upcomingCount,
                 attemptedCount
             }
+        }
+    }
+
+    async getDashboardStats(userId) {
+        const LiveTestAttempt = require('../../models/LiveTestAttempt.model')
+        
+        // Fetch completed attempts for this user
+        const attempts = await LiveTestAttempt.find({ user: userId, status: 'completed' }).lean()
+        const totalTestAttempted = attempts.length
+        
+        if (totalTestAttempted === 0) {
+            return {
+                totalTestAttempted: 0,
+                overallRank: 0,
+                totalAccuracy: 0
+            }
+        }
+
+        // Total (Average) Accuracy for this user
+        let sumAccuracy = 0
+        for (const att of attempts) {
+            sumAccuracy += (att.accuracy || 0)
+        }
+        const totalAccuracy = Math.round(sumAccuracy / totalTestAttempted)
+
+        // Calculate Overall Rank based on Average Accuracy across all users
+        const allUsersAggregation = await LiveTestAttempt.aggregate([
+            { $match: { status: 'completed' } },
+            { $group: { _id: '$user', avgAccuracy: { $avg: '$accuracy' } } },
+            { $sort: { avgAccuracy: -1 } }
+        ])
+
+        let overallRank = 0
+        const userRankIndex = allUsersAggregation.findIndex(u => u._id && u._id.toString() === userId.toString())
+        if (userRankIndex !== -1) {
+            overallRank = userRankIndex + 1
+        }
+
+        return {
+            totalTestAttempted,
+            overallRank,
+            totalAccuracy
         }
     }
 
