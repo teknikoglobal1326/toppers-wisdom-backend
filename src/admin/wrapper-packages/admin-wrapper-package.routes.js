@@ -2,10 +2,10 @@ const router = require('express').Router()
 const controller = require('./admin-wrapper-package.controller')
 const { validate, validateQuery } = require('../../core/validate')
 const { upload } = require('../../middlewares/upload.middleware')
-const { 
-  createWrapperPackageSchema, 
-  updateWrapperPackageSchema, 
-  listWrapperPackageQuerySchema 
+const {
+  createWrapperPackageSchema,
+  updateWrapperPackageSchema,
+  listWrapperPackageQuerySchema
 } = require('./admin-wrapper-package.schema')
 
 router.get('/', validateQuery(listWrapperPackageQuerySchema), controller.list)
