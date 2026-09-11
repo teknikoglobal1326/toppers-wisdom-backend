@@ -262,13 +262,20 @@ class AiTestService extends BaseService {
     const sessionId = require('crypto').randomUUID()
     const totalMarks = questions.reduce((acc, q) => acc + (q.marks || 1), 0)
 
+    const initialAnswers = questions.map(q => ({
+      questionId: q._id,
+      selectedOption: null,
+      status: 'unattempted',
+      timeTaken: 0
+    }))
+
     await this.repository.createAttempt({
       user: userId,
       aiTest: aiTest._id,
       sessionId,
       totalMarks,
       status: 'started',
-      answers: []
+      answers: initialAnswers
     })
 
     const { groupQuestionsBySubject } = require('../../lib/testQuestions')
@@ -347,9 +354,8 @@ class AiTestService extends BaseService {
       })
     }
 
-    const query = await this._buildQuestionQuery(aiTest)
-    const totalQuestionsLimit = aiTest.totalQuestions || 10
-    const questions = await QuestionModel.find(query).limit(Number(totalQuestionsLimit)).lean()
+    const questionIds = updatedAnswers.map(a => a.questionId)
+    const questions = await QuestionModel.find({ _id: { $in: questionIds } }).lean()
 
     const { scoreAnswers } = require('../../lib/testQuestions')
     const mockTestObj = {
@@ -437,10 +443,8 @@ class AiTestService extends BaseService {
       : 100.0
 
     // Fetch questions to build metrics
-    const query = await this._buildQuestionQuery(aiTest)
-    const totalQuestionsLimit = aiTest.totalQuestions || 10
-    const questions = await QuestionModel.find(query)
-      .limit(Number(totalQuestionsLimit))
+    const questionIds = (attempt.answers || []).map(a => a.questionId)
+    const questions = await QuestionModel.find({ _id: { $in: questionIds } })
       .populate('subjectId', 'name chapters')
       .lean()
 
@@ -724,7 +728,7 @@ class AiTestService extends BaseService {
         attempted: attempt.correct + attempt.wrong,
         skipped: attempt.skipped,
         unattempted: attempt.unattempted,
-        totalQuestions: totalQuestionsLimit,
+        totalQuestions: questions.length,
         duration: aiTest.duration,
         timeSpent: attempt.timeTaken ? `${parseFloat((attempt.timeTaken / 60).toFixed(2))} min` : '0 min'
       },

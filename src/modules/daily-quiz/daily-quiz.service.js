@@ -97,17 +97,17 @@ class DailyQuizService extends BaseService {
 
         if (query.date !== 'all') {
             const dateStr = query.date || new Date().toISOString().split('T')[0]
-            const startOfDay = new Date(dateStr)
-            startOfDay.setUTCHours(0, 0, 0, 0)
             const endOfDay = new Date(dateStr)
             endOfDay.setUTCHours(23, 59, 59, 999)
-            filter.scheduleAt = { $gte: startOfDay, $lte: endOfDay }
+            filter.scheduleAt = { $lte: endOfDay }
         }
+
+        const limit = query.limit ? parseInt(query.limit, 10) : 10
 
         const quizzesResult = await this.repository.findMany(filter, {
             page: query.page,
-            limit: query.limit,
-            sort: { createdAt: -1 },
+            limit: limit,
+            sort: { scheduleAt: -1, createdAt: -1 },
             populate: [
                 { path: 'exam', select: 'name' },
                 { path: 'subExams', select: 'name' },
