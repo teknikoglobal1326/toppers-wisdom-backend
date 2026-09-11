@@ -21,5 +21,7 @@ router.get('/:id', controller.getOne)
 router.put('/:id', uploadThumbnail, parseThumbnail('sectional-test-series-tests/thumbnails'), validate(updateSectionalTestSeriesTestSchema), controller.update)
 router.delete('/:id', controller.remove)
 router.get('/:id/analytics', controller.getTestAnalytics)
+router.get('/:id/section-timings', controller.getSectionTimings)
+router.put('/:id/section-timings', controller.updateSectionTimings)
 
 module.exports = router

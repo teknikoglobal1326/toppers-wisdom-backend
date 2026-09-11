@@ -469,21 +469,55 @@ const bulkCreate = catchAsync(async (req, res) => {
 
 const getSectionTimings = catchAsync(async (req, res) => {
     const doc = await PreviousYearPaperTest.findOne({ _id: req.params.id, isDeleted: false })
-        .populate('subjectIds', 'name title')
     if (!doc) throw new AppError('Test not found', 404, 'NOT_FOUND')
     sendSuccess(res, {
         testId: doc._id,
         totalDuration: doc.duration,
-        sectionTimings: doc.sectionTimings || []
+        parts: doc.parts || [],
     })
 })
+
+const validateSectionParts = (parts, testDuration, totalQuestions) => {
+    if (!Array.isArray(parts)) return
+    let sumDuration = 0
+    for (let i = 0; i < parts.length; i++) {
+        const p = parts[i]
+        const pTitle = p.title || `Part ${String.fromCharCode(65 + i)}`
+        const startQ = Number(p.startQ || 0)
+        const endQ = Number(p.endQ || 0)
+        const dur = Number(p.duration || 0)
+
+        if (startQ < 1) {
+            throw new AppError(`Start question for ${pTitle} must be at least 1`, 400, 'VALIDATION_ERROR')
+        }
+        if (startQ > endQ) {
+            throw new AppError(`Start question (Q${startQ}) cannot be greater than end question (Q${endQ}) in ${pTitle}`, 400, 'VALIDATION_ERROR')
+        }
+        if (totalQuestions > 0 && endQ > totalQuestions) {
+            throw new AppError(`Question range Q${endQ} in ${pTitle} exceeds total test questions (${totalQuestions})`, 400, 'VALIDATION_ERROR')
+        }
+        if (totalQuestions > 0 && startQ > totalQuestions) {
+            throw new AppError(`Start question Q${startQ} in ${pTitle} exceeds total test questions (${totalQuestions})`, 400, 'VALIDATION_ERROR')
+        }
+
+        sumDuration += dur
+    }
+
+    if (testDuration > 0 && sumDuration > testDuration) {
+        throw new AppError(`Total section timing duration (${sumDuration} Mins) exceeds total test duration (${testDuration} Mins)`, 400, 'VALIDATION_ERROR')
+    }
+}
 
 const updateSectionTimings = catchAsync(async (req, res) => {
     const doc = await PreviousYearPaperTest.findOne({ _id: req.params.id, isDeleted: false })
     if (!doc) throw new AppError('Test not found', 404, 'NOT_FOUND')
-    const { sectionTimings } = req.body
-    doc.sectionTimings = sectionTimings || []
-    doc.markModified('sectionTimings')
+    const { parts } = req.body
+    if (parts !== undefined) {
+        validateSectionParts(parts, doc.duration, doc.totalQuestions)
+        doc.parts = parts
+        doc.markModified('parts')
+    }
+
     await doc.save()
     sendSuccess(res, doc, 'Section timings updated successfully')
 })

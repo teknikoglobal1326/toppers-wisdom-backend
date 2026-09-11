@@ -11,6 +11,13 @@ const sectionalTestSeriesTestSchema = new mongoose.Schema({
     subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
     chapterIds: [{ type: mongoose.Schema.Types.ObjectId }],
     topicIds: [{ type: mongoose.Schema.Types.ObjectId }],
+    sectionTimings: [{
+        subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject' },
+        subjectName: { type: String },
+        duration: { type: Number, default: 0 },
+        isLocked: { type: Boolean, default: true }
+    }],
+    parts: [mongoose.Schema.Types.Mixed],
     title: { type: String, required: true, trim: true },
     description: { type: String, default: null },
     thumbnail: { type: String, default: null },
