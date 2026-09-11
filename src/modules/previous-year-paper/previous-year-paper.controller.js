@@ -22,7 +22,7 @@ const getPreviousYearPaperStats = catchAsync(async (req, res) => {
 })
 
 const startTest = catchAsync(async (req, res) => {
-    sendSuccess(res, await previousYearPaperService.startTest(req.params.testId, req.user._id, req.user.language || 'hi'))
+    sendSuccess(res, await previousYearPaperService.startTest(req.params.testIsd, req.user._id, req.user.language || 'hi'))
 })
 
 const submitTest = catchAsync(async (req, res) => {

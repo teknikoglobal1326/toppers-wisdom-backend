@@ -19,10 +19,12 @@ class OfferService extends BaseService {
     return this.getAll(filter, { page, limit, sort, populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }, { path: 'subscriptions', select: 'name title price durationDays banner' }] })
   }
 
-  async getLatest({ type, itemId, isActive } = {}) {
+  async getLatest({ type, itemId, isActive, exams, subExams } = {}) {
     const filter = { isDeleted: false }
     if (type) filter.type = type
     if (itemId) filter.itemId = itemId
+    if (exams) filter.exams = exams
+    if (subExams) filter.subExams = subExams
     if (isActive !== undefined) {
       filter.isActive = isActive === 'true' || isActive === true
     } else {
