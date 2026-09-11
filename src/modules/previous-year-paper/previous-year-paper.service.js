@@ -565,6 +565,7 @@ class PreviousYearPaperService extends BaseService {
         }
 
         const attempt = await this.repository.getAttemptBySession(sessionId, userId)
+        console.log("attempt data",attempt);
         if (!attempt) {
             throw new AppError('Session not found', 404, 'NOT_FOUND')
         }
@@ -588,7 +589,7 @@ class PreviousYearPaperService extends BaseService {
             let isCorrect = false
             let marksObtained = 0
 
-            if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
+            if (ans && ans.status !== 'skipped' && ans.status !== 'unattempted' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
                 isAttempted = true
 
                 let correctIndex = -1
