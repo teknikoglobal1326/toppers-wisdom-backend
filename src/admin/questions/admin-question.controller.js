@@ -29,9 +29,14 @@ const removeByTest = catchAsync(async (req, res) => {
   sendSuccess(res, await adminQuestionService.softDeleteByTest(req.params.testId), 'Questions deleted')
 })
 
+const parseBulk = catchAsync(async (req, res) => {
+  const result = await adminQuestionService.parseBulk(req.file, req.body, req.admin?._id || req.user?._id || req.user?.id)
+  sendSuccess(res, result, 'File parsed successfully')
+})
+
 const bulkUpload = catchAsync(async (req, res) => {
   const result = await adminQuestionService.bulkUpload(req.file, req.body, req.admin?._id || req.user?._id || req.user?.id)
   sendCreated(res, result)
 })
 
-module.exports = { list, getOne, create, update, remove, removeByTest, bulkUpload }
+module.exports = { list, getOne, create, update, remove, removeByTest, parseBulk, bulkUpload }
