@@ -31,7 +31,7 @@ const extractObjectIds = (val) => {
 exports.createSubscription = async (req, res, next) => {
   try {
     const { name, description, price, durationDays, isActive, isPremium, examId, examIds } = req.body;
-    let { banner, tests, boosters, materials, courses } = req.body;
+    let { banner, tests, boosters, materials, courses, customValidityMap } = req.body;
 
     if (typeof tests === 'string') {
       try { tests = JSON.parse(tests); } catch (e) { tests = []; }
@@ -41,6 +41,9 @@ exports.createSubscription = async (req, res, next) => {
     }
     if (typeof materials === 'string') {
       try { materials = JSON.parse(materials); } catch (e) { materials = []; }
+    }
+    if (typeof customValidityMap === 'string') {
+      try { customValidityMap = JSON.parse(customValidityMap); } catch (e) { customValidityMap = {}; }
     }
 
     let parsedCourses = extractObjectIds(courses);
@@ -80,6 +83,7 @@ exports.createSubscription = async (req, res, next) => {
       boosters: boosters || [],
       courses: parsedCourses || [],
       materials: materials || [],
+      customValidityMap: customValidityMap || {},
       banner,
       examId: parsedExamIds.length > 0 ? parsedExamIds[0] : undefined,
       examIds: parsedExamIds,
@@ -179,7 +183,7 @@ exports.getSubscriptionById = async (req, res, next) => {
 exports.updateSubscription = async (req, res, next) => {
   try {
     const { name, description, price, durationDays, isActive, isPremium, examId, examIds } = req.body;
-    let { banner, tests, boosters, materials, courses } = req.body;
+    let { banner, tests, boosters, materials, courses, customValidityMap } = req.body;
 
     if (typeof tests === 'string') {
       try { tests = JSON.parse(tests); } catch (e) { tests = []; }
@@ -189,6 +193,9 @@ exports.updateSubscription = async (req, res, next) => {
     }
     if (typeof materials === 'string') {
       try { materials = JSON.parse(materials); } catch (e) { materials = []; }
+    }
+    if (typeof customValidityMap === 'string') {
+      try { customValidityMap = JSON.parse(customValidityMap); } catch (e) { customValidityMap = undefined; }
     }
 
     let parsedCourses;
@@ -236,6 +243,7 @@ exports.updateSubscription = async (req, res, next) => {
     if (boosters) subscription.boosters = boosters;
     if (parsedCourses !== undefined) subscription.courses = parsedCourses;
     if (materials) subscription.materials = materials;
+    if (customValidityMap !== undefined) subscription.customValidityMap = customValidityMap;
     if (isActive !== undefined) subscription.isActive = isActive;
     if (isPremium !== undefined) subscription.isPremium = Boolean(isPremium);
 

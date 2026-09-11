@@ -348,6 +348,14 @@ class LiveTestService extends BaseService {
     async getDashboardStats(userId) {
         const LiveTestAttempt = require('../../models/LiveTestAttempt.model')
         
+        const allUsersAggregation = await LiveTestAttempt.aggregate([
+            { $match: { status: 'completed' } },
+            { $group: { _id: '$user', avgAccuracy: { $avg: '$accuracy' } } },
+            { $sort: { avgAccuracy: -1 } }
+        ])
+        
+        const totalParticipant = allUsersAggregation.length
+
         // Fetch completed attempts for this user
         const attempts = await LiveTestAttempt.find({ user: userId, status: 'completed' }).lean()
         const totalTestAttempted = attempts.length
@@ -356,7 +364,8 @@ class LiveTestService extends BaseService {
             return {
                 totalTestAttempted: 0,
                 overallRank: 0,
-                totalAccuracy: 0
+                totalAccuracy: 0,
+                totalParticipant
             }
         }
 
@@ -368,12 +377,6 @@ class LiveTestService extends BaseService {
         const totalAccuracy = Math.round(sumAccuracy / totalTestAttempted)
 
         // Calculate Overall Rank based on Average Accuracy across all users
-        const allUsersAggregation = await LiveTestAttempt.aggregate([
-            { $match: { status: 'completed' } },
-            { $group: { _id: '$user', avgAccuracy: { $avg: '$accuracy' } } },
-            { $sort: { avgAccuracy: -1 } }
-        ])
-
         let overallRank = 0
         const userRankIndex = allUsersAggregation.findIndex(u => u._id && u._id.toString() === userId.toString())
         if (userRankIndex !== -1) {
@@ -383,7 +386,8 @@ class LiveTestService extends BaseService {
         return {
             totalTestAttempted,
             overallRank,
-            totalAccuracy
+            totalAccuracy,
+            totalParticipant
         }
     }
 

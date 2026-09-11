@@ -431,7 +431,8 @@ class SectionalTestSeriesService extends BaseService {
             },
             hasAccess,
             questionsBySubject: groupedQuestions,
-            answers: attempt.answers || []
+            answers: attempt.answers || [],
+            parts: test.parts
         }
     }
 

@@ -468,6 +468,7 @@ class TestSeriesService extends BaseService {
             })
         }
 
+        console.log("test.parts",test);
         const groupedQuestions = groupQuestionsBySubject(questions)
         return {
             sessionId,
@@ -488,12 +489,14 @@ class TestSeriesService extends BaseService {
             },
             hasAccess,
             questionsBySubject: groupedQuestions,
-            answers: attempt.answers || []
+            answers: attempt.answers || [],
+            parts: test.parts
         }
     }
 
 
     async updateSession(testId, sessionId, userId, payload = {}) {
+        console.log("payload data", payload);
         const test = await this.repository.getSeriesTestById(testId)
         if (!test || test.isDeleted || test.status !== 'active') {
             throw new AppError('Test not found', 404, 'NOT_FOUND')

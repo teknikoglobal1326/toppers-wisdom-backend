@@ -10,13 +10,17 @@ const sanitizeQuestion = (question, lang = 'hi') => {
   return {
     _id: question._id,
     question: {
-      text: htmlToPlainText(langBlock?.question?.text),
+      text: langBlock?.question?.text || '',
       image: langBlock?.question?.image || '',
     },
     options: (langBlock?.options || []).map((option) => ({
-      text: htmlToPlainText(option.text),
+      text: option.text || '',
       image: option.image || '',
     })),
+    explanation: {
+      text: langBlock?.explanation?.text || '',
+      image: langBlock?.explanation?.image || '',
+    },
     order: question.order,
     sortOrder: question.sortOrder,
     perQuestionTime: question.perQuestionTime ?? null,
@@ -86,7 +90,7 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
     byId.set(question._id.toString(), { correctIndexEn, correctIndexHi })
   }
 
-  const marksPerQuestion = Number(test.marksPerQuestion || 1)
+  const marksPerQuestion = Number(test.marksPerQuestion || 2)
   const negativeMarks = Number(test.negativeMarks || 0)
 
   let score = 0
@@ -97,6 +101,10 @@ const scoreAnswers = (questions = [], answers = [], test = {}) => {
   for (const answer of answers) {
     if (answer.status === 'skipped') {
       skipped += 1
+      continue
+    }
+
+    if (answer.status === 'unattempted') {
       continue
     }
 

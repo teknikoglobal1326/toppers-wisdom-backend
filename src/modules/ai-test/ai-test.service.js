@@ -248,10 +248,12 @@ class AiTestService extends BaseService {
 
     const query = await this._buildQuestionQuery(aiTest)
     const totalQuestions = aiTest.totalQuestions || 10
-    const questions = await QuestionModel.find(query)
-      .limit(Number(totalQuestions))
-      .populate('subjectId', 'name chapters')
-      .lean()
+    let questions = await QuestionModel.aggregate([
+      { $match: query },
+      { $sample: { size: Number(totalQuestions) } }
+    ])
+
+    questions = await QuestionModel.populate(questions, { path: 'subjectId', select: 'name chapters' })
 
     if (!questions.length) {
       throw new AppError('No questions found for this test', 400, 'VALIDATION_ERROR')
@@ -260,13 +262,20 @@ class AiTestService extends BaseService {
     const sessionId = require('crypto').randomUUID()
     const totalMarks = questions.reduce((acc, q) => acc + (q.marks || 1), 0)
 
+    const initialAnswers = questions.map(q => ({
+      questionId: q._id,
+      selectedOption: null,
+      status: 'unattempted',
+      timeTaken: 0
+    }))
+
     await this.repository.createAttempt({
       user: userId,
       aiTest: aiTest._id,
       sessionId,
       totalMarks,
       status: 'started',
-      answers: []
+      answers: initialAnswers
     })
 
     const { groupQuestionsBySubject } = require('../../lib/testQuestions')
@@ -345,18 +354,17 @@ class AiTestService extends BaseService {
       })
     }
 
-    const query = await this._buildQuestionQuery(aiTest)
-    const totalQuestionsLimit = aiTest.totalQuestions || 10
-    const questions = await QuestionModel.find(query).limit(Number(totalQuestionsLimit)).lean()
+    const questionIds = updatedAnswers.map(a => a.questionId)
+    const questions = await QuestionModel.find({ _id: { $in: questionIds } }).lean()
 
     const { scoreAnswers } = require('../../lib/testQuestions')
     const mockTestObj = {
-      marksPerQuestion: 1,
+      marksPerQuestion: 2,
       negativeMarks: 0,
     }
 
     const { score, correct, wrong, skipped, unattempted, totalQuestions } = scoreAnswers(questions, updatedAnswers, mockTestObj)
-    const totalMarks = questions.reduce((acc, q) => acc + (q.marks || 1), 0)
+    const totalMarks = questions.reduce((acc, q) => acc + (q.marks || 2), 0)
     const accuracy = totalQuestions > 0 ? parseFloat(((correct / totalQuestions) * 100).toFixed(2)) : 0
     const status = payload.status || 'ongoing'
     let timeTaken = payload.timeTaken !== undefined ? payload.timeTaken : updatedAnswers.reduce((acc, ans) => acc + (ans.timeTaken || 0), 0)
@@ -394,14 +402,14 @@ class AiTestService extends BaseService {
       attemptId: attempt._id,
       sessionId,
       status,
-      score: 0,
+      score,
       accuracy,
       timeTaken,
       correct,
       wrong,
       skipped,
       unattempted,
-      totalQuestions: 0,
+      totalQuestions,
     }
   }
 
@@ -435,10 +443,8 @@ class AiTestService extends BaseService {
       : 100.0
 
     // Fetch questions to build metrics
-    const query = await this._buildQuestionQuery(aiTest)
-    const totalQuestionsLimit = aiTest.totalQuestions || 10
-    const questions = await QuestionModel.find(query)
-      .limit(Number(totalQuestionsLimit))
+    const questionIds = (attempt.answers || []).map(a => a.questionId)
+    const questions = await QuestionModel.find({ _id: { $in: questionIds } })
       .populate('subjectId', 'name chapters')
       .lean()
 
@@ -446,7 +452,7 @@ class AiTestService extends BaseService {
     const sectionWise = new Map()
     const topicWise = new Map()
 
-    const marksPerQuestion = 1
+    const marksPerQuestion = 2
     const negativeMarks = 0
 
     const { htmlToPlainText } = require('../../lib/htmlText')
@@ -458,7 +464,7 @@ class AiTestService extends BaseService {
       let isCorrect = false
       let marksObtained = 0
 
-      if (ans && ans.status !== 'skipped' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
+      if (ans && ans.status !== 'skipped' && ans.status !== 'unattempted' && ans.selectedOption !== null && ans.selectedOption !== undefined) {
         isAttempted = true
 
         let correctIndex = -1
@@ -644,8 +650,8 @@ class AiTestService extends BaseService {
 
     const sectionWisePerformance = Array.from(sectionWise.values()).map(sec => ({
       subject: sec.subject,
-      score: 0,
-      totalMarks: 0,
+      score: sec.score,
+      totalMarks: sec.totalMarks,
       attempted: sec.attempted,
       totalQuestions: sec.totalQuestions,
       correct: sec.correct,
@@ -657,8 +663,8 @@ class AiTestService extends BaseService {
         const hasRealTopics = Array.from(chap.topics.values()).some(t => t.topic._id !== null)
         return {
           chapter: chap.chapter,
-          score: 0,
-          totalMarks: 0,
+          score: chap.score,
+          totalMarks: chap.totalMarks,
           attempted: chap.attempted,
           totalQuestions: chap.totalQuestions,
           correct: chap.correct,
@@ -666,11 +672,11 @@ class AiTestService extends BaseService {
           skipped: chap.skipped,
           unattempted: chap.unattempted,
           ...(hasRealTopics ? {} : { isWeak: chap.totalQuestions > 0 ? (chap.correct / chap.totalQuestions) < 0.5 : false }),
-          percentage: 0,
+          percentage: chap.totalMarks > 0 ? parseFloat(((Math.max(0, chap.score) / chap.totalMarks) * 100).toFixed(2)) : 0,
           topics: Array.from(chap.topics.values()).map(top => ({
             topic: top.topic,
-            score: 0,
-            totalMarks: 0,
+            score: top.score,
+            totalMarks: top.totalMarks,
             attempted: top.attempted,
             totalQuestions: top.totalQuestions,
             correct: top.correct,
@@ -678,7 +684,7 @@ class AiTestService extends BaseService {
             skipped: top.skipped,
             unattempted: top.unattempted,
             isWeak: top.totalQuestions > 0 ? (top.correct / top.totalQuestions) < 0.5 : false,
-            percentage: 0
+            percentage: top.totalMarks > 0 ? parseFloat(((Math.max(0, top.score) / top.totalMarks) * 100).toFixed(2)) : 0
           }))
         }
       })
@@ -714,15 +720,15 @@ class AiTestService extends BaseService {
       status: attempt.status,
       expertComment,
       overallPerformance: {
-        score: 0,
-        totalMarks: 0,
+        score: attempt.score,
+        totalMarks: attempt.totalMarks,
         rank,
         percentile,
         accuracy: attempt.accuracy,
         attempted: attempt.correct + attempt.wrong,
         skipped: attempt.skipped,
         unattempted: attempt.unattempted,
-        totalQuestions: totalQuestionsLimit,
+        totalQuestions: questions.length,
         duration: aiTest.duration,
         timeSpent: attempt.timeTaken ? `${parseFloat((attempt.timeTaken / 60).toFixed(2))} min` : '0 min'
       },
@@ -765,10 +771,15 @@ class AiTestService extends BaseService {
 
     const { htmlToPlainText } = require('../../lib/htmlText')
 
-    const groupedQuestions = {}
+    const subjectWiseData = {}
+
     questions.forEach((q, idx) => {
-      const key = q._id.toString()
-      if (!groupedQuestions[key]) groupedQuestions[key] = { en: {}, hi: {} }
+      const subjectName = q.subjectId?.name || 'Uncategorized'
+      if (!subjectWiseData[subjectName]) {
+        subjectWiseData[subjectName] = []
+      }
+
+      const formattedQuestion = { en: {}, hi: {} }
 
       let langs = []
       if (q.en && (q.en.question?.text || q.en.options?.length)) langs.push('en')
@@ -791,7 +802,7 @@ class AiTestService extends BaseService {
         const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
         const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
 
-        groupedQuestions[key][lang] = {
+        formattedQuestion[lang] = {
           _id: q._id,
           exam: q.exam || null,
           subExams: q.subExams || [],
@@ -815,9 +826,14 @@ class AiTestService extends BaseService {
           isCorrect,
         }
       }
+
+      subjectWiseData[subjectName].push(formattedQuestion)
     })
 
-    return Object.values(groupedQuestions)
+    return Object.keys(subjectWiseData).map(subject => ({
+      subject,
+      questions: subjectWiseData[subject]
+    }))
   }
 
   async getMyAiTests(userId, query = {}) {
@@ -829,7 +845,9 @@ class AiTestService extends BaseService {
       populate: [{ path: 'subjects', select: 'name chapters' }]
     })
 
-    const data = result.data.map(test => {
+    const AiTestAttempt = require('../../models/AiTestAttempt.model')
+
+    const data = await Promise.all(result.data.map(async test => {
       const testDoc = typeof test.toObject === 'function' ? test.toObject() : test
 
       const chapterNames = []
@@ -838,28 +856,35 @@ class AiTestService extends BaseService {
       const selectChapters = (testDoc.chapters || []).map(String)
       const selectTopics = (testDoc.topics || []).map(String)
 
-      ;(testDoc.subjects || []).forEach(subj => {
-        ;(subj.chapters || []).forEach(chap => {
-          if (selectChapters.includes(String(chap._id))) {
-            chapterNames.push({ _id: chap._id, name: chap.name })
-          }
-          ;(chap.topics || []).forEach(topic => {
-            if (selectTopics.includes(String(topic._id))) {
-              topicNames.push({ _id: topic._id, name: topic.name })
+        ; (testDoc.subjects || []).forEach(subj => {
+          ; (subj.chapters || []).forEach(chap => {
+            if (selectChapters.includes(String(chap._id))) {
+              chapterNames.push({ _id: chap._id, name: chap.name })
             }
+            ; (chap.topics || []).forEach(topic => {
+              if (selectTopics.includes(String(topic._id))) {
+                topicNames.push({ _id: topic._id, name: topic.name })
+              }
+            })
           })
         })
-      })
 
       const cleanSubjects = (testDoc.subjects || []).map(s => ({ _id: s._id, name: s.name }))
+
+      const latestAttempt = await AiTestAttempt.findOne({ aiTest: testDoc._id, user: userId })
+        .sort({ createdAt: -1 })
+        .select('sessionId status')
+        .lean()
 
       return {
         ...testDoc,
         subjects: cleanSubjects,
         chapters: chapterNames,
-        topics: topicNames
+        topics: topicNames,
+        sessionId: latestAttempt ? latestAttempt.sessionId : null,
+        sessionStatus: latestAttempt ? latestAttempt.status : null
       }
-    })
+    }))
 
     return { data, pagination: result.pagination }
   }

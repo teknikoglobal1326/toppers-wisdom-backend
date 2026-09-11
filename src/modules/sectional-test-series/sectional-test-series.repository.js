@@ -155,7 +155,7 @@ class SectionalTestSeriesRepository extends BaseRepository {
 
     async getSeriesTestById(testId) {
         return SectionalTestSeriesTest.findOne({ _id: testId, isDeleted: false })
-            .select('sectionalTestSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
+            .select('sectionalTestSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted parts')
             .lean()
     }
 

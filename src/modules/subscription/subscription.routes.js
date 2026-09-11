@@ -9,5 +9,5 @@ router.post('/purchase', controller.purchaseSubscription);
 router.post('/verify', controller.verifyPayment);
 router.get('/history', controller.getPurchaseHistory);
 router.get('/orders', controller.getSubscriptionOrders);
-
+router.get('/:id', controller.getSubscriptionById);
 module.exports = router;

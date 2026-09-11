@@ -691,6 +691,65 @@ class SpeedMathTestService extends BaseService {
     return { success: true }
   }
 
+  async submitBulkAnswers(userId, testId, data) {
+    const { answers } = data
+    if (!Array.isArray(answers)) {
+      throw new AppError('answers must be an array', 400)
+    }
+
+    const test = await SpeedMathTest.findById(testId).lean()
+    if (!test) throw new AppError('Test not found', 404)
+
+    const attempt = await SpeedMathAttempt.findOne({ user: userId, test: testId, status: 'started' })
+    if (!attempt) throw new AppError('No active test attempt found', 404)
+
+    for (const ansData of answers) {
+      const { questionId, selectedOptionId, typedAnswer, timeTaken } = ansData
+      if (!questionId) continue
+
+      const q = test.questions.find(item => item.questionId === questionId)
+      if (!q) continue
+
+      let isSkipped = false
+      let isCorrect = false
+      let studentAnswerVal = null
+      let optId = null
+
+      if (selectedOptionId) {
+        const selectedOption = q.options.find(o => o.id === selectedOptionId)
+        if (!selectedOption) continue
+        studentAnswerVal = selectedOption.value
+        optId = selectedOptionId
+        isCorrect = (selectedOptionId === q.correctOptionId)
+      } else if (typedAnswer !== undefined && typedAnswer !== null && String(typedAnswer).trim() !== '') {
+        studentAnswerVal = Number(typedAnswer)
+        optId = null
+        isCorrect = (studentAnswerVal === q.correctAnswer)
+      } else {
+        isSkipped = true
+      }
+
+      const existingIndex = attempt.answers.findIndex(ans => ans.questionId === questionId)
+      const newAnswer = {
+        questionId,
+        selectedOptionId: optId,
+        studentAnswer: studentAnswerVal,
+        timeTaken: Number(timeTaken) || 0,
+        isCorrect,
+        isSkipped
+      }
+
+      if (existingIndex > -1) {
+        attempt.answers[existingIndex] = newAnswer
+      } else {
+        attempt.answers.push(newAnswer)
+      }
+    }
+
+    await attempt.save()
+    return { success: true }
+  }
+
   async submitTest(userId, testId) {
     const test = await SpeedMathTest.findById(testId).lean()
     if (!test) throw new AppError('Test not found', 404)

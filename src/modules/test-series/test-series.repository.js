@@ -147,7 +147,7 @@ class TestSeriesRepository extends BaseRepository {
 
     async getSeriesTestById(testId) {
         return TestSeriesTest.findOne({ _id: testId, isDeleted: false })
-            .select('testSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
+            .select('testSeries title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted parts')
             .lean()
     }
 
