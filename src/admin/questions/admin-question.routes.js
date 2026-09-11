@@ -28,6 +28,7 @@ const uploadQuestionFiles = upload.fields([
 ])
 
 router.get('/', validateQuery(listQuestionQuerySchema), controller.list)
+router.post('/parse-bulk', uploadBulk.single('file'), controller.parseBulk)
 router.post('/bulk', uploadBulk.single('file'), controller.bulkUpload)
 router.post('/', uploadQuestionFiles, attachUploadedFiles, validate(createQuestionSchema), controller.create)
 router.delete('/test/:testId', controller.removeByTest)

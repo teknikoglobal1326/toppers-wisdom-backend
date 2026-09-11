@@ -349,8 +349,246 @@ class AdminQuestionService extends BaseService {
     return { deletedCount: result.modifiedCount || 0 }
   }
 
-  async bulkUpload(file, metadata, adminId) {
+  async parseBulk(file, metadata, adminId) {
     if (!file) throw new AppError('File is required', 400, 'VALIDATION_ERROR')
+    if (!metadata.test) throw new AppError('test ID is required', 400, 'VALIDATION_ERROR')
+
+    const parentTest = await this.resolveParentTest(metadata.test)
+    if (!parentTest) throw new AppError('Parent test not found', 404, 'NOT_FOUND')
+
+    if (metadata.examId) {
+      metadata.exam = metadata.examId
+    }
+    if (metadata.subExamIds) {
+      if (Array.isArray(metadata.subExamIds)) {
+        metadata.subExams = metadata.subExamIds
+      } else if (typeof metadata.subExamIds === 'string' && metadata.subExamIds) {
+        metadata.subExams = metadata.subExamIds.split(',').map(s => s.trim())
+      }
+    }
+    if (parentTest) {
+      if (!metadata.exam) {
+        const rawExam = parentTest.exam || (Array.isArray(parentTest.exams) && parentTest.exams.length > 0 ? parentTest.exams[0] : null)
+        if (rawExam) {
+          metadata.exam = (rawExam._id || rawExam).toString()
+        }
+      }
+      if (!metadata.subExams || !metadata.subExams.length) {
+        const rawSubExams = parentTest.subExams || parentTest.subExamIds || []
+        if (Array.isArray(rawSubExams) && rawSubExams.length > 0) {
+          metadata.subExams = rawSubExams.map(s => (s && s._id ? s._id : s).toString())
+        }
+      }
+    }
+
+    const Subject = require('../../models/Subject.model')
+    const TestMaster = require('../../models/TestMaster.model')
+    const testMasterDoc = await TestMaster.findOne({ _id: metadata.test, isDeleted: false }).lean()
+
+    let allowedSubjects = []
+    const testDoc = testMasterDoc || parentTest
+    const rawTestSubjects = [
+      ...(Array.isArray(testDoc?.subjectIds) ? testDoc.subjectIds : []),
+      ...(Array.isArray(testDoc?.subjects) ? testDoc.subjects : []),
+      testDoc?.subjectId,
+      testDoc?.subject
+    ].filter(Boolean)
+
+    if (rawTestSubjects.length > 0) {
+      const ids = rawTestSubjects.map(s => (s && s._id ? s._id.toString() : s.toString()))
+      const uniqueIds = [...new Set(ids)]
+      allowedSubjects = await Subject.find({ _id: { $in: uniqueIds }, isDeleted: false }).lean()
+    }
+
+    if (allowedSubjects.length === 0 && (metadata.exam || testDoc?.exam || testDoc?.exams)) {
+      const targetExam = metadata.exam || (testDoc?.exams && testDoc.exams[0]) || testDoc?.exam
+      const targetSubExams = metadata.subExams || testDoc?.subExams || []
+      const orConditions = []
+      if (targetExam) orConditions.push({ examIds: targetExam })
+      if (targetSubExams.length > 0) orConditions.push({ subExamIds: { $in: targetSubExams } })
+
+      if (orConditions.length > 0) {
+        allowedSubjects = await Subject.find({ $or: orConditions, isDeleted: false }).lean()
+      }
+    }
+
+    const extension = path.extname(file.originalname).toLowerCase()
+    const { parseWordFile, mapWordQuestionToSchema, parseXmlFile, parseExcelFile, extractTextAndImage } = require('./admin-question-bulk.service')
+
+    let questionsData = []
+    if (extension === '.docx' || extension === '.doc') {
+      try {
+        const parsedWord = await parseWordFile(file.buffer)
+        questionsData = parsedWord.map((q) => mapWordQuestionToSchema(q, metadata))
+      } catch (err) {
+        if (extension === '.doc') {
+          throw new AppError('Older Word format (.doc) is not supported directly. Please open the file in Microsoft Word or Google Docs, save it as a modern Document (.docx) file, and try uploading it again.', 400, 'VALIDATION_ERROR')
+        }
+        throw err
+      }
+    } else if (extension === '.xlsx' || extension === '.xls') {
+      questionsData = await parseExcelFile(file.buffer, metadata)
+    } else if (extension === '.xml') {
+      questionsData = await parseXmlFile(file.buffer, metadata)
+    } else {
+      throw new AppError('Invalid file type. Only Word (.docx, .doc), Excel (.xlsx, .xls), and XML (.xml) files are supported.', 400, 'VALIDATION_ERROR')
+    }
+
+    if (!questionsData || questionsData.length === 0) {
+      throw new AppError('No questions parsed from the file.', 400, 'VALIDATION_ERROR')
+    }
+
+    const parsedQuestions = []
+
+    for (let index = 0; index < questionsData.length; index++) {
+      const qPayload = questionsData[index]
+      let qSubjectDoc = null
+      let qSubjectId = qPayload.subjectId || metadata.subjectId || null
+
+      if (allowedSubjects && allowedSubjects.length > 0) {
+        const rawSub = String(qSubjectId || '').trim().toLowerCase()
+        const rawSubNoSpace = rawSub.replace(/\s+/g, '')
+
+        qSubjectDoc = allowedSubjects.find(s => {
+          const sId = s._id.toString()
+          if (sId === String(qSubjectId || '').trim()) return true
+          const sName = (s.name || '').trim().toLowerCase()
+          const sNameNoSpace = sName.replace(/\s+/g, '')
+          if (sName === rawSub || sNameNoSpace === rawSubNoSpace) return true
+          if (s.enName && s.enName.trim().toLowerCase() === rawSub) return true
+          if (s.hiName && s.hiName.trim().toLowerCase() === rawSub) return true
+          return false
+        })
+
+        if (!qSubjectDoc && allowedSubjects.length === 1 && !qPayload.subjectId && !metadata.subjectId) {
+          qSubjectDoc = allowedSubjects[0]
+        }
+        if (qSubjectDoc) {
+          qSubjectId = qSubjectDoc._id.toString()
+        } else {
+          qSubjectId = null
+        }
+      } else if (qSubjectId) {
+        if (String(qSubjectId).match(/^[0-9a-fA-F]{24}$/)) {
+          qSubjectDoc = await Subject.findOne({ _id: qSubjectId, isDeleted: false })
+        } else {
+          const query = {
+            name: { $regex: new RegExp("^" + String(qSubjectId).trim() + "$", "i") },
+            isDeleted: false
+          }
+          if (metadata.exam) query.examIds = metadata.exam
+          qSubjectDoc = await Subject.findOne(query)
+          if (qSubjectDoc) {
+            qSubjectId = qSubjectDoc._id.toString()
+          } else {
+            qSubjectId = null
+          }
+        }
+      }
+
+      let qChapterId = qPayload.chapterId || metadata.chapterId || null
+      let qTopicId = qPayload.topicId || metadata.topicId || null
+
+      if (qSubjectDoc && Array.isArray(qSubjectDoc.chapters)) {
+        if (qChapterId) {
+          if (String(qChapterId).match(/^[0-9a-fA-F]{24}$/)) {
+            const ch = qSubjectDoc.chapters.find(c => c._id.toString() === qChapterId.toString())
+            if (!ch) qChapterId = null
+          } else {
+            const cleanChapterName = String(qChapterId).trim().toLowerCase().replace(/\s+/g, '')
+            const ch = qSubjectDoc.chapters.find(c => (c.name || '').trim().toLowerCase().replace(/\s+/g, '') === cleanChapterName)
+            if (ch) {
+              qChapterId = ch._id.toString()
+            } else {
+              qChapterId = null
+            }
+          }
+        }
+        if (!qChapterId && qSubjectDoc.chapters.length === 1 && !qPayload.chapterId && !metadata.chapterId) {
+          qChapterId = qSubjectDoc.chapters[0]._id.toString()
+        }
+
+        if (qChapterId) {
+          const ch = qSubjectDoc.chapters.find(c => c._id.toString() === qChapterId.toString())
+          if (ch && Array.isArray(ch.topics)) {
+            if (qTopicId) {
+              if (String(qTopicId).match(/^[0-9a-fA-F]{24}$/)) {
+                const tp = ch.topics.find(t => t._id.toString() === qTopicId.toString())
+                if (!tp) qTopicId = null
+              } else {
+                const cleanTopicName = String(qTopicId).trim().toLowerCase().replace(/\s+/g, '')
+                const tp = ch.topics.find(t => (t.name || '').trim().toLowerCase().replace(/\s+/g, '') === cleanTopicName)
+                if (tp) {
+                  qTopicId = tp._id.toString()
+                } else {
+                  qTopicId = null
+                }
+              }
+            }
+            if (!qTopicId && ch.topics.length === 1 && !qPayload.topicId && !metadata.topicId) {
+              qTopicId = ch.topics[0]._id.toString()
+            }
+          } else {
+            qTopicId = null
+          }
+        } else {
+          qTopicId = null
+        }
+      } else {
+        qChapterId = null
+        qTopicId = null
+      }
+
+      const getLangContent = (langObj) => {
+        if (!langObj) {
+          return {
+            questionText: '',
+            questionImage: null,
+            options: [{ text: '', image: null }, { text: '', image: null }, { text: '', image: null }, { text: '', image: null }],
+            correctIndex: 0,
+            explanationText: '',
+            explanationImage: null,
+            warnings: []
+          }
+        }
+        const opts = Array.isArray(langObj.options) ? langObj.options : []
+        let correctIdx = opts.findIndex(o => o.isCorrect)
+        if (correctIdx < 0) correctIdx = 0
+
+        return {
+          questionText: langObj.question?.text || '',
+          questionImage: langObj.question?.image || null,
+          options: opts.slice(0, 4).map(o => ({ text: o.text || '', image: o.image || null })),
+          correctIndex: correctIdx,
+          explanationText: langObj.explanation?.text || '',
+          explanationImage: langObj.explanation?.image || null,
+          warnings: []
+        }
+      }
+
+      parsedQuestions.push({
+        clientId: `row-${Date.now()}-${index}`,
+        rowNumber: index + 1,
+        order: index + 1,
+        subjectId: qSubjectId || '',
+        chapterId: qChapterId || '',
+        topicId: qTopicId || '',
+        hi: getLangContent(qPayload.hi || qPayload.en),
+        en: getLangContent(qPayload.en || qPayload.hi),
+        marks: qPayload.marks !== undefined && qPayload.marks !== null ? Number(qPayload.marks) : (Number(metadata.marks) || 1),
+        negativeMarks: qPayload.negativeMarks !== undefined && qPayload.negativeMarks !== null ? Number(qPayload.negativeMarks) : (Number(metadata.negativeMarks) || 0),
+        perQuestionTime: qPayload.perQuestionTime !== undefined && qPayload.perQuestionTime !== null ? Number(qPayload.perQuestionTime) : (metadata.perQuestionTime ? Number(metadata.perQuestionTime) : 60),
+        status: qPayload.status || metadata.status || 'active',
+      })
+    }
+
+    return { questions: parsedQuestions, total: parsedQuestions.length }
+  }
+
+  async bulkUpload(file, metadata, adminId) {
+    if (!file && (!metadata || !metadata.questions)) {
+      throw new AppError('File or questions data is required', 400, 'VALIDATION_ERROR')
+    }
     if (!metadata.test) throw new AppError('test ID is required', 400, 'VALIDATION_ERROR')
 
     const parentTest = await this.resolveParentTest(metadata.test)
@@ -404,8 +642,6 @@ class AdminQuestionService extends BaseService {
 
     let activeChapterId = metadata.chapterId || metadata.chapter
     let activeTopicId = metadata.topicId || metadata.topic
-
-
 
     if (subjectDoc) {
       if (activeChapterId && !String(activeChapterId).match(/^[0-9a-fA-F]{24}$/)) {
@@ -472,27 +708,65 @@ class AdminQuestionService extends BaseService {
       }
     }
 
-    const extension = path.extname(file.originalname).toLowerCase()
-    const { parseWordFile, mapWordQuestionToSchema, parseXmlFile, parseExcelFile, extractTextAndImage } = require('./admin-question-bulk.service')
-
     let questionsData = []
 
-    if (extension === '.docx' || extension === '.doc') {
-      try {
-        const parsedWord = await parseWordFile(file.buffer)
-        questionsData = parsedWord.map((q) => mapWordQuestionToSchema(q, metadata))
-      } catch (err) {
-        if (extension === '.doc') {
-          throw new AppError('Older Word format (.doc) is not supported directly. Please open the file in Microsoft Word or Google Docs, save it as a modern Document (.docx) file, and try uploading it again.', 400, 'VALIDATION_ERROR')
+    if (metadata.questions) {
+      const rawQuestions = typeof metadata.questions === 'string' ? JSON.parse(metadata.questions) : metadata.questions
+      questionsData = rawQuestions.map((q) => {
+        if (q.en && q.hi && (q.en.questionText !== undefined || q.en.question !== undefined)) {
+          // Standardize frontend review question format to DB schema format
+          const mapLang = (langData) => {
+            if (!langData) return { question: { text: '', image: '' }, options: [], explanation: { text: '', image: '' } }
+            if (langData.question) return langData
+            const opts = Array.isArray(langData.options) ? langData.options : []
+            const correctIndex = langData.correctIndex !== undefined ? langData.correctIndex : 0
+            return {
+              question: { text: langData.questionText || '', image: langData.questionImage || '' },
+              options: opts.map((opt, idx) => ({
+                text: opt.text || '',
+                image: opt.image || '',
+                isCorrect: correctIndex === idx
+              })),
+              explanation: { text: langData.explanationText || '', image: langData.explanationImage || '' }
+            }
+          }
+          return {
+            en: mapLang(q.en),
+            hi: mapLang(q.hi),
+            test: metadata.test,
+            subjectId: q.subjectId || metadata.subjectId,
+            chapterId: q.chapterId || metadata.chapterId,
+            topicId: q.topicId || metadata.topicId,
+            marks: q.marks !== undefined ? Number(q.marks) : (Number(metadata.marks) || 1),
+            negativeMarks: q.negativeMarks !== undefined ? Number(q.negativeMarks) : (Number(metadata.negativeMarks) || 0),
+            perQuestionTime: q.perQuestionTime ? Number(q.perQuestionTime) : (metadata.perQuestionTime ? Number(metadata.perQuestionTime) : null),
+            difficulty: q.difficulty || metadata.difficulty || 'medium',
+            status: q.status || metadata.status || 'active',
+          }
         }
-        throw err
+        return q
+      })
+    } else if (file) {
+      const extension = path.extname(file.originalname).toLowerCase()
+      const { parseWordFile, mapWordQuestionToSchema, parseXmlFile, parseExcelFile } = require('./admin-question-bulk.service')
+
+      if (extension === '.docx' || extension === '.doc') {
+        try {
+          const parsedWord = await parseWordFile(file.buffer)
+          questionsData = parsedWord.map((q) => mapWordQuestionToSchema(q, metadata))
+        } catch (err) {
+          if (extension === '.doc') {
+            throw new AppError('Older Word format (.doc) is not supported directly. Please open the file in Microsoft Word or Google Docs, save it as a modern Document (.docx) file, and try uploading it again.', 400, 'VALIDATION_ERROR')
+          }
+          throw err
+        }
+      } else if (extension === '.xlsx' || extension === '.xls') {
+        questionsData = await parseExcelFile(file.buffer, metadata)
+      } else if (extension === '.xml') {
+        questionsData = await parseXmlFile(file.buffer, metadata)
+      } else {
+        throw new AppError('Invalid file type. Only Word (.docx, .doc), Excel (.xlsx, .xls), and XML (.xml) files are supported.', 400, 'VALIDATION_ERROR')
       }
-    } else if (extension === '.xlsx' || extension === '.xls') {
-      questionsData = await parseExcelFile(file.buffer, metadata)
-    } else if (extension === '.xml') {
-      questionsData = await parseXmlFile(file.buffer, metadata)
-    } else {
-      throw new AppError('Invalid file type. Only Word (.docx, .doc), Excel (.xlsx, .xls), and XML (.xml) files are supported.', 400, 'VALIDATION_ERROR')
     }
 
     if (!questionsData || questionsData.length === 0) {
@@ -502,6 +776,7 @@ class AdminQuestionService extends BaseService {
     const { createQuestionSchema } = require('./admin-question.schema')
     const startOrder = await this.nextOrder(metadata.test)
 
+    const { extractTextAndImage } = require('./admin-question-bulk.service')
     const cleanTextAndImageFields = (langObj) => {
       if (!langObj) return
 
@@ -578,6 +853,10 @@ class AdminQuestionService extends BaseService {
           return false
         })
 
+        if (!qSubjectDoc && allowedSubjects.length === 1) {
+          qSubjectDoc = allowedSubjects[0]
+        }
+
         if (!qSubjectDoc) {
           const allowedNames = allowedSubjects.map(s => s.name).filter(Boolean).join(', ')
           throw new AppError(
@@ -607,8 +886,6 @@ class AdminQuestionService extends BaseService {
 
       let qChapterId = qPayload.chapterId;
       let qTopicId = qPayload.topicId;
-
-
 
       if (qSubjectDoc) {
         if (qChapterId && !qChapterId.toString().match(/^[0-9a-fA-F]{24}$/)) {
