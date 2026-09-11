@@ -377,7 +377,10 @@ router.get('/chapters/:courseId', catchAsync(async (req, res) => {
     }
     const chapters = (subject.chapters || []).map(ch => ({
       _id: ch._id,
-      title: ch.name
+      name: ch.name,
+      title: ch.name,
+      chapterName: ch.name,
+      topics: ch.topics || []
     }));
     return sendSuccess(res, chapters);
   }
@@ -402,6 +405,7 @@ router.get('/topics-by-subject/:subjectId', catchAsync(async (req, res) => {
         _id: t._id,
         name: t.name,
         topicName: t.name,
+        title: t.name,
         chapterId: ch._id,
       });
     });
@@ -421,7 +425,9 @@ router.get('/topics/:chapterId', catchAsync(async (req, res) => {
     if (nestedChapter) {
       const formattedTopics = (nestedChapter.topics || []).map(t => ({
         _id: t._id,
-        topicName: t.name
+        name: t.name || t.topicName,
+        topicName: t.name || t.topicName,
+        title: t.name || t.topicName
       }));
       return sendSuccess(res, formattedTopics);
     }

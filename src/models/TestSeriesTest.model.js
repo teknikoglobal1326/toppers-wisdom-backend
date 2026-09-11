@@ -36,6 +36,7 @@ const testSeriesTestSchema = new mongoose.Schema({
         duration: { type: Number, default: 0 },
         isLocked: { type: Boolean, default: true }
     }],
+    parts: [mongoose.Schema.Types.Mixed],
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
     // Languages this test is authored in. ['en'] | ['hi'] | ['en','hi'].
     // Drives which language question forms the admin fills and which language(s)
