@@ -469,6 +469,7 @@ class PreviousYearPaperService extends BaseService {
             },
             hasAccess,
             questionsBySubject: groupedQuestions,
+            parts: test.parts
         }
     }
 

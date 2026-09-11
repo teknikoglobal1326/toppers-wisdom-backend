@@ -39,7 +39,7 @@ class PreviousYearPaperRepository extends BaseRepository {
 
     async getPreviousYearPaperTestById(testId) {
         return PreviousYearPaperTest.findOne({ _id: testId, isDeleted: false })
-            .select('previousYearPaper title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted')
+            .select('previousYearPaper title duration isPerQuestionTime totalQuestions totalMarks marksPerQuestion negativeMarks passingMarks isPaid status isDeleted parts')
             .lean()
     }
 
