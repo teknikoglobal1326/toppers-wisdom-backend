@@ -6,6 +6,7 @@ router.post('/tests', controller.generateTest)
 router.get('/dashboard', controller.getDashboardData)
 router.get('/tests/:testId/questions', controller.getTestQuestions)
 router.post('/tests/:testId/answers', controller.submitAnswer)
+router.post('/tests/:testId/answers/bulk', controller.submitBulkAnswers)
 router.post('/tests/:testId/submit', controller.submitTest)
 router.get('/tests/:testId/result', controller.getResult)
 
