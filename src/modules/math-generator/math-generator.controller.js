@@ -17,6 +17,11 @@ const submitAnswer = catchAsync(async (req, res) => {
   sendSuccess(res, result)
 })
 
+const submitBulkAnswers = catchAsync(async (req, res) => {
+  const result = await speedMathTestService.submitBulkAnswers(req.user._id, req.params.testId, req.body)
+  sendSuccess(res, result)
+})
+
 const submitTest = catchAsync(async (req, res) => {
   const result = await speedMathTestService.submitTest(req.user._id, req.params.testId)
   sendSuccess(res, result)
@@ -36,6 +41,7 @@ module.exports = {
   generateTest,
   getTestQuestions,
   submitAnswer,
+  submitBulkAnswers,
   submitTest,
   getResult,
   getDashboardData

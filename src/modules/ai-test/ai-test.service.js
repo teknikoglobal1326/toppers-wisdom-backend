@@ -771,10 +771,15 @@ class AiTestService extends BaseService {
 
     const { htmlToPlainText } = require('../../lib/htmlText')
 
-    const groupedQuestions = {}
+    const subjectWiseData = {}
+
     questions.forEach((q, idx) => {
-      const key = q._id.toString()
-      if (!groupedQuestions[key]) groupedQuestions[key] = { en: {}, hi: {} }
+      const subjectName = q.subjectId?.name || 'Uncategorized'
+      if (!subjectWiseData[subjectName]) {
+        subjectWiseData[subjectName] = []
+      }
+
+      const formattedQuestion = { en: {}, hi: {} }
 
       let langs = []
       if (q.en && (q.en.question?.text || q.en.options?.length)) langs.push('en')
@@ -797,7 +802,7 @@ class AiTestService extends BaseService {
         const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
         const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
 
-        groupedQuestions[key][lang] = {
+        formattedQuestion[lang] = {
           _id: q._id,
           exam: q.exam || null,
           subExams: q.subExams || [],
@@ -821,9 +826,14 @@ class AiTestService extends BaseService {
           isCorrect,
         }
       }
+
+      subjectWiseData[subjectName].push(formattedQuestion)
     })
 
-    return Object.values(groupedQuestions)
+    return Object.keys(subjectWiseData).map(subject => ({
+      subject,
+      questions: subjectWiseData[subject]
+    }))
   }
 
   async getMyAiTests(userId, query = {}) {
@@ -846,21 +856,21 @@ class AiTestService extends BaseService {
       const selectChapters = (testDoc.chapters || []).map(String)
       const selectTopics = (testDoc.topics || []).map(String)
 
-      ;(testDoc.subjects || []).forEach(subj => {
-        ;(subj.chapters || []).forEach(chap => {
-          if (selectChapters.includes(String(chap._id))) {
-            chapterNames.push({ _id: chap._id, name: chap.name })
-          }
-          ;(chap.topics || []).forEach(topic => {
-            if (selectTopics.includes(String(topic._id))) {
-              topicNames.push({ _id: topic._id, name: topic.name })
+        ; (testDoc.subjects || []).forEach(subj => {
+          ; (subj.chapters || []).forEach(chap => {
+            if (selectChapters.includes(String(chap._id))) {
+              chapterNames.push({ _id: chap._id, name: chap.name })
             }
+            ; (chap.topics || []).forEach(topic => {
+              if (selectTopics.includes(String(topic._id))) {
+                topicNames.push({ _id: topic._id, name: topic.name })
+              }
+            })
           })
         })
-      })
 
       const cleanSubjects = (testDoc.subjects || []).map(s => ({ _id: s._id, name: s.name }))
-      
+
       const latestAttempt = await AiTestAttempt.findOne({ aiTest: testDoc._id, user: userId })
         .sort({ createdAt: -1 })
         .select('sessionId status')
