@@ -70,5 +70,9 @@ const getSubscriptionOrders = catchAsync(async (req, res) => {
 
     sendPaginated(res, ordersWithRemaining, paginated.pagination, 'Subscription orders retrieved successfully');
 });
+const getSubscriptionById = catchAsync(async (req, res) => {
+    const result = await subscriptionService.getSubscriptionById(req.params.id);
+    sendSuccess(res, result, 'Subscription detail retrieved successfully');
+});
 
-module.exports = { checkSubscriptions, purchaseSubscription, verifyPayment, getPurchaseHistory, getSubscriptionOrders };
+module.exports = { checkSubscriptions, purchaseSubscription, verifyPayment, getPurchaseHistory, getSubscriptionOrders, getSubscriptionById };

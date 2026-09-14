@@ -10,17 +10,26 @@ const checkAccess = async (userId, itemType, itemId) => {
     if (enrolled) { logger.debug({ userId, itemType, itemId }, 'Access via enrollment'); return true }
 
     const UserSubscription = require('../models/UserSubscription.model')
+    const SubscriptionOrder = require('../models/SubscriptionOrder.model')
     const activeSubs = await UserSubscription.find({
       user: userId,
       isActive: true,
       endDate: { $gt: new Date() }
-    }).populate('subscription').lean()
+    }).select('order').lean()
 
-    for (const us of activeSubs) {
-      if (us.subscription && Array.isArray(us.subscription.courses)) {
-        if (us.subscription.courses.some(cId => cId.toString() === itemId.toString())) {
-          logger.debug({ userId, itemType, itemId }, 'Access via active subscription course')
-          return true
+    const activeOrderIds = activeSubs.map(us => us.order).filter(Boolean)
+    if (activeOrderIds.length > 0) {
+      const subOrders = await SubscriptionOrder.find({
+        _id: { $in: activeOrderIds },
+        isActive: true
+      }).select('subscriptionDetails.courses').lean()
+
+      for (const order of subOrders) {
+        if (order.subscriptionDetails && Array.isArray(order.subscriptionDetails.courses)) {
+          if (order.subscriptionDetails.courses.some(cId => cId.toString() === itemId.toString())) {
+            logger.debug({ userId, itemType, itemId }, 'Access via active subscription order course')
+            return true
+          }
         }
       }
     }

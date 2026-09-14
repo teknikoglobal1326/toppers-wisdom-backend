@@ -95,8 +95,12 @@ class DailyQuizService extends BaseService {
             ]
         }
 
-        if (query.date !== 'all') {
-            const dateStr = query.date || new Date().toISOString().split('T')[0]
+        if (query.subject) {
+            filter.subjectIds = query.subject
+        }
+
+        if (query.date && query.date !== 'all') {
+            const dateStr = query.date
             const endOfDay = new Date(dateStr)
             endOfDay.setUTCHours(23, 59, 59, 999)
             filter.scheduleAt = { $lte: endOfDay }
@@ -115,10 +119,7 @@ class DailyQuizService extends BaseService {
             ]
         })
 
-        console.log("quizzesResult=======>",quizzesResult);
-        console.log("filter",filter);
         const Question = require('../../models/Question.model')
-        
 
         const processedData = await Promise.all(quizzesResult.data.map(async (item) => {
             const id = item._id.toString()
@@ -149,9 +150,24 @@ class DailyQuizService extends BaseService {
             }
         }))
 
+        const subjectFilter = { ...filter }
+        delete subjectFilter.scheduleAt
+        delete subjectFilter.subjectIds
+
+        const subjectAggregation = await DailyQuiz.aggregate([
+            { $match: subjectFilter },
+            { $unwind: "$subjectIds" },
+            { $group: { _id: "$subjectIds" } },
+            { $lookup: { from: 'subjects', localField: '_id', foreignField: '_id', as: 'subjectInfo' } },
+            { $unwind: "$subjectInfo" },
+            { $project: { _id: "$subjectInfo._id", name: "$subjectInfo.name" } }
+        ])
+        const subjectList = subjectAggregation
+
         return {
             data: processedData,
-            pagination: quizzesResult.pagination
+            pagination: quizzesResult.pagination,
+            subjectList
         }
     }
 

@@ -624,7 +624,8 @@ class CourseTestService extends BaseService {
             isDeleted: false,
             status: 'active',
         })
-            .select('language question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime en hi')
+            .select('language subjectId question options.text options.image options.isCorrect explanation order sortOrder perQuestionTime en hi')
+            .populate('subjectId', 'name')
             .sort({ sortOrder: 1, order: 1, createdAt: 1 })
             .lean()
 
@@ -636,10 +637,22 @@ class CourseTestService extends BaseService {
             }
         }
 
-        const groupedQuestions = {}
+        const subjectMap = new Map()
+
         for (const q of questions) {
+            const subjectId = q.subjectId?._id ? String(q.subjectId._id) : (q.subjectId ? String(q.subjectId) : 'uncategorized')
+            const subjectName = q.subjectId?.name || 'Uncategorized'
+
+            if (!subjectMap.has(subjectId)) {
+                subjectMap.set(subjectId, {
+                    subject: { _id: subjectId === 'uncategorized' ? null : subjectId, name: subjectName },
+                    questions: {}
+                })
+            }
+            const group = subjectMap.get(subjectId)
+
             const orderKey = String(q.order)
-            if (!groupedQuestions[orderKey]) groupedQuestions[orderKey] = { en: {}, hi: {} }
+            if (!group.questions[orderKey]) group.questions[orderKey] = { en: {}, hi: {} }
 
             // Determine available languages
             let langs = []
@@ -663,7 +676,7 @@ class CourseTestService extends BaseService {
                 const isAttempted = !!(userAnswer && userAnswer.status !== 'skipped' && userAnswer.selectedOption !== null && userAnswer.selectedOption !== undefined)
                 const isCorrect = isAttempted && correctIndex !== -1 ? (userAnswer.selectedOption === correctIndex) : false
 
-                groupedQuestions[orderKey][lang] = {
+                group.questions[orderKey][lang] = {
                     _id: q._id,
                     question: { text: htmlToPlainText(questionData.text || ''), image: questionData.image || '' },
                     options: optionsData.map((opt) => ({
@@ -687,7 +700,21 @@ class CourseTestService extends BaseService {
             }
         }
 
-        return Object.values(groupedQuestions)
+        // Return array of subjects instead of a flat array of questions
+        return Array.from(subjectMap.values()).map(subj => {
+            // Some frontends prefer questions as an array of objects rather than a mapped object, 
+            // but if groupQuestionsBySubject uses an object, we will stick to the same structure.
+            // If the UI needs an array for the solution, we can convert it here:
+            // return { subject: subj.subject, questions: Object.values(subj.questions) }
+            // Let's check how the previous flat array was generated: `Object.values(groupedQuestions)`.
+            // This means the previous output was an array of `{ en: {}, hi: {} }` objects.
+            // Let's provide an array for the questions inside the subject.
+            return {
+                subject: subj.subject,
+                questions: Object.values(subj.questions)
+            }
+        })
+
     }
 
     /**

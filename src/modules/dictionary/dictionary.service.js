@@ -168,6 +168,13 @@ const getCategoryGroups = async (cat, sub) => {
     const groups = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
     return { groups };
   }
+  if (sub === 'most_asked') {
+    const groups = await getMostAskedGroups(cat);
+    return { groups };
+  }
+  if (sub === 'mixed_test') {
+    return { groups: ['start_mixed_test'] };
+  }
   return { groups: [] };
 };
 
@@ -175,26 +182,34 @@ const getWords = async (cat, sub, group, page = 1, limit = 20) => {
   const normCat = normalizeCategory(cat);
   const query = { cat: normCat };
 
+  let finalSkip = (page - 1) * limit;
+  let finalLimit = limit;
+  let sort = { word: 1 };
+
   if (sub === 'exam' && group) {
     query.exams = group;
   } else if (sub === 'theme' && group) {
     query.theme = group;
   } else if (sub === 'alpha' && group) {
     query.word = new RegExp(`^${group}`, 'i');
+  } else if (sub === 'most_asked' && group) {
+    const match = group.match(/^rank_(\d+)_(\d+)(?:,asked_\d+_\d+)?$/);
+    if (match) {
+      const start = parseInt(match[1], 10);
+      const end = parseInt(match[2], 10);
+      finalSkip = start - 1;
+      finalLimit = end - start + 1;
+    }
   }
 
-  let sort = {};
-  if (sub === 'rep') {
-    sort = { rep: -1, updatedAt: -1 };
-  } else {
-    sort = { word: 1 };
+  if (sub === 'rep' || sub === 'most_asked') {
+    sort = { rep: -1, _id: 1 };
   }
 
-  const skip = (page - 1) * limit;
-  const words = await DictionaryWord.find(query).sort(sort).skip(skip).limit(limit);
+  const words = await DictionaryWord.find(query).sort(sort).skip(finalSkip).limit(finalLimit);
   const total = await DictionaryWord.countDocuments(query);
 
-  return { words, total, page, limit, totalPages: Math.ceil(total / limit) };
+  return { words, total, page, limit: finalLimit, totalPages: Math.ceil(total / finalLimit) };
 };
 
 const getWordById = async (id) => {
@@ -218,9 +233,15 @@ const searchWords = async (q, cat) => {
 
 const getPracticeMcqs = async (cat, sub, group) => {
   const match = { cat: normalizeCategory(cat) };
+  
+  let size = 10;
+  if (group === 'start_mixed_test') {
+    size = 20;
+  }
+
   const questions = await DictionaryQuestion.aggregate([
     { $match: match },
-    { $sample: { size: 10 } },
+    { $sample: { size } },
     { $project: { ans: 0, expl: 0, tip: 0 } }
   ]);
   return questions;
@@ -798,7 +819,47 @@ const deleteQuestion = async (id) => {
   return deleted;
 };
 
+const getMostAskedGroups = async (cat) => {
+  const query = {};
+  if (cat && cat !== 'all' && cat.trim() !== '') {
+    query.cat = normalizeCategory(cat);
+  }
+
+  const pipeline = [
+    { $match: query },
+    { $sort: { rep: -1, _id: 1 } },
+    { 
+      $group: {
+        _id: null,
+        reps: { $push: "$rep" }
+      }
+    }
+  ];
+
+  const result = await DictionaryWord.aggregate(pipeline);
+  if (!result || result.length === 0 || !result[0].reps.length) {
+    return [];
+  }
+
+  const reps = result[0].reps;
+  const groups = [];
+  const chunkSize = 100;
+  
+  for (let i = 0; i < reps.length; i += chunkSize) {
+    const chunk = reps.slice(i, i + chunkSize);
+    const startRank = i + 1;
+    const endRank = i + chunk.length;
+    const maxRep = chunk[0];
+    const minRep = chunk[chunk.length - 1];
+    
+    groups.push(`rank_${startRank}_${endRank},asked_${minRep}_${maxRep}`);
+  }
+
+  return groups;
+};
+
 module.exports = {
+  getMostAskedGroups,
   createWord,
   getAllWords,
   updateWord,

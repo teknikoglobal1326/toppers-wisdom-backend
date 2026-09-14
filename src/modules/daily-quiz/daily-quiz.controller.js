@@ -4,7 +4,7 @@ const dailyQuizService = require('./daily-quiz.service')
 
 const listQuizzes = catchAsync(async (req, res) => {
     const result = await dailyQuizService.listQuizzes(req.user._id, req.query)
-    sendPaginated(res, result.data, result.pagination)
+    sendPaginated(res, result.data, result.pagination, 'Success', { subjectList: result.subjectList })
 })
 
 const getQuizInstructions = catchAsync(async (req, res) => {

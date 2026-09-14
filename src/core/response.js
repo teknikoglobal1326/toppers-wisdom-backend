@@ -20,12 +20,13 @@ const sendCreated = (res, data, message = 'Created successfully') => {
   sendSuccess(res, data, message, 201)
 }
 
-const sendPaginated = (res, data, pagination, message = 'Success') => {
+const sendPaginated = (res, data, pagination, message = 'Success', extras = {}) => {
   res.status(200).json({
     success: true,
     message,
     data,
     pagination,
+    ...extras
   })
 }
 

@@ -4,8 +4,10 @@ const { sendSuccess } = require('../core/response')
 const Streak = require('../models/Streak.model')
 
 // GET /api/v1/common/streak-count
-router.get('/streak-count', catchAsync(async (req, res) => {
-  const count = await Streak.countDocuments({ currentStreak: { $gt: 0 } })
+router.get('/streak-count', require('../middlewares/auth.middleware').authMiddleware, catchAsync(async (req, res) => {
+  const userId = req.user._id;
+  const streak = await Streak.findOne({ user: userId });
+  const count = streak ? streak.currentStreak : 0;
   sendSuccess(res, { count }, 'Active streak count retrieved successfully')
 }))
 
