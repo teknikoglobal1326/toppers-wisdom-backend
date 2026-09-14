@@ -155,11 +155,37 @@ class CourseService extends BaseService {
       populate: [{ path: 'subjects.subject', select: 'name' }]
     })
 
+    let subCourseIds = new Set()
+    if (userId) {
+      const UserSubscription = require('../../models/UserSubscription.model')
+      const SubscriptionOrder = require('../../models/SubscriptionOrder.model')
+      
+      const activeUserSubs = await UserSubscription.find({
+        user: userId,
+        isActive: true,
+        endDate: { $gte: new Date() }
+      }).select('order').lean()
+
+      const activeOrderIds = activeUserSubs.map(us => us.order).filter(Boolean)
+      if (activeOrderIds.length > 0) {
+        const subOrders = await SubscriptionOrder.find({
+          _id: { $in: activeOrderIds },
+          isActive: true
+        }).select('subscriptionDetails.courses').lean()
+
+        subOrders.forEach(order => {
+          const courses = order.subscriptionDetails?.courses || []
+          courses.forEach(c => subCourseIds.add(c.toString()))
+        })
+      }
+    }
+
     result.data = await Promise.all(result.data.map(async (course) => {
       const isPurchased = !!(await courseRepository.findEnrollment(userId, course._id))
+      const hasSubAccess = subCourseIds.has(course._id.toString())
       return {
         ...course,
-        hasAccess: course.isFree || isPurchased || await checkAccess(userId, 'course', course._id),
+        hasAccess: course.isFree || isPurchased || hasSubAccess || await checkAccess(userId, 'course', course._id),
         isPurchased
       }
     }))
@@ -261,16 +287,27 @@ class CourseService extends BaseService {
       }
     }
 
+    filter.isLive = true;
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
     const type = (filters.type || '').trim().toLowerCase()
     if (type === 'upcoming') {
-      filter.liveStatus = { $in: ['pending', 'ongoing'] }
+      filter.liveStatus = 'pending'
       filter.$or = [
-        { scheduledStartTime: { $gt: now } },
-        { scheduleAt: { $gt: now } }
+        { scheduledStartTime: { $gte: startOfToday } },
+        { scheduleAt: { $gte: startOfToday } }
       ]
     } else {
-      // Default: only ongoing live classes
       filter.liveStatus = 'ongoing'
+      filter.$or = [
+        { scheduledStartTime: { $gte: startOfToday, $lte: endOfToday } },
+        { scheduleAt: { $gte: startOfToday, $lte: endOfToday } }
+      ]
     }
 
     const page = Math.max(1, Number(filters.page) || 1)
@@ -289,6 +326,16 @@ class CourseService extends BaseService {
         ])
         .lean()
     ])
+
+    const offsetMs = (5 * 60 + 30) * 60 * 1000; // 5 hours 30 mins
+    data.forEach(item => {
+      if (item.scheduledStartTime) {
+        item.scheduledStartTime = new Date(new Date(item.scheduledStartTime).getTime() + offsetMs);
+      }
+      if (item.scheduleAt) {
+        item.scheduleAt = new Date(new Date(item.scheduleAt).getTime() + offsetMs);
+      }
+    });
 
     return {
       data,
@@ -586,10 +633,10 @@ class CourseService extends BaseService {
   }
 
   async getVideoUrl(courseId, lessonId, userId) {
-    const enrollment = await courseRepository.findEnrollment(userId, courseId)
-    if (!enrollment) throw new AppError('You are not enrolled in this course', 403, 'FORBIDDEN')
-
     const course = await this.getById(courseId)
+    const hasAccess = course.isFree || await checkAccess(userId, 'course', courseId);
+    if (!hasAccess) throw new AppError('You are not enrolled in this course', 403, 'FORBIDDEN')
+
     const lesson = course.lessons.find((l) => l._id.toString() === lessonId)
     if (!lesson?.videoKey) throw new AppError('Video not available for this lesson', 404)
 

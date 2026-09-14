@@ -19,11 +19,28 @@ class OfferService extends BaseService {
     return this.getAll(filter, { page, limit, sort, populate: [{ path: 'exams', select: 'name' }, { path: 'subExams', select: 'name' }, { path: 'subscriptions', select: 'name title price durationDays banner' }] })
   }
 
-  async getLatest({ type, itemId, isActive, exams, subExams } = {}) {
+  async getLatest({ type, itemId, isActive, exams, subExams } = {}, user = null) {
     const filter = { isDeleted: false }
     if (type) filter.type = type
     if (itemId) filter.itemId = itemId
-    if (exams) filter.exams = exams
+
+    let examId = null;
+    if (user) {
+        const User = require('../../models/User.model');
+        const userDoc = await User.findById(user._id).select('exam').lean();
+        if (userDoc?.exam) {
+            examId = userDoc.exam;
+        } else if (user.examId) {
+            examId = user.examId;
+        }
+    }
+
+    if (examId) {
+        filter.exams = examId;
+    } else if (exams) {
+        filter.exams = exams;
+    }
+
     if (subExams) filter.subExams = subExams
     if (isActive !== undefined) {
       filter.isActive = isActive === 'true' || isActive === true

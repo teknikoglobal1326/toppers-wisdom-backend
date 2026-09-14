@@ -41,6 +41,12 @@ const subscriptionSchema = new mongoose.Schema({
   courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
   materials: [{ type: mongoose.Schema.Types.ObjectId }],
 
+  customValidityMap: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
+
   examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam' },
   examIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam', index: true }],
 

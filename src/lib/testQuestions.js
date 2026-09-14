@@ -10,13 +10,17 @@ const sanitizeQuestion = (question, lang = 'hi') => {
   return {
     _id: question._id,
     question: {
-      text: htmlToPlainText(langBlock?.question?.text),
+      text: langBlock?.question?.text || '',
       image: langBlock?.question?.image || '',
     },
     options: (langBlock?.options || []).map((option) => ({
-      text: htmlToPlainText(option.text),
+      text: option.text || '',
       image: option.image || '',
     })),
+    explanation: {
+      text: langBlock?.explanation?.text || '',
+      image: langBlock?.explanation?.image || '',
+    },
     order: question.order,
     sortOrder: question.sortOrder,
     perQuestionTime: question.perQuestionTime ?? null,
