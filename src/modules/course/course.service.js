@@ -164,18 +164,24 @@ class CourseService extends BaseService {
         user: userId,
         isActive: true,
         endDate: { $gte: new Date() }
-      }).select('order').lean()
+      }).select('order startDate').lean()
 
       const activeOrderIds = activeUserSubs.map(us => us.order).filter(Boolean)
       if (activeOrderIds.length > 0) {
+        const { isItemValidCustomValidity } = require('../../lib/subscriptionHelper')
         const subOrders = await SubscriptionOrder.find({
           _id: { $in: activeOrderIds },
           isActive: true
-        }).select('subscriptionDetails.courses').lean()
+        }).select('subscriptionDetails').lean()
 
         subOrders.forEach(order => {
           const courses = order.subscriptionDetails?.courses || []
-          courses.forEach(c => subCourseIds.add(c.toString()))
+          const userSub = activeUserSubs.find(us => us.order?.toString() === order._id.toString())
+          courses.forEach(c => {
+            if (userSub && isItemValidCustomValidity(order.subscriptionDetails, userSub.startDate, c)) {
+              subCourseIds.add(c.toString())
+            }
+          })
         })
       }
     }
@@ -222,6 +228,132 @@ class CourseService extends BaseService {
       hasAccess: true,
       isPurchased: true
     }))
+
+    return result
+  }
+
+  async listWrapperPackages(userId, filters) {
+    this.logger.info({ userId, filters }, 'Listing wrapper packages')
+    const WrapperPackage = require('../../models/WrapperPackage.model')
+    
+    const filter = { status: 'active', isDeleted: false }
+    const examId = filters.exam || filters.examId
+    if (examId) {
+      filter.exam = examId
+    } else if (userId) {
+      const User = require('../../models/User.model')
+      const user = await User.findById(userId).select('exam')
+      if (user && user.exam) {
+        filter.exam = user.exam
+      }
+    }
+
+    if (userId) {
+      const CourseOrder = require('../../models/CourseOrder.model')
+      const paidOrders = await CourseOrder.find({
+        user: userId,
+        status: 'paid',
+        'items.itemType': 'wrapper-package'
+      }).select('items').lean()
+
+      const purchasedWpIds = []
+      paidOrders.forEach(o => {
+        o.items.forEach(i => {
+          if (i.itemType === 'wrapper-package' && i.itemId) {
+            purchasedWpIds.push(i.itemId)
+          }
+        })
+      })
+
+      if (purchasedWpIds.length > 0) {
+        filter._id = { $nin: purchasedWpIds }
+      }
+    }
+
+    const { paginate } = require('../../core/paginate')
+    const result = await paginate(WrapperPackage, filter, {
+      page: filters.page,
+      limit: filters.limit,
+      sort: { createdAt: -1 },
+      populate: [{ path: 'exam', select: 'name' }]
+    })
+
+    result.data = result.data.map(wp => {
+      const doc = wp.toObject ? wp.toObject() : wp
+      return {
+        ...doc,
+        isPurchased: false,
+        hasAccess: false
+      }
+    })
+
+    return result
+  }
+
+  async getWrapperPackage(id, userId) {
+    this.logger.info({ id, userId }, 'Fetching wrapper package details')
+    const WrapperPackage = require('../../models/WrapperPackage.model')
+    
+    const wp = await WrapperPackage.findOne({ _id: id, isDeleted: false })
+      .populate([{ path: 'exam', select: 'name' }, { path: 'courses', select: 'title thumbnail mrp price description isFree type avgRating totalEnrollments' }])
+    
+    if (!wp) throw new AppError('Wrapper package not found', 404, 'NOT_FOUND')
+
+    let isPurchased = false
+    if (userId) {
+      const CourseOrder = require('../../models/CourseOrder.model')
+      isPurchased = await CourseOrder.exists({
+        user: userId,
+        status: 'paid',
+        'items.itemType': 'wrapper-package',
+        'items.itemId': id
+      })
+    }
+
+    const doc = wp.toObject()
+    return {
+      ...doc,
+      isPurchased: !!isPurchased,
+      hasAccess: !!isPurchased
+    }
+  }
+
+  async myWrapperPackages(userId, filters) {
+    this.logger.info({ userId }, 'Listing my wrapper packages')
+    const CourseOrder = require('../../models/CourseOrder.model')
+    const WrapperPackage = require('../../models/WrapperPackage.model')
+
+    const paidOrders = await CourseOrder.find({
+      user: userId,
+      status: 'paid',
+      'items.itemType': 'wrapper-package'
+    }).select('items').lean()
+
+    const purchasedWpIds = new Set()
+    paidOrders.forEach(o => {
+      o.items.forEach(i => {
+        if (i.itemType === 'wrapper-package' && i.itemId) purchasedWpIds.add(i.itemId.toString())
+      })
+    })
+
+    const filter = { _id: { $in: Array.from(purchasedWpIds) }, isDeleted: false }
+    
+    const { paginate } = require('../../core/paginate')
+    const result = await paginate(WrapperPackage, filter, {
+      page: filters.page,
+      limit: filters.limit,
+      sort: { createdAt: -1 },
+      populate: [{ path: 'exam', select: 'name' }]
+    })
+
+    result.data = result.data.map(wp => {
+      const doc = wp.toObject ? wp.toObject() : wp
+      return {
+        ...doc,
+        isPurchased: true,
+        hasAccess: true
+      }
+    })
 
     return result
   }
@@ -444,9 +576,14 @@ class CourseService extends BaseService {
         endDate: { $gt: new Date() }
       }).populate('subscription').lean();
 
+      const { isItemValidCustomValidity } = require('../../lib/subscriptionHelper');
       userSubs.forEach(us => {
         if (us.subscription && Array.isArray(us.subscription.materials)) {
-          us.subscription.materials.forEach(id => allowedMaterialIds.add(id.toString()));
+          us.subscription.materials.forEach(id => {
+            if (isItemValidCustomValidity(us.subscription, us.startDate, id)) {
+              allowedMaterialIds.add(id.toString());
+            }
+          });
         }
       });
     }
@@ -738,17 +875,16 @@ class CourseService extends BaseService {
       gstRate = 0;
     }
 
-    const subtotal = course.price || 0;
-    const gstAmount = parseFloat(((subtotal * gstRate) / 100).toFixed(2));
-    const grandTotal = parseFloat((subtotal + gstAmount).toFixed(2));
+    const subtotal = course.price
+    const gstAmount = Number(((subtotal * gstRate) / 100).toFixed(2))
+    const grandTotal = subtotal + gstAmount
 
     return {
       courseId,
       title: course.title,
-      mrp: course.mrp,
       description: course.description,
       thumbnail: course.thumbnail,
-      price: course.price,
+      mrp: course.mrp,
       subtotal,
       gstRate,
       gstAmount,
@@ -756,6 +892,46 @@ class CourseService extends BaseService {
       isFree: false
     }
   }
+
+  async checkoutWrapperPackage(packageId, userId) {
+    this.logger.info({ packageId, userId }, 'Checkout preview for wrapper package requested')
+    const WrapperPackage = require('../../models/WrapperPackage.model')
+    
+    const wp = await WrapperPackage.findOne({ _id: packageId, isDeleted: false, status: 'active' })
+    if (!wp) throw new AppError('Wrapper package not found', 404, 'NOT_FOUND')
+
+    if (userId) {
+      const CourseOrder = require('../../models/CourseOrder.model')
+      const existing = await CourseOrder.exists({
+        user: userId,
+        status: 'paid',
+        'items.itemType': 'wrapper-package',
+        'items.itemId': packageId
+      })
+      if (existing) throw new AppError('Already purchased this package', 409, 'DUPLICATE_ERROR')
+    }
+
+    var gstRate = 18; 
+    if (wp.price > 1) gstRate = 0;
+
+    const subtotal = wp.price || 0
+    const gstAmount = Number(((subtotal * gstRate) / 100).toFixed(2))
+    const grandTotal = subtotal + gstAmount
+
+    return {
+      packageId,
+      title: wp.title,
+      description: wp.description,
+      thumbnail: wp.image,
+      mrp: wp.price, // assuming price is mrp for package
+      subtotal,
+      gstRate,
+      gstAmount,
+      grandTotal,
+      isFree: subtotal === 0
+    }
+  }
+
 
   async createRazorpayOrder(courseId, userId, amountDetails) {
     try {
@@ -814,6 +990,53 @@ class CourseService extends BaseService {
       }
 
       throw new AppError(message, statusCode)
+    }
+  }
+
+  async createRazorpayOrderWrapperPackage(packageId, userId, amountDetails) {
+    this.logger.info({ packageId, userId, amountDetails }, 'Creating Razorpay order for wrapper package')
+
+    const WrapperPackage = require('../../models/WrapperPackage.model')
+    const wp = await WrapperPackage.findOne({ _id: packageId, isDeleted: false, status: 'active' })
+    if (!wp) throw new AppError('Wrapper package not found', 404, 'NOT_FOUND')
+
+    const CourseOrder = require('../../models/CourseOrder.model')
+    const existing = await CourseOrder.exists({
+      user: userId,
+      status: 'paid',
+      'items.itemType': 'wrapper-package',
+      'items.itemId': packageId
+    })
+    if (existing) throw new AppError('Already purchased this package', 409, 'DUPLICATE_ERROR')
+
+    const { amount, discount, gstRate, gstAmount, grandTotal } = amountDetails
+
+    if (amount !== wp.price) {
+      throw new AppError('Amount mismatch', 400, 'AMOUNT_MISMATCH')
+    }
+
+    try {
+      const items = [{
+        itemType: 'wrapper-package',
+        itemId: packageId,
+        title: wp.title,
+        price: Number(amount),
+        validityInMonths: 12, // Default validity or update if model has it
+        isLifetime: false
+      }]
+
+      const paymentService = require('../payment/payment.service')
+      return await paymentService.createOrder(userId, items, {
+        totalAmount: Number(amount),
+        discount: Number(discount || 0),
+        gstRate: Number(gstRate || 0),
+        gstAmount: Number(gstAmount || 0),
+        grandTotal: Number(grandTotal)
+      })
+    } catch (error) {
+      this.logger.error({ packageId, userId, error }, 'Error creating razorpay order for wrapper package')
+      if (error instanceof AppError) throw error
+      throw new AppError('Failed to create payment order', 500)
     }
   }
 

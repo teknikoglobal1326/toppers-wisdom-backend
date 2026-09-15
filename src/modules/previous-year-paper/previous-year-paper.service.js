@@ -25,24 +25,28 @@ class PreviousYearPaperService extends BaseService {
             user: userId,
             isActive: true,
             endDate: { $gte: new Date() }
-        }).select('order').lean()
+        }).select('order startDate').lean()
 
         const activeOrderIds = activeUserSubs.map(us => us.order).filter(Boolean)
         const subscribedPaperIds = new Set()
 
         if (activeOrderIds.length > 0) {
+            const { isItemValidCustomValidity } = require('../../lib/subscriptionHelper')
             const orders = await SubscriptionOrder.find({
                 _id: { $in: activeOrderIds },
                 isActive: true
-            }).select('subscriptionDetails.tests').lean()
+            }).select('subscriptionDetails').lean()
 
             orders.forEach(order => {
                 const details = order.subscriptionDetails || {}
+                const userSub = activeUserSubs.find(us => us.order?.toString() === order._id.toString())
                 if (details.tests) {
                     details.tests.forEach(testItem => {
                         if (testItem.moduleType === 'PreviousYearPaper' && testItem.moduleId) {
                             testItem.moduleId.forEach(mId => {
-                                subscribedPaperIds.add(mId.toString())
+                                if (userSub && isItemValidCustomValidity(details, userSub.startDate, mId)) {
+                                    subscribedPaperIds.add(mId.toString())
+                                }
                             })
                         }
                     })
@@ -848,6 +852,7 @@ class PreviousYearPaperService extends BaseService {
                 score: attempt.score,
                 totalMarks: attempt.totalMarks,
                 rank,
+                totalParticipants,
                 accuracy: attempt.accuracy,
                 percentile,
                 attempted: attempt.correct + attempt.wrong,

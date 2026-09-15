@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const courseOrderSchema = new mongoose.Schema({
   user:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   items: [{
-    itemType: { type: String, enum: ['course', 'test', 'booster'], required: true },
+    itemType: { type: String, enum: ['course', 'test', 'booster', 'wrapper-package'], required: true },
     itemId:   { type: mongoose.Schema.Types.ObjectId, required: true },
     title: String, price: Number, validityInMonths: Number, isLifetime: Boolean,
   }],

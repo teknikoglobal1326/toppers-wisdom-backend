@@ -83,7 +83,7 @@ app.use('/api/v1/grammars', authMiddleware, require('./modules/grammar/grammar.r
 app.use('/api/v1/coupons', authMiddleware, require('./modules/coupon/coupon.routes'))
 app.use('/api/v1/faqs', authMiddleware, require('./modules/faq/faq.routes'))
 app.use('/api/v1/rewards', authMiddleware, require('./modules/rewards/rewards.routes'))
-app.use('/api/v1/offers', require('./modules/offer/offer.routes'))
+app.use('/api/v1/offers', authMiddleware,require('./modules/offer/offer.routes'))
 app.use('/api/v1/twsPost', authMiddleware, require('./modules/thought-of-the-day/thought-of-the-day.routes'))
 app.use('/api/v1/ai-tests', authMiddleware, require('./modules/ai-test/ai-test.routes'))
 app.use('/api/v1/share', require('./modules/share/share.routes'))
