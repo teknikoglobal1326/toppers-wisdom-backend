@@ -5,6 +5,7 @@ const createBookSchema = Joi.object({
   author: Joi.string().trim().optional().allow(null, ''),
   coverImage: Joi.string().optional().allow(null, ''),
   file: Joi.string().optional().allow(null, ''),
+  samplePdf: Joi.string().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
   price: Joi.number().min(0).optional().default(0),
   mrp: Joi.number().min(0).optional().default(0),
@@ -26,6 +27,7 @@ const updateBookSchema = Joi.object({
   author:      Joi.string().trim().optional().allow(null, ''),
   coverImage:  Joi.string().optional().allow(null, ''),
   file:        Joi.string().optional().allow(null, ''),
+  samplePdf:   Joi.string().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
   price:       Joi.number().min(0).optional(),
   mrp:         Joi.number().min(0).optional(),
@@ -63,3 +65,4 @@ const listBookQuerySchema = Joi.object({
 })
 
 module.exports = { createBookSchema, createBookDualSchema, updateBookSchema, setBuyUrlSchema, listBookQuerySchema }
+
