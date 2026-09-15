@@ -213,7 +213,7 @@ exports.resolveLink = async (req, res) => {
                 if (!document.hidden) {
                     window.location.href = fallbackLink;
                 }
-            }, 3000); // Wait 3 seconds
+            }, 1000); // Wait 3 seconds
         };
     </script>
 </body>

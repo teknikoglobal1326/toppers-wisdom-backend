@@ -4,6 +4,8 @@ const Streak = require('../../models/Streak.model')
 const User = require('../../models/User.model')
 const DailyActivity = require('../../models/DailyActivity.model')
 const WalletHistory = require('../../models/WalletHistory.model')
+const StreakSlab = require('../../models/StreakSlab.model')
+const AppError = require('../../core/AppError')
 
 class AdminStreakController {
   listAll = catchAsync(async (req, res) => {
@@ -296,6 +298,44 @@ class AdminStreakController {
     }
 
     return sendSuccess(res, streak, 'User streak reset to 0')
+  })
+
+  // Slab CRUD
+  createSlab = catchAsync(async (req, res) => {
+    const { days, coins, badgeName, status } = req.body
+    const slab = await StreakSlab.create({ days, coins, badgeName, status })
+    return sendSuccess(res, slab, 'Streak slab created successfully', 201)
+  })
+
+  listSlabs = catchAsync(async (req, res) => {
+    const slabs = await StreakSlab.find({ isDeleted: false }).sort({ days: 1 })
+    return sendSuccess(res, slabs, 'Streak slabs fetched successfully')
+  })
+
+  updateSlab = catchAsync(async (req, res) => {
+    const { id } = req.params
+    const slab = await StreakSlab.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { $set: req.body },
+      { new: true, runValidators: true }
+    )
+    if (!slab) {
+      throw new AppError('Streak slab not found', 404, 'NOT_FOUND')
+    }
+    return sendSuccess(res, slab, 'Streak slab updated successfully')
+  })
+
+  deleteSlab = catchAsync(async (req, res) => {
+    const { id } = req.params
+    const slab = await StreakSlab.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { isDeleted: true },
+      { new: true }
+    )
+    if (!slab) {
+      throw new AppError('Streak slab not found', 404, 'NOT_FOUND')
+    }
+    return sendSuccess(res, null, 'Streak slab deleted successfully')
   })
 }
 

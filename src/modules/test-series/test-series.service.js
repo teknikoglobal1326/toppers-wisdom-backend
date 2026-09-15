@@ -42,12 +42,13 @@ class TestSeriesService extends BaseService {
             user: userId,
             isActive: true,
             endDate: { $gte: new Date() }
-        }).select('order').lean()
+        }).select('order startDate').lean()
 
         const activeOrderIds = activeUserSubs.map(us => us.order).filter(Boolean)
 
         if (activeOrderIds.length > 0) {
-            const count = await SubscriptionOrder.countDocuments({
+            const { isItemValidCustomValidity } = require('../../lib/subscriptionHelper')
+            const orders = await SubscriptionOrder.find({
                 _id: { $in: activeOrderIds },
                 isActive: true,
                 'subscriptionDetails.tests': {
@@ -56,8 +57,14 @@ class TestSeriesService extends BaseService {
                         moduleId: { $in: [series._id, series._id.toString()] }
                     }
                 }
-            })
-            if (count > 0) return true
+            }).select('subscriptionDetails').lean()
+
+            for (const order of orders) {
+                const userSub = activeUserSubs.find(us => us.order?.toString() === order._id.toString())
+                if (userSub && isItemValidCustomValidity(order.subscriptionDetails, userSub.startDate, series._id)) {
+                    return true
+                }
+            }
         }
 
         return false
@@ -118,7 +125,7 @@ class TestSeriesService extends BaseService {
                 user: userId,
                 isActive: true,
                 endDate: { $gte: new Date() }
-            }).select('order').lean()
+            }).select('order startDate').lean()
         ])
 
         const accessedSeriesIds = new Set()
@@ -133,17 +140,21 @@ class TestSeriesService extends BaseService {
         const activeOrderIds = activeUserSubs.map(us => us.order).filter(Boolean)
 
         if (activeOrderIds.length > 0) {
+            const { isItemValidCustomValidity } = require('../../lib/subscriptionHelper')
             const orders = await SubscriptionOrder.find({
                 _id: { $in: activeOrderIds },
                 isActive: true
-            }).select('subscriptionDetails.tests').lean()
+            }).select('subscriptionDetails').lean()
 
             for (const order of orders) {
+                const userSub = activeUserSubs.find(us => us.order?.toString() === order._id.toString())
                 const details = order.subscriptionDetails || {}
                 for (const testItem of details.tests || []) {
                     if (testItem.moduleType === 'TestSeries') {
                         for (const mid of testItem.moduleId || []) {
-                            accessedSeriesIds.add(mid.toString())
+                            if (userSub && isItemValidCustomValidity(details, userSub.startDate, mid)) {
+                                accessedSeriesIds.add(mid.toString())
+                            }
                         }
                     }
                 }
@@ -871,6 +882,7 @@ class TestSeriesService extends BaseService {
                 score: attempt.score,
                 totalMarks: attempt.totalMarks,
                 rank,
+                totalParticipants,
                 accuracy: attempt.accuracy,
                 percentile,
                 attempted: attempt.correct + attempt.wrong,

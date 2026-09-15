@@ -134,6 +134,8 @@ class DailyQuizService extends BaseService {
                 .sort({ attemptedAt: -1 })
                 .lean()
 
+            const attemptCount = await DailyQuizAttempt.countDocuments({ quiz: id, user: userId })
+
             const resolved = withResolvedSyllabus(item)
             delete resolved.description
             delete resolved.instructions
@@ -147,6 +149,7 @@ class DailyQuizService extends BaseService {
                 attemptStatus: completedAttempt ? 'attempted' : 'not_attempted',
                 latestAttempt: completedAttempt || null,
                 sessionId: latestAttempt?.sessionId || null,
+                attemptCount,
             }
         }))
 
@@ -318,7 +321,8 @@ class DailyQuizService extends BaseService {
         const attempt = await this.repository.getAttemptBySession(sessionId, userId)
         if (!attempt) throw new AppError('Session not found', 404, 'NOT_FOUND')
 
-        
+        const { rank, totalParticipants } = await this.repository.getAttemptRank(quizId, attempt.score || 0, attempt.timeTaken || 0)
+
         const questions = await this.repository.findQuestionsForQuiz(quizId)
         const userAnswers = attempt.answers || []
 
@@ -563,8 +567,8 @@ const sectionWise = new Map()
             })
         }))
 
-        const percentile = 0 > 1
-            ? parseFloat((((totalParticipants - 1) / (totalParticipants - 1)) * 100).toFixed(2))
+        const percentile = totalParticipants > 1
+            ? parseFloat((((totalParticipants - rank) / (totalParticipants - 1)) * 100).toFixed(2))
             : 100.0;
 
         let expertComment = "Keep practicing!";
@@ -594,6 +598,8 @@ const sectionWise = new Map()
             overallPerformance: {
                 score: attempt.score,
                 totalMarks: attempt.totalMarks,
+                rank,
+                totalParticipants,
                 accuracy: attempt.accuracy,
                 percentile,
                 attempted: attempt.correct + attempt.wrong,
