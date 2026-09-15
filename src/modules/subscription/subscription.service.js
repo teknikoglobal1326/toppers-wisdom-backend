@@ -134,7 +134,7 @@ class SubscriptionService {
     async getSubscriptionById(id) {
         const Subscription = require('../../models/Subscription.model');
         const subscription = await Subscription.findOne({ _id: id, isDeleted: false, isActive: true })
-            .select('name description price durationDays tests boosters courses banner isPremium')
+            // .select('name description price durationDays tests boosters courses banner isPremium')
             .lean();
         
         if (!subscription) {
@@ -142,15 +142,7 @@ class SubscriptionService {
             throw new AppError('Subscription not found', 404);
         }
 
-        return {
-            _id: subscription._id,
-            name: subscription.name,
-            description: subscription.description,
-            price: subscription.price,
-            durationDays: subscription.durationDays,
-            isPremium: Boolean(subscription.isPremium),
-            image: subscription.banner || null
-        };
+        return subscription;
     }
 
     async purchaseSubscription(userId, subscriptionId, couponCode = null) {

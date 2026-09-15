@@ -25,6 +25,30 @@ const listCourses = catchAsync(async (req, res) => {
   sendPaginated(res, result.data, result.pagination)
 })
 
+const listWrapperPackages = catchAsync(async (req, res) => {
+  const result = await courseService.listWrapperPackages(req.user ? req.user._id : null, req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
+const getWrapperPackage = catchAsync(async (req, res) => {
+  sendSuccess(res, await courseService.getWrapperPackage(req.params.id, req.user ? req.user._id : null))
+})
+
+const myWrapperPackages = catchAsync(async (req, res) => {
+  const result = await courseService.myWrapperPackages(req.user._id, req.query)
+  sendPaginated(res, result.data, result.pagination)
+})
+
+const checkoutWrapperPackage = catchAsync(async (req, res) => {
+  sendSuccess(res, await courseService.checkoutWrapperPackage(req.params.id, req.user._id))
+})
+
+const createRazorpayOrderWrapperPackage = catchAsync(async (req, res) => {
+  const { amount, discount, gstRate, gstAmount, grandTotal } = req.body;
+  const amountDetails = { amount, discount, gstRate, gstAmount, grandTotal };
+  sendSuccess(res, await courseService.createRazorpayOrderWrapperPackage(req.params.id, req.user._id, amountDetails))
+})
+
 const myCourses = catchAsync(async (req, res) => {
   const result = await courseService.myCourses(req.user._id, req.query)
   sendPaginated(res, result.data, result.pagination)
@@ -96,6 +120,11 @@ const deleteNote = catchAsync(async (req, res) => {
 module.exports = {
   listCourseSubjects,
   listCourses,
+  listWrapperPackages,
+  getWrapperPackage,
+  myWrapperPackages,
+  checkoutWrapperPackage,
+  createRazorpayOrderWrapperPackage,
   myCourses,
   getCourse,
   getSubjectMaterials,
