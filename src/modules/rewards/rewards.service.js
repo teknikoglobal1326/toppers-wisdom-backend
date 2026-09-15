@@ -54,8 +54,10 @@ class RewardsService {
 
   async getWalletSummary(userId) {
     await this.ensureSignupBonus(userId);
+    const mongoose = require('mongoose');
+    const objectId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
     const aggregate = await WalletHistory.aggregate([
-      { $match: { user: userId, transactionType: 'credit' } },
+      { $match: { user: objectId, transactionType: 'credit' } },
       { $group: { _id: '$source', totalCoins: { $sum: '$amount' } } }
     ]);
 
@@ -130,29 +132,7 @@ class RewardsService {
     activity.streakMaintained = true;
     activity.streakSource = activityType;
 
-    // Award coins
-    if (isFirstActivityToday) {
-      if (activity.coinsEarned < 1) {
-        const coinsToAdd = 1 - activity.coinsEarned;
-        activity.coinsEarned = 1;
-        await this.addCoins(userId, coinsToAdd, 'daily_streak', 'Completed first daily activity');
-      }
-    }
-
-    // Count unique missions completed today
-    const completedCount = ['test-series-test', 'pyp_paper', 'pyp_dictionary', 'ai_test'].reduce(
-      (count, key) => (activity.missions[key] === true ? count + 1 : count),
-      0
-    );
-
-    // If all 4 missions are completed today, award the 1.5 coin total
-    if (completedCount === 4) {
-      if (activity.coinsEarned < 1.5) {
-        const coinsToAdd = 1.5 - activity.coinsEarned;
-        activity.coinsEarned = 1.5;
-        await this.addCoins(userId, coinsToAdd, 'daily_streak', 'Completed all daily activities');
-      }
-    }
+    // Award daily coins logic has been removed. Milestone rewards are handled below.
 
     await activity.save();
 
@@ -186,6 +166,13 @@ class RewardsService {
       }
       streak.tier = 1;
       await streak.save();
+
+      // Check Streak Slab for milestone reward
+      const StreakSlab = require('../../models/StreakSlab.model');
+      const slab = await StreakSlab.findOne({ days: streak.currentStreak, status: 'active', isDeleted: false });
+      if (slab) {
+        await this.addCoins(userId, slab.coins, 'daily_streak', `Completed ${slab.days} days streak slab`);
+      }
     }
 
     return { streakMaintained: true };

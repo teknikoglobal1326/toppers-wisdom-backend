@@ -227,6 +227,39 @@ const updateProfile = async (userId, payload) => {
     }
   }
 
+  const code = payload.referralCode || payload.referalCode
+  if (code && !currentUser.referredBy) {
+    const User = require('../../models/User.model')
+    const referrer = await User.findOne({ referralCode: code })
+    if (referrer && referrer._id.toString() !== userId.toString()) {
+      updateData.referredBy = referrer._id
+      
+      const rewardsService = require('../rewards/rewards.service')
+      const { notificationQueue } = require('../../jobs/queue')
+      
+      // Referrer gets 25 coins
+      await rewardsService.addCoins(referrer._id, 25, 'referral', `Referred new user: ${payload.name || currentUser.name || currentUser.phone || 'User'}`)
+      
+      // Notify referrer using the template defined in notification.worker.js
+      notificationQueue.add('referral-bonus', {
+        userId: referrer._id
+      }).catch(err => logger.error({ err }, 'Failed to queue referral bonus notification for referrer'))
+      
+      // Check if user already got signup bonus to prevent double dipping
+      const WalletHistory = require('../../models/WalletHistory.model')
+      const hasSignup = await WalletHistory.exists({ user: userId, source: 'signup' })
+      if (!hasSignup) {
+        // New user gets 10 coins for signup
+        await rewardsService.addCoins(userId, 10, 'signup', 'Sign Up Bonus via Referral')
+        
+        // Notify new user using the template defined in notification.worker.js
+        notificationQueue.add('signup-bonus-referral', {
+          userId: userId
+        }).catch(err => logger.error({ err }, 'Failed to queue signup bonus notification for new user'))
+      }
+    }
+  }
+
   const updatedUser = await authRepository.updateById(userId, updateData)
 
   logger.info({ userId }, 'User profile updated')
