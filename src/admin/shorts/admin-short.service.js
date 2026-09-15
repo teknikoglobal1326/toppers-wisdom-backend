@@ -1,4 +1,4 @@
-const path = require('path')
+﻿const path = require('path')
 const BaseService = require('../../core/BaseService')
 const shortRepository = require('../../modules/short/short.repository')
 const AppError = require('../../core/AppError')
@@ -10,10 +10,14 @@ class AdminShortService extends BaseService {
     super(shortRepository, 'admin:short')
   }
 
-  async listAll({ categoryId, status, sortOrder, page, limit } = {}) {
+  async listAll({ categoryId, status, sortOrder, page, limit, search } = {}) {
     const filter = { isDeleted: false }
     if (categoryId) filter.categoryId = categoryId
     if (status) filter.status = status
+    if (search) {
+      const rx = new RegExp(search.trim(), 'i')
+      filter.$or = [{ title: rx }, { hiTitle: rx }, { enTitle: rx }]
+    }
     const direction = sortOrder === 'desc' ? -1 : 1
     const result = await this.getAll(filter, { page, limit, sort: { sortOrder: direction, createdAt: -1 } })
 
