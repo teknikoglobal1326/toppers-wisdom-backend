@@ -224,13 +224,15 @@ class AdminStreakController {
 
     // Milestones Calculation
     const currentStreak = streak ? streak.currentStreak : 0
-    const milestones = [
-      { days: 7, rewardCoins: 50, badgeName: '7-Day Ignition 🔥', achieved: currentStreak >= 7 },
-      { days: 14, rewardCoins: 100, badgeName: '14-Day Blaze ⚡', achieved: currentStreak >= 14 },
-      { days: 30, rewardCoins: 250, badgeName: '30-Day Legend 🏆', achieved: currentStreak >= 30 },
-      { days: 60, rewardCoins: 500, badgeName: '60-Day Titan 👑', achieved: currentStreak >= 60 },
-      { days: 100, rewardCoins: 1000, badgeName: '100-Day Grandmaster 🌟', achieved: currentStreak >= 100 }
-    ]
+    const StreakSlab = require('../../models/StreakSlab.model')
+    const slabs = await StreakSlab.find({ isDeleted: false, status: 'active' }).sort({ days: 1 })
+    
+    const milestones = slabs.map(slab => ({
+      days: slab.days,
+      rewardCoins: slab.coins,
+      badgeName: slab.badgeName || `${slab.days}-Day Streak`,
+      achieved: currentStreak >= slab.days
+    }))
 
     // Wallet coins from daily streak source
     const walletSum = await WalletHistory.aggregate([
