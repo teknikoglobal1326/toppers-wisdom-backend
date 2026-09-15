@@ -333,8 +333,7 @@ class AdminContentService extends BaseService {
 
     const Content = require('../../models/Content.model')
     await Content.updateMany({ agoraChannel: content.agoraChannel, isDeleted: false }, {
-      isLive: false,
-      liveStatus: 'completed',
+      isLive: false, liveStatus: 'completed',
       restreamUrls: [],
       agoraConverters: [],
       rtmpServer: '',

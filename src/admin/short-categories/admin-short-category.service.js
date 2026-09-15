@@ -1,4 +1,4 @@
-const path = require('path')
+﻿const path = require('path')
 const BaseService = require('../../core/BaseService')
 const shortCategoryRepository = require('../../modules/short-category/short-category.repository')
 const AppError = require('../../core/AppError')
@@ -11,10 +11,13 @@ class AdminShortCategoryService extends BaseService {
     super(shortCategoryRepository, 'admin:short-category')
   }
 
-  async listAll({ examId, status, page, limit } = {}) {
+  async listAll({ examId, status, search, page, limit } = {}) {
     const filter = { isDeleted: false }
     if (examId) filter.examIds = examId
     if (status) filter.status = status
+    if (search) {
+      filter.name = new RegExp(search.trim(), 'i')
+    }
     const result = await this.getAll(filter, {
       page,
       limit,
