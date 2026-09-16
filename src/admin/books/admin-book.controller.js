@@ -124,9 +124,15 @@ const listPurchases = catchAsync(async (req, res) => {
   const User = require('../../models/User.model')
   const Book = require('../../models/Book.model')
   const mongoose = require('mongoose')
-  const { page = 1, limit = 10, search, q, bookId, status, section, startDate, endDate, sortBy = 'createdAt', sortOrder = 'desc' } = req.query
+  const { page = 1, limit = 10, search, q, bookId, status, startDate, endDate, sortBy = 'createdAt', sortOrder = 'desc' } = req.query
 
-  const queryFilter = {}
+  // Strictly get eBook IDs
+  const ebookBooks = await Book.find({ section: 'eBooks', isDeleted: false }).select('_id').lean()
+  const ebookIds = ebookBooks.map(b => b._id)
+
+  const queryFilter = {
+    book: { $in: ebookIds }
+  }
   
   if (status && status !== 'all') {
     queryFilter.status = status
@@ -135,31 +141,27 @@ const listPurchases = catchAsync(async (req, res) => {
   if (bookId && mongoose.Types.ObjectId.isValid(bookId)) {
     queryFilter.book = new mongoose.Types.ObjectId(bookId)
   }
-  if (section && section !== 'all') {
-    const matchingSectionBooks = await Book.find({ section }).select('_id').lean()
-    const sectionBookIds = matchingSectionBooks.map(b => b._id)
-    if (queryFilter.book) {
-      // already filtered by specific book
-    } else {
-      queryFilter.book = { $in: sectionBookIds }
-    }
-  }
 
   const searchTerm = search || q
   if (searchTerm && searchTerm.trim()) {
     const rx = new RegExp(searchTerm.trim(), 'i')
     const [matchingUsers, matchingBooks] = await Promise.all([
       User.find({ $or: [{ name: rx }, { email: rx }, { phone: rx }] }).select('_id').lean(),
-      Book.find({ title: rx }).select('_id').lean(),
+      Book.find({ title: rx, section: 'eBooks', isDeleted: false }).select('_id').lean(),
     ])
     const userIds = matchingUsers.map(u => u._id)
-    const bookIds = matchingBooks.map(b => b._id)
+    const matchingBookIds = matchingBooks.map(b => b._id)
 
-    queryFilter.$or = [
-      { razorpayOrderId: rx },
-      { razorpayPaymentId: rx },
-      { user: { $in: userIds } },
-      { book: { $in: bookIds } }
+    queryFilter.$and = [
+      { book: { $in: ebookIds } },
+      {
+        $or: [
+          { razorpayOrderId: rx },
+          { razorpayPaymentId: rx },
+          { user: { $in: userIds } },
+          { book: { $in: matchingBookIds } }
+        ]
+      }
     ]
   }
 
@@ -179,6 +181,8 @@ const listPurchases = catchAsync(async (req, res) => {
   const sortDirection = sortOrder === 'asc' ? 1 : -1
   const sort = { [sortBy]: sortDirection }
 
+  const globalEbookFilter = { book: { $in: ebookIds } }
+
   const [purchases, total, globalTotalTransactions, globalTotalPaid, globalTotalPending, globalTotalFailed, revenueAgg, todayCount, todayRevenueAgg] = await Promise.all([
     BookPurchase.find(queryFilter)
       .populate('user', 'name email phone qualification avatar image')
@@ -188,24 +192,24 @@ const listPurchases = catchAsync(async (req, res) => {
       .limit(limitNum)
       .lean(),
     BookPurchase.countDocuments(queryFilter),
-    BookPurchase.countDocuments({}),
-    BookPurchase.countDocuments({ status: 'paid' }),
-    BookPurchase.countDocuments({ status: 'pending' }),
-    BookPurchase.countDocuments({ status: 'failed' }),
+    BookPurchase.countDocuments(globalEbookFilter),
+    BookPurchase.countDocuments({ ...globalEbookFilter, status: 'paid' }),
+    BookPurchase.countDocuments({ ...globalEbookFilter, status: 'pending' }),
+    BookPurchase.countDocuments({ ...globalEbookFilter, status: 'failed' }),
     BookPurchase.aggregate([
-      { $match: { status: 'paid' } },
+      { $match: { ...globalEbookFilter, status: 'paid' } },
       { $group: { _id: null, totalRevenue: { $sum: '$amount' } } }
     ]),
     (() => {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      return BookPurchase.countDocuments({ createdAt: { $gte: today } })
+      return BookPurchase.countDocuments({ ...globalEbookFilter, createdAt: { $gte: today } })
     })(),
     (() => {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       return BookPurchase.aggregate([
-        { $match: { status: 'paid', createdAt: { $gte: today } } },
+        { $match: { ...globalEbookFilter, status: 'paid', createdAt: { $gte: today } } },
         { $group: { _id: null, todayRevenue: { $sum: '$amount' } } }
       ])
     })()

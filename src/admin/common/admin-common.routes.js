@@ -1076,7 +1076,9 @@ router.get('/grammar-categories', catchAsync(async (req, res) => {
 // GET /api/v1/admin/common/books
 router.get('/books', catchAsync(async (req, res) => {
   const Book = require('../../models/Book.model')
-  const books = await Book.find({ isDeleted: false })
+  const filter = { isDeleted: false }
+  if (req.query.section) filter.section = req.query.section
+  const books = await Book.find(filter)
     .sort({ sortOrder: 1, createdAt: -1 })
     .select('_id title price mrp coverImage author section isFree')
     .lean()
