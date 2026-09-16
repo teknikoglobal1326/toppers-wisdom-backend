@@ -1,10 +1,11 @@
-const Joi = require('joi')
+﻿const Joi = require('joi')
 
 const createBookSchema = Joi.object({
   title: Joi.string().trim().required(),
   author: Joi.string().trim().optional().allow(null, ''),
   coverImage: Joi.string().optional().allow(null, ''),
   file: Joi.string().optional().allow(null, ''),
+  samplePdf: Joi.string().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
   price: Joi.number().min(0).optional().default(0),
   mrp: Joi.number().min(0).optional().default(0),
@@ -26,6 +27,7 @@ const updateBookSchema = Joi.object({
   author:      Joi.string().trim().optional().allow(null, ''),
   coverImage:  Joi.string().optional().allow(null, ''),
   file:        Joi.string().optional().allow(null, ''),
+  samplePdf:   Joi.string().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
   price:       Joi.number().min(0).optional(),
   mrp:         Joi.number().min(0).optional(),
@@ -62,4 +64,19 @@ const listBookQuerySchema = Joi.object({
   exam: Joi.string().optional(),
 })
 
-module.exports = { createBookSchema, createBookDualSchema, updateBookSchema, setBuyUrlSchema, listBookQuerySchema }
+
+const listPurchasesQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+  search: Joi.string().trim().allow('').optional(),
+  q: Joi.string().trim().allow('').optional(),
+  bookId: Joi.string().trim().allow('').optional(),
+  section: Joi.string().valid('all', 'books', 'eBooks', 'audioBooks', 'myBooks').optional(),
+  status: Joi.string().valid('paid', 'pending', 'failed', 'all').optional(),
+  startDate: Joi.string().allow('').optional(),
+  endDate: Joi.string().allow('').optional(),
+  sortBy: Joi.string().valid('createdAt', 'amount', 'status').default('createdAt'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
+})
+module.exports = { createBookSchema, createBookDualSchema, updateBookSchema, setBuyUrlSchema, listBookQuerySchema, listPurchasesQuerySchema }
+

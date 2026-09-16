@@ -1,4 +1,4 @@
-const Joi = require('joi')
+﻿const Joi = require('joi')
 
 const createShortCategorySchema = Joi.object({
   name: Joi.string().trim().required(),
@@ -33,6 +33,7 @@ const updateShortCategorySchema = Joi.object({
 }).min(1)
 
 const listShortCategoryQuerySchema = Joi.object({
+  search: Joi.string().trim().max(200).optional().allow('', null),
   examId: Joi.string().hex().length(24),
   status: Joi.string().valid('active', 'inactive'),
   page: Joi.number().integer().min(1).default(1),
