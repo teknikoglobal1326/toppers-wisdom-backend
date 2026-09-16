@@ -9,4 +9,6 @@ router.patch('/read/:id/:chapterId', validate(setGrammarChapterReadSchema), cont
 router.patch('/bookmark/:id/:chapterId', validate(setGrammarChapterBookmarkSchema), controller.setChapterBookmark)
 router.patch('/like/:id', validate(setGrammarLikeSchema), controller.setGrammarLike)
 
+
+
 module.exports = router
