@@ -13,6 +13,7 @@ const grammarSchema = new mongoose.Schema({
   topicName: { type: String, required: true, trim: true },
   chapters: { type: [chapterSchema], default: [] },
   sortOrder: { type: Number, default: 0, index: true },
+  totalLikes: { type: Number, default: 0, index: true },
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
   exam: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exam', index: true }],
   subjectIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],

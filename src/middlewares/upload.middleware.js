@@ -78,7 +78,7 @@ const uploadVideoImage = multer({
     ];
 
     const ext = path.extname(file.originalname).toLowerCase()
-    const allowedAudioExts = ['.mp3', '.wav', '.ogg', '.aac', '.m4a']
+    const allowedAudioExts = ['.mp3', '.wav', '.ogg', '.aac', '.m4a', '.mpeg', '.mpg']
 
     if (allowed.includes(file.mimetype) || allowedAudioExts.includes(ext) || ext === '.mkv') {
       return cb(null, true);

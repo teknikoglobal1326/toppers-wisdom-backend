@@ -71,14 +71,16 @@ class BookService extends BaseService {
         key_secret: config.RAZORPAY_KEY_SECRET,
     })
 
-    // Amount in paise
-    const amount = book.price * 100
+    // Amount in paise (must be integer)
+    const amount = Math.round(book.price * 100)
 
     // Create Razorpay Order
+    // Razorpay receipt length cannot exceed 40 characters
+    const receipt = `rcpt_${userId.toString().slice(-10)}_${bookId.toString().slice(-10)}_${Date.now().toString().slice(-5)}`
     const rzpOrder = await razorpay.orders.create({
         amount,
         currency: 'INR',
-        receipt: `receipt_${userId}_${bookId}`
+        receipt: receipt.slice(0, 40)
     })
 
     // Create Pending Purchase Record

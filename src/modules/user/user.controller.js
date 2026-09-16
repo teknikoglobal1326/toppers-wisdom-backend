@@ -91,6 +91,7 @@ const getStreakCount = catchAsync(async (req, res) => {
 
 const getMyWallet = catchAsync(async (req, res) => {
   const rewardsService = require('../rewards/rewards.service')
+  const User = require('../../models/User.model')
   
   // Get wallet summary for total balance and coins by source
   const summary = await rewardsService.getWalletSummary(req.user._id)
@@ -98,9 +99,18 @@ const getMyWallet = catchAsync(async (req, res) => {
   // Get recent 20 wallet activities
   const history = await rewardsService.getWalletHistory(req.user._id, 1, 20)
 
+  // Get user referral info
+  const user = await User.findById(req.user._id).select('referralCode')
+  const totalFriendsReferred = await User.countDocuments({ referredBy: req.user._id })
+
   sendSuccess(res, {
     totalBalance: summary.totalBalance,
     coinsBySource: summary.sources,
+    referralInfo: {
+      referralCode: user?.referralCode || null,
+      totalFriendsReferred,
+      totalReferralCoinsEarned: summary.sources.referral || 0
+    },
     recentActivity: history.history
   }, 'Wallet details retrieved successfully')
 })
