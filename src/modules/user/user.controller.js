@@ -89,4 +89,20 @@ const getStreakCount = catchAsync(async (req, res) => {
   sendSuccess(res, { count }, 'Active streak count retrieved successfully')
 })
 
-module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification, getPremiumPlan, getExamCalendar, getStreakCount }
+const getMyWallet = catchAsync(async (req, res) => {
+  const rewardsService = require('../rewards/rewards.service')
+  
+  // Get wallet summary for total balance and coins by source
+  const summary = await rewardsService.getWalletSummary(req.user._id)
+  
+  // Get recent 20 wallet activities
+  const history = await rewardsService.getWalletHistory(req.user._id, 1, 20)
+
+  sendSuccess(res, {
+    totalBalance: summary.totalBalance,
+    coinsBySource: summary.sources,
+    recentActivity: history.history
+  }, 'Wallet details retrieved successfully')
+})
+
+module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification, getPremiumPlan, getExamCalendar, getStreakCount, getMyWallet }

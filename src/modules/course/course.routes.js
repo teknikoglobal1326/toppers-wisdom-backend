@@ -6,6 +6,15 @@ const { reviewSchema, noteSchema } = require('./course.schema')
 router.get('/subjects', controller.listCourseSubjects)
 router.get('/my-courses', controller.myCourses)
 router.get('/scheduled-live-classes', controller.getScheduledLiveClasses)
+
+// Wrapper packages routes
+router.get('/wrapper-packages', controller.listWrapperPackages)
+router.get('/my-wrapper-packages', require('../../middlewares/auth.middleware').authMiddleware, controller.myWrapperPackages)
+router.get('/wrapper-packages/:id', controller.getWrapperPackage)
+router.get('/wrapper-packages/:id/checkout', require('../../middlewares/auth.middleware').authMiddleware, controller.checkoutWrapperPackage)
+router.post('/wrapper-packages/:id/create-razorpay-order', require('../../middlewares/auth.middleware').authMiddleware, controller.createRazorpayOrderWrapperPackage)
+router.post('/wrapper-packages/:id/verify-payment', require('../../middlewares/auth.middleware').authMiddleware, controller.verifyPayment)
+
 router.get('/', controller.listCourses)
 router.get('/:id', controller.getCourse)
 router.get('/:id/subjects/:subjectId/materials', controller.getSubjectMaterials)

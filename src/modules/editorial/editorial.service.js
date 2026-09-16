@@ -155,9 +155,13 @@ class EditorialService extends BaseService {
           endDate: { $gt: new Date() }
         }).populate('subscription').lean();
 
+        const { isItemValidCustomValidity } = require('../../lib/subscriptionHelper');
         userSubs.forEach(us => {
           if (us.subscription) {
-            activeSubs.push(us.subscription);
+            // Check if editorial has custom validity
+            if (isItemValidCustomValidity(us.subscription, us.startDate, 'editorial')) {
+              activeSubs.push(us.subscription);
+            }
           }
         });
       }
@@ -387,10 +391,15 @@ class EditorialService extends BaseService {
       endDate: { $gt: new Date() }
     }).populate('subscription').lean()
 
+    const { isItemValidCustomValidity } = require('../../lib/subscriptionHelper')
     const hasSubAccess = userSubs.some(us => {
       const sub = us.subscription
       if (!sub || !Array.isArray(sub.boosters)) return false
-      return sub.boosters.some(b => (b.moduleType || '').toLowerCase() === 'editorial')
+      const hasEditorial = sub.boosters.some(b => (b.moduleType || '').toLowerCase() === 'editorial')
+      if (hasEditorial) {
+        return isItemValidCustomValidity(sub, us.startDate, 'editorial')
+      }
+      return false
     })
 
     return hasSubAccess

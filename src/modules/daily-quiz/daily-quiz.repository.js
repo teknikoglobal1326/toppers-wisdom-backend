@@ -126,6 +126,25 @@ class DailyQuizRepository extends BaseRepository {
         ])
         return participants[0]?.count || 0
     }
+
+    async getAttemptRank(quizId, score, timeTaken) {
+        const higherRankCount = await DailyQuizAttempt.countDocuments({
+            quiz: quizId,
+            status: { $in: ['completed', 'abandoned'] },
+            $or: [
+                { score: { $gt: score } },
+                { score: score, timeTaken: { $lt: timeTaken } }
+            ]
+        })
+        const totalParticipants = await DailyQuizAttempt.countDocuments({
+            quiz: quizId,
+            status: { $in: ['completed', 'abandoned'] }
+        })
+        return {
+            rank: higherRankCount + 1,
+            totalParticipants
+        }
+    }
 }
 
 module.exports = new DailyQuizRepository()

@@ -226,6 +226,14 @@ new Worker('notification', async (job) => {
     title = 'New Login Detected'
     body = 'You have successfully logged in to your account.'
     data = { ...data, type: 'login' }
+  } else if (name === 'referral-bonus') {
+    title = 'Referral Bonus! 🎉'
+    body = 'You earned 25 coins for successfully referring a new user!'
+    data = { ...data, type: 'referral_bonus' }
+  } else if (name === 'signup-bonus-referral') {
+    title = 'Welcome Bonus! 🎁'
+    body = 'You received 10 coins as a sign-up bonus via referral!'
+    data = { ...data, type: 'signup_bonus' }
   }
 
   let filter = {}

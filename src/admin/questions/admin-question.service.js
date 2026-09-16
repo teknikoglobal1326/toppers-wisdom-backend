@@ -259,12 +259,15 @@ class AdminQuestionService extends BaseService {
     }
     const Subject = require('../../models/Subject.model')
     const subjectDoc = await Subject.findOne({ _id: subjectId, isDeleted: false })
+    console.log("request subject._id",subjectId);
+    console.log("subjectDoc data",subjectDoc);
     if (!subjectDoc) {
       throw new AppError('Subject could not be resolved/found in database.', 400, 'VALIDATION_ERROR')
     }
     if (!chapterId) {
       throw new AppError('Chapter is missing or invalid.', 400, 'VALIDATION_ERROR')
     }
+  
     const chapter = subjectDoc.chapters.find(c => c._id.toString() === chapterId.toString())
     if (!chapter) {
       throw new AppError('Chapter could not be resolved/found under the selected subject.', 400, 'VALIDATION_ERROR')

@@ -15,22 +15,41 @@ const checkAccess = async (userId, itemType, itemId) => {
       user: userId,
       isActive: true,
       endDate: { $gt: new Date() }
-    }).select('order').lean()
+    }).select('order startDate').lean()
 
     const activeOrderIds = activeSubs.map(us => us.order).filter(Boolean)
     if (activeOrderIds.length > 0) {
+      const { isItemValidCustomValidity } = require('./subscriptionHelper')
       const subOrders = await SubscriptionOrder.find({
         _id: { $in: activeOrderIds },
         isActive: true
-      }).select('subscriptionDetails.courses').lean()
+      }).select('subscriptionDetails').lean()
 
       for (const order of subOrders) {
         if (order.subscriptionDetails && Array.isArray(order.subscriptionDetails.courses)) {
           if (order.subscriptionDetails.courses.some(cId => cId.toString() === itemId.toString())) {
-            logger.debug({ userId, itemType, itemId }, 'Access via active subscription order course')
-            return true
+            const userSub = activeSubs.find(us => us.order?.toString() === order._id.toString())
+            if (userSub && isItemValidCustomValidity(order.subscriptionDetails, userSub.startDate, itemId)) {
+              logger.debug({ userId, itemType, itemId }, 'Access via active subscription order course')
+              return true
+            }
           }
         }
+      }
+    }
+    const WrapperPackage = require('../models/WrapperPackage.model')
+    const wrapperPackages = await WrapperPackage.find({ courses: itemId, status: 'active', isDeleted: false }).select('_id').lean()
+    if (wrapperPackages.length > 0) {
+      const wpIds = wrapperPackages.map(wp => wp._id)
+      const paidWp = await CourseOrder.exists({ 
+        user: userId, 
+        status: 'paid', 
+        'items.itemType': 'wrapper-package', 
+        'items.itemId': { $in: wpIds } 
+      })
+      if (paidWp) {
+        logger.debug({ userId, itemType, itemId }, 'Access via wrapper package')
+        return true
       }
     }
   }
