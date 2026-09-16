@@ -1,4 +1,4 @@
-const BaseService = require('../../core/BaseService')
+﻿const BaseService = require('../../core/BaseService')
 const bookRepository = require('./book.repository')
 const AppError = require('../../core/AppError')
 const { createLogger } = require('../../config/logger')
@@ -165,12 +165,12 @@ class BookService extends BaseService {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .populate('book', 'title author coverImage price isFree tags rating')
+        .populate('book', 'title author coverImage price mrp isFree tags rating file samplePdf description section language')
 
     const total = await BookPurchase.countDocuments(query)
 
     return {
-        data: purchases.map(p => p.book),
+        data: purchases.map(p => p.book).filter(Boolean),
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
     }
 }

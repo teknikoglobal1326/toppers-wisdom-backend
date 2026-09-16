@@ -1,4 +1,4 @@
-const Joi = require('joi')
+﻿const Joi = require('joi')
 
 const createBookSchema = Joi.object({
   title: Joi.string().trim().required(),
@@ -64,5 +64,18 @@ const listBookQuerySchema = Joi.object({
   exam: Joi.string().optional(),
 })
 
-module.exports = { createBookSchema, createBookDualSchema, updateBookSchema, setBuyUrlSchema, listBookQuerySchema }
+
+const listPurchasesQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+  search: Joi.string().trim().allow('').optional(),
+  q: Joi.string().trim().allow('').optional(),
+  bookId: Joi.string().trim().allow('').optional(),
+  status: Joi.string().valid('paid', 'pending', 'failed', 'all').optional(),
+  startDate: Joi.string().allow('').optional(),
+  endDate: Joi.string().allow('').optional(),
+  sortBy: Joi.string().valid('createdAt', 'amount', 'status').default('createdAt'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
+})
+module.exports = { createBookSchema, createBookDualSchema, updateBookSchema, setBuyUrlSchema, listBookQuerySchema, listPurchasesQuerySchema }
 

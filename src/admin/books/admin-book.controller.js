@@ -1,4 +1,4 @@
-const catchAsync = require('../../core/catchAsync')
+﻿const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendCreated, sendPaginated } = require('../../core/response')
 const Book = require('../../models/Book.model')
 const AppError = require('../../core/AppError')
@@ -115,4 +115,105 @@ const setBuyUrl = catchAsync(async (req, res) => {
     sendSuccess(res, book, 'Buy URL updated')
 })
 
-module.exports = { list, getOne, create, update, remove, setBuyUrl }
+
+const listPurchases = catchAsync(async (req, res) => {
+  const BookPurchase = require('../../models/BookPurchase.model')
+  const User = require('../../models/User.model')
+  const Book = require('../../models/Book.model')
+  const mongoose = require('mongoose')
+  const { page = 1, limit = 10, search, q, bookId, status, startDate, endDate, sortBy = 'createdAt', sortOrder = 'desc' } = req.query
+
+  const queryFilter = {}
+  
+  if (status && status !== 'all') {
+    queryFilter.status = status
+  }
+
+  if (bookId && mongoose.Types.ObjectId.isValid(bookId)) {
+    queryFilter.book = new mongoose.Types.ObjectId(bookId)
+  }
+
+  const searchTerm = search || q
+  if (searchTerm && searchTerm.trim()) {
+    const rx = new RegExp(searchTerm.trim(), 'i')
+    const [matchingUsers, matchingBooks] = await Promise.all([
+      User.find({ $or: [{ name: rx }, { email: rx }, { phone: rx }] }).select('_id').lean(),
+      Book.find({ title: rx }).select('_id').lean(),
+    ])
+    const userIds = matchingUsers.map(u => u._id)
+    const bookIds = matchingBooks.map(b => b._id)
+
+    queryFilter.$or = [
+      { razorpayOrderId: rx },
+      { razorpayPaymentId: rx },
+      { user: { $in: userIds } },
+      { book: { $in: bookIds } }
+    ]
+  }
+
+  if (startDate || endDate) {
+    queryFilter.createdAt = {}
+    if (startDate) queryFilter.createdAt.$gte = new Date(startDate)
+    if (endDate) {
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      queryFilter.createdAt.$lte = end
+    }
+  }
+
+  const pageNum = Number(page) || 1
+  const limitNum = Number(limit) || 10
+  const skip = (pageNum - 1) * limitNum
+  const sortDirection = sortOrder === 'asc' ? 1 : -1
+  const sort = { [sortBy]: sortDirection }
+
+  const [purchases, total, globalTotalTransactions, globalTotalPaid, globalTotalPending, globalTotalFailed, revenueAgg, todayCount, todayRevenueAgg] = await Promise.all([
+    BookPurchase.find(queryFilter)
+      .populate('user', 'name email phone qualification avatar image')
+      .populate('book', 'title author coverImage price mrp section language file samplePdf buyUrl isFree rating')
+      .sort(sort)
+      .skip(skip)
+      .limit(limitNum)
+      .lean(),
+    BookPurchase.countDocuments(queryFilter),
+    BookPurchase.countDocuments({}),
+    BookPurchase.countDocuments({ status: 'paid' }),
+    BookPurchase.countDocuments({ status: 'pending' }),
+    BookPurchase.countDocuments({ status: 'failed' }),
+    BookPurchase.aggregate([
+      { $match: { status: 'paid' } },
+      { $group: { _id: null, totalRevenue: { $sum: '$amount' } } }
+    ]),
+    (() => {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return BookPurchase.countDocuments({ createdAt: { $gte: today } })
+    })(),
+    (() => {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      return BookPurchase.aggregate([
+        { $match: { status: 'paid', createdAt: { $gte: today } } },
+        { $group: { _id: null, todayRevenue: { $sum: '$amount' } } }
+      ])
+    })()
+  ])
+
+  const globalRevenue = revenueAgg.length > 0 ? revenueAgg[0].totalRevenue : 0
+  const globalTodayRevenue = todayRevenueAgg.length > 0 ? todayRevenueAgg[0].todayRevenue : 0
+
+  sendPaginated(res, purchases, {
+    page: pageNum,
+    limit: limitNum,
+    total,
+    totalPages: Math.ceil(total / limitNum) || 1,
+    globalTotalTransactions,
+    globalTotalPaid,
+    globalTotalPending,
+    globalTotalFailed,
+    globalRevenue,
+    globalTodayTransactions: todayCount,
+    globalTodayRevenue
+  })
+})
+module.exports = { list, getOne, create, update, remove, setBuyUrl, listPurchases }

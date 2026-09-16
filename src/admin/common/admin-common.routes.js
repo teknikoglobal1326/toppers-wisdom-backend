@@ -1,4 +1,4 @@
-const router = require('express').Router()
+﻿const router = require('express').Router()
 const catchAsync = require('../../core/catchAsync')
 const { sendSuccess, sendError, sendPaginated } = require('../../core/response')
 const qualificationService = require('../../modules/qualification/qualification.service')
@@ -1072,4 +1072,14 @@ router.get('/grammar-categories', catchAsync(async (req, res) => {
   sendSuccess(res, categories)
 }))
 
+
+// GET /api/v1/admin/common/books
+router.get('/books', catchAsync(async (req, res) => {
+  const Book = require('../../models/Book.model')
+  const books = await Book.find({ isDeleted: false })
+    .sort({ sortOrder: 1, createdAt: -1 })
+    .select('_id title price mrp coverImage author section isFree')
+    .lean()
+  sendSuccess(res, books)
+}))
 module.exports = router
