@@ -1,4 +1,4 @@
-const Joi = require('joi')
+﻿const Joi = require('joi')
 
 const createShortSchema = Joi.object({
   title:     Joi.string().trim().required(),
@@ -28,6 +28,7 @@ const createShortDualSchema = Joi.object({
 })
 
 const listShortQuerySchema = Joi.object({
+  search: Joi.string().trim().max(200).optional().allow('', null),
   categoryId: Joi.string().hex().length(24),
   status: Joi.string().valid('active', 'inactive'),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc'),

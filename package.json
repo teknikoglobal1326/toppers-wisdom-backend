@@ -6,6 +6,7 @@
     "start": "node src/server.js",
     "dev": "nodemon -r ./src/dns-fix.js",
     "seed": "node src/seeds/seed.js",
+    "seed:books-history": "node src/seeds/seed-book-purchases.js",
     "create:admin": "node src/seeds/create-superadmin.js",
     "lint": "eslint src/**/*.js"
   },

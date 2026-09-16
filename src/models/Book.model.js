@@ -11,6 +11,7 @@ const bookSchema = new mongoose.Schema({
   isFree:      { type: Boolean, default: false, index: true },
   section:     { type: String, enum: ['myBooks', 'eBooks', 'books', 'audioBooks'], default: 'books', index: true },
   file:        { type: String, default: null },
+  samplePdf:   { type: String, default: null },
   buyUrl:      { type: String, default: null },
   pages:       { type: Number, default: 0 },
   rating:      { type: Number, default: 0 },
@@ -24,3 +25,4 @@ const bookSchema = new mongoose.Schema({
 }, { timestamps: true })
 
 module.exports = mongoose.model('Book', bookSchema)
+
