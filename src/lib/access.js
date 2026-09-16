@@ -6,6 +6,13 @@ const logger = createLogger('access')
 
 const checkAccess = async (userId, itemType, itemId) => {
   if (itemType === 'course') {
+    const Course = require('../models/Course.model')
+    const course = await Course.findById(itemId).select('type isFree').lean()
+    if (course && (course.type === 'free' || course.isFree)) {
+      logger.debug({ userId, itemType, itemId }, 'Access via free course')
+      return true
+    }
+
     const enrolled = await Enrollment.exists({ user: userId, course: itemId })
     if (enrolled) { logger.debug({ userId, itemType, itemId }, 'Access via enrollment'); return true }
 
