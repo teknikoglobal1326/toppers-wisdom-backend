@@ -68,6 +68,9 @@ const normalizeBookPayload = (data = {}) => {
         const parsedMrp = Number(payload.mrp)
         if (!Number.isNaN(parsedMrp)) payload.mrp = parsedMrp
     }
+    if (payload.isFree !== undefined && payload.isFree !== null && payload.isFree !== '') {
+        payload.isFree = (payload.isFree === true || payload.isFree === 'true')
+    }
     if (payload.price !== undefined && payload.price !== null && payload.price !== '') {
         const parsedPrice = Number(payload.price)
         if (!Number.isNaN(parsedPrice)) payload.price = parsedPrice
@@ -121,7 +124,7 @@ const listPurchases = catchAsync(async (req, res) => {
   const User = require('../../models/User.model')
   const Book = require('../../models/Book.model')
   const mongoose = require('mongoose')
-  const { page = 1, limit = 10, search, q, bookId, status, startDate, endDate, sortBy = 'createdAt', sortOrder = 'desc' } = req.query
+  const { page = 1, limit = 10, search, q, bookId, status, section, startDate, endDate, sortBy = 'createdAt', sortOrder = 'desc' } = req.query
 
   const queryFilter = {}
   
@@ -131,6 +134,15 @@ const listPurchases = catchAsync(async (req, res) => {
 
   if (bookId && mongoose.Types.ObjectId.isValid(bookId)) {
     queryFilter.book = new mongoose.Types.ObjectId(bookId)
+  }
+  if (section && section !== 'all') {
+    const matchingSectionBooks = await Book.find({ section }).select('_id').lean()
+    const sectionBookIds = matchingSectionBooks.map(b => b._id)
+    if (queryFilter.book) {
+      // already filtered by specific book
+    } else {
+      queryFilter.book = { $in: sectionBookIds }
+    }
   }
 
   const searchTerm = search || q

@@ -71,6 +71,7 @@ const listPurchasesQuerySchema = Joi.object({
   search: Joi.string().trim().allow('').optional(),
   q: Joi.string().trim().allow('').optional(),
   bookId: Joi.string().trim().allow('').optional(),
+  section: Joi.string().valid('all', 'books', 'eBooks', 'audioBooks', 'myBooks').optional(),
   status: Joi.string().valid('paid', 'pending', 'failed', 'all').optional(),
   startDate: Joi.string().allow('').optional(),
   endDate: Joi.string().allow('').optional(),
