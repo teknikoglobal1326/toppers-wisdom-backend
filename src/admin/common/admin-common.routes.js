@@ -52,11 +52,14 @@ router.get('/qualifications', catchAsync(async (_req, res) => {
 
 // GET /api/v1/admin/common/courses
 router.get('/courses', catchAsync(async (req, res) => {
-  const courses = await courseRepository.findAll({ isDeleted: false },
-    { sort: { sortOrder: 1, createdAt: -1 }, select: '_id title sortOrder', });
+  const filter = { isDeleted: false };
+  if (req.query.examId) {
+    filter.exam = req.query.examId;
+  }
+  const courses = await courseRepository.findAll(filter,
+    { sort: { sortOrder: 1, createdAt: -1 }, select: '_id title exam sortOrder' });
   sendSuccess(res, courses);
-})
-);
+}));
 
 // GET /api/v1/admin/common/subscriptions
 router.get('/subscriptions', catchAsync(async (req, res) => {

@@ -4,6 +4,44 @@ const adminCourseService = require('./admin-course.service')
 
 const listAll = catchAsync(async (req, res) => { const r = await adminCourseService.listAll(req.query); sendPaginated(res, r.data, r.pagination) })
 const listPurchases = catchAsync(async (req, res) => { const r = await adminCourseService.listPurchases(req.query); sendPaginated(res, r.data, r.pagination) })
+const exportPurchases = catchAsync(async (req, res) => {
+  const purchases = await adminCourseService.exportPurchases(req.query)
+
+  if (req.query.format === 'json') {
+    return sendSuccess(res, purchases, 'Export data retrieved successfully')
+  }
+
+  const headers = ['S.No', 'Order ID', 'Payment ID', 'Student Name', 'Student Phone', 'Student Email', 'Course / Item', 'Total Amount', 'Discount', 'GST Rate (%)', 'GST Amount', 'Grand Total', 'Currency', 'Status', 'Date']
+  const csvRows = [headers.join(',')]
+
+  for (const p of purchases) {
+    const row = [
+      p.serialNo,
+      `"${String(p.orderId || '').replace(/"/g, '""')}"`,
+      `"${String(p.paymentId || '').replace(/"/g, '""')}"`,
+      `"${String(p.studentName || '').replace(/"/g, '""')}"`,
+      `"${String(p.studentPhone || '').replace(/"/g, '""')}"`,
+      `"${String(p.studentEmail || '').replace(/"/g, '""')}"`,
+      `"${String(p.courses || '').replace(/"/g, '""')}"`,
+      p.totalAmount,
+      p.discount,
+      p.gstRate,
+      p.gstAmount,
+      p.grandTotal,
+      `"${p.currency}"`,
+      `"${p.status}"`,
+      `"${p.paymentDate}"`
+    ]
+    csvRows.push(row.join(','))
+  }
+
+  const csvString = csvRows.join('\r\n')
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', `attachment; filename="course_transactions_${Date.now()}.csv"`)
+  res.status(200).send(csvString)
+})
+
+
 const getOne = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.getById(req.params.id)) })
 const createCourse = catchAsync(async (req, res) => { sendCreated(res, await adminCourseService.create({ ...req.body, createdBy: req.admin._id })) })
 const updateCourse = catchAsync(async (req, res) => { sendSuccess(res, await adminCourseService.update(req.params.id, req.body)) })
@@ -76,4 +114,4 @@ const deleteTestForCourse = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Test deleted successfully')
 })
 
-module.exports = { listAll, listPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, mapFaculties, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse, uploadTestForCourse, listTestsForCourse, getTestForCourse, updateTestForCourse, deleteTestForCourse }
+module.exports = { listAll, listPurchases, exportPurchases, getOne, createCourse, updateCourse, deleteCourse, publish, mapFaculties, addLesson, removeLesson, uploadUrl, thumbnailUploadUrl, bannerUploadUrl, updateTimetable, getAssociatedData, uploadPdfForCourse, listPdfsForCourse, getPdfForCourse, updatePdfForCourse, deletePdfForCourse, uploadTestForCourse, listTestsForCourse, getTestForCourse, updateTestForCourse, deleteTestForCourse }

@@ -184,6 +184,10 @@ class AdminCourseService extends BaseService {
     return this.update(courseId, { timetable });
   }
 
+  async exportPurchases(query) {
+    return courseRepository.exportPurchases(query);
+  }
+
   async listPurchases(query) {
     return courseRepository.listPurchases(query);
   }

@@ -101,7 +101,35 @@ class AdminStreakController {
     const total = countResult[0] ? countResult[0].total : 0
 
     // Sorting and Pagination
-    pipeline.push({ $sort: { currentStreak: -1, lastActiveDate: -1 } })
+    // Sorting and Pagination
+    const sortBy = req.query.sortBy || req.query.sort || 'currentStreak'
+    const sortOrder = req.query.sortOrder === 'asc' || req.query.order === 'asc' || req.query.sortOrder === '1' ? 1 : -1
+
+    const sortStage = {}
+    if (sortBy === 'longestStreak') {
+      sortStage.longestStreak = sortOrder
+    } else if (sortBy === 'totalActiveDays') {
+      sortStage.totalActiveDays = sortOrder
+    } else if (sortBy === 'freezesAvailable') {
+      sortStage.freezesAvailable = sortOrder
+    } else if (sortBy === 'lastActiveDate') {
+      sortStage.lastActiveDate = sortOrder
+    } else if (sortBy === 'name' || sortBy === 'user') {
+      sortStage['user.name'] = sortOrder
+    } else if (sortBy === 'createdAt') {
+      sortStage.createdAt = sortOrder
+    } else {
+      sortStage.currentStreak = sortOrder
+    }
+
+    if (!sortStage.currentStreak && sortBy !== 'currentStreak') {
+      sortStage.currentStreak = -1
+    }
+    if (!sortStage.lastActiveDate) {
+      sortStage.lastActiveDate = -1
+    }
+
+    pipeline.push({ $sort: sortStage })
     pipeline.push({ $skip: skip })
     pipeline.push({ $limit: limit })
 

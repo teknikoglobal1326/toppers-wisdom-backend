@@ -1,6 +1,7 @@
 const router     = require('express').Router()
 const controller = require('./admin-user.controller')
 
+router.get('/export',                      controller.exportUsers)
 router.get('/',                            controller.listAll)
 router.get('/:id',                         controller.getOne)
 router.patch('/:id',                       controller.updateUser)
