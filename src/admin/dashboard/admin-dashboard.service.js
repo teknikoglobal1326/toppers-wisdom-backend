@@ -1,3 +1,4 @@
+const mongoose = require('mongoose')
 const User = require('../../models/User.model')
 const Course = require('../../models/Course.model')
 const TestSeries = require('../../models/TestSeries.model')
@@ -9,6 +10,7 @@ const Subscription = require('../../models/Subscription.model')
 const Book = require('../../models/Book.model')
 const PreviousYearPaper = require('../../models/PreviousYearPaper.model')
 const DailyQuiz = require('../../models/DailyQuiz.model')
+const SubExam = require('../../models/SubExam.model')
 const { createLogger } = require('../../config/logger')
 
 const logger = createLogger('admin:dashboard:service')
@@ -42,9 +44,42 @@ const parseDateRange = (query = {}) => {
   return { startDate, endDate }
 }
 
+const parseExamFilter = (query = {}) => {
+  const examId = query.examId || query.exam
+  if (examId && mongoose.Types.ObjectId.isValid(examId)) {
+    return new mongoose.Types.ObjectId(examId)
+  }
+  return null
+}
+
+const getExamContextIds = async (examObjectId) => {
+  if (!examObjectId) return null
+
+  const [subExamIds, courseIds, testIds, subIds] = await Promise.all([
+    SubExam.find({ examId: examObjectId, is_deleted: false }).distinct('_id'),
+    Course.find({ exam: examObjectId, isDeleted: false }).distinct('_id'),
+    TestSeries.find({ exam: examObjectId, isDeleted: false }).distinct('_id'),
+    Subscription.find({
+      $or: [{ examId: examObjectId }, { examIds: examObjectId }],
+      isDeleted: false
+    }).distinct('_id')
+  ])
+
+  return {
+    examObjectId,
+    subExamIds,
+    courseIds,
+    testIds,
+    subIds,
+    orderItemIds: [...courseIds, ...testIds]
+  }
+}
+
 const getDashboardStats = async (query = {}) => {
   logger.info({ query }, 'Fetching admin dashboard stats')
   const { startDate, endDate } = parseDateRange(query)
+  const examObjectId = parseExamFilter(query)
+  const examContext = await getExamContextIds(examObjectId)
 
   const userMatch = { isDeleted: false }
   const courseMatch = { isDeleted: false }
@@ -62,6 +97,23 @@ const getDashboardStats = async (query = {}) => {
     const endOfToday = new Date()
     endOfToday.setUTCHours(23, 59, 59, 999)
     liveMatch.scheduledStartTime = { $gte: startOfToday, $lte: endOfToday }
+  }
+
+  if (examContext) {
+    userMatch.$or = [
+      { 'exam._id': examContext.examObjectId },
+      { exam: examContext.examObjectId },
+      { 'exam._id': examContext.examObjectId.toString() },
+      ...(examContext.subExamIds.length > 0
+        ? [
+            { 'subExam._id': { $in: examContext.subExamIds } },
+            { 'subExams._id': { $in: examContext.subExamIds } }
+          ]
+        : [])
+    ]
+    courseMatch.exam = examContext.examObjectId
+    testMatch.exam = examContext.examObjectId
+    liveMatch.course = { $in: examContext.courseIds }
   }
 
   const [totalUsers, totalCourses, totalTestSeries, todayLiveClasses] = await Promise.all([
@@ -82,6 +134,8 @@ const getDashboardStats = async (query = {}) => {
 const getEnrollmentStats = async (query = {}) => {
   logger.info({ query }, 'Fetching admin dashboard daily enrollment stats')
   const { startDate: customStart, endDate: customEnd } = parseDateRange(query)
+  const examObjectId = parseExamFilter(query)
+  const examContext = await getExamContextIds(examObjectId)
 
   let startDate, endDate, isCustomRange = false
   let year, month, half
@@ -110,11 +164,17 @@ const getEnrollmentStats = async (query = {}) => {
     endDate = new Date(endIsoString)
   }
 
+  const matchFilter = {
+    enrolledAt: { $gte: startDate, $lte: endDate }
+  }
+
+  if (examContext) {
+    matchFilter.course = { $in: examContext.courseIds }
+  }
+
   const enrollments = await Enrollment.aggregate([
     {
-      $match: {
-        enrolledAt: { $gte: startDate, $lte: endDate }
-      }
+      $match: matchFilter
     },
     {
       $group: {
@@ -159,6 +219,8 @@ const getEnrollmentStats = async (query = {}) => {
 const getRevenueStats = async (query = {}) => {
   logger.info({ query }, 'Fetching admin dashboard daily revenue stats')
   const { startDate: customStart, endDate: customEnd } = parseDateRange(query)
+  const examObjectId = parseExamFilter(query)
+  const examContext = await getExamContextIds(examObjectId)
 
   let startDate, endDate, isCustomRange = false
   let year, month, half
@@ -187,28 +249,49 @@ const getRevenueStats = async (query = {}) => {
     endDate = new Date(endIsoString)
   }
 
-  const [courseOrders, subscriptionOrders] = await Promise.all([
-    CourseOrder.aggregate([
-      {
-        $match: {
-          status: 'paid',
-          paidAt: { $gte: startDate, $lte: endDate }
-        }
-      },
+  const courseOrderPipeline = [
+    {
+      $match: {
+        status: 'paid',
+        paidAt: { $gte: startDate, $lte: endDate },
+        ...(examContext ? { 'items.itemId': { $in: examContext.orderItemIds } } : {})
+      }
+    }
+  ]
+
+  if (examContext) {
+    courseOrderPipeline.push(
+      { $unwind: '$items' },
+      { $match: { 'items.itemId': { $in: examContext.orderItemIds } } },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt', timezone: 'Asia/Kolkata' } },
           count: { $sum: 1 },
-          amount: { $sum: '$totalAmount' }
+          amount: { $sum: { $ifNull: ['$items.price', 0] } }
         }
       }
-    ]),
+    )
+  } else {
+    courseOrderPipeline.push({
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt', timezone: 'Asia/Kolkata' } },
+        count: { $sum: 1 },
+        amount: { $sum: '$totalAmount' }
+      }
+    })
+  }
+
+  const subOrderMatch = {
+    status: 'paid',
+    paidAt: { $gte: startDate, $lte: endDate },
+    ...(examContext ? { subscription: { $in: examContext.subIds } } : {})
+  }
+
+  const [courseOrders, subscriptionOrders] = await Promise.all([
+    CourseOrder.aggregate(courseOrderPipeline),
     SubscriptionOrder.aggregate([
       {
-        $match: {
-          status: 'paid',
-          paidAt: { $gte: startDate, $lte: endDate }
-        }
+        $match: subOrderMatch
       },
       {
         $group: {
@@ -263,6 +346,8 @@ const getRevenueStats = async (query = {}) => {
 const getUpcomingLiveClasses = async (query = {}) => {
   logger.info({ query }, 'Fetching upcoming live classes for dashboard')
   const { startDate, endDate } = parseDateRange(query)
+  const examObjectId = parseExamFilter(query)
+  const examContext = await getExamContextIds(examObjectId)
 
   require('../../models/Subject.model')
   const Enrollment = require('../../models/Enrollment.model')
@@ -279,6 +364,10 @@ const getUpcomingLiveClasses = async (query = {}) => {
     const startOfToday = new Date()
     startOfToday.setUTCHours(0, 0, 0, 0)
     matchFilter.scheduledStartTime = { $gte: startOfToday }
+  }
+
+  if (examContext) {
+    matchFilter.course = { $in: examContext.courseIds }
   }
 
   const liveClasses = await Content.find(matchFilter)
@@ -318,6 +407,7 @@ const getUpcomingLiveClasses = async (query = {}) => {
 const getTopExamsByStudentCount = async (query = {}) => {
   logger.info({ query }, 'Fetching top 7 exams by student count')
   const { startDate, endDate } = parseDateRange(query)
+  const examObjectId = parseExamFilter(query)
 
   const matchFilter = {
     isDeleted: false,
@@ -326,6 +416,13 @@ const getTopExamsByStudentCount = async (query = {}) => {
 
   if (startDate && endDate) {
     matchFilter.createdAt = { $gte: startDate, $lte: endDate }
+  }
+
+  if (examObjectId) {
+    matchFilter.$or = [
+      { 'exam._id': examObjectId },
+      { 'exam._id': examObjectId.toString() }
+    ]
   }
 
   const topExams = await User.aggregate([
@@ -377,6 +474,8 @@ const getTopExamsByStudentCount = async (query = {}) => {
 const getCategorizedEnrollments = async (query = {}) => {
   logger.info({ query }, 'Fetching paid enrollments categorized by Course, Test Series, and Subscription')
   const { startDate, endDate } = parseDateRange(query)
+  const examObjectId = parseExamFilter(query)
+  const examContext = await getExamContextIds(examObjectId)
 
   const courseMatch = { status: 'paid' }
   const subMatch = { status: 'paid' }
@@ -384,6 +483,11 @@ const getCategorizedEnrollments = async (query = {}) => {
   if (startDate && endDate) {
     courseMatch.paidAt = { $gte: startDate, $lte: endDate }
     subMatch.paidAt = { $gte: startDate, $lte: endDate }
+  }
+
+  if (examContext) {
+    courseMatch['items.itemId'] = { $in: examContext.orderItemIds }
+    subMatch.subscription = { $in: examContext.subIds }
   }
 
   const [paidOrders, paidSubOrders] = await Promise.all([
@@ -395,14 +499,22 @@ const getCategorizedEnrollments = async (query = {}) => {
   const testPurchaseCount = {}
   const subPurchaseCount = {}
 
+  const validCourseIdSet = examContext ? new Set(examContext.courseIds.map(id => id.toString())) : null
+  const validTestIdSet = examContext ? new Set(examContext.testIds.map(id => id.toString())) : null
+  const validSubIdSet = examContext ? new Set(examContext.subIds.map(id => id.toString())) : null
+
   for (const order of paidOrders) {
     for (const item of order.items || []) {
       if (!item.itemId) continue
       const itemIdStr = item.itemId.toString()
       if (item.itemType === 'course') {
-        coursePurchaseCount[itemIdStr] = (coursePurchaseCount[itemIdStr] || 0) + 1
+        if (!validCourseIdSet || validCourseIdSet.has(itemIdStr)) {
+          coursePurchaseCount[itemIdStr] = (coursePurchaseCount[itemIdStr] || 0) + 1
+        }
       } else if (item.itemType === 'test') {
-        testPurchaseCount[itemIdStr] = (testPurchaseCount[itemIdStr] || 0) + 1
+        if (!validTestIdSet || validTestIdSet.has(itemIdStr)) {
+          testPurchaseCount[itemIdStr] = (testPurchaseCount[itemIdStr] || 0) + 1
+        }
       }
     }
   }
@@ -410,7 +522,9 @@ const getCategorizedEnrollments = async (query = {}) => {
   for (const order of paidSubOrders) {
     if (!order.subscription) continue
     const subIdStr = order.subscription.toString()
-    subPurchaseCount[subIdStr] = (subPurchaseCount[subIdStr] || 0) + 1
+    if (!validSubIdSet || validSubIdSet.has(subIdStr)) {
+      subPurchaseCount[subIdStr] = (subPurchaseCount[subIdStr] || 0) + 1
+    }
   }
 
   const courseIds = Object.keys(coursePurchaseCount)
@@ -493,10 +607,14 @@ const getCategorizedEnrollments = async (query = {}) => {
 const getDashboardCounts = async (query = {}) => {
   logger.info({ query }, 'Fetching admin dashboard total counts')
   const { startDate, endDate } = parseDateRange(query)
+  const examObjectId = parseExamFilter(query)
 
   const matchFilter = { isDeleted: false }
   if (startDate && endDate) {
     matchFilter.createdAt = { $gte: startDate, $lte: endDate }
+  }
+  if (examObjectId) {
+    matchFilter.exam = examObjectId
   }
 
   const [totalCourses, totalBooks, totalTestSeries, totalPreviousYearPapers, totalDailyQuizzes] = await Promise.all([
@@ -519,6 +637,8 @@ const getDashboardCounts = async (query = {}) => {
 const getRecentActivities = async (query = {}) => {
   logger.info({ query }, 'Fetching admin dashboard recent activity')
   const { startDate, endDate } = parseDateRange(query)
+  const examObjectId = parseExamFilter(query)
+  const examContext = await getExamContextIds(examObjectId)
 
   const courseMatch = { status: 'paid' }
   const subMatch = { status: 'paid' }
@@ -528,6 +648,12 @@ const getRecentActivities = async (query = {}) => {
     courseMatch.paidAt = { $gte: startDate, $lte: endDate }
     subMatch.paidAt = { $gte: startDate, $lte: endDate }
     enrollMatch.enrolledAt = { $gte: startDate, $lte: endDate }
+  }
+
+  if (examContext) {
+    courseMatch['items.itemId'] = { $in: examContext.orderItemIds }
+    subMatch.subscription = { $in: examContext.subIds }
+    enrollMatch.course = { $in: examContext.courseIds }
   }
 
   const [recentCourseOrders, recentSubscriptionOrders, recentEnrollments] = await Promise.all([
