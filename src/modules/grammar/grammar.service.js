@@ -3,7 +3,6 @@ const AppError = require('../../core/AppError')
 const grammarRepository = require('./grammar.repository')
 const Grammar = require('../../models/Grammar.model')
 const UserGrammarChapterLike = require('../../models/GrammarChapterLike.model')
-const UserGrammarLike = require('../../models/UserGrammarLike.model')
 const GrammarCategory = require('../../models/GrammarCategory.model')
 const { paginate } = require('../../core/paginate')
 
@@ -120,23 +119,7 @@ class GrammarService extends BaseService {
       .lean()
   }
 
-  async attachGrammarLikeState(items = [], userId) {
-    if (!userId || !items.length) return items
 
-    const grammarIds = items.map((item) => item._id)
-    const likes = await UserGrammarLike.find({
-      userId,
-      grammarId: { $in: grammarIds },
-      isLiked: true
-    }).select('grammarId isLiked').lean()
-
-    const likedGrammarIds = new Set(likes.map((like) => String(like.grammarId)))
-
-    return items.map((item) => ({
-      ...item,
-      isLiked: likedGrammarIds.has(String(item._id)),
-    }))
-  }
 
   async getByCategory(categoryId, query = {}, userId) {
     const filter = { categoryId, isDeleted: false, status: 'active' }
@@ -151,37 +134,52 @@ class GrammarService extends BaseService {
     })
 
     const withChaptersState = await this.attachChapterLikeState(result.data, userId, topicSortOrder, 'all')
-    const withGrammarState = await this.attachGrammarLikeState(withChaptersState, userId)
     
-    return { ...result, data: withGrammarState }
+    return { ...result, data: withChaptersState }
   }
 
-  async setGrammarLike(grammarId, userId) {
-    const grammar = await Grammar.findOne({ _id: grammarId, isDeleted: false }).lean()
+  async setChapterLike(grammarId, chapterId, userId, isLiked = true) {
+    const grammar = await Grammar.findOne({ _id: grammarId, isDeleted: false }).select('chapters').lean()
     if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
 
-    const existing = await UserGrammarLike.findOne({ userId, grammarId }).lean()
-    const previous = !!existing?.isLiked
-    const nextValue = !previous // Toggle the like status
+    const chapter = (grammar.chapters || []).find((item) => String(item._id) === String(chapterId))
+    if (!chapter) throw new AppError('Chapter not found', 404, 'NOT_FOUND')
 
-    await UserGrammarLike.findOneAndUpdate(
-      { userId, grammarId },
-      { $set: { isLiked: nextValue } },
+    const existing = await UserGrammarChapterLike.findOne({ userId, grammarId, chapterId }).lean()
+    const previous = !!existing?.isLiked
+    const nextValue = !!isLiked
+
+    if (!existing && !nextValue) {
+      return { grammarId, chapterId, isLiked: false, isBookmarked: false, isRead: false, totalLikes: chapter.totalLikes || 0 }
+    }
+
+    await UserGrammarChapterLike.findOneAndUpdate(
+      { userId, grammarId, chapterId },
+      {
+        $set: {
+          isLiked: nextValue,
+        },
+        $setOnInsert: { isRead: false, readAt: null, isBookmarked: false, bookmarkedAt: null },
+      },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     )
 
     if (previous !== nextValue) {
       const delta = nextValue ? 1 : -1
-      await Grammar.updateOne({ _id: grammarId }, { $inc: { totalLikes: delta } })
-      await Grammar.updateOne({ _id: grammarId }, { $max: { totalLikes: 0 } })
+      await Grammar.updateOne(
+        { _id: grammarId, 'chapters._id': chapterId },
+        { $inc: { 'chapters.$.totalLikes': delta } }
+      )
     }
 
-    const refreshed = await Grammar.findOne({ _id: grammarId }).select('totalLikes').lean()
+    const refreshed = await Grammar.findOne({ _id: grammarId, 'chapters._id': chapterId }, { 'chapters.$': 1 }).lean()
+    const refreshedChapter = refreshed?.chapters?.[0] || chapter
 
     return {
       grammarId,
+      chapterId,
       isLiked: nextValue,
-      totalLikes: refreshed.totalLikes || 0,
+      totalLikes: refreshedChapter.totalLikes || 0,
     }
   }
 

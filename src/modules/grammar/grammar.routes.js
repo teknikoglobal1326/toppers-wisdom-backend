@@ -1,12 +1,14 @@
 const router = require('express').Router()
 const controller = require('./grammar.controller')
 const { validate, validateQuery } = require('../../core/validate')
-const { listGrammarQuerySchema, setGrammarLikeSchema, setGrammarChapterReadSchema, setGrammarChapterBookmarkSchema } = require('./grammar.schema')
+const { listGrammarQuerySchema, setGrammarChapterLikeSchema, setGrammarChapterReadSchema, setGrammarChapterBookmarkSchema } = require('./grammar.schema')
 
 router.get('/', validateQuery(listGrammarQuerySchema), controller.list)
 router.get('/:categoryId', controller.getByCategory)
 router.patch('/read/:id/:chapterId', validate(setGrammarChapterReadSchema), controller.setChapterRead)
 router.patch('/bookmark/:id/:chapterId', validate(setGrammarChapterBookmarkSchema), controller.setChapterBookmark)
-router.patch('/like/:id', validate(setGrammarLikeSchema), controller.setGrammarLike)
+router.patch('/like/:id/:chapterId', validate(setGrammarChapterLikeSchema), controller.setChapterLike)
+
+
 
 module.exports = router

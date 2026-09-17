@@ -16,7 +16,7 @@ const listGrammarQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(20),
 }).unknown(true)
 
-const setGrammarLikeSchema = Joi.object({
+const setGrammarChapterLikeSchema = Joi.object({
   isLiked: Joi.boolean().default(true),
 })
 
@@ -28,4 +28,4 @@ const setGrammarChapterBookmarkSchema = Joi.object({
   isBookmarked: Joi.boolean().default(true),
 })
 
-module.exports = { listGrammarQuerySchema, setGrammarLikeSchema, setGrammarChapterReadSchema, setGrammarChapterBookmarkSchema }
+module.exports = { listGrammarQuerySchema, setGrammarChapterLikeSchema, setGrammarChapterReadSchema, setGrammarChapterBookmarkSchema }
