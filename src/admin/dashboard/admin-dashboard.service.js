@@ -137,6 +137,10 @@ const getEnrollmentStats = async (query = {}) => {
   const examObjectId = parseExamFilter(query)
   const examContext = await getExamContextIds(examObjectId)
 
+  const courseObjectId = query.courseId && mongoose.Types.ObjectId.isValid(query.courseId)
+    ? new mongoose.Types.ObjectId(query.courseId)
+    : null
+
   let startDate, endDate, isCustomRange = false
   let year, month, half
 
@@ -168,7 +172,9 @@ const getEnrollmentStats = async (query = {}) => {
     enrolledAt: { $gte: startDate, $lte: endDate }
   }
 
-  if (examContext) {
+  if (courseObjectId) {
+    matchFilter.course = courseObjectId
+  } else if (examContext) {
     matchFilter.course = { $in: examContext.courseIds }
   }
 
@@ -222,6 +228,14 @@ const getRevenueStats = async (query = {}) => {
   const examObjectId = parseExamFilter(query)
   const examContext = await getExamContextIds(examObjectId)
 
+  const courseObjectId = query.courseId && mongoose.Types.ObjectId.isValid(query.courseId)
+    ? new mongoose.Types.ObjectId(query.courseId)
+    : null
+  const subObjectId = query.subscriptionId && mongoose.Types.ObjectId.isValid(query.subscriptionId)
+    ? new mongoose.Types.ObjectId(query.subscriptionId)
+    : null
+  const revenueSource = query.source || query.revenueSource // 'all' | 'course' | 'subscription'
+
   let startDate, endDate, isCustomRange = false
   let year, month, half
 
@@ -249,47 +263,69 @@ const getRevenueStats = async (query = {}) => {
     endDate = new Date(endIsoString)
   }
 
-  const courseOrderPipeline = [
-    {
-      $match: {
-        status: 'paid',
-        paidAt: { $gte: startDate, $lte: endDate },
-        ...(examContext ? { 'items.itemId': { $in: examContext.orderItemIds } } : {})
-      }
-    }
-  ]
+  let targetOrderItems = null
+  if (courseObjectId) {
+    targetOrderItems = [courseObjectId]
+  } else if (examContext) {
+    targetOrderItems = examContext.orderItemIds
+  }
 
-  if (examContext) {
-    courseOrderPipeline.push(
-      { $unwind: '$items' },
-      { $match: { 'items.itemId': { $in: examContext.orderItemIds } } },
+  let targetSubIds = null
+  if (subObjectId) {
+    targetSubIds = [subObjectId]
+  } else if (examContext) {
+    targetSubIds = examContext.subIds
+  }
+
+  const includeCourseOrders = revenueSource !== 'subscription' && !subObjectId
+  const includeSubOrders = revenueSource !== 'course' && !courseObjectId
+
+  const promises = []
+
+  if (includeCourseOrders) {
+    const courseOrderPipeline = [
       {
+        $match: {
+          status: 'paid',
+          paidAt: { $gte: startDate, $lte: endDate },
+          ...(targetOrderItems ? { 'items.itemId': { $in: targetOrderItems } } : {})
+        }
+      }
+    ]
+
+    if (targetOrderItems) {
+      courseOrderPipeline.push(
+        { $unwind: '$items' },
+        { $match: { 'items.itemId': { $in: targetOrderItems } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt', timezone: 'Asia/Kolkata' } },
+            count: { $sum: 1 },
+            amount: { $sum: { $ifNull: ['$items.price', 0] } }
+          }
+        }
+      )
+    } else {
+      courseOrderPipeline.push({
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt', timezone: 'Asia/Kolkata' } },
           count: { $sum: 1 },
-          amount: { $sum: { $ifNull: ['$items.price', 0] } }
+          amount: { $sum: '$totalAmount' }
         }
-      }
-    )
+      })
+    }
+    promises.push(CourseOrder.aggregate(courseOrderPipeline))
   } else {
-    courseOrderPipeline.push({
-      $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt', timezone: 'Asia/Kolkata' } },
-        count: { $sum: 1 },
-        amount: { $sum: '$totalAmount' }
-      }
-    })
+    promises.push(Promise.resolve([]))
   }
 
-  const subOrderMatch = {
-    status: 'paid',
-    paidAt: { $gte: startDate, $lte: endDate },
-    ...(examContext ? { subscription: { $in: examContext.subIds } } : {})
-  }
-
-  const [courseOrders, subscriptionOrders] = await Promise.all([
-    CourseOrder.aggregate(courseOrderPipeline),
-    SubscriptionOrder.aggregate([
+  if (includeSubOrders) {
+    const subOrderMatch = {
+      status: 'paid',
+      paidAt: { $gte: startDate, $lte: endDate },
+      ...(targetSubIds ? { subscription: { $in: targetSubIds } } : {})
+    }
+    promises.push(SubscriptionOrder.aggregate([
       {
         $match: subOrderMatch
       },
@@ -300,8 +336,12 @@ const getRevenueStats = async (query = {}) => {
           amount: { $sum: '$amount' }
         }
       }
-    ])
-  ])
+    ]))
+  } else {
+    promises.push(Promise.resolve([]))
+  }
+
+  const [courseOrders, subscriptionOrders] = await Promise.all(promises)
 
   const courseMap = new Map(courseOrders.map(item => [item._id, { count: item.count, amount: item.amount }]))
   const subMap = new Map(subscriptionOrders.map(item => [item._id, { count: item.count, amount: item.amount }]))
@@ -349,6 +389,10 @@ const getUpcomingLiveClasses = async (query = {}) => {
   const examObjectId = parseExamFilter(query)
   const examContext = await getExamContextIds(examObjectId)
 
+  const courseObjectId = query.courseId && mongoose.Types.ObjectId.isValid(query.courseId)
+    ? new mongoose.Types.ObjectId(query.courseId)
+    : null
+
   require('../../models/Subject.model')
   const Enrollment = require('../../models/Enrollment.model')
 
@@ -366,7 +410,9 @@ const getUpcomingLiveClasses = async (query = {}) => {
     matchFilter.scheduledStartTime = { $gte: startOfToday }
   }
 
-  if (examContext) {
+  if (courseObjectId) {
+    matchFilter.course = courseObjectId
+  } else if (examContext) {
     matchFilter.course = { $in: examContext.courseIds }
   }
 
