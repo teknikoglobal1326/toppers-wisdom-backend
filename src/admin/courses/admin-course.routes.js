@@ -45,6 +45,7 @@ const parseArrays = (req, res, next) => {
 }
 
 router.get('/', validateQuery(listQuerySchema), controller.listAll)
+router.get('/purchases/export', controller.exportPurchases)
 router.get('/purchases', validateQuery(listQuerySchema), controller.listPurchases)
 router.post('/', uploadCourseImages, parseFormData, validate(createCourseSchema), controller.createCourse)
 router.get('/associated-data', controller.getAssociatedData)

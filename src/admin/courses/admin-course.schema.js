@@ -92,6 +92,11 @@ const listQuerySchema = Joi.object({
   order: Joi.string().valid('asc', 'desc').default('desc'),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
+  fromDate: Joi.string().allow('', null),
+  toDate: Joi.string().allow('', null),
+  startDate: Joi.string().allow('', null),
+  endDate: Joi.string().allow('', null),
+  format: Joi.string().valid('json', 'csv').allow('', null),
 })
 
 module.exports = {
