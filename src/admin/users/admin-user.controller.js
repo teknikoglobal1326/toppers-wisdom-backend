@@ -17,12 +17,36 @@ require('../../models/Editorial.model')
 class AdminUserService extends BaseService {
   constructor() { super(userRepository, 'admin:user') }
 
+  async getPaidUserIds() {
+    const CourseOrder = require('../../models/CourseOrder.model')
+    const SubscriptionOrder = require('../../models/SubscriptionOrder.model')
+    const Enrollment = require('../../models/Enrollment.model')
+    const UserSubscription = require('../../models/UserSubscription.model')
+
+    const [coursePaidUsers, subPaidUsers, enrollmentUsers, activeSubUsers] = await Promise.all([
+      CourseOrder.find({ status: 'paid' }).distinct('user'),
+      SubscriptionOrder.find({ status: 'paid' }).distinct('user'),
+      Enrollment.find().distinct('user'),
+      UserSubscription.find({ isActive: true }).distinct('user')
+    ])
+
+    const paidUserSet = new Set([
+      ...coursePaidUsers.map(u => u?.toString()).filter(Boolean),
+      ...subPaidUsers.map(u => u?.toString()).filter(Boolean),
+      ...enrollmentUsers.map(u => u?.toString()).filter(Boolean),
+      ...activeSubUsers.map(u => u?.toString()).filter(Boolean)
+    ])
+
+    return Array.from(paidUserSet)
+  }
+
   async listAll(filters) {
     const filter = { role: 'user', isDeleted: { $ne: true } }
     if (filters.search) {
       filter.$or = [
         { name:  { $regex: filters.search, $options: 'i' } },
         { phone: { $regex: filters.search, $options: 'i' } },
+        { email: { $regex: filters.search, $options: 'i' } },
       ]
     }
     if (filters.qualification && filters.qualification !== "") {
@@ -38,10 +62,87 @@ class AdminUserService extends BaseService {
       filter.profileCompletionState = filters.profileCompletionState;
     }
 
-    return this.getAll(filter, {
+    const paidUserIds = await this.getPaidUserIds()
+    const paidUserIdSet = new Set(paidUserIds)
+
+    if (filters.purchaseStatus === 'paid') {
+      filter._id = { $in: paidUserIds }
+    } else if (filters.purchaseStatus === 'unpaid') {
+      filter._id = { $nin: paidUserIds }
+    }
+
+    const result = await this.getAll(filter, {
       page:   filters.page,
       limit:  filters.limit,
       select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status',
+    })
+
+    const transformedData = (result.data || []).map(u => {
+      const uObj = u.toObject ? u.toObject() : { ...u }
+      uObj.isPaid = paidUserIdSet.has(String(uObj._id))
+      return uObj
+    })
+
+    return {
+      data: transformedData,
+      pagination: result.pagination
+    }
+  }
+
+  async exportUsers(filters = {}) {
+    const filter = { role: 'user', isDeleted: { $ne: true } }
+    if (filters.search) {
+      filter.$or = [
+        { name:  { $regex: filters.search, $options: 'i' } },
+        { phone: { $regex: filters.search, $options: 'i' } },
+        { email: { $regex: filters.search, $options: 'i' } },
+      ]
+    }
+    if (filters.qualification && filters.qualification !== "") {
+      filter['qualification._id'] = filters.qualification;
+    }
+    if (filters.examId && filters.examId !== "") {
+      filter['exam._id'] = filters.examId;
+    }
+    if (filters.subExamId && filters.subExamId !== "") {
+      filter['subExams._id'] = filters.subExamId;
+    }
+    if (filters.profileCompletionState && filters.profileCompletionState !== "") {
+      filter.profileCompletionState = filters.profileCompletionState;
+    }
+
+    const paidUserIds = await this.getPaidUserIds()
+    const paidUserIdSet = new Set(paidUserIds)
+
+    if (filters.purchaseStatus === 'paid') {
+      filter._id = { $in: paidUserIds }
+    } else if (filters.purchaseStatus === 'unpaid') {
+      filter._id = { $nin: paidUserIds }
+    }
+
+    const User = require('../../models/User.model')
+    const users = await User.find(filter)
+      .sort({ createdAt: -1 })
+      .select('name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status')
+      .lean()
+
+    return users.map((u, index) => {
+      const isPaid = paidUserIdSet.has(String(u._id))
+      const subExamsNames = Array.isArray(u.subExams) ? u.subExams.map(s => s.name || s).join(', ') : ''
+      return {
+        serialNo: index + 1,
+        name: u.name || 'N/A',
+        phone: u.phone || 'N/A',
+        email: u.email || 'N/A',
+        qualification: u.qualification?.name || 'N/A',
+        exam: u.exam?.name || 'N/A',
+        subExams: subExamsNames || 'N/A',
+        profileStatus: u.profileCompletionState || 'N/A',
+        purchaseStatus: isPaid ? 'Paid' : 'Unpaid',
+        accountStatus: u.status || 'active',
+        loginType: u.isSocial ? 'Google Login' : 'Normal Login',
+        joinedAt: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : 'N/A'
+      }
     })
   }
 
@@ -490,6 +591,41 @@ const removeCourseEnrollment = catchAsync(async (req, res) => {
   sendSuccess(res, null, 'Course enrollment removed successfully')
 })
 
+const exportUsers = catchAsync(async (req, res) => {
+  const users = await svc.exportUsers(req.query)
+
+  if (req.query.format === 'json') {
+    return sendSuccess(res, users, 'Export data retrieved successfully')
+  }
+
+  // Generate CSV
+  const headers = ['S.No', 'Name', 'Phone', 'Email', 'Qualification', 'Exam', 'Sub Exams', 'Profile Status', 'Purchase Status', 'Account Status', 'Login Type', 'Joined At']
+  const csvRows = [headers.join(',')]
+
+  for (const u of users) {
+    const row = [
+      u.serialNo,
+      `"${String(u.name || '').replace(/"/g, '""')}"`,
+      `"${String(u.phone || '').replace(/"/g, '""')}"`,
+      `"${String(u.email || '').replace(/"/g, '""')}"`,
+      `"${String(u.qualification || '').replace(/"/g, '""')}"`,
+      `"${String(u.exam || '').replace(/"/g, '""')}"`,
+      `"${String(u.subExams || '').replace(/"/g, '""')}"`,
+      `"${String(u.profileStatus || '').replace(/"/g, '""')}"`,
+      `"${u.purchaseStatus}"`,
+      `"${u.accountStatus}"`,
+      `"${u.loginType}"`,
+      `"${u.joinedAt}"`
+    ]
+    csvRows.push(row.join(','))
+  }
+
+  const csvString = csvRows.join('\r\n')
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', `attachment; filename="users_export_${Date.now()}.csv"`)
+  res.status(200).send(csvString)
+})
+
 module.exports = {
   listAll,
   getOne,
@@ -502,6 +638,7 @@ module.exports = {
   revokeSubscription,
   allocateCourse,
   updateCourseExpiry,
-  removeCourseEnrollment
+  removeCourseEnrollment,
+  exportUsers
 }
 
