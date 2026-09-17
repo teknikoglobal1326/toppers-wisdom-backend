@@ -108,7 +108,8 @@ class VocabularyService extends BaseService {
             filter.$or = [{ isRead: true }, { isBookmarked: true }]
         }
 
-        return VocabularyUserState.distinct('vocabulary', filter)
+        const states = await VocabularyUserState.find(filter).select('vocabulary').lean()
+        return states.map(s => s.vocabulary)
     }
 
     async buildListFilter(query = {}, userId) {
@@ -166,14 +167,13 @@ class VocabularyService extends BaseService {
         const filter = await this.buildListFilter(query, userId)
         const sort = this.buildSort(query)
 
+        console.log("filter",filter);
         const result = await this.getAll(filter, {
             page: query.page,
             limit: query.limit,
             sort,
             select: 'title type word pronunciation audio thumbnail bannerImage shortDescription longDescription usages synonyms antonyms publishDate sortOrder status createdAt updatedAt',
         })
-
-        console.log("result.data",result.data);
         const data = await this.attachUserState(result.data, userId)
         return { ...result, data }
     }

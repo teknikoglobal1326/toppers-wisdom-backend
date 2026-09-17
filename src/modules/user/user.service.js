@@ -175,16 +175,9 @@ class UserService extends BaseService {
                 { $match: { 'vocabulary.isDeleted': false, 'vocabulary.status': 'active' } },
                 {
                     $group: {
-                        _id: { type: '$vocabulary.type', vocabulary: '$vocabulary._id' },
-                        isRead: { $max: { $cond: ['$isRead', 1, 0] } },
-                        isBookmarked: { $max: { $cond: ['$isBookmarked', 1, 0] } },
-                    },
-                },
-                {
-                    $group: {
-                        _id: '$_id.type',
-                        totalRead: { $sum: '$isRead' },
-                        totalBookmarked: { $sum: '$isBookmarked' },
+                        _id: '$vocabulary.type',
+                        totalRead: { $sum: { $cond: [{ $eq: ['$isRead', true] }, 1, 0] } },
+                        totalBookmarked: { $sum: { $cond: [{ $eq: ['$isBookmarked', true] }, 1, 0] } },
                     },
                 },
             ]),
@@ -206,16 +199,9 @@ class UserService extends BaseService {
                 { $match: { 'editorial.isDeleted': false } },
                 {
                     $group: {
-                        _id: { type: '$editorial.type', editorial: '$editorial._id' },
-                        isRead: { $max: { $cond: ['$isRead', 1, 0] } },
-                        isBookmarked: { $max: { $cond: ['$isBookmarked', 1, 0] } },
-                    },
-                },
-                {
-                    $group: {
-                        _id: '$_id.type',
-                        totalRead: { $sum: '$isRead' },
-                        totalBookmarked: { $sum: '$isBookmarked' },
+                        _id: '$editorial.type',
+                        totalRead: { $sum: { $cond: [{ $eq: ['$isRead', true] }, 1, 0] } },
+                        totalBookmarked: { $sum: { $cond: [{ $eq: ['$isBookmarked', true] }, 1, 0] } },
                     },
                 },
             ]),
