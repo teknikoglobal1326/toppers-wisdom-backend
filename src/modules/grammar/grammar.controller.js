@@ -28,12 +28,12 @@ const setChapterBookmark = catchAsync(async (req, res) => {
   )
 })
 
-const setChapterLike = catchAsync(async (req, res) => {
+const setGrammarLike = catchAsync(async (req, res) => {
   sendSuccess(
     res,
-    await grammarService.setChapterLike(req.params.id, req.params.chapterId, req.user?._id, req.body.isLiked),
-    'Chapter like updated'
+    await grammarService.setGrammarLike(req.params.id, req.user?._id),
+    'Grammar like updated'
   )
 })
 
-module.exports = { list, getByCategory, setChapterRead, setChapterBookmark, setChapterLike }
+module.exports = { list, getByCategory, setChapterRead, setChapterBookmark, setGrammarLike }

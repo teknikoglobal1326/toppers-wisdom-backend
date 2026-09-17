@@ -73,7 +73,7 @@ const getPracticeMcqs = async (req, res, next) => {
 const updateFlashcardProgress = async (req, res, next) => {
   try {
     const { wordId, selfRating } = req.body;
-    const progress = await dictionaryService.updateFlashcardProgress(req.user.id, wordId, selfRating);
+    const progress = await dictionaryService.updateFlashcardProgress(req.user._id, wordId, selfRating);
     res.status(200).json({ success: true, data: progress });
   } catch (error) {
     next(error);
@@ -83,7 +83,9 @@ const updateFlashcardProgress = async (req, res, next) => {
 const updateMcqAttempt = async (req, res, next) => {
   try {
     const { questionId, selectedOption } = req.body;
-    const result = await dictionaryService.updateMcqAttempt(req.user.id, questionId, selectedOption);
+    console.log("questionId",questionId);
+    console.log("selectedOption",selectedOption);
+    const result = await dictionaryService.updateMcqAttempt(req.user._id, questionId, selectedOption);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -92,7 +94,7 @@ const updateMcqAttempt = async (req, res, next) => {
 
 const getDueItems = async (req, res, next) => {
   try {
-    const studentId = req.params.studentId === 'me' ? req.user.id : req.params.studentId;
+    const studentId = req.params.studentId === 'me' ? req.user._id : req.params.studentId;
     const items = await dictionaryService.getDueItems(studentId);
     res.status(200).json({ success: true, data: items });
   } catch (error) {
