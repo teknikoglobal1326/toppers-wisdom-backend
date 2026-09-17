@@ -25,6 +25,8 @@ const uploadBookFiles = upload.fields([
   { name: 'enCoverImage', maxCount: 1 },
   { name: 'hiFile', maxCount: 1 },
   { name: 'enFile', maxCount: 1 },
+  { name: 'hiSamplePdf', maxCount: 1 },
+  { name: 'enSamplePdf', maxCount: 1 },
 ])
 
 // Runs BEFORE validate: parses JSON string fields so Joi sees the correct types
@@ -63,18 +65,27 @@ const parseFiles = async (req, _res, next) => {
       return uploadFile(file.buffer, `book-${language}-${Date.now()}.pdf`, folder, file.mimetype)
     }
 
+    const uploadSamplePdf = async (file, language) => {
+      if (!file) return null
+      return uploadFile(file.buffer, `sample-${language}-${Date.now()}.pdf`, folder, file.mimetype)
+    }
+
     if (isDualLanguagePayload(req.body)) {
-      const [hiCoverImage, enCoverImage, hiFile, enFile] = await Promise.all([
+      const [hiCoverImage, enCoverImage, hiFile, enFile, hiSamplePdf, enSamplePdf] = await Promise.all([
         uploadCover(req.files?.hiCoverImage?.[0], 'hi'),
         uploadCover(req.files?.enCoverImage?.[0], 'en'),
         uploadPdf(req.files?.hiFile?.[0], 'hi'),
         uploadPdf(req.files?.enFile?.[0], 'en'),
+        uploadSamplePdf(req.files?.hiSamplePdf?.[0], 'hi'),
+        uploadSamplePdf(req.files?.enSamplePdf?.[0], 'en'),
       ])
 
       if (hiCoverImage) req.body.hi.coverImage = hiCoverImage
       if (enCoverImage) req.body.en.coverImage = enCoverImage
       if (hiFile) req.body.hi.file = hiFile
       if (enFile) req.body.en.file = enFile
+      if (hiSamplePdf) req.body.hi.samplePdf = hiSamplePdf
+      if (enSamplePdf) req.body.en.samplePdf = enSamplePdf
 
       next()
       return

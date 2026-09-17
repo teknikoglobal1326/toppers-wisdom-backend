@@ -142,27 +142,13 @@ const uploadVideoImage = multer({
       ...ALLOWED_VIDEO_MIME,
       ...ALLOWED_AUDIO_MIME,
       ...ALLOWED_PDF_MIME,
-    ]
-    const allowedExts = [
-      ...ALLOWED_IMAGE_EXTS,
-      ...ALLOWED_VIDEO_EXTS,
-      ...ALLOWED_AUDIO_EXTS,
-      ...ALLOWED_PDF_EXTS,
-    ]
+    ];
 
-    const ext = path.extname(file.originalname || '').toLowerCase()
+    const ext = path.extname(file.originalname).toLowerCase()
+    const allowedAudioExts = ['.mp3', '.wav', '.ogg', '.aac', '.m4a', '.mpeg', '.mpg']
 
-    if (
-      allowedMimes.includes(file.mimetype) ||
-      allowedExts.includes(ext) ||
-      (file.mimetype && (
-        file.mimetype.startsWith('image/') ||
-        file.mimetype.startsWith('video/') ||
-        file.mimetype.startsWith('audio/') ||
-        file.mimetype === 'application/pdf'
-      ))
-    ) {
-      return cb(null, true)
+    if (allowed.includes(file.mimetype) || allowedAudioExts.includes(ext) || ext === '.mkv') {
+      return cb(null, true);
     }
 
     cb(

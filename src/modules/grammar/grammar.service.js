@@ -71,7 +71,8 @@ class GrammarService extends BaseService {
     for (const like of likes) {
       map.set(`${String(like.grammarId)}:${String(like.chapterId)}`, {
         isRead: !!like.isRead,
-        isBookmarked: !!(like.isBookmarked || like.isLiked),
+        isBookmarked: !!like.isBookmarked,
+        isLiked: !!like.isLiked,
       })
     }
     return map
@@ -87,11 +88,12 @@ class GrammarService extends BaseService {
         const key = `${String(item._id)}:${String(chapter._id)}`
         const state = likeMap.get(key)
         const isBookmarked = !!state?.isBookmarked
+        const isLiked = !!state?.isLiked
         return {
           ...chapter,
           isRead: !!state?.isRead,
           isBookmarked,
-          isLiked: isBookmarked,
+          isLiked,
         }
       }),
     }))
@@ -117,6 +119,8 @@ class GrammarService extends BaseService {
       .lean()
   }
 
+
+
   async getByCategory(categoryId, query = {}, userId) {
     const filter = { categoryId, isDeleted: false, status: 'active' }
     const direction = query.sortOrder === 'desc' ? -1 : 1
@@ -129,12 +133,54 @@ class GrammarService extends BaseService {
       sort: { [sortBy]: direction, createdAt: -1 }
     })
 
-    const data = await this.attachChapterLikeState(result.data, userId, topicSortOrder, 'all')
-    return { ...result, data }
+    const withChaptersState = await this.attachChapterLikeState(result.data, userId, topicSortOrder, 'all')
+    
+    return { ...result, data: withChaptersState }
   }
 
   async setChapterLike(grammarId, chapterId, userId, isLiked = true) {
-    return this.setChapterBookmark(grammarId, chapterId, userId, isLiked)
+    const grammar = await Grammar.findOne({ _id: grammarId, isDeleted: false }).select('chapters').lean()
+    if (!grammar) throw new AppError('Grammar not found', 404, 'NOT_FOUND')
+
+    const chapter = (grammar.chapters || []).find((item) => String(item._id) === String(chapterId))
+    if (!chapter) throw new AppError('Chapter not found', 404, 'NOT_FOUND')
+
+    const existing = await UserGrammarChapterLike.findOne({ userId, grammarId, chapterId }).lean()
+    const previous = !!existing?.isLiked
+    const nextValue = !!isLiked
+
+    if (!existing && !nextValue) {
+      return { grammarId, chapterId, isLiked: false, isBookmarked: false, isRead: false, totalLikes: chapter.totalLikes || 0 }
+    }
+
+    await UserGrammarChapterLike.findOneAndUpdate(
+      { userId, grammarId, chapterId },
+      {
+        $set: {
+          isLiked: nextValue,
+        },
+        $setOnInsert: { isRead: false, readAt: null, isBookmarked: false, bookmarkedAt: null },
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    )
+
+    if (previous !== nextValue) {
+      const delta = nextValue ? 1 : -1
+      await Grammar.updateOne(
+        { _id: grammarId, 'chapters._id': chapterId },
+        { $inc: { 'chapters.$.totalLikes': delta } }
+      )
+    }
+
+    const refreshed = await Grammar.findOne({ _id: grammarId, 'chapters._id': chapterId }, { 'chapters.$': 1 }).lean()
+    const refreshedChapter = refreshed?.chapters?.[0] || chapter
+
+    return {
+      grammarId,
+      chapterId,
+      isLiked: nextValue,
+      totalLikes: refreshedChapter.totalLikes || 0,
+    }
   }
 
   async setChapterRead(grammarId, chapterId, userId, isRead = true) {
@@ -165,7 +211,7 @@ class GrammarService extends BaseService {
     if (!chapter) throw new AppError('Chapter not found', 404, 'NOT_FOUND')
 
     const existing = await UserGrammarChapterLike.findOne({ userId, grammarId, chapterId }).lean()
-    const previous = !!(existing?.isBookmarked || existing?.isLiked)
+    const previous = !!existing?.isBookmarked
     const nextValue = !!isBookmarked
 
     if (!existing && !nextValue) {
@@ -177,7 +223,6 @@ class GrammarService extends BaseService {
       {
         $set: {
           isBookmarked: nextValue,
-          isLiked: nextValue,
           bookmarkedAt: nextValue ? new Date() : null,
         },
         $setOnInsert: { isRead: false, readAt: null },
@@ -185,11 +230,7 @@ class GrammarService extends BaseService {
       { new: true, upsert: true, setDefaultsOnInsert: true }
     )
 
-    if (previous !== nextValue) {
-      const delta = nextValue ? 1 : -1
-      await Grammar.updateOne({ _id: grammarId, 'chapters._id': chapterId }, { $inc: { 'chapters.$.totalLikes': delta } })
-      await Grammar.updateOne({ _id: grammarId, 'chapters._id': chapterId }, { $max: { 'chapters.$.totalLikes': 0 } })
-    }
+    // Bookmark does not affect totalLikes, only setChapterLike does.
 
     const refreshed = await Grammar.findOne({ _id: grammarId, 'chapters._id': chapterId }, { 'chapters.$': 1 }).lean()
     const refreshedChapter = refreshed?.chapters?.[0] || chapter
@@ -198,7 +239,6 @@ class GrammarService extends BaseService {
       grammarId,
       chapterId,
       isBookmarked: nextValue,
-      isLiked: nextValue,
       totalLikes: refreshedChapter.totalLikes || 0,
     }
   }

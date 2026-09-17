@@ -16,7 +16,7 @@ class AiTestService extends BaseService {
     this.logger.info({ userId: user._id, query }, 'Retrieving syllabus subjects')
     const filter = { isDeleted: false, status: 'active' }
 
-    const examId = query.examId || (user.exam && user.exam._id)
+    const examId = query.examId || (user.examId)
     if (examId) {
       filter.$or = [
         { examIds: examId },
@@ -25,12 +25,6 @@ class AiTestService extends BaseService {
     }
 
     let subjects = await this.repository.getActiveSubjects(filter)
-
-    // Fallback if filtering by exam returned no subjects
-    if ((!subjects || subjects.length === 0) && examId) {
-      this.logger.warn({ examId }, 'No active subjects found for exam filter; falling back to all active subjects')
-      subjects = await this.repository.getActiveSubjects({})
-    }
 
     return (subjects || []).map(subj => ({
       _id: subj._id,
@@ -303,7 +297,7 @@ class AiTestService extends BaseService {
         }
       }
     }
-
+    
     return {
       sessionId,
       test: {
