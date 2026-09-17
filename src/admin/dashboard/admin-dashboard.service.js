@@ -13,24 +13,62 @@ const { createLogger } = require('../../config/logger')
 
 const logger = createLogger('admin:dashboard:service')
 
-const getDashboardStats = async () => {
-  logger.info('Fetching admin dashboard stats')
-  
-  const startOfToday = new Date()
-  startOfToday.setUTCHours(0, 0, 0, 0)
-  const endOfToday = new Date()
-  endOfToday.setUTCHours(23, 59, 59, 999)
+const parseDateRange = (query = {}) => {
+  let startDate = null
+  let endDate = null
+
+  if (query.startDate && query.endDate) {
+    const sStr = String(query.startDate).trim()
+    const eStr = String(query.endDate).trim()
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(sStr)) {
+      startDate = new Date(`${sStr}T00:00:00.000+05:30`)
+    } else {
+      startDate = new Date(sStr)
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(eStr)) {
+      endDate = new Date(`${eStr}T23:59:59.999+05:30`)
+    } else {
+      endDate = new Date(eStr)
+    }
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      startDate = null
+      endDate = null
+    }
+  }
+
+  return { startDate, endDate }
+}
+
+const getDashboardStats = async (query = {}) => {
+  logger.info({ query }, 'Fetching admin dashboard stats')
+  const { startDate, endDate } = parseDateRange(query)
+
+  const userMatch = { isDeleted: false }
+  const courseMatch = { isDeleted: false }
+  const testMatch = { isDeleted: false }
+  const liveMatch = { isLive: true, isDeleted: false, status: 'active' }
+
+  if (startDate && endDate) {
+    userMatch.createdAt = { $gte: startDate, $lte: endDate }
+    courseMatch.createdAt = { $gte: startDate, $lte: endDate }
+    testMatch.createdAt = { $gte: startDate, $lte: endDate }
+    liveMatch.scheduledStartTime = { $gte: startDate, $lte: endDate }
+  } else {
+    const startOfToday = new Date()
+    startOfToday.setUTCHours(0, 0, 0, 0)
+    const endOfToday = new Date()
+    endOfToday.setUTCHours(23, 59, 59, 999)
+    liveMatch.scheduledStartTime = { $gte: startOfToday, $lte: endOfToday }
+  }
 
   const [totalUsers, totalCourses, totalTestSeries, todayLiveClasses] = await Promise.all([
-    User.countDocuments({ isDeleted: false }),
-    Course.countDocuments({ isDeleted: false }),
-    TestSeries.countDocuments({ isDeleted: false }),
-    Content.countDocuments({
-      isLive: true,
-      isDeleted: false,
-      status: 'active',
-      scheduledStartTime: { $gte: startOfToday, $lte: endOfToday }
-    })
+    User.countDocuments(userMatch),
+    Course.countDocuments(courseMatch),
+    TestSeries.countDocuments(testMatch),
+    Content.countDocuments(liveMatch)
   ])
 
   return {
@@ -43,24 +81,34 @@ const getDashboardStats = async () => {
 
 const getEnrollmentStats = async (query = {}) => {
   logger.info({ query }, 'Fetching admin dashboard daily enrollment stats')
+  const { startDate: customStart, endDate: customEnd } = parseDateRange(query)
 
-  const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
-  const defaultYear = nowIST.getFullYear()
-  const defaultMonth = nowIST.getMonth() + 1 // 1-indexed
-  const defaultHalf = nowIST.getDate() <= 15 ? 1 : 2
+  let startDate, endDate, isCustomRange = false
+  let year, month, half
 
-  const year = Number(query.year) || defaultYear
-  const month = Number(query.month) || defaultMonth
-  const half = Number(query.half) || defaultHalf
+  if (customStart && customEnd) {
+    startDate = customStart
+    endDate = customEnd
+    isCustomRange = true
+  } else {
+    const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+    const defaultYear = nowIST.getFullYear()
+    const defaultMonth = nowIST.getMonth() + 1 // 1-indexed
+    const defaultHalf = nowIST.getDate() <= 15 ? 1 : 2
 
-  const startDay = half === 1 ? 1 : 16
-  const endDay = half === 1 ? 15 : new Date(year, month, 0).getDate()
+    year = Number(query.year) || defaultYear
+    month = Number(query.month) || defaultMonth
+    half = Number(query.half) || defaultHalf
 
-  const startIsoString = `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}T00:00:00.000+05:30`
-  const endIsoString = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}T23:59:59.999+05:30`
+    const startDay = half === 1 ? 1 : 16
+    const endDay = half === 1 ? 15 : new Date(year, month, 0).getDate()
 
-  const startDate = new Date(startIsoString)
-  const endDate = new Date(endIsoString)
+    const startIsoString = `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}T00:00:00.000+05:30`
+    const endIsoString = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}T23:59:59.999+05:30`
+
+    startDate = new Date(startIsoString)
+    endDate = new Date(endIsoString)
+  }
 
   const enrollments = await Enrollment.aggregate([
     {
@@ -70,7 +118,7 @@ const getEnrollmentStats = async (query = {}) => {
     },
     {
       $group: {
-        _id: { $dayOfMonth: { date: "$enrolledAt", timezone: "Asia/Kolkata" } },
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$enrolledAt', timezone: 'Asia/Kolkata' } },
         count: { $sum: 1 }
       }
     }
@@ -79,43 +127,65 @@ const getEnrollmentStats = async (query = {}) => {
   const statsMap = new Map(enrollments.map(item => [item._id, item.count]))
 
   const dailyStats = []
-  for (let day = startDay; day <= endDay; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  const currentCursor = new Date(startDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+  const endCursor = new Date(endDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+
+  while (currentCursor <= endCursor) {
+    const y = currentCursor.getFullYear()
+    const m = String(currentCursor.getMonth() + 1).padStart(2, '0')
+    const d = String(currentCursor.getDate()).padStart(2, '0')
+    const dateStr = `${y}-${m}-${d}`
+
     dailyStats.push({
       date: dateStr,
-      day,
-      count: statsMap.get(day) || 0
+      day: currentCursor.getDate(),
+      count: statsMap.get(dateStr) || 0
     })
+
+    currentCursor.setDate(currentCursor.getDate() + 1)
   }
 
   return {
-    year,
-    month,
-    half,
+    year: year || startDate.getFullYear(),
+    month: month || (startDate.getMonth() + 1),
+    half: half || 1,
+    isCustomRange,
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
     dailyStats
   }
 }
 
 const getRevenueStats = async (query = {}) => {
   logger.info({ query }, 'Fetching admin dashboard daily revenue stats')
+  const { startDate: customStart, endDate: customEnd } = parseDateRange(query)
 
-  const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
-  const defaultYear = nowIST.getFullYear()
-  const defaultMonth = nowIST.getMonth() + 1 // 1-indexed
-  const defaultHalf = nowIST.getDate() <= 15 ? 1 : 2
+  let startDate, endDate, isCustomRange = false
+  let year, month, half
 
-  const year = Number(query.year) || defaultYear
-  const month = Number(query.month) || defaultMonth
-  const half = Number(query.half) || defaultHalf
+  if (customStart && customEnd) {
+    startDate = customStart
+    endDate = customEnd
+    isCustomRange = true
+  } else {
+    const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+    const defaultYear = nowIST.getFullYear()
+    const defaultMonth = nowIST.getMonth() + 1 // 1-indexed
+    const defaultHalf = nowIST.getDate() <= 15 ? 1 : 2
 
-  const startDay = half === 1 ? 1 : 16
-  const endDay = half === 1 ? 15 : new Date(year, month, 0).getDate()
+    year = Number(query.year) || defaultYear
+    month = Number(query.month) || defaultMonth
+    half = Number(query.half) || defaultHalf
 
-  const startIsoString = `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}T00:00:00.000+05:30`
-  const endIsoString = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}T23:59:59.999+05:30`
+    const startDay = half === 1 ? 1 : 16
+    const endDay = half === 1 ? 15 : new Date(year, month, 0).getDate()
 
-  const startDate = new Date(startIsoString)
-  const endDate = new Date(endIsoString)
+    const startIsoString = `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}T00:00:00.000+05:30`
+    const endIsoString = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}T23:59:59.999+05:30`
+
+    startDate = new Date(startIsoString)
+    endDate = new Date(endIsoString)
+  }
 
   const [courseOrders, subscriptionOrders] = await Promise.all([
     CourseOrder.aggregate([
@@ -127,9 +197,9 @@ const getRevenueStats = async (query = {}) => {
       },
       {
         $group: {
-          _id: { $dayOfMonth: { date: "$paidAt", timezone: "Asia/Kolkata" } },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt', timezone: 'Asia/Kolkata' } },
           count: { $sum: 1 },
-          amount: { $sum: "$totalAmount" }
+          amount: { $sum: '$totalAmount' }
         }
       }
     ]),
@@ -142,9 +212,9 @@ const getRevenueStats = async (query = {}) => {
       },
       {
         $group: {
-          _id: { $dayOfMonth: { date: "$paidAt", timezone: "Asia/Kolkata" } },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt', timezone: 'Asia/Kolkata' } },
           count: { $sum: 1 },
-          amount: { $sum: "$amount" }
+          amount: { $sum: '$amount' }
         }
       }
     ])
@@ -154,49 +224,66 @@ const getRevenueStats = async (query = {}) => {
   const subMap = new Map(subscriptionOrders.map(item => [item._id, { count: item.count, amount: item.amount }]))
 
   const dailyStats = []
-  for (let day = startDay; day <= endDay; day++) {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    
-    const courseInfo = courseMap.get(day) || { count: 0, amount: 0 }
-    const subInfo = subMap.get(day) || { count: 0, amount: 0 }
-    
+  const currentCursor = new Date(startDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+  const endCursor = new Date(endDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+
+  while (currentCursor <= endCursor) {
+    const y = currentCursor.getFullYear()
+    const m = String(currentCursor.getMonth() + 1).padStart(2, '0')
+    const d = String(currentCursor.getDate()).padStart(2, '0')
+    const dateStr = `${y}-${m}-${d}`
+
+    const courseInfo = courseMap.get(dateStr) || { count: 0, amount: 0 }
+    const subInfo = subMap.get(dateStr) || { count: 0, amount: 0 }
+
     dailyStats.push({
       date: dateStr,
-      day,
+      day: currentCursor.getDate(),
       courseEnrollmentCount: courseInfo.count,
       courseEnrollmentRevenue: Number(courseInfo.amount.toFixed(2)),
       subscriptionCount: subInfo.count,
       subscriptionRevenue: Number(subInfo.amount.toFixed(2)),
       totalRevenue: Number((courseInfo.amount + subInfo.amount).toFixed(2))
     })
+
+    currentCursor.setDate(currentCursor.getDate() + 1)
   }
 
   return {
-    year,
-    month,
-    half,
+    year: year || startDate.getFullYear(),
+    month: month || (startDate.getMonth() + 1),
+    half: half || 1,
+    isCustomRange,
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
     dailyStats
   }
 }
 
-const getUpcomingLiveClasses = async () => {
-  logger.info('Fetching upcoming live classes for dashboard')
+const getUpcomingLiveClasses = async (query = {}) => {
+  logger.info({ query }, 'Fetching upcoming live classes for dashboard')
+  const { startDate, endDate } = parseDateRange(query)
 
-  // Require models
   require('../../models/Subject.model')
   const Enrollment = require('../../models/Enrollment.model')
 
-  const startOfToday = new Date()
-  startOfToday.setUTCHours(0, 0, 0, 0)
-
-  const liveClasses = await Content.find({
+  const matchFilter = {
     isLive: true,
     isDeleted: false,
-    status: 'active',
-    scheduledStartTime: { $gte: startOfToday }
-  })
+    status: 'active'
+  }
+
+  if (startDate && endDate) {
+    matchFilter.scheduledStartTime = { $gte: startDate, $lte: endDate }
+  } else {
+    const startOfToday = new Date()
+    startOfToday.setUTCHours(0, 0, 0, 0)
+    matchFilter.scheduledStartTime = { $gte: startOfToday }
+  }
+
+  const liveClasses = await Content.find(matchFilter)
     .sort({ scheduledStartTime: 1 })
-    .limit(5)
+    .limit(20)
     .populate({
       path: 'course',
       select: 'title totalEnrollments type'
@@ -228,15 +315,22 @@ const getUpcomingLiveClasses = async () => {
   return result
 }
 
-const getTopExamsByStudentCount = async () => {
-  logger.info('Fetching top 7 exams by student count')
+const getTopExamsByStudentCount = async (query = {}) => {
+  logger.info({ query }, 'Fetching top 7 exams by student count')
+  const { startDate, endDate } = parseDateRange(query)
+
+  const matchFilter = {
+    isDeleted: false,
+    'exam._id': { $ne: null }
+  }
+
+  if (startDate && endDate) {
+    matchFilter.createdAt = { $gte: startDate, $lte: endDate }
+  }
 
   const topExams = await User.aggregate([
     {
-      $match: {
-        isDeleted: false,
-        'exam._id': { $ne: null }
-      }
+      $match: matchFilter
     },
     {
       $group: {
@@ -280,20 +374,27 @@ const getTopExamsByStudentCount = async () => {
   return topExams
 }
 
-const getCategorizedEnrollments = async () => {
-  logger.info('Fetching paid enrollments categorized by Course, Test Series, and Subscription')
+const getCategorizedEnrollments = async (query = {}) => {
+  logger.info({ query }, 'Fetching paid enrollments categorized by Course, Test Series, and Subscription')
+  const { startDate, endDate } = parseDateRange(query)
 
-  // 1. Fetch paid course orders and paid subscription orders
+  const courseMatch = { status: 'paid' }
+  const subMatch = { status: 'paid' }
+
+  if (startDate && endDate) {
+    courseMatch.paidAt = { $gte: startDate, $lte: endDate }
+    subMatch.paidAt = { $gte: startDate, $lte: endDate }
+  }
+
   const [paidOrders, paidSubOrders] = await Promise.all([
-    CourseOrder.find({ status: 'paid' }).lean(),
-    SubscriptionOrder.find({ status: 'paid' }).lean()
+    CourseOrder.find(courseMatch).lean(),
+    SubscriptionOrder.find(subMatch).lean()
   ])
 
   const coursePurchaseCount = {}
   const testPurchaseCount = {}
   const subPurchaseCount = {}
 
-  // Tally CourseOrders
   for (const order of paidOrders) {
     for (const item of order.items || []) {
       if (!item.itemId) continue
@@ -306,14 +407,12 @@ const getCategorizedEnrollments = async () => {
     }
   }
 
-  // Tally SubscriptionOrders
   for (const order of paidSubOrders) {
     if (!order.subscription) continue
     const subIdStr = order.subscription.toString()
     subPurchaseCount[subIdStr] = (subPurchaseCount[subIdStr] || 0) + 1
   }
 
-  // 2. Resolve items from DB to verify existence and get names
   const courseIds = Object.keys(coursePurchaseCount)
   const testSeriesIds = Object.keys(testPurchaseCount)
   const subIds = Object.keys(subPurchaseCount)
@@ -324,7 +423,6 @@ const getCategorizedEnrollments = async () => {
     Subscription.find({ _id: { $in: subIds } }).select('_id name').lean()
   ])
 
-  // Course tally
   let totalCourseEnrollments = 0
   let topCourseItem = null
   for (const c of courses) {
@@ -339,7 +437,6 @@ const getCategorizedEnrollments = async () => {
     }
   }
 
-  // Test Series tally
   let totalTestSeriesEnrollments = 0
   let topTestSeriesItem = null
   for (const ts of testSeriesList) {
@@ -354,7 +451,6 @@ const getCategorizedEnrollments = async () => {
     }
   }
 
-  // Subscription tally
   let totalSubEnrollments = 0
   let topSubItem = null
   for (const s of subscriptions) {
@@ -390,20 +486,25 @@ const getCategorizedEnrollments = async () => {
     })
   }
 
-  // Sort descending by enrollmentCount
   result.sort((a, b) => b.enrollmentCount - a.enrollmentCount)
   return result
 }
 
-const getDashboardCounts = async () => {
-  logger.info('Fetching admin dashboard total counts')
+const getDashboardCounts = async (query = {}) => {
+  logger.info({ query }, 'Fetching admin dashboard total counts')
+  const { startDate, endDate } = parseDateRange(query)
+
+  const matchFilter = { isDeleted: false }
+  if (startDate && endDate) {
+    matchFilter.createdAt = { $gte: startDate, $lte: endDate }
+  }
 
   const [totalCourses, totalBooks, totalTestSeries, totalPreviousYearPapers, totalDailyQuizzes] = await Promise.all([
-    Course.countDocuments({ isDeleted: false }),
-    Book.countDocuments({ isDeleted: false }),
-    TestSeries.countDocuments({ isDeleted: false }),
-    PreviousYearPaper.countDocuments({ isDeleted: false }),
-    DailyQuiz.countDocuments({ isDeleted: false })
+    Course.countDocuments(matchFilter),
+    Book.countDocuments(matchFilter),
+    TestSeries.countDocuments(matchFilter),
+    PreviousYearPaper.countDocuments(matchFilter),
+    DailyQuiz.countDocuments(matchFilter)
   ])
 
   return {
@@ -415,24 +516,35 @@ const getDashboardCounts = async () => {
   }
 }
 
-const getRecentActivities = async () => {
-  logger.info('Fetching admin dashboard recent activity')
+const getRecentActivities = async (query = {}) => {
+  logger.info({ query }, 'Fetching admin dashboard recent activity')
+  const { startDate, endDate } = parseDateRange(query)
+
+  const courseMatch = { status: 'paid' }
+  const subMatch = { status: 'paid' }
+  const enrollMatch = {}
+
+  if (startDate && endDate) {
+    courseMatch.paidAt = { $gte: startDate, $lte: endDate }
+    subMatch.paidAt = { $gte: startDate, $lte: endDate }
+    enrollMatch.enrolledAt = { $gte: startDate, $lte: endDate }
+  }
 
   const [recentCourseOrders, recentSubscriptionOrders, recentEnrollments] = await Promise.all([
-    CourseOrder.find({ status: 'paid',  })
+    CourseOrder.find(courseMatch)
       .sort({ paidAt: -1 })
-      .limit(5)
+      .limit(10)
       .populate({ path: 'user', select: 'name' })
       .lean(),
-    SubscriptionOrder.find({ status: 'paid' })
+    SubscriptionOrder.find(subMatch)
       .sort({ paidAt: -1 })
-      .limit(5)
+      .limit(10)
       .populate({ path: 'user', select: 'name' })
       .populate({ path: 'subscription', select: 'name' })
       .lean(),
-    Enrollment.find()
+    Enrollment.find(enrollMatch)
       .sort({ enrolledAt: -1 })
-      .limit(5)
+      .limit(10)
       .populate({ path: 'user', select: 'name' })
       .populate({ path: 'course', select: 'title' })
       .lean()
@@ -489,7 +601,7 @@ const getRecentActivities = async () => {
   const allActivities = [...courseActivities, ...subscriptionActivities, ...enrollmentActivities]
   allActivities.sort((a, b) => new Date(b.date) - new Date(a.date))
   
-  return allActivities.slice(0, 5)
+  return allActivities.slice(0, 20)
 }
 
 module.exports = {
@@ -502,4 +614,3 @@ module.exports = {
   getDashboardCounts,
   getRecentActivities
 }
-
