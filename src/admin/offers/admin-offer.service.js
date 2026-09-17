@@ -1,4 +1,4 @@
-const path = require('path')
+﻿const path = require('path')
 const BaseService = require('../../core/BaseService')
 const offerRepository = require('../../modules/offer/offer.repository')
 const AppError = require('../../core/AppError')
@@ -15,12 +15,15 @@ class AdminOfferService extends BaseService {
     super(offerRepository, 'admin:offer')
   }
 
-  async listAll({ type, itemId, isActive, page, limit } = {}) {
+  async listAll({ type, itemId, isActive, search, page, limit, sortBy, sortOrder } = {}) {
     const filter = { isDeleted: false }
     if (type) filter.type = type
     if (itemId) filter.itemId = itemId
     if (isActive !== undefined && isActive !== '') {
       filter.isActive = isActive === 'true' || isActive === true
+    }
+    if (search) {
+      filter.title = new RegExp(search.trim(), 'i')
     }
     return this.getAll(filter, { page, limit, sort: { createdAt: -1 }, populate: POPULATE_FIELDS })
   }

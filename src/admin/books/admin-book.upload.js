@@ -1,4 +1,4 @@
-const multer   = require('multer')
+const multer = require('multer')
 const { uploadFile } = require('../../lib/fileUpload')
 const AppError = require('../../core/AppError')
 const { isDualLanguagePayload, parseJsonIfString } = require('../../core/languageUtils')
@@ -10,7 +10,7 @@ const upload = multer({
     if (['coverImage', 'hiCoverImage', 'enCoverImage'].includes(file.fieldname) && !file.mimetype.startsWith('image/')) {
       return cb(new AppError('Only image files are allowed for coverImage', 400, 'INVALID_FILE_TYPE'))
     }
-    if (['file', 'hiFile', 'enFile'].includes(file.fieldname) && file.mimetype !== 'application/pdf') {
+    if (['file', 'hiFile', 'enFile', 'samplePdf', 'hiSamplePdf', 'enSamplePdf'].includes(file.fieldname) && file.mimetype !== 'application/pdf') {
       return cb(new AppError('Only PDF files are allowed for file', 400, 'INVALID_FILE_TYPE'))
     }
     cb(null, true)
@@ -19,7 +19,8 @@ const upload = multer({
 
 const uploadBookFiles = upload.fields([
   { name: 'coverImage', maxCount: 1 },
-  { name: 'file',       maxCount: 1 },
+  { name: 'file', maxCount: 1 },
+  { name: 'samplePdf', maxCount: 1 },
   { name: 'hiCoverImage', maxCount: 1 },
   { name: 'enCoverImage', maxCount: 1 },
   { name: 'hiFile', maxCount: 1 },
@@ -80,14 +81,19 @@ const parseFiles = async (req, _res, next) => {
     }
 
     if (req.files?.coverImage?.[0]) {
-      const f   = req.files.coverImage[0]
+      const f = req.files.coverImage[0]
       const ext = f.originalname.split('.').pop().toLowerCase()
       req.body.coverImage = await uploadFile(f.buffer, `cover-${Date.now()}.${ext}`, folder, f.mimetype)
     }
 
     if (req.files?.file?.[0]) {
-      const f   = req.files.file[0]
+      const f = req.files.file[0]
       req.body.file = await uploadFile(f.buffer, `book-${Date.now()}.pdf`, folder, f.mimetype)
+    }
+
+    if (req.files?.samplePdf?.[0]) {
+      const f = req.files.samplePdf[0]
+      req.body.samplePdf = await uploadFile(f.buffer, `sample-${Date.now()}.pdf`, folder, f.mimetype)
     }
 
     next()
@@ -97,3 +103,6 @@ const parseFiles = async (req, _res, next) => {
 }
 
 module.exports = { uploadBookFiles, parseFields, parseFiles }
+
+
+
