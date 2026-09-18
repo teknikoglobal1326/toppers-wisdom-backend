@@ -11,19 +11,20 @@ class AdminWrapperPackageService extends BaseService {
     this.logger = createLogger('admin:wrapper-package:service')
   }
 
-  async listAll({ status, page, limit, search, exam } = {}) {
+  async listAll({ status, page, limit, search, exam, type } = {}) {
     const filter = { isDeleted: false }
-    if (status) filter.status = status
+    if (status && status !== 'all') filter.status = status
+    if (type && type !== 'all') filter.type = type
     if (search) filter.title = new RegExp(search, 'i')
     if (exam) filter.exam = exam
     
     const result = await this.getAll(filter, { 
       page, 
       limit, 
-      sort: { createdAt: -1 }, 
+      sort: { sortOrder: 1, createdAt: -1 }, 
       populate: [
         { path: 'exam', select: 'name hiName enName' },
-        { path: 'courses', select: 'title' }
+        { path: 'courses', select: 'title price type mrp' }
       ]
     })
 
@@ -34,7 +35,7 @@ class AdminWrapperPackageService extends BaseService {
     const pkg = await wrapperPackageRepository.findOne({ _id: id, isDeleted: false }, {
       populate: [
         { path: 'exam', select: 'name hiName enName' },
-        { path: 'courses', select: 'title' }
+        { path: 'courses', select: 'title price type mrp' }
       ]
     })
     if (!pkg) throw new AppError('Wrapper package not found', 404, 'NOT_FOUND')
@@ -62,7 +63,36 @@ class AdminWrapperPackageService extends BaseService {
 
     if (payload.price !== undefined && payload.price !== null && payload.price !== '') {
       const parsedPrice = Number(payload.price)
-      if (!Number.isNaN(parsedPrice)) payload.price = parsedPrice
+      payload.price = !Number.isNaN(parsedPrice) ? parsedPrice : 0
+    } else {
+      payload.price = 0
+    }
+
+    if (payload.mrp !== undefined && payload.mrp !== null && payload.mrp !== '') {
+      const parsedMrp = Number(payload.mrp)
+      payload.mrp = !Number.isNaN(parsedMrp) ? parsedMrp : 0
+    } else {
+      payload.mrp = 0
+    }
+
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSort = Number(payload.sortOrder)
+      payload.sortOrder = !Number.isNaN(parsedSort) ? parsedSort : 0
+    } else {
+      payload.sortOrder = 0
+    }
+
+    if (payload.isFree !== undefined) {
+      payload.isFree = payload.isFree === true || payload.isFree === 'true'
+    }
+
+    if (payload.type === 'free' || payload.isFree) {
+      payload.isFree = true
+      payload.type = 'free'
+      payload.price = 0
+      payload.mrp = 0
+    } else if (!payload.type) {
+      payload.type = 'recorded'
     }
     
     const image = await this.uploadImage(file)
@@ -87,7 +117,28 @@ class AdminWrapperPackageService extends BaseService {
 
     if (payload.price !== undefined && payload.price !== null && payload.price !== '') {
       const parsedPrice = Number(payload.price)
-      if (!Number.isNaN(parsedPrice)) payload.price = parsedPrice
+      payload.price = !Number.isNaN(parsedPrice) ? parsedPrice : 0
+    }
+
+    if (payload.mrp !== undefined && payload.mrp !== null && payload.mrp !== '') {
+      const parsedMrp = Number(payload.mrp)
+      payload.mrp = !Number.isNaN(parsedMrp) ? parsedMrp : 0
+    }
+
+    if (payload.sortOrder !== undefined && payload.sortOrder !== null && payload.sortOrder !== '') {
+      const parsedSort = Number(payload.sortOrder)
+      payload.sortOrder = !Number.isNaN(parsedSort) ? parsedSort : 0
+    }
+
+    if (payload.isFree !== undefined) {
+      payload.isFree = payload.isFree === true || payload.isFree === 'true'
+    }
+
+    if (payload.type === 'free' || payload.isFree) {
+      payload.isFree = true
+      payload.type = 'free'
+      payload.price = 0
+      payload.mrp = 0
     }
     
     if (file) {

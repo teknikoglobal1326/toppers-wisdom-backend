@@ -1,4 +1,4 @@
-const BaseService = require('../../core/BaseService')
+﻿const BaseService = require('../../core/BaseService')
 const AppError = require('../../core/AppError')
 const leadGenerateRepository = require('../../modules/lead-generate/lead-generate.repository')
 
@@ -7,22 +7,64 @@ class AdminLeadGenerateService extends BaseService {
     super(leadGenerateRepository, 'admin:lead-generate')
   }
 
-  buildFilter({ isRead, purposeType, subType, visitType } = {}) {
+  async buildFilter({ isRead, purposeType, subType, visitType, leadStatus, search, startDate, endDate } = {}) {
     const filter = {}
 
-    if (isRead !== undefined) {
-      // Joi casts boolean, but query string might be string 'true' or 'false'
+    if (isRead !== undefined && isRead !== '' && isRead !== 'all') {
       filter.isRead = isRead === 'true' || isRead === true
     }
-    if (purposeType) filter.purposeType = purposeType
-    if (subType) filter.subType = subType
-    if (visitType) filter.visitType = visitType
+    if (purposeType && purposeType !== 'all') filter.purposeType = purposeType
+    if (subType && subType !== 'all') filter.subType = subType
+    if (visitType && visitType !== 'all') filter.visitType = visitType
+
+    if (leadStatus && leadStatus !== 'all') {
+      if (leadStatus === 'hot') {
+        filter.$or = [
+          { leadStatus: 'hot' },
+          { visitType: 'payment_failed' }
+        ]
+      } else if (leadStatus === 'warm') {
+        filter.$or = [
+          { leadStatus: 'warm' },
+          { visitType: { $in: ['detail', 'checkout', 'contentCheckout', 'banner'] } }
+        ]
+      } else if (leadStatus === 'cold') {
+        filter.$or = [
+          { leadStatus: 'cold' },
+          { visitType: 'onboarding' }
+        ]
+      }
+    }
+
+    if (startDate || endDate) {
+      filter.createdAt = {}
+      if (startDate) filter.createdAt.$gte = new Date(startDate)
+      if (endDate) {
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        filter.createdAt.$lte = end
+      }
+    }
+
+    if (search && search.trim()) {
+      try {
+        const User = require('../../models/User.model')
+        const regex = new RegExp(search.trim(), 'i')
+        const users = await User.find({
+          $or: [{ name: regex }, { email: regex }, { phone: regex }]
+        }).select('_id').lean()
+        const userIds = users.map(u => u._id)
+        filter.user = { $in: userIds }
+      } catch (e) {
+        // Fallback if user search fails
+      }
+    }
 
     return filter
   }
 
   async listAll(query = {}) {
-    const filter = this.buildFilter(query)
+    const filter = await this.buildFilter(query)
     const direction = query.sortOrder !== undefined ? Number(query.sortOrder) : -1
     const sortBy = query.sortBy || 'createdAt'
 

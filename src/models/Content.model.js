@@ -13,6 +13,7 @@ const contantSchema = new mongoose.Schema({
   youtubeUrl: { type: String, default: null },
   image: { type: String, default: '' },
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
+  isFree: { type: Boolean, default: false },
   isDeleted: { type: Boolean, default: false, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   isLive: { type: Boolean, default: false },
