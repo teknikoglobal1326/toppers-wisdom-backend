@@ -124,7 +124,7 @@ class AdminUserService extends BaseService {
       page:   filters.page,
       limit:  filters.limit,
       sort:   { createdAt: -1 },
-      select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status remarks',
+      select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status remarks allocatedByName allocatedBy',
     })
 
     const userIds = (result.data || []).map(u => (u._id || u.id)?.toString()).filter(Boolean)
@@ -137,13 +137,20 @@ class AdminUserService extends BaseService {
     ])
 
     const remarkMap = {}
+    const assignerMap = {}
     subRemarks.forEach(s => {
       const uid = s.user?.toString()
-      if (uid && !remarkMap[uid]) remarkMap[uid] = s.remarks
+      if (uid && !remarkMap[uid]) {
+        remarkMap[uid] = s.remarks
+        assignerMap[uid] = s.allocatedByName || 'Admin'
+      }
     })
     enrollRemarks.forEach(e => {
       const uid = e.user?.toString()
-      if (uid && !remarkMap[uid]) remarkMap[uid] = e.remarks
+      if (uid && !remarkMap[uid]) {
+        remarkMap[uid] = e.remarks
+        assignerMap[uid] = e.allocatedByName || 'Admin'
+      }
     })
 
     const transformedData = (result.data || []).map(u => {
@@ -151,6 +158,7 @@ class AdminUserService extends BaseService {
       const uid = String(uObj._id)
       uObj.isPaid = paidUserIdSet.has(uid)
       uObj.remarks = uObj.remarks || remarkMap[uid] || ''
+      uObj.allocatedByName = uObj.allocatedByName || assignerMap[uid] || ''
       return uObj
     })
 
@@ -223,7 +231,7 @@ class AdminUserService extends BaseService {
     const User = require('../../models/User.model')
     const users = await User.find(filter)
       .sort({ createdAt: -1 })
-      .select('name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status remarks')
+      .select('name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status remarks allocatedByName')
       .lean()
 
     const userIds = users.map(u => u._id?.toString()).filter(Boolean)
@@ -236,19 +244,27 @@ class AdminUserService extends BaseService {
     ])
 
     const remarkMap = {}
+    const assignerMap = {}
     subRemarks.forEach(s => {
       const uid = s.user?.toString()
-      if (uid && !remarkMap[uid]) remarkMap[uid] = s.remarks
+      if (uid && !remarkMap[uid]) {
+        remarkMap[uid] = s.remarks
+        assignerMap[uid] = s.allocatedByName || 'Admin'
+      }
     })
     enrollRemarks.forEach(e => {
       const uid = e.user?.toString()
-      if (uid && !remarkMap[uid]) remarkMap[uid] = e.remarks
+      if (uid && !remarkMap[uid]) {
+        remarkMap[uid] = e.remarks
+        assignerMap[uid] = e.allocatedByName || 'Admin'
+      }
     })
 
     return users.map((u, index) => {
       const isPaid = paidUserIdSet.has(String(u._id))
       const subExamsNames = Array.isArray(u.subExams) ? u.subExams.map(s => s.name || s).join(', ') : ''
       const userRemarks = u.remarks || remarkMap[String(u._id)] || ''
+      const userAssigner = u.allocatedByName || assignerMap[String(u._id)] || 'N/A'
       return {
         serialNo: index + 1,
         name: u.name || 'N/A',
@@ -260,6 +276,7 @@ class AdminUserService extends BaseService {
         profileStatus: u.profileCompletionState || 'N/A',
         purchaseStatus: isPaid ? 'Paid' : 'Unpaid',
         remarks: userRemarks || 'N/A',
+        allocatedBy: userAssigner,
         accountStatus: u.status || 'active',
         loginType: u.isSocial ? 'Google Login' : 'Normal Login',
         joinedAt: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : 'N/A'
@@ -305,6 +322,7 @@ class AdminUserService extends BaseService {
             { path: 'boosters.moduleId', select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status' }
           ]
         })
+        .populate('allocatedBy', 'name email role')
         .lean(),
       Enrollment.countDocuments({ user: userId }),
       AiTestAttempt.countDocuments({ user: userId }),
@@ -372,7 +390,8 @@ const getUserEnrollments = catchAsync(async (req, res) => {
     expiresAt: e.expiresAt,
     progressPercent: e.progressPercent,
     progress: e.progress,
-    remarks: e.remarks || ''
+    remarks: e.remarks || '',
+    allocatedByName: e.allocatedByName || (e.allocatedBy ? 'Admin' : '')
   }))
 
   sendPaginated(res, mappedData, r.pagination)
@@ -575,7 +594,7 @@ const getUserAttempts = catchAsync(async (req, res) => {
 
 const allocateSubscription = catchAsync(async (req, res) => {
   const userId = req.params.id
-  const { subscriptionId, durationDays, startDate, endDate, remarks } = req.body
+  const { subscriptionId, durationDays, startDate, endDate, remarks, allocatedByName } = req.body
 
   const Subscription = require('../../models/Subscription.model')
   const UserSubscription = require('../../models/UserSubscription.model')
@@ -596,6 +615,9 @@ const allocateSubscription = catchAsync(async (req, res) => {
   // Deactivate any previous active subscription for this user
   await UserSubscription.updateMany({ user: userId, isActive: true }, { isActive: false })
 
+  const assignerId = req.admin?._id || req.member?._id || req.user?._id || null
+  const assignerName = allocatedByName || req.admin?.name || req.member?.name || (req.admin?.email ? req.admin.email.split('@')[0] : 'Admin')
+
   const userSub = await UserSubscription.create({
     user: userId,
     subscription: subscriptionId,
@@ -603,11 +625,16 @@ const allocateSubscription = catchAsync(async (req, res) => {
     endDate: end,
     isActive: true,
     remarks: remarks || '',
-    allocatedBy: req.user?._id || null
+    allocatedBy: assignerId,
+    allocatedByName: assignerName
   })
 
-  if (remarks) {
-    await User.findByIdAndUpdate(userId, { remarks, allocatedBy: req.user?._id || null })
+  if (remarks || assignerName) {
+    await User.findByIdAndUpdate(userId, { 
+      remarks: remarks || undefined, 
+      allocatedBy: assignerId,
+      allocatedByName: assignerName
+    })
   }
 
   sendSuccess(res, userSub, 'Subscription allocated successfully')
@@ -659,7 +686,7 @@ const revokeSubscription = catchAsync(async (req, res) => {
 
 const allocateCourse = catchAsync(async (req, res) => {
   const userId = req.params.id
-  const { courseId, durationDays, startDate, expiresAt, remarks } = req.body
+  const { courseId, durationDays, startDate, expiresAt, remarks, allocatedByName } = req.body
 
   const Course = require('../../models/Course.model')
   const Enrollment = require('../../models/Enrollment.model')
@@ -679,6 +706,9 @@ const allocateCourse = catchAsync(async (req, res) => {
     expiry = new Date(enrolledAt.getTime() + months * 30 * 24 * 60 * 60 * 1000)
   }
 
+  const assignerId = req.admin?._id || req.member?._id || req.user?._id || null
+  const assignerName = allocatedByName || req.admin?.name || req.member?.name || (req.admin?.email ? req.admin.email.split('@')[0] : 'Admin')
+
   const enrollment = await Enrollment.findOneAndUpdate(
     { user: userId, course: courseId },
     {
@@ -686,13 +716,18 @@ const allocateCourse = catchAsync(async (req, res) => {
       expiresAt: expiry,
       progressPercent: 0,
       remarks: remarks || '',
-      allocatedBy: req.user?._id || null
+      allocatedBy: assignerId,
+      allocatedByName: assignerName
     },
     { upsert: true, new: true }
   )
 
-  if (remarks) {
-    await User.findByIdAndUpdate(userId, { remarks, allocatedBy: req.user?._id || null })
+  if (remarks || assignerName) {
+    await User.findByIdAndUpdate(userId, { 
+      remarks: remarks || undefined, 
+      allocatedBy: assignerId,
+      allocatedByName: assignerName
+    })
   }
 
   sendSuccess(res, enrollment, 'Course allocated successfully to user')
@@ -746,6 +781,7 @@ const exportUsers = catchAsync(async (req, res) => {
     { label: 'Profile Status', value: 'profileStatus' },
     { label: 'Plan Status', value: 'purchaseStatus' },
     { label: 'Remarks', value: 'remarks' },
+    { label: 'Allocated By', value: 'allocatedBy' },
     { label: 'Account Status', value: 'accountStatus' },
     { label: 'Login Type', value: 'loginType' },
     { label: 'Joined On', value: 'joinedAt' }
