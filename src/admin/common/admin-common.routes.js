@@ -52,13 +52,29 @@ router.get('/qualifications', catchAsync(async (_req, res) => {
 
 // GET /api/v1/admin/common/courses
 router.get('/courses', catchAsync(async (req, res) => {
-  const filter = { isDeleted: false };
-  if (req.query.examId) {
-    filter.exam = req.query.examId;
+  const mongoose = require('mongoose')
+  const { examId, exam, examIds } = req.query
+  const filter = { isDeleted: false }
+  const targetExam = examId || exam
+
+  if (targetExam && targetExam !== 'all') {
+    if (mongoose.Types.ObjectId.isValid(targetExam)) {
+      const oid = new mongoose.Types.ObjectId(targetExam)
+      filter.exam = { $in: [oid, targetExam] }
+    } else {
+      filter.exam = targetExam
+    }
+  } else if (examIds) {
+    const list = Array.isArray(examIds) ? examIds : String(examIds).split(',').filter(Boolean)
+    const objectIdList = list.filter(id => mongoose.Types.ObjectId.isValid(id)).map(id => new mongoose.Types.ObjectId(id))
+    filter.exam = { $in: [...objectIdList, ...list] }
   }
-  const courses = await courseRepository.findAll(filter,
-    { sort: { sortOrder: 1, createdAt: -1 }, select: '_id title exam sortOrder' });
-  sendSuccess(res, courses);
+
+  const courses = await courseRepository.findAll(filter, {
+    sort: { sortOrder: 1, createdAt: -1 },
+    select: '_id title name price type mrp isFree exam sortOrder status'
+  })
+  sendSuccess(res, courses)
 }));
 
 // GET /api/v1/admin/common/subscriptions
@@ -1088,3 +1104,4 @@ router.get('/books', catchAsync(async (req, res) => {
   sendSuccess(res, books)
 }))
 module.exports = router
+

@@ -1,4 +1,4 @@
-const BaseService = require('../../core/BaseService')
+﻿const BaseService = require('../../core/BaseService')
 const courseRepository = require('./course.repository')
 const { checkAccess } = require('../../lib/access')
 const { getPresignedDownloadUrl } = require('../../lib/s3')
@@ -274,7 +274,7 @@ class CourseService extends BaseService {
     const result = await paginate(WrapperPackage, filter, {
       page: filters.page,
       limit: filters.limit,
-      sort: { createdAt: -1 },
+      sort: { sortOrder: 1, createdAt: -1 },
       populate: [{ path: 'exam', select: 'name' }]
     })
 
@@ -342,7 +342,7 @@ class CourseService extends BaseService {
     const result = await paginate(WrapperPackage, filter, {
       page: filters.page,
       limit: filters.limit,
-      sort: { createdAt: -1 },
+      sort: { sortOrder: 1, createdAt: -1 },
       populate: [{ path: 'exam', select: 'name' }]
     })
 
@@ -1135,3 +1135,4 @@ class CourseService extends BaseService {
 }
 
 module.exports = new CourseService()
+
