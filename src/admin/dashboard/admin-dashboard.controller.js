@@ -3,7 +3,7 @@ const { sendSuccess } = require('../../core/response')
 const dashboardService = require('./admin-dashboard.service')
 
 const getDashboardStats = catchAsync(async (req, res) => {
-  const stats = await dashboardService.getDashboardStats()
+  const stats = await dashboardService.getDashboardStats(req.query)
   sendSuccess(res, stats, 'Dashboard stats fetched successfully')
 })
 
@@ -18,27 +18,27 @@ const getRevenueStats = catchAsync(async (req, res) => {
 })
 
 const getUpcomingLiveClasses = catchAsync(async (req, res) => {
-  const data = await dashboardService.getUpcomingLiveClasses()
+  const data = await dashboardService.getUpcomingLiveClasses(req.query)
   sendSuccess(res, data, 'Upcoming live classes retrieved successfully')
 })
 
 const getTopExamsByStudentCount = catchAsync(async (req, res) => {
-  const data = await dashboardService.getTopExamsByStudentCount()
+  const data = await dashboardService.getTopExamsByStudentCount(req.query)
   sendSuccess(res, data, 'Top exams (categories) by student count retrieved successfully')
 })
 
 const getCategorizedEnrollments = catchAsync(async (req, res) => {
-  const data = await dashboardService.getCategorizedEnrollments()
+  const data = await dashboardService.getCategorizedEnrollments(req.query)
   sendSuccess(res, data, 'Categorized paid enrollment statistics retrieved successfully')
 })
 
 const getDashboardCounts = catchAsync(async (req, res) => {
-  const data = await dashboardService.getDashboardCounts()
+  const data = await dashboardService.getDashboardCounts(req.query)
   sendSuccess(res, data, 'Dashboard item counts retrieved successfully')
 })
 
 const getRecentActivities = catchAsync(async (req, res) => {
-  const data = await dashboardService.getRecentActivities()
+  const data = await dashboardService.getRecentActivities(req.query)
   sendSuccess(res, data, 'Recent dashboard activities retrieved successfully')
 })
 
@@ -52,4 +52,3 @@ module.exports = {
   getDashboardCounts,
   getRecentActivities
 }
-
