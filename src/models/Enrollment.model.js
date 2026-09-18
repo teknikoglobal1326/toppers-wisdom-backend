@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+﻿const mongoose = require('mongoose')
 
 const enrollmentSchema = new mongoose.Schema({
   user:   { type: mongoose.Schema.Types.ObjectId, ref: 'User',   required: true },
@@ -14,6 +14,8 @@ const enrollmentSchema = new mongoose.Schema({
   enrolledAt:  { type: Date, default: Date.now },
   completedAt: Date,
   expiresAt:   Date,
+  remarks:     { type: String, trim: true, default: '' },
+  allocatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true })
 
 enrollmentSchema.index({ user: 1, course: 1 }, { unique: true })

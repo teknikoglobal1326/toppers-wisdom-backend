@@ -40,6 +40,26 @@ class AdminUserService extends BaseService {
     return Array.from(paidUserSet)
   }
 
+  async getRemarkedUserIds() {
+    const UserSubscription = require('../../models/UserSubscription.model')
+    const Enrollment = require('../../models/Enrollment.model')
+    const User = require('../../models/User.model')
+
+    const [subUsers, enrollUsers, directRemarkUsers] = await Promise.all([
+      UserSubscription.find({ remarks: { $exists: true, $nin: ['', null] } }).distinct('user'),
+      Enrollment.find({ remarks: { $exists: true, $nin: ['', null] } }).distinct('user'),
+      User.find({ remarks: { $exists: true, $nin: ['', null] } }).distinct('_id')
+    ])
+
+    const set = new Set([
+      ...subUsers.map(u => u?.toString()).filter(Boolean),
+      ...enrollUsers.map(u => u?.toString()).filter(Boolean),
+      ...directRemarkUsers.map(u => u?.toString()).filter(Boolean)
+    ])
+
+    return Array.from(set)
+  }
+
   async listAll(filters) {
     const filter = { role: 'user', isDeleted: { $ne: true } }
     if (filters.search) {
@@ -65,21 +85,72 @@ class AdminUserService extends BaseService {
     const paidUserIds = await this.getPaidUserIds()
     const paidUserIdSet = new Set(paidUserIds)
 
+    let allowedIds = null
+    let excludedIds = []
+
     if (filters.purchaseStatus === 'paid') {
-      filter._id = { $in: paidUserIds }
+      allowedIds = paidUserIds
     } else if (filters.purchaseStatus === 'unpaid') {
-      filter._id = { $nin: paidUserIds }
+      excludedIds.push(...paidUserIds)
+    }
+
+    const hasRemarksVal = filters.hasRemarks || filters.hasRemark || filters.remarks || filters.isRemarked
+    if (hasRemarksVal === 'true' || hasRemarksVal === true) {
+      const remarkedUserIds = await this.getRemarkedUserIds()
+      if (allowedIds) {
+        const remarkSet = new Set(remarkedUserIds)
+        allowedIds = allowedIds.filter(id => remarkSet.has(id.toString()))
+      } else {
+        allowedIds = remarkedUserIds
+      }
+    } else if (hasRemarksVal === 'false' || hasRemarksVal === false) {
+      const remarkedUserIds = await this.getRemarkedUserIds()
+      excludedIds.push(...remarkedUserIds)
+    }
+
+    if (allowedIds !== null) {
+      filter._id = { $in: allowedIds }
+    }
+    if (excludedIds.length > 0) {
+      if (filter._id && filter._id.$in) {
+        const exclSet = new Set(excludedIds.map(x => x.toString()))
+        filter._id.$in = filter._id.$in.filter(id => !exclSet.has(id.toString()))
+      } else {
+        filter._id = { $nin: excludedIds }
+      }
     }
 
     const result = await this.getAll(filter, {
       page:   filters.page,
       limit:  filters.limit,
-      select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status',
+      sort:   { createdAt: -1 },
+      select: 'name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status remarks',
+    })
+
+    const userIds = (result.data || []).map(u => (u._id || u.id)?.toString()).filter(Boolean)
+    const UserSubscription = require('../../models/UserSubscription.model')
+    const Enrollment = require('../../models/Enrollment.model')
+
+    const [subRemarks, enrollRemarks] = await Promise.all([
+      UserSubscription.find({ user: { $in: userIds }, remarks: { $exists: true, $nin: ['', null] } }).sort({ createdAt: -1 }).lean(),
+      Enrollment.find({ user: { $in: userIds }, remarks: { $exists: true, $nin: ['', null] } }).sort({ enrolledAt: -1 }).lean()
+    ])
+
+    const remarkMap = {}
+    subRemarks.forEach(s => {
+      const uid = s.user?.toString()
+      if (uid && !remarkMap[uid]) remarkMap[uid] = s.remarks
+    })
+    enrollRemarks.forEach(e => {
+      const uid = e.user?.toString()
+      if (uid && !remarkMap[uid]) remarkMap[uid] = e.remarks
     })
 
     const transformedData = (result.data || []).map(u => {
       const uObj = u.toObject ? u.toObject() : { ...u }
-      uObj.isPaid = paidUserIdSet.has(String(uObj._id))
+      const uid = String(uObj._id)
+      uObj.isPaid = paidUserIdSet.has(uid)
+      uObj.remarks = uObj.remarks || remarkMap[uid] || ''
       return uObj
     })
 
@@ -114,21 +185,70 @@ class AdminUserService extends BaseService {
     const paidUserIds = await this.getPaidUserIds()
     const paidUserIdSet = new Set(paidUserIds)
 
+    let allowedIds = null
+    let excludedIds = []
+
     if (filters.purchaseStatus === 'paid') {
-      filter._id = { $in: paidUserIds }
+      allowedIds = paidUserIds
     } else if (filters.purchaseStatus === 'unpaid') {
-      filter._id = { $nin: paidUserIds }
+      excludedIds.push(...paidUserIds)
+    }
+
+    const hasRemarksVal = filters.hasRemarks || filters.hasRemark || filters.remarks || filters.isRemarked
+    if (hasRemarksVal === 'true' || hasRemarksVal === true) {
+      const remarkedUserIds = await this.getRemarkedUserIds()
+      if (allowedIds) {
+        const remarkSet = new Set(remarkedUserIds)
+        allowedIds = allowedIds.filter(id => remarkSet.has(id.toString()))
+      } else {
+        allowedIds = remarkedUserIds
+      }
+    } else if (hasRemarksVal === 'false' || hasRemarksVal === false) {
+      const remarkedUserIds = await this.getRemarkedUserIds()
+      excludedIds.push(...remarkedUserIds)
+    }
+
+    if (allowedIds !== null) {
+      filter._id = { $in: allowedIds }
+    }
+    if (excludedIds.length > 0) {
+      if (filter._id && filter._id.$in) {
+        const exclSet = new Set(excludedIds.map(x => x.toString()))
+        filter._id.$in = filter._id.$in.filter(id => !exclSet.has(id.toString()))
+      } else {
+        filter._id = { $nin: excludedIds }
+      }
     }
 
     const User = require('../../models/User.model')
     const users = await User.find(filter)
       .sort({ createdAt: -1 })
-      .select('name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status')
+      .select('name phone email isSocial qualification exam subExams profileCompletionState profileComplete createdAt status remarks')
       .lean()
+
+    const userIds = users.map(u => u._id?.toString()).filter(Boolean)
+    const UserSubscription = require('../../models/UserSubscription.model')
+    const Enrollment = require('../../models/Enrollment.model')
+
+    const [subRemarks, enrollRemarks] = await Promise.all([
+      UserSubscription.find({ user: { $in: userIds }, remarks: { $exists: true, $nin: ['', null] } }).sort({ createdAt: -1 }).lean(),
+      Enrollment.find({ user: { $in: userIds }, remarks: { $exists: true, $nin: ['', null] } }).sort({ enrolledAt: -1 }).lean()
+    ])
+
+    const remarkMap = {}
+    subRemarks.forEach(s => {
+      const uid = s.user?.toString()
+      if (uid && !remarkMap[uid]) remarkMap[uid] = s.remarks
+    })
+    enrollRemarks.forEach(e => {
+      const uid = e.user?.toString()
+      if (uid && !remarkMap[uid]) remarkMap[uid] = e.remarks
+    })
 
     return users.map((u, index) => {
       const isPaid = paidUserIdSet.has(String(u._id))
       const subExamsNames = Array.isArray(u.subExams) ? u.subExams.map(s => s.name || s).join(', ') : ''
+      const userRemarks = u.remarks || remarkMap[String(u._id)] || ''
       return {
         serialNo: index + 1,
         name: u.name || 'N/A',
@@ -139,6 +259,7 @@ class AdminUserService extends BaseService {
         subExams: subExamsNames || 'N/A',
         profileStatus: u.profileCompletionState || 'N/A',
         purchaseStatus: isPaid ? 'Paid' : 'Unpaid',
+        remarks: userRemarks || 'N/A',
         accountStatus: u.status || 'active',
         loginType: u.isSocial ? 'Google Login' : 'Normal Login',
         joinedAt: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : 'N/A'
@@ -250,7 +371,8 @@ const getUserEnrollments = catchAsync(async (req, res) => {
     enrolledAt: e.enrolledAt,
     expiresAt: e.expiresAt,
     progressPercent: e.progressPercent,
-    progress: e.progress
+    progress: e.progress,
+    remarks: e.remarks || ''
   }))
 
   sendPaginated(res, mappedData, r.pagination)
@@ -453,10 +575,11 @@ const getUserAttempts = catchAsync(async (req, res) => {
 
 const allocateSubscription = catchAsync(async (req, res) => {
   const userId = req.params.id
-  const { subscriptionId, durationDays, startDate, endDate } = req.body
+  const { subscriptionId, durationDays, startDate, endDate, remarks } = req.body
 
   const Subscription = require('../../models/Subscription.model')
   const UserSubscription = require('../../models/UserSubscription.model')
+  const User = require('../../models/User.model')
 
   const sub = await Subscription.findById(subscriptionId)
   if (!sub) {
@@ -478,8 +601,14 @@ const allocateSubscription = catchAsync(async (req, res) => {
     subscription: subscriptionId,
     startDate: start,
     endDate: end,
-    isActive: true
+    isActive: true,
+    remarks: remarks || '',
+    allocatedBy: req.user?._id || null
   })
+
+  if (remarks) {
+    await User.findByIdAndUpdate(userId, { remarks, allocatedBy: req.user?._id || null })
+  }
 
   sendSuccess(res, userSub, 'Subscription allocated successfully')
 })
@@ -530,10 +659,11 @@ const revokeSubscription = catchAsync(async (req, res) => {
 
 const allocateCourse = catchAsync(async (req, res) => {
   const userId = req.params.id
-  const { courseId, durationDays, startDate, expiresAt } = req.body
+  const { courseId, durationDays, startDate, expiresAt, remarks } = req.body
 
   const Course = require('../../models/Course.model')
   const Enrollment = require('../../models/Enrollment.model')
+  const User = require('../../models/User.model')
 
   const course = await Course.findById(courseId)
   if (!course) {
@@ -554,10 +684,16 @@ const allocateCourse = catchAsync(async (req, res) => {
     {
       enrolledAt,
       expiresAt: expiry,
-      progressPercent: 0
+      progressPercent: 0,
+      remarks: remarks || '',
+      allocatedBy: req.user?._id || null
     },
     { upsert: true, new: true }
   )
+
+  if (remarks) {
+    await User.findByIdAndUpdate(userId, { remarks, allocatedBy: req.user?._id || null })
+  }
 
   sendSuccess(res, enrollment, 'Course allocated successfully to user')
 })
@@ -598,32 +734,29 @@ const exportUsers = catchAsync(async (req, res) => {
     return sendSuccess(res, users, 'Export data retrieved successfully')
   }
 
-  // Generate CSV
-  const headers = ['S.No', 'Name', 'Phone', 'Email', 'Qualification', 'Exam', 'Sub Exams', 'Profile Status', 'Purchase Status', 'Account Status', 'Login Type', 'Joined At']
-  const csvRows = [headers.join(',')]
+  const { Parser } = require('json2csv')
+  const fields = [
+    { label: 'S.No', value: 'serialNo' },
+    { label: 'Name', value: 'name' },
+    { label: 'Phone', value: 'phone' },
+    { label: 'Email', value: 'email' },
+    { label: 'Qualification', value: 'qualification' },
+    { label: 'Exam', value: 'exam' },
+    { label: 'Sub Exams', value: 'subExams' },
+    { label: 'Profile Status', value: 'profileStatus' },
+    { label: 'Plan Status', value: 'purchaseStatus' },
+    { label: 'Remarks', value: 'remarks' },
+    { label: 'Account Status', value: 'accountStatus' },
+    { label: 'Login Type', value: 'loginType' },
+    { label: 'Joined On', value: 'joinedAt' }
+  ]
 
-  for (const u of users) {
-    const row = [
-      u.serialNo,
-      `"${String(u.name || '').replace(/"/g, '""')}"`,
-      `"${String(u.phone || '').replace(/"/g, '""')}"`,
-      `"${String(u.email || '').replace(/"/g, '""')}"`,
-      `"${String(u.qualification || '').replace(/"/g, '""')}"`,
-      `"${String(u.exam || '').replace(/"/g, '""')}"`,
-      `"${String(u.subExams || '').replace(/"/g, '""')}"`,
-      `"${String(u.profileStatus || '').replace(/"/g, '""')}"`,
-      `"${u.purchaseStatus}"`,
-      `"${u.accountStatus}"`,
-      `"${u.loginType}"`,
-      `"${u.joinedAt}"`
-    ]
-    csvRows.push(row.join(','))
-  }
+  const json2csvParser = new Parser({ fields })
+  const csv = json2csvParser.parse(users)
 
-  const csvString = csvRows.join('\r\n')
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
-  res.setHeader('Content-Disposition', `attachment; filename="users_export_${Date.now()}.csv"`)
-  res.status(200).send(csvString)
+  res.header('Content-Type', 'text/csv')
+  res.attachment(`users_export_${new Date().toISOString().slice(0, 10)}.csv`)
+  return res.send(csv)
 })
 
 module.exports = {
@@ -631,8 +764,8 @@ module.exports = {
   getOne,
   updateUser,
   getUserOrders,
-  getUserAttempts,
   getUserEnrollments,
+  getUserAttempts,
   allocateSubscription,
   updateSubscriptionExpiry,
   revokeSubscription,
@@ -641,4 +774,3 @@ module.exports = {
   removeCourseEnrollment,
   exportUsers
 }
-

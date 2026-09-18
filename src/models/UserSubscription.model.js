@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+﻿const mongoose = require('mongoose')
 
 const userSubscriptionSchema = new mongoose.Schema({
   user:         { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -7,6 +7,8 @@ const userSubscriptionSchema = new mongoose.Schema({
   startDate:    { type: Date, required: true },
   endDate:      { type: Date, required: true },
   isActive:     { type: Boolean, default: true, index: true },
+  remarks:      { type: String, trim: true, default: '' },
+  allocatedBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true })
 
 userSubscriptionSchema.index({ user: 1, subscription: 1 })
