@@ -63,29 +63,69 @@ class AdminLeadGenerateService extends BaseService {
     return filter
   }
 
+  async resolveItemNames(leads) {
+    if (!Array.isArray(leads) || leads.length === 0) return leads
+
+    const missingLeads = leads.filter(l => !l.itemName && l.itemId)
+    if (missingLeads.length === 0) return leads
+
+    try {
+      const Course = require('../../models/Course.model')
+      const Subscription = require('../../models/Subscription.model')
+      const itemIds = missingLeads.map(l => l.itemId)
+
+      const [courses, subscriptions] = await Promise.all([
+        Course.find({ _id: { $in: itemIds } }).select('_id title name').lean(),
+        Subscription.find({ _id: { $in: itemIds } }).select('_id title name').lean()
+      ])
+
+      const courseMap = new Map(courses.map(c => [String(c._id), c.title || c.name]))
+      const subMap = new Map(subscriptions.map(s => [String(s._id), s.title || s.name]))
+
+      leads.forEach(l => {
+        if (!l.itemName && l.itemId) {
+          const resolved = courseMap.get(String(l.itemId)) || subMap.get(String(l.itemId))
+          if (resolved) l.itemName = resolved
+        }
+      })
+    } catch (e) {
+      // Ignore resolution error
+    }
+
+    return leads
+  }
+
   async listAll(query = {}) {
     const filter = await this.buildFilter(query)
     const direction = query.sortOrder !== undefined ? Number(query.sortOrder) : -1
     const sortBy = query.sortBy || 'createdAt'
 
-    return this.getAll(filter, {
+    const result = await this.getAll(filter, {
       page: query.page,
       limit: query.limit,
       sort: { [sortBy]: direction },
       populate: { path: 'user', select: 'name email phone' }
     })
+
+    if (result && result.data) {
+      await this.resolveItemNames(result.data)
+    }
+
+    return result
   }
 
   async exportLeads(query = {}) {
     const filter = await this.buildFilter(query)
     const direction = query.sortOrder !== undefined ? Number(query.sortOrder) : -1
     const sortBy = query.sortBy || 'createdAt'
-    const User = require('../../models/User.model')
 
-    return leadGenerateRepository.find(filter, {
+    const leads = await leadGenerateRepository.find(filter, {
       sort: { [sortBy]: direction },
       populate: { path: 'user', select: 'name email phone' }
     })
+
+    await this.resolveItemNames(leads)
+    return leads
   }
 
   async updateLead(id, data) {
