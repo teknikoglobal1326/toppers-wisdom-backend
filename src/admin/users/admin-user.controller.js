@@ -81,6 +81,21 @@ class AdminUserService extends BaseService {
     if (filters.profileCompletionState && filters.profileCompletionState !== "") {
       filter.profileCompletionState = filters.profileCompletionState;
     }
+    if (filters.startDate || filters.fromDate || filters.endDate || filters.toDate) {
+      const from = filters.startDate || filters.fromDate;
+      const to = filters.endDate || filters.toDate;
+      filter.createdAt = {};
+      if (from) {
+        const start = new Date(from);
+        start.setHours(0, 0, 0, 0);
+        filter.createdAt.$gte = start;
+      }
+      if (to) {
+        const end = new Date(to);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
 
     const paidUserIds = await this.getPaidUserIds()
     const paidUserIdSet = new Set(paidUserIds)
@@ -188,6 +203,21 @@ class AdminUserService extends BaseService {
     }
     if (filters.profileCompletionState && filters.profileCompletionState !== "") {
       filter.profileCompletionState = filters.profileCompletionState;
+    }
+    if (filters.startDate || filters.fromDate || filters.endDate || filters.toDate) {
+      const from = filters.startDate || filters.fromDate;
+      const to = filters.endDate || filters.toDate;
+      filter.createdAt = {};
+      if (from) {
+        const start = new Date(from);
+        start.setHours(0, 0, 0, 0);
+        filter.createdAt.$gte = start;
+      }
+      if (to) {
+        const end = new Date(to);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
     }
 
     const paidUserIds = await this.getPaidUserIds()
