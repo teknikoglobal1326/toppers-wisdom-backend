@@ -227,6 +227,7 @@ class AdminCourseTestService extends BaseService {
         else if (cleanKey === "scheduleat" || cleanKey === "scheduledat") normalizedRow.scheduleAt = value
         else if (cleanKey === "language") normalizedRow.language = value
         else if (cleanKey === "status") normalizedRow.status = value
+        else if (cleanKey === "isfree" || cleanKey === "free") normalizedRow.isFree = String(value).trim().toLowerCase() === "true" || String(value).trim() === "1"
       }
 
       if (!normalizedRow.title) continue
@@ -317,6 +318,7 @@ class AdminCourseTestService extends BaseService {
         scheduleAt: normalizedRow.scheduleAt || null,
         language: normalizedRow.language || "hi",
         status: normalizedRow.status || common.status || "draft",
+        isFree: normalizedRow.isFree !== undefined ? normalizedRow.isFree : (common.isFree !== undefined ? common.isFree : false),
         createdBy: adminId
       }
 

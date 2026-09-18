@@ -21,6 +21,7 @@ const createPdfSchema = Joi.object({
   sortOrder: Joi.number().integer().min(0).default(0),
   instruction: Joi.string().trim().optional().allow('', null),
   status: Joi.string().valid('active', 'inactive').default('active'),
+  isFree: Joi.boolean().default(false),
   scheduleAt: Joi.date().optional().allow('', null),
   scheduledStartTime: Joi.date().optional().allow('', null),
   scheduledEndTime: Joi.date().optional().allow('', null),
@@ -39,6 +40,7 @@ const updatePdfSchema = Joi.object({
   sortOrder: Joi.number().integer().min(0),
   instruction: Joi.string().trim().optional().allow('', null),
   status: Joi.string().valid('active', 'inactive'),
+  isFree: Joi.boolean().optional(),
   scheduleAt: Joi.date().optional().allow('', null),
   scheduledStartTime: Joi.date().optional().allow('', null),
   scheduledEndTime: Joi.date().optional().allow('', null),
@@ -46,6 +48,7 @@ const updatePdfSchema = Joi.object({
 
 const listPdfQuerySchema = Joi.object({
   status: Joi.string().valid('active', 'inactive'),
+  isFree: Joi.boolean().optional(),
   course: Joi.string().hex().length(24),
   subject: Joi.string().hex().length(24),
   topic: Joi.string().hex().length(24),

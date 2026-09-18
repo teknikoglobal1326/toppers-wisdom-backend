@@ -56,6 +56,7 @@ const createCourseTestSchema = Joi.object({
   scheduledEndTime: Joi.date().optional().allow('', null, 'null', 'undefined'),
   language: Joi.string().valid('hi', 'en', 'both').default('hi'),
   status: Joi.string().valid('draft', 'active', 'inactive').default('draft'),
+  isFree: Joi.boolean().default(false),
 }).custom(validateTestMarks)
 
 const updateCourseTestSchema = Joi.object({
@@ -87,10 +88,12 @@ const updateCourseTestSchema = Joi.object({
   scheduledEndTime: Joi.date().optional().allow('', null, 'null', 'undefined'),
   language: Joi.string().valid('hi', 'en', 'both'),
   status: Joi.string().valid('draft', 'active', 'inactive'),
+  isFree: Joi.boolean().optional(),
 }).min(1)
 
 const listCourseTestQuerySchema = Joi.object({
   status: Joi.string().valid('draft', 'active', 'inactive'),
+  isFree: Joi.boolean().optional(),
   course: Joi.string().hex().length(24),
   subject: Joi.string().hex().length(24),
   topic: Joi.string().hex().length(24),
@@ -129,6 +132,7 @@ const bulkCreateCourseTestSchema = Joi.array().items(
     scheduleAt: Joi.date().optional().allow(null, '', 'null', 'undefined'),
     language: Joi.string().valid('hi', 'en', 'both').default('hi'),
     status: Joi.string().valid('draft', 'active', 'inactive').default('draft'),
+  isFree: Joi.boolean().default(false),
   })
 ).min(1)
 

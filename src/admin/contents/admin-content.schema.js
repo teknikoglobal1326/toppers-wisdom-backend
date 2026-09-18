@@ -24,6 +24,7 @@ const createContentSchema = Joi.object({
   youtubeUrl: Joi.string().trim().when('type', { is: 'youtube', then: Joi.required(), otherwise: Joi.optional().allow('', null) }),
   image: Joi.string().trim().optional().allow('', null),
   status: Joi.string().valid('active', 'inactive').default('active'),
+  isFree: Joi.boolean().default(false),
   scheduleAt: Joi.date().optional().allow('', null),
   scheduledStartTime: Joi.date().optional().allow('', null),
   scheduledEndTime: Joi.date().optional().allow('', null),
@@ -71,6 +72,7 @@ const updateContentSchema = Joi.object({
   youtubeUrl: Joi.string().trim().optional().allow('', null),
   image: Joi.string().trim().optional().allow('', null),
   status: Joi.string().valid('active', 'inactive'),
+  isFree: Joi.boolean().optional(),
   scheduleAt: Joi.date().optional().allow('', null),
   scheduledStartTime: Joi.date().optional().allow('', null),
   scheduledEndTime: Joi.date().optional().allow('', null),
@@ -78,6 +80,7 @@ const updateContentSchema = Joi.object({
 
 const listContentQuerySchema = Joi.object({
   status: Joi.string().valid('active', 'inactive'),
+  isFree: Joi.boolean().optional(),
   course: Joi.string().hex().length(24),
   topic: Joi.string().hex().length(24),
   search: Joi.string().trim().max(200),
@@ -121,6 +124,7 @@ const bulkCreateContentSchema = Joi.array().items(
     youtubeUrl: Joi.string().trim().when('type', { is: 'youtube', then: Joi.required(), otherwise: Joi.optional().allow('', null) }),
     image: Joi.string().trim().optional().allow('', null),
     status: Joi.string().valid('active', 'inactive').default('active'),
+  isFree: Joi.boolean().default(false),
     isLive: Joi.boolean().default(false),
     scheduledStartTime: Joi.date().optional().allow(null, ''),
     scheduledEndTime: Joi.date().optional().allow(null, ''),
@@ -136,3 +140,4 @@ module.exports = {
   updateLiveClassSchema,
   bulkCreateContentSchema
 }
+

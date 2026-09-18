@@ -42,6 +42,7 @@ const courseTestSchema = new mongoose.Schema({
   scheduledEndTime: { type: Date },
   language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
   status: { type: String, enum: ['draft', 'active', 'inactive', 'other'], default: 'other' },
+  isFree: { type: Boolean, default: false },
   isDeleted: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User'}
 

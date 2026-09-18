@@ -11,6 +11,7 @@ const courseSeparatedPdfSchema = new mongoose.Schema({
   image: { type: String, default: '' },
   sortOrder: { type: Number, default: 0, index: true },
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
+  isFree: { type: Boolean, default: false },
   scheduleAt: { type: Date, default: null },
   scheduledStartTime: { type: Date },
   scheduledEndTime: { type: Date },
