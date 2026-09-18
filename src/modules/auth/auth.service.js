@@ -1,4 +1,4 @@
-const authRepository = require('./auth.repository')
+﻿const authRepository = require('./auth.repository')
 const { generateOtp, storeOtp, verifyOtp, checkRateLimit } = require('../../lib/otp')
 const { sendOtpSms } = require('../../lib/sms')
 const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../../lib/jwt')
@@ -102,6 +102,18 @@ const verifyOtpAndLogin = async (phone, otp, providedReferralCode) => {
       } catch (e) {
         logger.error({ err: e }, 'Failed to add signup bonus');
       }
+    }
+        try {
+      const Lead = require('../../models/Lead.model')
+      await Lead.create({
+        user: user._id,
+        purposeType: 'onboarding',
+        subType: 'onboarding',
+        visitType: 'onboarding',
+        leadStatus: 'cold'
+      })
+    } catch (leadErr) {
+      logger.error({ err: leadErr }, 'Failed to create onboarding lead')
     }
     logger.info({ phone, userId: user._id }, 'New user registered')
     const { notificationQueue } = require('../../jobs/queue')

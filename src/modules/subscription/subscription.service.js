@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+﻿/* eslint-disable no-console */
 const Subscription = require('../../models/Subscription.model');
 const mongoose = require('mongoose');
 
@@ -212,6 +212,31 @@ class SubscriptionService {
             subscriptionDetails
         };
 
+                try {
+            const Lead = require('../../models/Lead.model');
+            await Lead.deleteMany({ user: userId, itemId: subscription._id, visitType: 'detail', purposeType: 'subscription' });
+            const hasCheckoutLead = await Lead.exists({
+                user: userId,
+                purposeType: 'subscription',
+                visitType: 'checkout',
+                itemId: subscription._id
+            });
+            if (!hasCheckoutLead) {
+                await Lead.create({
+                    user: userId,
+                    purposeType: 'subscription',
+                    subType: 'subscription',
+                    visitType: 'checkout',
+                    leadStatus: 'warm',
+                    itemId: subscription._id,
+                    itemName: subscription.name,
+                    amount: grandTotal
+                });
+            }
+        } catch (subLeadErr) {
+            console.error('Failed to create subscription checkout lead', subLeadErr);
+        }
+
         const order = await SubscriptionOrder.create(orderData);
 
         console.log(`[SubscriptionService] Created Order ID: ${order._id}. Saved fields: duration=${order.duration}, isActive=${order.isActive}, detailsExists=${!!order.subscriptionDetails}`);
@@ -325,3 +350,4 @@ class SubscriptionService {
 }
 
 module.exports = new SubscriptionService();
+
