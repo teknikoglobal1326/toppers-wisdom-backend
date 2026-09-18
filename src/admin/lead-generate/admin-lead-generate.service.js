@@ -76,6 +76,18 @@ class AdminLeadGenerateService extends BaseService {
     })
   }
 
+  async exportLeads(query = {}) {
+    const filter = await this.buildFilter(query)
+    const direction = query.sortOrder !== undefined ? Number(query.sortOrder) : -1
+    const sortBy = query.sortBy || 'createdAt'
+    const User = require('../../models/User.model')
+
+    return leadGenerateRepository.find(filter, {
+      sort: { [sortBy]: direction },
+      populate: { path: 'user', select: 'name email phone' }
+    })
+  }
+
   async updateLead(id, data) {
     const lead = await leadGenerateRepository.findOne({ _id: id })
     if (!lead) throw new AppError('Lead not found', 404, 'NOT_FOUND')

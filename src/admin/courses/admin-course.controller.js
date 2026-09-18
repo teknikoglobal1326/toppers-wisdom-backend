@@ -11,16 +11,30 @@ const exportPurchases = catchAsync(async (req, res) => {
     return sendSuccess(res, purchases, 'Export data retrieved successfully')
   }
 
+  const formatExportDate = (date) => {
+    if (!date) return 'N/A'
+    const d = new Date(date)
+    if (isNaN(d.getTime())) return 'N/A'
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = months[d.getMonth()]
+    const year = d.getFullYear()
+    return `${day}-${month}-${year}`
+  }
+
   const headers = ['S.No', 'Order ID', 'Payment ID', 'Student Name', 'Student Phone', 'Student Email', 'Course / Item', 'Total Amount', 'Discount', 'GST Rate (%)', 'GST Amount', 'Grand Total', 'Currency', 'Status', 'Date']
   const csvRows = [headers.join(',')]
 
   for (const p of purchases) {
+    const phoneVal = p.studentPhone && p.studentPhone !== 'N/A' ? '="' + String(p.studentPhone).replace(/"/g, '""') + '"' : '"N/A"'
+    const dateVal = p.paymentDate ? '="' + formatExportDate(p.paymentDate) + '"' : '"N/A"'
+
     const row = [
       p.serialNo,
       `"${String(p.orderId || '').replace(/"/g, '""')}"`,
       `"${String(p.paymentId || '').replace(/"/g, '""')}"`,
       `"${String(p.studentName || '').replace(/"/g, '""')}"`,
-      `"${String(p.studentPhone || '').replace(/"/g, '""')}"`,
+      phoneVal,
       `"${String(p.studentEmail || '').replace(/"/g, '""')}"`,
       `"${String(p.courses || '').replace(/"/g, '""')}"`,
       p.totalAmount,
@@ -28,16 +42,16 @@ const exportPurchases = catchAsync(async (req, res) => {
       p.gstRate,
       p.gstAmount,
       p.grandTotal,
-      `"${p.currency}"`,
-      `"${p.status}"`,
-      `"${p.paymentDate}"`
+      `"${p.currency || 'INR'}"`,
+      `"${p.status || 'paid'}"`,
+      dateVal
     ]
     csvRows.push(row.join(','))
   }
 
-  const csvString = csvRows.join('\r\n')
+  const csvString = "\uFEFF" + csvRows.join('\r\n')
   res.setHeader('Content-Type', 'text/csv; charset=utf-8')
-  res.setHeader('Content-Disposition', `attachment; filename="course_transactions_${Date.now()}.csv"`)
+  res.setHeader('Content-Disposition', `attachment; filename="course_transactions_${new Date().toISOString().slice(0, 10)}.csv"`)
   res.status(200).send(csvString)
 })
 

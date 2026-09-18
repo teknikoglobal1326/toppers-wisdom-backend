@@ -295,7 +295,7 @@ exports.deleteSubscription = async (req, res, next) => {
 // Get Purchased Subscription History with User Info
 exports.getSubscriptionHistory = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, subscriptionId, userId, search, isActive } = req.query;
+    const { page = 1, limit = 20, subscriptionId, userId, search, isActive, startDate, fromDate, endDate, toDate } = req.query;
     const filter = {};
 
     if (subscriptionId) {
@@ -306,6 +306,22 @@ exports.getSubscriptionHistory = async (req, res, next) => {
     }
     if (isActive !== undefined && isActive !== '') {
       filter.isActive = isActive === 'true';
+    }
+
+    const from = startDate || fromDate;
+    const to = endDate || toDate;
+    if (from || to) {
+      filter.createdAt = {};
+      if (from) {
+        const start = new Date(from);
+        start.setHours(0, 0, 0, 0);
+        filter.createdAt.$gte = start;
+      }
+      if (to) {
+        const end = new Date(to);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
     }
 
     const pageNum = parseInt(page, 10) || 1;
@@ -354,6 +370,101 @@ exports.getSubscriptionHistory = async (req, res, next) => {
         globalInactive
       }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Export Subscription History to CSV
+exports.exportSubscriptionHistory = async (req, res, next) => {
+  try {
+    const { subscriptionId, userId, search, isActive, startDate, fromDate, endDate, toDate } = req.query;
+    const filter = {};
+
+    if (subscriptionId) filter.subscription = subscriptionId;
+    if (userId) filter.user = userId;
+    if (isActive !== undefined && isActive !== '') filter.isActive = isActive === 'true';
+
+    const from = startDate || fromDate;
+    const to = endDate || toDate;
+    if (from || to) {
+      filter.createdAt = {};
+      if (from) {
+        const start = new Date(from);
+        start.setHours(0, 0, 0, 0);
+        filter.createdAt.$gte = start;
+      }
+      if (to) {
+        const end = new Date(to);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
+
+    if (search) {
+      const matchingUsers = await User.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      const userIds = matchingUsers.map(u => u._id);
+      filter.user = { $in: userIds };
+    }
+
+    const history = await UserSubscription.find(filter)
+      .populate('user', 'name phone email')
+      .populate('subscription', 'name price durationDays')
+      .populate('order', 'amount currency status razorpayOrderId razorpayPaymentId paidAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const formatExportDate = (date) => {
+      if (!date) return 'N/A';
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return 'N/A';
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+
+    const headers = ['S.No', 'Subscriber Name', 'Phone', 'Email', 'Plan Name', 'Duration (Days)', 'Amount (INR)', 'Payment Status', 'Order ID', 'Subscription Status', 'Start Date', 'End Date', 'Purchased On'];
+    const csvRows = [headers.join(',')];
+
+    history.forEach((item, idx) => {
+      const user = item.user || {};
+      const plan = item.subscription || {};
+      const order = item.order || {};
+      const phoneVal = user.phone ? '="' + String(user.phone).replace(/"/g, '""') + '"' : '"N/A"';
+      const startDateVal = item.startDate ? '="' + formatExportDate(item.startDate) + '"' : '"N/A"';
+      const endDateVal = item.endDate ? '="' + formatExportDate(item.endDate) + '"' : '"N/A"';
+      const purchasedVal = item.createdAt ? '="' + formatExportDate(item.createdAt) + '"' : '"N/A"';
+
+      const row = [
+        idx + 1,
+        `"${String(user.name || 'Anonymous').replace(/"/g, '""')}"`,
+        phoneVal,
+        `"${String(user.email || 'N/A').replace(/"/g, '""')}"`,
+        `"${String(plan.name || 'Plan').replace(/"/g, '""')}"`,
+        plan.durationDays || 30,
+        order.amount || plan.price || 0,
+        `"${String(order.status || 'Paid').toUpperCase()}"`,
+        `"${String(order.razorpayOrderId || 'N/A').replace(/"/g, '""')}"`,
+        item.isActive ? '"Active"' : '"Expired"',
+        startDateVal,
+        endDateVal,
+        purchasedVal
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvString = "\uFEFF" + csvRows.join('\r\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="subscription_history_${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.status(200).send(csvString);
   } catch (error) {
     next(error);
   }
