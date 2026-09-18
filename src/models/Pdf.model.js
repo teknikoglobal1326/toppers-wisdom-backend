@@ -12,6 +12,7 @@ const pdfSchema = new mongoose.Schema({
   sortOrder: { type: Number, default: 0, index: true },
 //   instruction: { type: String, default: '' },
   status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
+  isFree: { type: Boolean, default: false },
   scheduleAt: { type: Date, default: null },
   scheduledStartTime: { type: Date },
   scheduledEndTime: { type: Date },

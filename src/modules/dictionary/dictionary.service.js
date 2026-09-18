@@ -68,6 +68,7 @@ const normalizeWordItem = (raw) => {
   }
 
   const deriv = cleanArr(raw.deriv);
+  const wordFamily = cleanArr(raw.wordFamily || raw.word_family || raw['word family'] || raw['Word Family'] || raw['WordFamily']);
   const theme = cleanStr(raw.theme);
   const src = cleanStr(raw.src) || 'Previous Year Papers';
   const rep = Number(raw.rep) || 0;
@@ -89,6 +90,7 @@ const normalizeWordItem = (raw) => {
     hook,
     note,
     deriv,
+    wordFamily,
     theme,
     src,
     rep

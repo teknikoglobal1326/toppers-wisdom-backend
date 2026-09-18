@@ -11,9 +11,12 @@ const enrollmentSchema = new mongoose.Schema({
     completedAt:    Date,
   }],
   progressPercent: { type: Number, default: 0 },
-  enrolledAt:  { type: Date, default: Date.now },
-  completedAt: Date,
-  expiresAt:   Date,
+  enrolledAt:      { type: Date, default: Date.now },
+  completedAt:     Date,
+  expiresAt:       Date,
+  remarks:         { type: String, trim: true, default: '' },
+  allocatedBy:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  allocatedByName: { type: String, default: '' },
 }, { timestamps: true })
 
 enrollmentSchema.index({ user: 1, course: 1 }, { unique: true })

@@ -1,4 +1,4 @@
-const router     = require('express').Router()
+﻿const router     = require('express').Router()
 const controller = require('./payment.controller')
 const { validate, validateQuery } = require('../../core/validate')
 const { authMiddleware } = require('../../middlewares/auth.middleware')
@@ -11,6 +11,9 @@ router.post('/webhook', controller.webhook)
 router.use(authMiddleware)
 router.post('/create-order', validate(createOrderSchema),  controller.createOrder)
 router.post('/verify',       validate(verifyPaymentSchema), controller.verifyPayment)
+router.post('/failure',      controller.handlePaymentFailure)
+router.post('/cancel',       controller.handlePaymentFailure)
 router.get('/transactions',  validateQuery(listTransactionsQuerySchema), controller.listMyTransactions)
 
 module.exports = router
+

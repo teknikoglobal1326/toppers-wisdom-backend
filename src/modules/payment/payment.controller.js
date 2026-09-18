@@ -1,4 +1,4 @@
-const catchAsync = require('../../core/catchAsync')
+﻿const catchAsync = require('../../core/catchAsync')
 const { sendSuccess } = require('../../core/response')
 const paymentService = require('./payment.service')
 
@@ -26,4 +26,9 @@ const listMyTransactions = catchAsync(async (req, res) => {
   sendPaginated(res, result.data, result.pagination)
 })
 
-module.exports = { createOrder, verifyPayment, webhook, listMyTransactions }
+const handlePaymentFailure = catchAsync(async (req, res) => {
+  const result = await paymentService.handlePaymentFailure(req.user._id, req.body)
+  sendSuccess(res, result, 'Payment failure/cancellation recorded')
+})
+
+module.exports = { createOrder, verifyPayment, webhook, listMyTransactions, handlePaymentFailure }

@@ -415,6 +415,7 @@ class AdminContentService extends BaseService {
         else if (cleanKey === "chapters" || cleanKey === "chapter") normalizedRow.chapters = value
         else if (cleanKey === "topics" || cleanKey === "topic") normalizedRow.topics = value
         else if (cleanKey === "status") normalizedRow.status = value
+        else if (cleanKey === "isfree" || cleanKey === "free") normalizedRow.isFree = String(value).trim().toLowerCase() === "true" || String(value).trim() === "1"
         else if (cleanKey === "islive" || cleanKey === "live") {
           normalizedRow.isLive = String(value).trim().toLowerCase() === "true" || String(value).trim() === "1"
         }
@@ -496,6 +497,7 @@ class AdminContentService extends BaseService {
         image: "",
         sortOrder: normalizedRow.sortOrder !== undefined ? normalizedRow.sortOrder : 0,
         status: normalizedRow.status || common.status || "active",
+        isFree: normalizedRow.isFree !== undefined ? normalizedRow.isFree : (common.isFree !== undefined ? common.isFree : false),
         isLive: normalizedRow.isLive || false,
         scheduledStartTime: normalizedRow.scheduledStartTime || null,
         scheduledEndTime: normalizedRow.scheduledEndTime || null,

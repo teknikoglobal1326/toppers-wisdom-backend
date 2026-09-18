@@ -138,6 +138,7 @@ class AdminPdfService extends BaseService {
           image: masterPdf.image,
           sortOrder: masterPdf.sortOrder,
           status: masterPdf.status,
+          isFree: masterPdf.isFree,
           scheduleAt: masterPdf.scheduleAt,
           createdBy: adminId,
           course: assignment.course,
@@ -214,6 +215,7 @@ class AdminPdfService extends BaseService {
         else if (cleanKey === "chapters" || cleanKey === "chapter") normalizedRow.chapters = value
         else if (cleanKey === "topics" || cleanKey === "topic") normalizedRow.topics = value
         else if (cleanKey === "status") normalizedRow.status = value
+        else if (cleanKey === "isfree" || cleanKey === "free") normalizedRow.isFree = String(value).trim().toLowerCase() === "true" || String(value).trim() === "1"
         else if (cleanKey === "scheduleat" || cleanKey === "schedule" || cleanKey === "scheduledtime") {
           normalizedRow.scheduleAt = value !== "" ? value : undefined
         }
@@ -292,6 +294,7 @@ class AdminPdfService extends BaseService {
         image: "",
         sortOrder: normalizedRow.sortOrder !== undefined ? normalizedRow.sortOrder : 0,
         status: normalizedRow.status || common.status || "active",
+        isFree: normalizedRow.isFree !== undefined ? normalizedRow.isFree : (common.isFree !== undefined ? common.isFree : false),
         scheduleAt: normalizedRow.scheduleAt !== undefined ? normalizedRow.scheduleAt : (common.scheduleAt || null),
         createdBy: adminId
       }

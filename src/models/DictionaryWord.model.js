@@ -31,6 +31,7 @@ const dictionaryWordSchema = new mongoose.Schema({
   hook: { type: String },
   note: { type: String },
   deriv: [{ type: String }],
+  wordFamily: [{ type: String }],
   theme: { type: String },
   src: { type: String }
 }, { timestamps: true });

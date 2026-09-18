@@ -1,4 +1,4 @@
-const BaseService = require('../../core/BaseService')
+﻿const BaseService = require('../../core/BaseService')
 const paymentRepository = require('./payment.repository')
 const crypto = require('crypto')
 const Razorpay = require('razorpay')
@@ -315,8 +315,103 @@ class PaymentService extends BaseService {
     if (body.event === 'payment.failed') {
       const { order_id } = body.payload.payment.entity
       await paymentRepository.updateOne({ razorpayOrderId: order_id }, { status: 'failed' })
-      this.logger.warn({ razorpayOrderId: order_id }, 'Payment failed')
+            this.logger.warn({ razorpayOrderId: order_id }, 'Payment failed')
+      try {
+        const Order = require('../../models/Order.model')
+        const Lead = require('../../models/Lead.model')
+        const order = await Order.findOne({ razorpayOrderId: order_id })
+        if (order) {
+          const firstItem = order.items?.[0]
+          await Lead.create({
+            user: order.user,
+            purposeType: firstItem?.itemType === 'subscription' ? 'subscription' : 'course',
+            subType: firstItem?.itemType || 'course',
+            visitType: 'payment_failed',
+            leadStatus: 'hot',
+            itemId: firstItem?.itemId || null,
+            itemName: firstItem?.name || null,
+            amount: order.finalAmount || order.totalAmount,
+            paymentError: 'Payment failed'
+          })
+        }
+      } catch (leadFailErr) {
+        this.logger.error({ err: leadFailErr }, 'Failed to create payment_failed lead')
+      }
     }
+  }
+
+  async handlePaymentFailure(userId, payload = {}) {
+    this.logger.warn({ userId, payload }, 'Handling payment failure / cancellation from app')
+    const Lead = require('../../models/Lead.model')
+    const Order = require('../../models/Order.model')
+    const Course = require('../../models/Course.model')
+    const Subscription = require('../../models/Subscription.model')
+
+    const { orderId, razorpayOrderId, courseId, subscriptionId, error, reason } = payload
+
+    let order = null
+    if (orderId) {
+      order = await Order.findById(orderId)
+    } else if (razorpayOrderId) {
+      order = await Order.findOne({ razorpayOrderId })
+    }
+
+    if (order) {
+      await paymentRepository.updateOne({ _id: order._id }, { status: 'failed' })
+    }
+
+    let purposeType = 'course'
+    let subType = 'course'
+    let itemId = courseId || null
+    let itemName = null
+    let amount = order ? (order.grandTotal || order.totalAmount) : 0
+
+    if (subscriptionId || (order && order.subscription)) {
+      purposeType = 'subscription'
+      subType = 'subscription'
+      itemId = subscriptionId || order?.subscription
+      const sub = await Subscription.findById(itemId).lean()
+      if (sub) {
+        itemName = sub.name
+        if (!amount) amount = sub.price
+      }
+    } else if (itemId || (order && order.items && order.items.length > 0)) {
+      const firstItem = order?.items?.[0]
+      if (firstItem) {
+        itemId = itemId || firstItem.itemId
+        purposeType = firstItem.itemType || 'course'
+        subType = firstItem.itemType || 'course'
+        itemName = firstItem.name
+      } else if (itemId) {
+        const course = await Course.findById(itemId).lean()
+        if (course) {
+          itemName = course.title || course.name
+          if (!amount) amount = course.price
+        }
+      }
+    }
+
+    const failureReason = error || reason || 'Payment cancelled by user / failed at gateway'
+
+    // Delete prior checkout / detail lead for this item to upgrade to hot payment_failed lead
+    if (itemId) {
+      await Lead.deleteMany({ user: userId, itemId, visitType: { $in: ['detail', 'checkout', 'contentCheckout'] } })
+    }
+
+    const lead = await Lead.create({
+      user: userId,
+      purposeType,
+      subType,
+      visitType: 'payment_failed',
+      leadStatus: 'hot',
+      itemId,
+      itemName,
+      amount,
+      paymentError: failureReason
+    })
+
+    this.logger.info({ userId, leadId: lead._id }, 'Payment failed lead recorded successfully')
+    return { lead, success: true }
   }
 
   async listUserOrders(userId, query) {
@@ -360,3 +455,5 @@ class PaymentService extends BaseService {
 }
 
 module.exports = new PaymentService()
+
+

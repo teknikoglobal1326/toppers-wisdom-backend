@@ -40,6 +40,7 @@ const courseSeparatedTestSchema = new mongoose.Schema({
   scheduledEndTime: { type: Date },
   language: { type: String, enum: ['hi', 'en', 'both'], default: 'hi' },
   status: { type: String, enum: ['draft', 'active', 'inactive', 'other'], default: 'draft', index: true },
+  isFree: { type: Boolean, default: false },
   isDeleted: { type: Boolean, default: false, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' }
 }, { timestamps: true })
