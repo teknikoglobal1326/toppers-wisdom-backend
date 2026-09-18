@@ -341,10 +341,19 @@ class RewardsService {
       });
     }
 
+    const StreakSlab = require('../../models/StreakSlab.model');
+    const streakSlabs = await StreakSlab.find({ status: 'active', isDeleted: false }).sort({ days: 1 }).lean();
+
+    const streakSlabsWithStatus = streakSlabs.map(slab => ({
+      ...slab,
+      isCompleted: currentStreakCount >= slab.days
+    }));
+
     return {
       currentMonthCalendar,
       activeStreak,
-      last6MonthsStreak
+      // last6MonthsStreak,
+      streakSlabs: streakSlabsWithStatus
     };
   }
 }
