@@ -8,7 +8,7 @@ const sendOtpSchema = Joi.object({
 const verifyOtpSchema = Joi.object({
   phone: Joi.string().pattern(/^[6-9]\d{9}$/).required(),
   otp: Joi.string().length(4).pattern(/^\d+$/).required(),
-  referralCode: Joi.string().optional()
+  referralCode: Joi.string().allow('', null).optional()
 })
 
 const refreshTokenSchema = Joi.object({
@@ -30,14 +30,14 @@ const updateProfileSchema = Joi.object({
   examId: objectId.optional().label('examId'),
   subexamIds: Joi.array().items(objectId.label('subexamIds')).min(1).optional(),
   avatar: Joi.string().max(500).allow('', null).optional(),
-  referralCode: Joi.string().optional(),
+  referralCode: Joi.string().allow('', null).optional(),
 }).min(1).messages({ 'object.min': 'At least one field is required to update' })
 
 const googleSignupSchema = Joi.object({
   email: Joi.string().email().required(),
   name: Joi.string().required(),
   avatar: Joi.string().uri().optional().allow('', null),
-  referralCode: Joi.string().optional(),
+  referralCode: Joi.string().allow('', null).optional(),
 })
 
 const loginSchema = Joi.object({
