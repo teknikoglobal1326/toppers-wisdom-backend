@@ -260,6 +260,38 @@ class AdminUserService extends BaseService {
       }
     })
 
+    const formatProfileStatus = (status) => {
+      if (!status) return 'Incomplete'
+      const map = {
+        profileFull: 'Profile Completed',
+        profileComplete: 'Profile Completed',
+        profileCompleted: 'Profile Completed',
+        onboarding: 'Onboarding',
+        otpsent: 'OTP Sent',
+        otpPending: 'OTP Pending',
+        password_created: 'Password Created',
+        profileIncomplete: 'Profile Incomplete',
+        verifyOtp: 'Verify OTP'
+      }
+      return map[status] || String(status).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+    }
+
+    const formatExportDate = (date) => {
+      if (!date) return 'N/A'
+      const d = new Date(date)
+      if (isNaN(d.getTime())) return 'N/A'
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = months[d.getMonth()]
+      const year = d.getFullYear()
+      return `${day}-${month}-${year}`
+    }
+
+    const formatAccountStatus = (status) => {
+      if (!status) return 'Active'
+      return String(status).charAt(0).toUpperCase() + String(status).slice(1)
+    }
+
     return users.map((u, index) => {
       const isPaid = paidUserIdSet.has(String(u._id))
       const subExamsNames = Array.isArray(u.subExams) ? u.subExams.map(s => s.name || s).join(', ') : ''
@@ -273,13 +305,13 @@ class AdminUserService extends BaseService {
         qualification: u.qualification?.name || 'N/A',
         exam: u.exam?.name || 'N/A',
         subExams: subExamsNames || 'N/A',
-        profileStatus: u.profileCompletionState || 'N/A',
+        profileStatus: formatProfileStatus(u.profileCompletionState),
         purchaseStatus: isPaid ? 'Paid' : 'Unpaid',
         remarks: userRemarks || 'N/A',
         allocatedBy: userAssigner,
-        accountStatus: u.status || 'active',
+        accountStatus: formatAccountStatus(u.status),
         loginType: u.isSocial ? 'Google Login' : 'Normal Login',
-        joinedAt: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : 'N/A'
+        joinedAt: formatExportDate(u.createdAt)
       }
     })
   }
@@ -769,30 +801,36 @@ const exportUsers = catchAsync(async (req, res) => {
     return sendSuccess(res, users, 'Export data retrieved successfully')
   }
 
-  const { Parser } = require('json2csv')
-  const fields = [
-    { label: 'S.No', value: 'serialNo' },
-    { label: 'Name', value: 'name' },
-    { label: 'Phone', value: 'phone' },
-    { label: 'Email', value: 'email' },
-    { label: 'Qualification', value: 'qualification' },
-    { label: 'Exam', value: 'exam' },
-    { label: 'Sub Exams', value: 'subExams' },
-    { label: 'Profile Status', value: 'profileStatus' },
-    { label: 'Plan Status', value: 'purchaseStatus' },
-    { label: 'Remarks', value: 'remarks' },
-    { label: 'Allocated By', value: 'allocatedBy' },
-    { label: 'Account Status', value: 'accountStatus' },
-    { label: 'Login Type', value: 'loginType' },
-    { label: 'Joined On', value: 'joinedAt' }
-  ]
+  const headers = ['S.No', 'Name', 'Phone', 'Email', 'Qualification', 'Exam', 'Sub Exams', 'Profile Status', 'Plan Status', 'Remarks', 'Allocated By', 'Account Status', 'Login Type', 'Joined On']
+  const csvRows = [headers.join(',')]
 
-  const json2csvParser = new Parser({ fields })
-  const csv = json2csvParser.parse(users)
+  for (const u of users) {
+    const phoneVal = u.phone && u.phone !== 'N/A' ? '="' + String(u.phone).replace(/"/g, '""') + '"' : '"N/A"'
+    const dateVal = u.joinedAt && u.joinedAt !== 'N/A' ? '="' + String(u.joinedAt).replace(/"/g, '""') + '"' : '"N/A"'
 
-  res.header('Content-Type', 'text/csv')
-  res.attachment(`users_export_${new Date().toISOString().slice(0, 10)}.csv`)
-  return res.send(csv)
+    const row = [
+      u.serialNo,
+      `"${String(u.name || '').replace(/"/g, '""')}"`,
+      phoneVal,
+      `"${String(u.email || '').replace(/"/g, '""')}"`,
+      `"${String(u.qualification || '').replace(/"/g, '""')}"`,
+      `"${String(u.exam || '').replace(/"/g, '""')}"`,
+      `"${String(u.subExams || '').replace(/"/g, '""')}"`,
+      `"${String(u.profileStatus || '').replace(/"/g, '""')}"`,
+      `"${String(u.purchaseStatus || '').replace(/"/g, '""')}"`,
+      `"${String(u.remarks || '').replace(/"/g, '""')}"`,
+      `"${String(u.allocatedBy || '').replace(/"/g, '""')}"`,
+      `"${String(u.accountStatus || '').replace(/"/g, '""')}"`,
+      `"${String(u.loginType || '').replace(/"/g, '""')}"`,
+      dateVal
+    ]
+    csvRows.push(row.join(','))
+  }
+
+  const csvString = "\uFEFF" + csvRows.join("\r\n")
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', `attachment; filename="users_export_${new Date().toISOString().slice(0, 10)}.csv"`)
+  res.status(200).send(csvString)
 })
 
 module.exports = {
@@ -810,3 +848,4 @@ module.exports = {
   removeCourseEnrollment,
   exportUsers
 }
+
