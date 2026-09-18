@@ -228,9 +228,11 @@ const updateProfile = async (userId, payload) => {
   }
 
   const code = payload.referralCode || payload.referalCode
+  console.log("payload in service",payload);
   if (code && !currentUser.referredBy) {
     const User = require('../../models/User.model')
-    const referrer = await User.findOne({ referralCode: code })
+    const referrer = await User.findOne({ referralCode: code.trim().toUpperCase() })
+    console.log("referrer",referrer);
     if (referrer && referrer._id.toString() !== userId.toString()) {
       updateData.referredBy = referrer._id
       
@@ -256,6 +258,26 @@ const updateProfile = async (userId, payload) => {
         notificationQueue.add('signup-bonus-referral', {
           userId: userId
         }).catch(err => logger.error({ err }, 'Failed to queue signup bonus notification for new user'))
+      }
+
+      try {
+        await require('../../models/ReferralHistory.model').create({
+          referrer: referrer._id,
+          referredUser: userId,
+          referralCode: code.trim().toUpperCase(),
+          referrerCoinsAwarded: 25,
+          referredCoinsAwarded: hasSignup ? 0 : 10,
+        })
+
+        console.log("used refreal code",{
+          referrer: referrer._id,
+          referredUser: userId,
+          referralCode: code.trim().toUpperCase(),
+          referrerCoinsAwarded: 25,
+          referredCoinsAwarded: hasSignup ? 0 : 10,
+        })
+      } catch (err) {
+        logger.error({ err }, 'Failed to create ReferralHistory')
       }
     }
   }
@@ -301,9 +323,6 @@ const loginWithPassword = async (phone, password) => {
     throw new AppError('User not found. Please register first.', 404, 'USER_NOT_FOUND')
   }
 
-  if (!user.profileComplete) {
-    throw new AppError('Please complete your profile before logging in', 403, 'PROFILE_INCOMPLETE')
-  }
 
   if (!user.password) {
     throw new AppError('Password not set. Please use OTP to login.', 400, 'PASSWORD_NOT_SET')

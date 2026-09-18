@@ -39,6 +39,7 @@ const getProfile = catchAsync(async (req, res) => {
 })
 
 const updateProfile = catchAsync(async (req, res) => {
+  console.log("req.body",req.body);
   const data = await authService.updateProfile(req.user._id, req.body)
   sendSuccess(res, data, 'Profile updated successfully')
 })

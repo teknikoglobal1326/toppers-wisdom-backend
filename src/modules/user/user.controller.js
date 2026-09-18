@@ -115,4 +115,8 @@ const getMyWallet = catchAsync(async (req, res) => {
   }, 'Wallet details retrieved successfully')
 })
 
-module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification, getPremiumPlan, getExamCalendar, getStreakCount, getMyWallet }
+const createTestimonial = catchAsync(async (req, res) => {
+  sendCreated(res, await userService.createTestimonial(req.user._id, req.body), 'Testimonial submitted successfully')
+})
+
+module.exports = { getMe, updateProfile, setupProfile, getStats, getCommonStudyStats, getSaved, removeSaved, getOrders, getNotifications, getUnreadNotificationCount, markNotifRead, deleteNotification, updateFcmToken, createReport, getMyReports, getMyReportByItemId, createMcqReport, getMyMcqReportByItemId, saveQuestion, unsaveQuestion, getSavedQuestions, getMyMcqReports, sendTestNotification, getPremiumPlan, getExamCalendar, getStreakCount, getMyWallet, createTestimonial }
