@@ -1,4 +1,4 @@
-﻿const BaseService = require('../../core/BaseService')
+const BaseService = require('../../core/BaseService')
 const paymentRepository = require('./payment.repository')
 const crypto = require('crypto')
 const Razorpay = require('razorpay')
@@ -302,6 +302,27 @@ class PaymentService extends BaseService {
     },
     'verifyPayment FAILED'
   )
+
+  try {
+    const Order = require('../../models/Order.model')
+    const Lead = require('../../models/Lead.model')
+    if (razorpayOrderId) {
+      const orderData = await Order.findOne({ razorpayOrderId })
+      if (orderData) {
+        const firstItem = orderData.items?.[0]
+        if (firstItem && firstItem.itemId) {
+          const lead = await Lead.findOne({ user: userId, itemId: firstItem.itemId })
+          if (lead) {
+            lead.leadStatus = 'hot'
+            lead.visitType = 'paymentFailed'
+            await lead.save()
+          }
+        }
+      }
+    }
+  } catch (leadUpdateError) {
+    this.logger.error({ err: leadUpdateError, userId, razorpayOrderId }, 'Failed to update lead on payment verify failure')
+  }
 
   throw error
   }

@@ -1,4 +1,4 @@
-﻿/* eslint-disable no-console */
+/* eslint-disable no-console */
 const Subscription = require('../../models/Subscription.model');
 const mongoose = require('mongoose');
 
@@ -286,66 +286,87 @@ class SubscriptionService {
     }
 
     async verifyPayment(userId, razorpayOrderId, razorpayPaymentId, razorpaySignature) {
-        const SubscriptionOrder = require('../../models/SubscriptionOrder.model');
-        const UserSubscription = require('../../models/UserSubscription.model');
-        const Subscription = require('../../models/Subscription.model');
-        const crypto = require('crypto');
-        const config = require('../../config/env');
-        const AppError = require('../../core/AppError');
-
-        const expectedSig = crypto
-            .createHmac('sha256', config.RAZORPAY_KEY_SECRET)
-            .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-            .digest('hex');
-
-        if (expectedSig !== razorpaySignature) {
-            throw new AppError('Invalid payment signature', 400, 'PAYMENT_INVALID');
-        }
-
-        const order = await SubscriptionOrder.findOne({ razorpayOrderId, user: userId });
-        if (!order) throw new AppError('Order not found', 404);
-        if (order.status === 'paid') throw new AppError('Payment already processed', 409);
-
-        const subscription = await Subscription.findById(order.subscription);
-        if (!subscription) throw new AppError('Subscription not found', 404);
-
-        order.status = 'paid';
-        order.razorpayPaymentId = razorpayPaymentId;
-        order.razorpaySignature = razorpaySignature;
-        order.paidAt = new Date();
-        await order.save();
-
-        const startDate = new Date();
-        const endDate = new Date(startDate.getTime() + (subscription.durationDays * 24 * 60 * 60 * 1000));
-
-        await UserSubscription.create({
-            user: userId,
-            subscription: order.subscription,
-            order: order._id,
-            startDate: new Date(),
-            endDate,
-            status: 'active'
-        });
-
-        if (order.couponApplied && order.couponApplied.code) {
-            const Coupon = require('../../models/Coupon.model');
-            await Coupon.updateOne({ code: order.couponApplied.code }, { $inc: { usageCount: 1 } });
-        }
-
-        console.log(`[SubscriptionService] Subscription activated for user: ${userId}, Order: ${order._id}`);
-
         try {
-            const { notificationQueue } = require('../../jobs/queue');
-            await notificationQueue.add('subscription-success', {
-                userId,
-                orderId: order._id,
-                amount: order.amount
-            });
-        } catch (err) {
-            console.error('Failed to queue subscription success notification:', err);
-        }
+            const SubscriptionOrder = require('../../models/SubscriptionOrder.model');
+            const UserSubscription = require('../../models/UserSubscription.model');
+            const Subscription = require('../../models/Subscription.model');
+            const crypto = require('crypto');
+            const config = require('../../config/env');
+            const AppError = require('../../core/AppError');
 
-        return { success: true, userSubscription: UserSubscription };
+            const expectedSig = crypto
+                .createHmac('sha256', config.RAZORPAY_KEY_SECRET)
+                .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+                .digest('hex');
+
+            if (expectedSig !== razorpaySignature) {
+                throw new AppError('Invalid payment signature', 400, 'PAYMENT_INVALID');
+            }
+
+            const order = await SubscriptionOrder.findOne({ razorpayOrderId, user: userId });
+            if (!order) throw new AppError('Order not found', 404);
+            if (order.status === 'paid') throw new AppError('Payment already processed', 409);
+
+            const subscription = await Subscription.findById(order.subscription);
+            if (!subscription) throw new AppError('Subscription not found', 404);
+
+            order.status = 'paid';
+            order.razorpayPaymentId = razorpayPaymentId;
+            order.razorpaySignature = razorpaySignature;
+            order.paidAt = new Date();
+            await order.save();
+
+            const startDate = new Date();
+            const endDate = new Date(startDate.getTime() + (subscription.durationDays * 24 * 60 * 60 * 1000));
+
+            await UserSubscription.create({
+                user: userId,
+                subscription: order.subscription,
+                order: order._id,
+                startDate: new Date(),
+                endDate,
+                status: 'active'
+            });
+
+            if (order.couponApplied && order.couponApplied.code) {
+                const Coupon = require('../../models/Coupon.model');
+                await Coupon.updateOne({ code: order.couponApplied.code }, { $inc: { usageCount: 1 } });
+            }
+
+            console.log(`[SubscriptionService] Subscription activated for user: ${userId}, Order: ${order._id}`);
+
+            try {
+                const { notificationQueue } = require('../../jobs/queue');
+                await notificationQueue.add('subscription-success', {
+                    userId,
+                    orderId: order._id,
+                    amount: order.amount
+                });
+            } catch (err) {
+                console.error('Failed to queue subscription success notification:', err);
+            }
+
+            return { success: true, userSubscription: UserSubscription };
+        } catch (error) {
+            try {
+                const SubscriptionOrder = require('../../models/SubscriptionOrder.model');
+                const Lead = require('../../models/Lead.model');
+                if (razorpayOrderId) {
+                    const orderData = await SubscriptionOrder.findOne({ razorpayOrderId });
+                    if (orderData && orderData.subscription) {
+                        const lead = await Lead.findOne({ user: userId, itemId: orderData.subscription });
+                        if (lead) {
+                            lead.leadStatus = 'hot';
+                            lead.visitType = 'paymentFailed';
+                            await lead.save();
+                        }
+                    }
+                }
+            } catch (leadUpdateError) {
+                console.error('Failed to update lead on subscription payment verify failure:', leadUpdateError);
+            }
+            throw error;
+        }
     }
 }
 
