@@ -165,7 +165,7 @@ class VocabularyService extends BaseService {
 
     async listAll(query = {}, userId) {
         const filter = await this.buildListFilter(query, userId)
-        const sort = this.buildSort(query)
+        const sort = { word: 1 } // Sort by word alphabetically A-Z
 
         console.log("filter",filter);
         const result = await this.getAll(filter, {

@@ -9,6 +9,7 @@ const testimonialSchema = new mongoose.Schema({
   stats: { type: String, trim: true, default: '' },
   image: { type: String, default: '' },
   reviewText: { type: String, required: true, trim: true },
+  rating: { type: Number, min: 1, max: 5, default: 5 },
 
   isDeleted: { type: Boolean, default: false, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }

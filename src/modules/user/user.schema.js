@@ -45,4 +45,9 @@ const saveQuestionSchema = Joi.object({
   testId: Joi.string().hex().length(24).optional(),
 })
 
-module.exports = { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema, createMcqReportSchema, saveQuestionSchema }
+const createTestimonialSchema = Joi.object({
+  reviewText: Joi.string().trim().min(2).max(2000).required(),
+  rating: Joi.number().integer().min(1).max(5).required()
+})
+
+module.exports = { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema, createMcqReportSchema, saveQuestionSchema, createTestimonialSchema }

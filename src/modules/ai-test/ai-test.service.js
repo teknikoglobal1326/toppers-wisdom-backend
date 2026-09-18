@@ -708,10 +708,13 @@ class AiTestService extends BaseService {
 
     console.log("AI Test Analysis - attempt.timeTaken (seconds):", attempt.timeTaken)
 
+    const isPassed = attempt.totalMarks > 0 ? (attempt.score >= (attempt.totalMarks * 0.33)) : false;
+
     return {
       attemptId: attempt._id,
       sessionId: attempt.sessionId,
       status: attempt.status,
+      isPassed,
       expertComment,
       overallPerformance: {
         score: attempt.score,

@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const controller = require('./user.controller')
 const { validate } = require('../../core/validate')
-const { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema, createMcqReportSchema, saveQuestionSchema } = require('./user.schema')
+const { updateProfileSchema, setupProfileSchema, updateFcmSchema, createReportSchema, createMcqReportSchema, saveQuestionSchema, createTestimonialSchema } = require('./user.schema')
 
 router.get('/me', controller.getMe)
 router.patch('/me', validate(updateProfileSchema), controller.updateProfile)
@@ -23,6 +23,8 @@ router.get('/me/reports/:itemId', controller.getMyReportByItemId)
 router.post('/question-reports', validate(createMcqReportSchema), controller.createMcqReport)
 router.get('/question-reports', controller.getMyMcqReports)
 router.get('/question-reports/:itemId', controller.getMyMcqReportByItemId)
+
+router.post('/me/testimonials', validate(createTestimonialSchema), controller.createTestimonial)
 
 router.post('/me/saved-questions', validate(saveQuestionSchema), controller.saveQuestion)
 router.delete('/me/saved-questions/:questionId', controller.unsaveQuestion)

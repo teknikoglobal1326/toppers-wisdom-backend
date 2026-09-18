@@ -30,6 +30,7 @@ const updateProfileSchema = Joi.object({
   examId: objectId.optional().label('examId'),
   subexamIds: Joi.array().items(objectId.label('subexamIds')).min(1).optional(),
   avatar: Joi.string().max(500).allow('', null).optional(),
+  referralCode: Joi.string().optional(),
 }).min(1).messages({ 'object.min': 'At least one field is required to update' })
 
 const googleSignupSchema = Joi.object({
