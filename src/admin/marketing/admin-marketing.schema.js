@@ -4,7 +4,7 @@ const announcementBlockSchema = Joi.object({
   text: Joi.string().trim().required(),
   priority: Joi.number().integer().min(0).default(0)
 })
-
+//points
 const createNotificationSchema = Joi.object({
   title: Joi.string().trim().required(),
   message: Joi.string().trim().required(),
