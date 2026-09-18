@@ -568,6 +568,29 @@ class UserService extends BaseService {
         })
         return { success: true, message: 'Test notification queued successfully' }
     }
+
+    async createTestimonial(userId, data) {
+        const User = require('../../models/User.model')
+        const Testimonial = require('../../models/Testimonial.model')
+
+        const user = await User.findById(userId).lean()
+        if (!user) throw new AppError('User not found', 404)
+
+        const defaultImage = "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.name || 'User')
+        const image = user.avatar || defaultImage
+        const exam = user.exam?.name || user.subExam?.name || 'General'
+
+        const testimonial = await Testimonial.create({
+            name: user.name || 'Unknown',
+            exam: exam,
+            image: image,
+            reviewText: data.reviewText,
+            rating: data.rating,
+            createdBy: userId
+        })
+
+        return testimonial.toObject()
+    }
 }
 
 module.exports = new UserService()

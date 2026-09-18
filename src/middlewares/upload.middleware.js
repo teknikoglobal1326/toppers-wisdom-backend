@@ -1,4 +1,4 @@
-﻿const multer = require('multer')
+const multer = require('multer')
 const path = require('path')
 const AppError = require('../core/AppError')
 
@@ -147,7 +147,7 @@ const uploadVideoImage = multer({
     const ext = path.extname(file.originalname).toLowerCase()
     const allowedAudioExts = ['.mp3', '.wav', '.ogg', '.aac', '.m4a', '.mpeg', '.mpg']
 
-    if (allowed.includes(file.mimetype) || allowedAudioExts.includes(ext) || ext === '.mkv') {
+    if (allowedMimes.includes(file.mimetype) || allowedAudioExts.includes(ext) || ext === '.mkv') {
       return cb(null, true);
     }
 
