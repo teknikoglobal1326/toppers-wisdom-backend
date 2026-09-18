@@ -1,4 +1,4 @@
-const catchAsync            = require('../../core/catchAsync')
+﻿const catchAsync            = require('../../core/catchAsync')
 const { sendSuccess }       = require('../../core/response')
 const { notificationQueue } = require('../../jobs/queue')
 const { createLogger }      = require('../../config/logger')
@@ -6,8 +6,8 @@ const { createLogger }      = require('../../config/logger')
 const logger = createLogger('admin:notification:controller')
 
 const broadcast = catchAsync(async (req, res) => {
-  const { title, body, examId, subExamId, all, type, moduleType, moduleId, countdown, schedule } = req.body
-  logger.info({ title, all, examId, subExamId, type, moduleType, moduleId, countdown, schedule }, 'Broadcasting notification')
+  const { title, body, examId, subExamId, courseIds, subscriptionIds, targetAudience, all, type, moduleType, moduleId, countdown, schedule } = req.body
+  logger.info({ title, all, examId, subExamId, courseIds, subscriptionIds, targetAudience, type, moduleType, moduleId, countdown, schedule }, 'Broadcasting notification')
 
   const targetModuleType = moduleType || 'system'
   const scheduledTime = schedule ? new Date(schedule).getTime() : Date.now()
@@ -48,6 +48,9 @@ const broadcast = catchAsync(async (req, res) => {
       body,
       examId,
       subExamId,
+      courseIds,
+      subscriptionIds,
+      targetAudience,
       all,
       data: {
         moduleType: targetModuleType,
@@ -62,17 +65,17 @@ const broadcast = catchAsync(async (req, res) => {
   const resultData = {
     jobId: job.id,
     title,
-    message: body,
     body,
+    all: !!all,
     examId: examId || null,
     subExamId: subExamId || null,
-    all: !!all,
-    moduleType: targetModuleType,
+    courseIds: courseIds || [],
+    subscriptionIds: subscriptionIds || [],
+    targetAudience: targetAudience || 'all',
+    type: targetModuleType,
     moduleId: moduleId || null,
-    schedule: schedule ? new Date(schedule).toISOString() : null,
     countdown: targetCountdown ? new Date(targetCountdown).toISOString() : null,
-    isProcessed: delay === 0,
-    createdAt: new Date().toISOString()
+    schedule: schedule ? new Date(schedule).toISOString() : null,
   }
 
   sendSuccess(res, resultData, delay > 0 ? 'Notification scheduled with countdown' : 'Notification broadcast queued')

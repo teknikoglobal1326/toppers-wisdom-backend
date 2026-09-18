@@ -1,5 +1,9 @@
 const BaseService = require('../../core/BaseService')
 const NotificationCampaign = require('../../models/NotificationCampaign.model')
+require('../../models/Course.model')
+require('../../models/Subscription.model')
+require('../../models/Exam.model')
+require('../../models/SubExam.model')
 const Announcement = require('../../models/Announcement.model')
 const { notificationQueue } = require('../../jobs/queue')
 const AppError = require('../../core/AppError')
@@ -77,6 +81,10 @@ class AdminMarketingService extends BaseService {
 
   async getNotification(id) {
     const campaign = await NotificationCampaign.findOne({ _id: id, isDeleted: false })
+      .populate('examId', 'name title')
+      .populate('subExamId', 'name title')
+      .populate('courseIds', 'title name price thumbnail image')
+      .populate('subscriptionIds', 'name title planName price duration durationUnit')
     if (!campaign) throw new AppError('Notification campaign not found', 404, 'NOT_FOUND')
     return campaign
   }

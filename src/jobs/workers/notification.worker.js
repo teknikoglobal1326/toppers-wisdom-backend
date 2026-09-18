@@ -1,41 +1,27 @@
 const { Worker } = require('bullmq')
-const redis  = require('../../config/redis')
-const admin  = require('firebase-admin')
-const User   = require('../../models/User.model')
-const Notification = require('../../models/Notification.model')
-const config = require('../../config/env')
+const admin = require('firebase-admin')
+const redis = require('../../config/redis')
 const { createLogger } = require('../../config/logger')
-const fs = require('fs')
-const path = require('path')
+const User = require('../../models/User.model')
+const Notification = require('../../models/Notification.model')
 
-const logger = createLogger('jobs:notification')
+const logger = createLogger('notification:worker')
 
 let fcmEnabled = false
-if (config.FCM_SERVICE_ACCOUNT_JSON) {
-  try {
-    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(config.FCM_SERVICE_ACCOUNT_JSON)) })
-    fcmEnabled = true
-  } catch (err) {
-    logger.error({ err }, 'Failed to initialize Firebase Admin with FCM_SERVICE_ACCOUNT_JSON')
+try {
+  const serviceAccount = require('../../../firebase-service-account.json')
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    })
   }
-} else {
-  // Fallback to local credential file in src/firebase/
-  const credPath = path.join(__dirname, '../../firebase/toopers-wisdom-firebase-adminsdk-fbsvc-0f6f847949.json')
-  if (fs.existsSync(credPath)) {
-    try {
-      const serviceAccount = require(credPath)
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) })
-      fcmEnabled = true
-      logger.info('Firebase Admin initialized with local service account credentials')
-    } catch (err) {
-      logger.error({ err }, 'Failed to initialize Firebase Admin with local credentials file')
-    }
-  } else {
-    logger.warn('FCM_SERVICE_ACCOUNT_JSON not set and local credentials file missing — push notifications disabled')
-  }
+  fcmEnabled = true
+  logger.info('Firebase Admin SDK initialized successfully')
+} catch (err) {
+  logger.warn({ err: err.message }, 'Firebase Admin SDK failed to initialize — push notifications disabled')
 }
 
-new Worker('notification', async (job) => {
+const worker = new Worker('notification', async (job) => {
   const { name } = job
   logger.info({ jobId: job.id, name }, 'Notification job started')
 
@@ -48,14 +34,48 @@ new Worker('notification', async (job) => {
       return
     }
 
-    const { title, message, image, notificationType } = campaign
+    const { title, message, image, notificationType, all, examId, subExamId, courseIds, subscriptionIds } = campaign
+    
+    let baseFilter = { fcmToken: { $ne: null, $exists: true }, isDeleted: false }
+
+    if (!all) {
+      if (courseIds && courseIds.length > 0) {
+        const Enrollment = require('../../models/Enrollment.model')
+        const CourseOrder = require('../../models/CourseOrder.model')
+        const [enrolledUsers, orderUsers] = await Promise.all([
+          Enrollment.find({ course: { $in: courseIds } }).distinct('user'),
+          CourseOrder.find({ 'items.itemId': { $in: courseIds }, status: 'paid' }).distinct('user')
+        ])
+        const targetUserIds = [...new Set([...enrolledUsers, ...orderUsers].map(String))]
+        baseFilter._id = { $in: targetUserIds }
+      } else if (subscriptionIds && subscriptionIds.length > 0) {
+        const SubscriptionOrder = require('../../models/SubscriptionOrder.model')
+        const UserSubscription = require('../../models/UserSubscription.model')
+        const [subUsers, userSubUsers] = await Promise.all([
+          SubscriptionOrder.find({ subscription: { $in: subscriptionIds }, status: 'paid' }).distinct('user'),
+          UserSubscription.find({ subscription: { $in: subscriptionIds } }).distinct('user')
+        ])
+        const targetUserIds = [...new Set([...subUsers, ...userSubUsers].map(String))]
+        baseFilter._id = { $in: targetUserIds }
+      } else if (examId && subExamId) {
+        baseFilter.$and = [
+          { $or: [{ 'exam._id': examId }, { 'examType._id': examId }] },
+          { $or: [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }] }
+        ]
+      } else if (examId) {
+        baseFilter.$or = [{ 'exam._id': examId }, { 'examType._id': examId }]
+      } else if (subExamId) {
+        baseFilter.$or = [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }]
+      }
+    }
+
     const batchSize = 500
     let skip = 0
     let hasMore = true
     let totalSent = 0
 
     while (hasMore) {
-      const batchUsers = await User.find({ fcmToken: { $ne: null, $exists: true }, isDeleted: false })
+      const batchUsers = await User.find(baseFilter)
         .select('_id fcmToken')
         .skip(skip)
         .limit(batchSize)
@@ -125,9 +145,21 @@ new Worker('notification', async (job) => {
       return
     }
 
-    const title = announcement.title
-    const firstBlockText = announcement.announcementBlocks?.[0]?.text || 'New announcement published'
-    const pushBody = firstBlockText.length > 100 ? firstBlockText.substring(0, 100) + '...' : firstBlockText
+    const { title, message, image, all, examId, subExamId } = announcement
+    let baseFilter = { fcmToken: { $ne: null, $exists: true }, isDeleted: false }
+
+    if (!all) {
+      if (examId && subExamId) {
+        baseFilter.$and = [
+          { $or: [{ 'exam._id': examId }, { 'examType._id': examId }] },
+          { $or: [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }] }
+        ]
+      } else if (examId) {
+        baseFilter.$or = [{ 'exam._id': examId }, { 'examType._id': examId }]
+      } else if (subExamId) {
+        baseFilter.$or = [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }]
+      }
+    }
 
     const batchSize = 500
     let skip = 0
@@ -135,10 +167,7 @@ new Worker('notification', async (job) => {
     let totalSent = 0
 
     while (hasMore) {
-      const batchUsers = await User.find({ 
-        fcmToken: { $ne: null, $exists: true }, 
-        isDeleted: false 
-      })
+      const batchUsers = await User.find(baseFilter)
         .select('_id fcmToken')
         .skip(skip)
         .limit(batchSize)
@@ -156,23 +185,14 @@ new Worker('notification', async (job) => {
             tokens,
             notification: {
               title,
-              body: pushBody,
-              imageUrl: announcement.image || undefined
+              body: message,
+              imageUrl: image || undefined
             },
             data: {
               type: 'announcement',
               announcementId: String(announcementId)
             }
           })
-          
-          result.responses.forEach((resp, index) => {
-            if (resp.success) {
-              logger.info(`Success: User ${batchUsers[index]._id} received push.`);
-            } else {
-              logger.error(`Failed: User ${batchUsers[index]._id} failed. Reason: ${resp.error}`);
-            }
-          });
-          
           logger.info({ jobId: job.id, sent: result.successCount, failed: result.failureCount }, 'FCM announcement campaign batch sent')
         } catch (err) {
           logger.error({ err }, 'FCM announcement campaign batch send failed')
@@ -182,7 +202,7 @@ new Worker('notification', async (job) => {
       const notificationDocs = batchUsers.map((u) => ({
         user: u._id,
         title,
-        body: pushBody,
+        body: message,
         type: 'system',
         data: {
           type: 'announcement',
@@ -194,7 +214,7 @@ new Worker('notification', async (job) => {
         try {
           await Notification.insertMany(notificationDocs)
         } catch (err) {
-          logger.error({ err }, 'In-app notification announcement batch insert failed')
+          logger.error({ err }, 'In-app announcement campaign batch insert failed')
         }
       }
 
@@ -208,7 +228,7 @@ new Worker('notification', async (job) => {
     return
   }
 
-  let { userId, subExamId, examId, all, title, body, data } = job.data
+  let { userId, subExamId, examId, courseIds, subscriptionIds, all, title, body, data } = job.data
 
   if (name === 'payment-success') {
     title = 'Course Purchased!'
@@ -227,29 +247,49 @@ new Worker('notification', async (job) => {
     body = 'You have successfully logged in to your account.'
     data = { ...data, type: 'login' }
   } else if (name === 'referral-bonus') {
-    title = 'Referral Bonus! 🎉'
+    title = 'Referral Bonus! 🎁'
     body = 'You earned 25 coins for successfully referring a new user!'
     data = { ...data, type: 'referral_bonus' }
   } else if (name === 'signup-bonus-referral') {
-    title = 'Welcome Bonus! 🎁'
+    title = 'Welcome Bonus! 🎉'
     body = 'You received 10 coins as a sign-up bonus via referral!'
     data = { ...data, type: 'signup_bonus' }
   }
 
   let filter = {}
-  if (!all && examId && subExamId) {
-    filter = {
-      $and: [
-        { $or: [{ 'exam._id': examId }, { 'examType._id': examId }] },
-        { $or: [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }] }
-      ]
+  if (!all) {
+    if (courseIds && courseIds.length > 0) {
+      const Enrollment = require('../../models/Enrollment.model')
+      const CourseOrder = require('../../models/CourseOrder.model')
+      const [enrolledUsers, orderUsers] = await Promise.all([
+        Enrollment.find({ course: { $in: courseIds } }).distinct('user'),
+        CourseOrder.find({ 'items.itemId': { $in: courseIds }, status: 'paid' }).distinct('user')
+      ])
+      const targetUserIds = [...new Set([...enrolledUsers, ...orderUsers].map(String))]
+      filter = { _id: { $in: targetUserIds } }
+    } else if (subscriptionIds && subscriptionIds.length > 0) {
+      const SubscriptionOrder = require('../../models/SubscriptionOrder.model')
+      const UserSubscription = require('../../models/UserSubscription.model')
+      const [subUsers, userSubUsers] = await Promise.all([
+        SubscriptionOrder.find({ subscription: { $in: subscriptionIds }, status: 'paid' }).distinct('user'),
+        UserSubscription.find({ subscription: { $in: subscriptionIds } }).distinct('user')
+      ])
+      const targetUserIds = [...new Set([...subUsers, ...userSubUsers].map(String))]
+      filter = { _id: { $in: targetUserIds } }
+    } else if (examId && subExamId) {
+      filter = {
+        $and: [
+          { $or: [{ 'exam._id': examId }, { 'examType._id': examId }] },
+          { $or: [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }] }
+        ]
+      }
+    } else if (examId) {
+      filter = { $or: [{ 'exam._id': examId }, { 'examType._id': examId }] }
+    } else if (subExamId) {
+      filter = { $or: [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }] }
+    } else if (userId) {
+      filter = { _id: userId }
     }
-  } else if (!all && examId) {
-    filter = { $or: [{ 'exam._id': examId }, { 'examType._id': examId }] }
-  } else if (!all && subExamId) {
-    filter = { $or: [{ 'subExam._id': subExamId }, { 'subExams._id': subExamId }] }
-  } else if (!all && userId) {
-    filter = { _id: userId }
   }
 
   const users  = await User.find(filter).select('_id fcmToken').lean()
@@ -277,3 +317,9 @@ new Worker('notification', async (job) => {
   }
   logger.info({ jobId: job.id, count: users.length }, 'Notification job done')
 }, { connection: redis })
+
+worker.on('failed', (job, err) => {
+  logger.error({ jobId: job?.id, err }, 'Notification worker job failed')
+})
+
+module.exports = worker

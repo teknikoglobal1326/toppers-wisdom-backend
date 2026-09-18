@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+﻿const mongoose = require('mongoose')
 
 const notificationCampaignSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
@@ -6,8 +6,11 @@ const notificationCampaignSchema = new mongoose.Schema({
   image: { type: String, default: '' },
   notificationType: { type: String, default: 'marketing' },
   schedule: { type: Date, required: true, index: true },
+  targetAudience: { type: String, default: 'all' },
   examId: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null },
   subExamId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubExam', default: null },
+  courseIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
+  subscriptionIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subscription' }],
   all: { type: Boolean, default: false },
   moduleType: { type: String, default: null },
   moduleId: { type: String, default: null },
